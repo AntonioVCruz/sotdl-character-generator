@@ -16,7 +16,10 @@ Os insumos ficam em `docs/reference/`. Em caso de conflito, vale esta ordem:
 3. `character-sheet.html`: o resultado que o gerador deve produzir. É a ficha final, não a interface do gerador.
 4. `lessons-learned.md`: erros da tentativa anterior a evitar.
 
-Regras do jogo: o conteúdo extraído dos livros fica em `content/` (somente local, fora do Git). Use-o como fonte da verdade. O que vier da memória, e não de `content/`, deve ser marcado como **não verificado**.
+Regras do jogo: o conteúdo dos livros fica em `content/` (somente local, fora do Git).
+- `content/pdfs/`: os livros. São a fonte da verdade.
+- `content/extracted/`: extrações em Markdown da tentativa anterior, ainda não verificadas. Podem ser usadas para localizar regras rapidamente, mas qualquer dado que entre numa spec deve ser conferido no PDF correspondente.
+O que vier da memória, ou só de `content/extracted/` sem conferência, deve ser marcado como **não verificado**.
 
 Se uma spec contradisser os princípios ou o wireframe, aponte o conflito e pergunte. Não resolva sozinho.
 
