@@ -59,7 +59,7 @@ Por etapa:
 
 A tentativa anterior falhou por escopo inflado e excesso de processo (ver `docs/reference/lessons-learned.md`). Os princípios descrevem um produto amplo; a lição é não construí-lo de uma vez.
 
-- **MVP:** [A DEFINIR na etapa de requisitos. Ponto de partida sugerido: criação no nível 0 com um pequeno conjunto de ancestralidades, rolagens e escolhas, ficha final e ajuste manual.]
+- **MVP:** definido na seção 1.2.1 do SRS (`docs/srs.md`): criação no nível 0 pelo fluxo do core com Human, Dwarf e Clockwork, fontes com adição e substituição de entidade, log de criação, ficha final, ajuste manual e impressão.
 - **Fora do MVP por padrão** (Should ou Could, salvo decisão em contrário na etapa de requisitos): a ficha como ferramenta de jogo (D17, P13c, P11c, P34 em jogo, D31, D34), subida de nível e mudanças pós-nível (P13b, D16, D32), pacotes da casa importáveis e sua atualização (P21, P6a, D13), editor e importação de textos (P9a) e cobertura de todos os suplementos.
 - Ao enumerar requisitos, não expandir áreas fora do MVP. Registrá-las com sua prioridade e seguir em frente.
 - Produzir **apenas documentos de decisão**: requisitos, arquitetura, ADRs, UX e plano. Nada de relatórios de entrega, status, fechamento, matrizes de aceite ou registros do trabalho realizado.
@@ -71,12 +71,14 @@ A tentativa anterior falhou por escopo inflado e excesso de processo (ver `docs/
 - **Fontes:** o conteúdo inclui o livro básico e todos os suplementos, que expandem, substituem ou revisam o core em sete padrões (seção 2.2 dos princípios). Os princípios já decidem o mecanismo: livros com componentes, ordem de prioridade, exceção no cartão e por rolagem.
 - **Esqueleto vs. camada editável:** derivados sempre calculados (D2), ajuste manual como camada nomeada (P12), concessões do mestre como camada própria (P23), mudança a montante desfaz dependentes com confirmação (P6).
 - **Escolha vs. rolagem:** quatro regimes de decisão (seção 1.1). O gerador registra, não fiscaliza (P7). Respeitar a distribuição publicada: 3d6 são três dados, não um número uniforme de 3 a 18.
-- **Demonstrabilidade (em aberto):** o repositório é público e não pode conter conteúdo dos livros, e o conteúdo oficial vive em pacotes (P21a). Se esses pacotes ficarem só em `content/`, um visitante público não consegue usar o app. A etapa de requisitos deve decidir cedo o que um visitante sem os livros consegue fazer.
+- **Demonstrabilidade (decidida, D35):** o app traz a mecânica oficial sem texto, nos termos do P22. Um visitante sem os livros percorre o fluxo inteiro; entradas sem texto mostram faixa, página e efeitos. O risco de licença foi aceito: o site é aberto ao público (Q1 do SRS).
 - **Aplicação web (em aberto, para a arquitetura):** decidir onde ficam os personagens (navegador ou servidor), se há contas de usuário (P2 e P9 falam em escopo "por usuário"; P21 em compartilhar pacotes) e onde hospedar, considerando o custo de um projeto pessoal. O MVP pode adotar a opção mais simples, desde que não impeça as demais depois.
 
 ## Propriedade intelectual
 
-- Este repositório é **público**. Nunca copiar texto, tabelas ou arte dos livros para fora de `content/`.
+- Este repositório é **público**. A linha entre o que pode e o que não pode sair de `content/` é a do P22 (D35, D36, D38):
+  - **Pode entrar no repositório (mecânica oficial):** identificadores e nomes de entidades (ancestralidade, path, magia, talento, tradição, item, tipo de criatura), números, faixas de dado, efeitos, concessões, ligações entre tabelas, condições (P26) e página. Nomes curtos que são o conteúdo inteiro de uma entrada e não são entidades (ex.: profissões) só entram quando outra regra os referencia (D36, D38).
+  - **Nunca sai de `content/`:** texto descritivo dos livros, inclusive o texto de resultado das tabelas narrativas; nomes de entrada que nenhuma regra referencia; arte.
 - Nos documentos, referenciar livro e página em vez de transcrever regras (P22). Nomes de elementos (ancestralidades, caminhos, magias) podem ser citados.
 - PDFs nunca são versionados (`*.pdf` está no `.gitignore`).
 

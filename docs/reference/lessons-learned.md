@@ -40,11 +40,11 @@ Por respeito à propriedade intelectual, a geração ficava bloqueada sem os liv
 
 **Lição:** decidir na especificação, e não no fim, o que um visitante sem os livros consegue fazer, sem violar a propriedade intelectual.
 
-## 7. Conteúdo dos livros nunca entra no Git
+## 7. Texto dos livros nunca entra no Git
 
 O primeiro commit continha derivados dos livros e dados pessoais de compra. Corrigir exigiu reescrever o histórico, e parte da limpeza ainda depende do suporte do GitHub.
 
-**Lição:** a separação entre conteúdo dos livros e repositório público existe desde o primeiro commit (`content/` e `*.pdf` no `.gitignore`), não é corrigida depois.
+**Lição:** a linha entre o que pode e o que não pode entrar no repositório público é traçada antes do primeiro commit, não corrigida depois. PDFs, extrações e texto descritivo dos livros ficam em `content/` (`content/` e `*.pdf` no `.gitignore`); só a mecânica entra no repositório, nos termos do P22 (D35, D36). Dados pessoais nunca entram.
 
 ## O que vale reaproveitar
 
