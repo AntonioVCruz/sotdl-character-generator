@@ -25,3 +25,5 @@ Thumbs.db
 .claude/skills/
 agent/
 skills-lock.json
+# Arquivo de trabalho da skill requirements-engineering (registro de andamento).
+docs/.requirements-progress.md
