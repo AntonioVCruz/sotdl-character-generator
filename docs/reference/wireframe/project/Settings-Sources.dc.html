@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Sources and rules</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=IBM+Plex+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#1A1A18}a:hover{color:#4F4F4B}
+</style>
+</helmet>
+<div style="min-height: 100vh; background: #EFEFEC; font-family: Inter, system-ui, sans-serif; color: #1A1A18; font-size: 14px; line-height: 1.45">
+
+<header style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; padding: 12px 24px; background: #FFFFFF; border-bottom: 1px solid #D4D4CF">
+<a href="Home.dc.html" style="font-weight: 700; font-size: 15px; text-decoration: none">SotDL Generator</a>
+<span style="color: #4F4F4B">Liliana · Human · Level 0 · Creating</span>
+<div style="flex: 1 1 auto"></div>
+<a href="Main.dc.html" style="display: inline-flex; align-items: center; min-height: 40px; padding: 0 14px; border: 1px solid #D4D4CF; border-radius: 6px; text-decoration: none">Back to builder</a>
+</header>
+
+<div style="max-width: 1440px; margin: 0 auto; padding: 24px; box-sizing: border-box; display: flex; flex-direction: column; gap: 20px">
+
+<div style="display: flex; flex-direction: column; gap: 6px">
+<h1 style="margin: 0; font-size: 28px">Sources and rules</h1>
+<p style="margin: 0; color: #4F4F4B; max-width: 75ch">These settings belong to this character. When two books have their own version of the same thing, the book higher in the list wins. The core rulebook is always active and always last.</p>
+</div>
+
+<nav aria-label="Settings sections" style="display: flex; flex-wrap: wrap; gap: 4px; border-bottom: 1px solid #D4D4CF">
+<a href="#books" aria-current="true" style="display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px; border-bottom: 2px solid #1A1A18; text-decoration: none; font-weight: 600">Books</a>
+<a href="#optional" style="display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px; text-decoration: none; color: #4F4F4B">Optional rules</a>
+<a href="#house" style="display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px; text-decoration: none; color: #4F4F4B">House rules</a>
+<a href="#texts" style="display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px; text-decoration: none; color: #4F4F4B">Rule texts</a>
+</nav>
+
+<div style="display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start">
+
+<main style="flex: 999 1 640px; min-width: 0; display: flex; flex-direction: column; gap: 20px">
+
+<section id="books" aria-labelledby="books-h" style="background: #FFFFFF; border: 1px solid #D4D4CF; border-radius: 8px; padding: 20px; display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; align-items: baseline">
+<h2 id="books-h" style="margin: 0; font-size: 18px">Books, in priority order</h2>
+<span style="font-size: 13px; color: #4F4F4B">Drag to reorder · 5 of 9 active</span>
+</div>
+
+<div style="border: 2px solid #1A1A18; border-radius: 8px; overflow: hidden">
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 12px 14px; background: #FFFFFF">
+<button type="button" aria-label="Drag Only Human" style="min-height: 44px; min-width: 32px; border: 0; background: transparent; cursor: grab; color: #4F4F4B">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 8h16M4 16h16"/></svg>
+</button>
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #4F4F4B; min-width: 20px">1</span>
+<div style="flex: 1 1 220px; display: flex; flex-direction: column">
+<strong>Only Human</strong>
+<span style="font-size: 12px; color: #4F4F4B">Human variant · Development tables · Level 4 option</span>
+</div>
+<label style="display: inline-flex; align-items: center; gap: 8px; min-height: 44px"><input type="checkbox" checked style="width: 20px; height: 20px"> Active</label>
+<button type="button" aria-expanded="true" style="min-height: 40px; padding: 0 12px; border: 1px solid #A8A8A2; border-radius: 6px; background: #FFFFFF; font: inherit; font-size: 13px; cursor: pointer">Components (4)</button>
+</div>
+<div style="display: flex; flex-direction: column; gap: 0; background: #F7F7F5; border-top: 1px solid #D4D4CF; padding: 6px 14px 10px 64px">
+<sc-for list="{{components}}" as="c" hint-placeholder-count="4">
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 8px 0; border-bottom: 1px solid #E4E4E0">
+<label style="display: inline-flex; align-items: center; gap: 8px; flex: 1 1 280px; min-height: 36px"><input type="checkbox" checked="{{c.on}}" style="width: 18px; height: 18px"> {{c.name}}</label>
+<span style="font-size: 11px; padding: 2px 6px; border-radius: 4px; background: #E4E4E0">{{c.type}}</span>
+<span style="font-size: 12px; color: #4F4F4B; flex: 1 1 260px">{{c.note}}</span>
+</div>
+</sc-for>
+</div>
+</div>
+
+<sc-for list="{{books}}" as="b" hint-placeholder-count="4">
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 12px 14px; border: 1px solid #D4D4CF; border-radius: 8px">
+<button type="button" aria-label="Drag {{b.name}}" style="min-height: 44px; min-width: 32px; border: 0; background: transparent; cursor: grab; color: #4F4F4B">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 8h16M4 16h16"/></svg>
+</button>
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #4F4F4B; min-width: 20px">{{b.n}}</span>
+<div style="flex: 1 1 220px; display: flex; flex-direction: column">
+<strong>{{b.name}}</strong>
+<span style="font-size: 12px; color: #4F4F4B">{{b.what}}</span>
+</div>
+<label style="display: inline-flex; align-items: center; gap: 8px; min-height: 44px"><input type="checkbox" checked="{{b.on}}" style="width: 20px; height: 20px"> Active</label>
+<button type="button" aria-expanded="false" style="min-height: 40px; padding: 0 12px; border: 1px solid #A8A8A2; border-radius: 6px; background: #FFFFFF; font: inherit; font-size: 13px; cursor: pointer">{{b.comp}}</button>
+</div>
+</sc-for>
+
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 12px 14px; border: 1px solid #D4D4CF; border-radius: 8px; background: #F7F7F5">
+<span aria-hidden="true" style="min-width: 32px; display: inline-flex; justify-content: center; color: #4F4F4B">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
+</span>
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #4F4F4B; min-width: 20px">last</span>
+<div style="flex: 1 1 220px; display: flex; flex-direction: column">
+<strong>Shadow of the Demon Lord (core)</strong>
+<span style="font-size: 12px; color: #4F4F4B">Always active. Used whenever no book above has its own version.</span>
+</div>
+</div>
+</section>
+
+<section id="optional" aria-labelledby="opt-h" style="background: #FFFFFF; border: 1px solid #D4D4CF; border-radius: 8px; padding: 20px; display: flex; flex-direction: column; gap: 12px">
+<h2 id="opt-h" style="margin: 0; font-size: 18px">Optional rules</h2>
+<p style="margin: 0; color: #4F4F4B; font-size: 13px">Variants that sit beside the standard rule. A book can be active while its optional rules stay off.</p>
+<sc-for list="{{optional}}" as="o" hint-placeholder-count="3">
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 10px 0; border-bottom: 1px solid #EFEFEC">
+<label style="display: inline-flex; align-items: center; gap: 8px; flex: 1 1 280px; min-height: 40px"><input type="checkbox" checked="{{o.on}}" style="width: 20px; height: 20px"> {{o.name}}</label>
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; padding: 2px 6px; border: 1px solid #A8A8A2; border-radius: 4px">{{o.src}}</span>
+<span style="font-size: 12px; color: #4F4F4B; flex: 1 1 280px">{{o.affects}}</span>
+</div>
+</sc-for>
+</section>
+
+<section id="house" aria-labelledby="house-h" style="background: #FFFFFF; border: 1px solid #D4D4CF; border-radius: 8px; padding: 20px; display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; align-items: center">
+<h2 id="house-h" style="margin: 0; font-size: 18px">House rules</h2>
+<div style="display: flex; flex-wrap: wrap; gap: 8px">
+<button type="button" style="min-height: 40px; padding: 0 14px; border: 1px solid #A8A8A2; border-radius: 6px; background: #FFFFFF; font: inherit; font-size: 13px; cursor: pointer">Import pack</button>
+<button type="button" style="min-height: 40px; padding: 0 14px; border: 1px solid #A8A8A2; border-radius: 6px; background: #FFFFFF; font: inherit; font-size: 13px; cursor: pointer">Export pack</button>
+</div>
+</div>
+<p style="margin: 0; color: #4F4F4B; font-size: 13px">Packs use the same format as the books, so a pack can be shared with your table and appears here like a book.</p>
+<div style="border: 1px solid #D4D4CF; border-radius: 8px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px">
+<div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center">
+<strong style="flex: 1 1 auto">Built-in house rules</strong>
+<span style="font-size: 11px; padding: 2px 6px; border-radius: 4px; background: #E4E4E0">House rule</span>
+</div>
+<label style="display: flex; align-items: flex-start; gap: 10px; min-height: 40px"><input type="checkbox" style="width: 20px; height: 20px; margin-top: 2px"><span>Any ancestry may roll attributes <span style="display: block; font-size: 12px; color: #4F4F4B">Each starting attribute becomes its base − 2 + 1d3. While this is off, only ancestries whose book offers random attributes can roll.</span></span></label>
+</div>
+</section>
+
+<section id="texts" aria-labelledby="texts-h" style="background: #FFFFFF; border: 1px solid #D4D4CF; border-radius: 8px; padding: 20px; display: flex; flex-direction: column; gap: 10px">
+<h2 id="texts-h" style="margin: 0; font-size: 18px">Rule texts</h2>
+<p style="margin: 0; color: #4F4F4B; font-size: 13px; max-width: 75ch">The generator shows mechanics and page references. Full rule text appears only where you add it yourself, field by field, or import a text pack you made. Your texts are saved to your account only.</p>
+<div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center">
+<span style="font-size: 13px"><strong>My table texts</strong> (imported) · 1,180 entries from 5 books · 3 fields written here. Entries without text show their page reference.</span>
+<button type="button" style="min-height: 40px; padding: 0 14px; border: 1px solid #A8A8A2; border-radius: 6px; background: #FFFFFF; font: inherit; font-size: 13px; cursor: pointer">Import text pack</button>
+<button type="button" style="min-height: 40px; padding: 0 14px; border: 1px solid #A8A8A2; border-radius: 6px; background: #FFFFFF; font: inherit; font-size: 13px; cursor: pointer">Export my texts</button>
+</div>
+</section>
+</main>
+
+<aside aria-labelledby="sum-h" style="flex: 1 1 320px; background: #FFFFFF; border: 1px solid #D4D4CF; border-radius: 8px; padding: 20px; display: flex; flex-direction: column; gap: 12px">
+<h2 id="sum-h" style="margin: 0; font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: #4F4F4B">What these settings mean</h2>
+<ul style="margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 10px">
+<sc-for list="{{summary}}" as="s" hint-placeholder-count="6">
+<li>{{s}}</li>
+</sc-for>
+</ul>
+<div style="padding: 12px; background: #F7F7F5; border: 1px dashed #A8A8A2; border-radius: 6px; font-size: 13px; color: #4F4F4B">If you change these after making choices, the generator lists the choices that depend on them and asks before undoing anything.</div>
+<a href="Main.dc.html" style="display: inline-flex; justify-content: center; align-items: center; min-height: 44px; padding: 0 18px; border-radius: 6px; background: #1A1A18; color: #FFFFFF; text-decoration: none; font-weight: 600">Apply and continue</a>
+</aside>
+</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const components = [
+      { name: 'Human ancestry (revised)', type: 'Replaces core', note: 'Used instead of the core Human.', on: true },
+      { name: 'Development tables', type: 'Revises procedure', note: 'For Humans, replaces Professions and Wealth with chained tables.', on: true },
+      { name: 'Level 4 option: discover a tradition', type: 'Adds', note: 'Extra choice for Expert Human.', on: true },
+      { name: 'Random attributes (8 + 1d3)', type: 'Optional rule', note: 'Off: Humans use the fixed scores.', on: false }
+    ];
+    const books = [
+      { n: 2, name: 'Oddities, Artifacts, and Esoterica', what: 'Interesting things tables · you can switch per roll', comp: 'Components (1)', on: true },
+      { n: 3, name: 'Insupposable Instruments', what: 'Items, animals and properties', comp: 'Components (3)', on: true },
+      { n: 4, name: 'Battle Scars', what: 'Prostheses, spells · 2 optional rules', comp: 'Components (3)', on: true },
+      { n: 5, name: '[Other supplement]', what: '[What it adds]', comp: 'Components', on: false }
+    ];
+    const optional = [
+      { name: 'Injuries', src: 'BATTLE SCARS', affects: 'Play only: wounds can lower attributes or cost limbs.', on: false },
+      { name: 'Incapacitated characters (deadlier)', src: 'BATTLE SCARS', affects: 'Play only.', on: false },
+      { name: 'Random attributes for Humans', src: 'ONLY HUMAN', affects: 'Creation: Attributes step shows a die.', on: false }
+    ];
+    const summary = [
+      'Human uses the Only Human version. The core Human stays available through the version switch.',
+      'For Humans, the Professions and Wealth steps are replaced by Development.',
+      'Interesting things roll on the Oddities tables. You can switch any single roll back to the core table.',
+      'Battle Scars items and spells are available. Its optional rules are off.',
+      'Attributes are fixed. No ancestry can roll them.',
+      'Rule texts come from your imported pack. Anything it does not cover shows mechanics and a page reference.'
+    ];
+    return { components, books, optional, summary };
+  }
+}
+</script>
+</body>
+</html>

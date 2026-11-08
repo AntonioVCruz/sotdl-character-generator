@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Level up · Expert path</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=IBM+Plex+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#1A1A18}a:hover{color:#4F4F4B}
+</style>
+</helmet>
+<div style="min-height: 100vh; background: #EFEFEC; font-family: Inter, system-ui, sans-serif; color: #1A1A18; font-size: 14px; line-height: 1.45">
+
+<header style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; padding: 12px 24px; background: #FFFFFF; border-bottom: 1px solid #D4D4CF">
+<a href="Home.dc.html" style="font-weight: 700; font-size: 15px; text-decoration: none">SotDL Generator</a>
+<span style="color: #4F4F4B">Liliana · Human Magician · Level 2 → 3</span>
+<div style="flex: 1 1 auto"></div>
+<nav aria-label="Character" style="display: flex; flex-wrap: wrap; gap: 8px">
+<a href="Sheet.dc.html" style="display: inline-flex; align-items: center; min-height: 40px; padding: 0 14px; border: 1px solid #D4D4CF; border-radius: 6px; text-decoration: none">Cancel level up</a>
+<a href="Log-Export.dc.html" style="display: inline-flex; align-items: center; min-height: 40px; padding: 0 14px; border: 1px solid #D4D4CF; border-radius: 6px; text-decoration: none">Log</a>
+</nav>
+</header>
+
+<div style="display: flex; flex-wrap: wrap; gap: 24px; padding: 24px; max-width: 1440px; margin: 0 auto; box-sizing: border-box; align-items: flex-start">
+
+<nav aria-label="Level 3 steps" style="flex: 1 1 220px; display: flex; flex-direction: column; gap: 4px">
+<div style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #4F4F4B; padding: 0 12px 8px">Level 3 · Expert</div>
+<sc-for list="{{steps}}" as="s" hint-placeholder-count="8">
+<sc-if value="{{s.current}}" hint-placeholder-val="{{false}}">
+<a href="{{s.href}}" aria-current="step" style="display: flex; justify-content: space-between; align-items: center; gap: 8px; min-height: 44px; padding: 0 12px; border-radius: 6px; background: #1A1A18; color: #FFFFFF; text-decoration: none; font-weight: 600"><span>{{s.n}}. {{s.label}}</span><span style="font-size: 12px; font-weight: 500">{{s.status}}</span></a>
+</sc-if>
+<sc-if value="{{s.other}}" hint-placeholder-val="{{true}}">
+<a href="{{s.href}}" style="display: flex; justify-content: space-between; align-items: center; gap: 8px; min-height: 44px; padding: 0 12px; border-radius: 6px; text-decoration: none"><span>{{s.n}}. {{s.label}}</span><span style="font-size: 12px; color: #4F4F4B">{{s.status}}</span></a>
+</sc-if>
+</sc-for>
+<p style="margin: 12px 12px 0; padding-top: 12px; border-top: 1px solid #D4D4CF; font-size: 12px; color: #4F4F4B">Steps appear once you pick a path. Earlier levels stay as they are; to change them, open the log.</p>
+</nav>
+
+<main style="flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column; gap: 20px">
+
+<section aria-labelledby="step-q" style="background: #FFFFFF; border: 1px solid #D4D4CF; border-radius: 8px; padding: 24px; display: flex; flex-direction: column; gap: 10px">
+<div style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #4F4F4B">Step 1 of 8 · Choice</div>
+<h1 id="step-q" style="margin: 0; font-size: 26px; line-height: 1.2">Which expert path does Liliana take?</h1>
+<p style="margin: 0; color: #4F4F4B; max-width: 72ch">At level 3 you choose an expert path. You gain its level 3 benefits now, and its benefits at levels 6 and 9 later. Any expert path is allowed; think about what fits your story. <span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; padding: 2px 6px; border: 1px solid #A8A8A2; border-radius: 4px; color: #1A1A18; white-space: nowrap">CORE ch. 4</span></p>
+<div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px">
+<span style="font-size: 12px; padding: 4px 10px; border-radius: 999px; background: #1A1A18; color: #FFFFFF">Chosen 1 / 1 · Wizard</span>
+</div>
+</section>
+
+<div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center">
+<span style="font-size: 13px; color: #4F4F4B">Show</span>
+<button type="button" aria-pressed="true" style="min-height: 40px; padding: 0 12px; border: 2px solid #1A1A18; border-radius: 999px; background: #FFFFFF; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer">All</button>
+<button type="button" aria-pressed="false" style="min-height: 40px; padding: 0 12px; border: 1px solid #A8A8A2; border-radius: 999px; background: #FFFFFF; font: inherit; font-size: 13px; cursor: pointer">Magic paths</button>
+<button type="button" aria-pressed="false" style="min-height: 40px; padding: 0 12px; border: 1px solid #A8A8A2; border-radius: 999px; background: #FFFFFF; font: inherit; font-size: 13px; cursor: pointer">Combat paths</button>
+<button type="button" aria-pressed="false" style="min-height: 40px; padding: 0 12px; border: 1px solid #A8A8A2; border-radius: 999px; background: #FFFFFF; font: inherit; font-size: 13px; cursor: pointer">From supplements</button>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px">
+<sc-for list="{{paths}}" as="p" hint-placeholder-count="12">
+<sc-if value="{{p.on}}" hint-placeholder-val="{{false}}">
+<button type="button" aria-pressed="true" style="text-align: left; font: inherit; color: inherit; cursor: pointer; display: flex; flex-direction: column; gap: 6px; padding: 12px; border: 2px solid #1A1A18; border-radius: 8px; background: #FFFFFF"><strong>{{p.name}}</strong><span style="font-size: 12px; color: #4F4F4B">{{p.tag}}</span><span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px">{{p.src}}</span></button>
+</sc-if>
+<sc-if value="{{p.ok}}" hint-placeholder-val="{{true}}">
+<button type="button" aria-pressed="false" style="text-align: left; font: inherit; color: inherit; cursor: pointer; display: flex; flex-direction: column; gap: 6px; padding: 12px; border: 1px solid #D4D4CF; border-radius: 8px; background: #FFFFFF"><strong>{{p.name}}</strong><span style="font-size: 12px; color: #4F4F4B">{{p.tag}}</span><span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px">{{p.src}}</span></button>
+</sc-if>
+<sc-if value="{{p.blocked}}" hint-placeholder-val="{{false}}">
+<button type="button" disabled style="text-align: left; font: inherit; color: #4F4F4B; display: flex; flex-direction: column; gap: 6px; padding: 12px; border: 1px dashed #A8A8A2; border-radius: 8px; background: #F7F7F5"><strong>{{p.name}}</strong><span style="font-size: 12px">{{p.tag}}</span><span style="font-size: 12px; color: #1A1A18">Not available: {{p.why}}</span></button>
+</sc-if>
+</sc-for>
+</div>
+
+<section aria-labelledby="wiz-h" style="background: #FFFFFF; border: 1px solid #D4D4CF; border-radius: 8px; padding: 20px; display: flex; flex-direction: column; gap: 14px">
+<div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center">
+<h2 id="wiz-h" style="margin: 0; font-size: 20px; flex: 1 1 auto">Level 3 Wizard</h2>
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; padding: 2px 6px; border: 1px solid #A8A8A2; border-radius: 4px">CORE p.76</span>
+<span style="font-size: 11px; padding: 2px 6px; border-radius: 4px; background: #E4E4E0">Core</span>
+</div>
+<div style="display: flex; flex-direction: column">
+<sc-for list="{{benefits}}" as="b" hint-placeholder-count="6">
+<div style="display: grid; grid-template-columns: minmax(140px, 1fr) minmax(0, 3fr) minmax(90px, auto); gap: 12px; align-items: baseline; padding: 10px 0; border-bottom: 1px solid #EFEFEC">
+<strong>{{b.k}}</strong>
+<span>{{b.v}}</span>
+<span style="font-size: 12px; padding: 2px 8px; border-radius: 999px; border: 1px solid #A8A8A2; justify-self: end; white-space: nowrap">{{b.kind}}</span>
+</div>
+</sc-for>
+</div>
+<details style="border-top: 1px solid #D4D4CF; padding-top: 10px">
+<summary style="cursor: pointer; min-height: 32px; font-weight: 600">Later at levels 6 and 9</summary>
+<p style="margin: 8px 0 0; color: #4F4F4B">Level 6: Health +2, discover a tradition or learn a spell, Spell Expertise. Level 9: see <span style="font-family: 'IBM Plex Mono', monospace">CORE p.76</span>.</p>
+</details>
+</section>
+
+<section aria-labelledby="also-h" style="background: #FFFFFF; border: 1px dashed #A8A8A2; border-radius: 8px; padding: 16px; display: flex; flex-direction: column; gap: 8px">
+<h2 id="also-h" style="margin: 0; font-size: 15px">Reaching expert also asks for</h2>
+<ul style="margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px">
+<li>An <strong>Objective</strong>: choose one or roll d20 on Character Objectives.</li>
+<li>A <strong>Story Development</strong> for your new path: roll d6, choose or write your own.</li>
+<li>New gear: your non-magical equipment has worn out. Review what to replace.</li>
+</ul>
+</section>
+
+<div style="display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap">
+<a href="Sheet.dc.html" style="display: inline-flex; align-items: center; min-height: 44px; padding: 0 18px; border: 1px solid #A8A8A2; border-radius: 6px; text-decoration: none">Back to sheet</a>
+<a href="Magic.dc.html" style="display: inline-flex; align-items: center; min-height: 44px; padding: 0 18px; border-radius: 6px; background: #1A1A18; color: #FFFFFF; text-decoration: none; font-weight: 600">Next: Attributes</a>
+</div>
+</main>
+
+<aside aria-label="Level up summary" style="flex: 1 1 280px; display: flex; flex-direction: column; gap: 16px">
+<section style="background: #FFFFFF; border: 1px solid #D4D4CF; border-radius: 8px; padding: 16px; display: flex; flex-direction: column; gap: 10px">
+<h2 style="margin: 0; font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: #4F4F4B">Changes at level 3</h2>
+<sc-for list="{{changes}}" as="c" hint-placeholder-count="4">
+<div style="display: flex; justify-content: space-between; gap: 8px; padding: 6px 0; border-bottom: 1px solid #EFEFEC; font-size: 13px"><span style="color: #4F4F4B">{{c.k}}</span><span style="font-family: 'IBM Plex Mono', monospace; font-weight: 600">{{c.v}}</span></div>
+</sc-for>
+</section>
+<section style="background: #FFFFFF; border: 1px solid #D4D4CF; border-radius: 8px; padding: 16px; display: flex; flex-direction: column; gap: 8px; font-size: 13px">
+<h2 style="margin: 0; font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: #4F4F4B">Path so far</h2>
+<div>Level 1–2 · Magician</div>
+<div><strong>Level 3 · Wizard</strong> (choosing)</div>
+<div style="color: #4F4F4B">Level 7 · master path</div>
+</section>
+</aside>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1430}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const cur = 0;
+    const steps = [
+      ['Expert path', 'Wizard', 'LevelUp.dc.html'],
+      ['Attributes', '+1 to two', 'LevelUp.dc.html'],
+      ['Language or scholarship', '1 choice', 'LevelUp.dc.html'],
+      ['Magic', '1 + Grimoire', 'Magic.dc.html'],
+      ['Story Development', 'd6', 'LevelUp.dc.html'],
+      ['Objective', 'd20', 'LevelUp.dc.html'],
+      ['Equipment', 'Worn out', 'LevelUp.dc.html'],
+      ['Review', '', 'Sheet.dc.html']
+    ].map(([label, status, href], i) => ({ n: i + 1, label, status, href, current: i === cur, other: i !== cur }));
+    const P = (name, tag, src, extra) => ({ name, tag, src, on: false, ok: true, blocked: false, why: '', ...(extra || {}) });
+    const paths = [
+      P('Wizard', 'Magic · scholarship', 'CORE p.76', { on: true, ok: false }),
+      P('Sorcerer', 'Magic', 'CORE p.71'),
+      P('Spellbinder', 'Magic and weapons', 'CORE p.72'),
+      P('Warlock', 'Magic', 'CORE p.74'),
+      P('Witch', 'Magic', 'CORE p.75'),
+      P('Fighter', 'Combat', 'CORE p.66'),
+      P('Scout', 'Skill', 'CORE p.70'),
+      P('Thief', 'Skill', 'CORE p.73'),
+      P('Cleric', 'Faith', 'CORE p.64'),
+      P('Druid', 'Faith', 'CORE p.65'),
+      P('[Supplement path]', '[Theme]', '[BOOK p.—]'),
+      P('[Supplement path]', '[Theme]', '', { ok: false, blocked: true, why: 'requires [prerequisite] from its book' })
+    ];
+    const benefits = [
+      { k: 'Attributes', v: 'Increase two by 1.', kind: 'You choose' },
+      { k: 'Characteristics', v: 'Health +2, Power +1.', kind: 'Automatic' },
+      { k: 'Languages and professions', v: 'Speak another language, or add another area of scholarship.', kind: 'You choose' },
+      { k: 'Magic', v: 'Discover a new tradition, or learn one spell from a tradition you know.', kind: 'You choose' },
+      { k: 'Grimoire', v: 'A tome with three spells of rank 1 or higher that you can cast, from any tradition. Counts as learning them for Corruption.', kind: 'You choose 3' },
+      { k: 'Grimoire Casting', v: 'While holding it, cast a spell from it by spending a casting of a learned spell of the same or higher rank.', kind: 'Talent' }
+    ];
+    const changes = [
+      { k: 'Health', v: '13 → 15' }, { k: 'Power', v: '1 → 2' },
+      { k: 'Healing Rate', v: '3 → 3' }, { k: 'Attributes', v: '2 to raise' }
+    ];
+    return { steps, paths, benefits, changes };
+  }
+}
+</script>
+</body>
+</html>

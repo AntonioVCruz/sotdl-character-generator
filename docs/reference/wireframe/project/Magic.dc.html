@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Level up · Magic</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=IBM+Plex+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#1A1A18}a:hover{color:#4F4F4B}
+</style>
+</helmet>
+<div style="min-height: 100vh; background: #EFEFEC; font-family: Inter, system-ui, sans-serif; color: #1A1A18; font-size: 14px; line-height: 1.45">
+
+<header style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; padding: 12px 24px; background: #FFFFFF; border-bottom: 1px solid #D4D4CF">
+<a href="Home.dc.html" style="font-weight: 700; font-size: 15px; text-decoration: none">SotDL Generator</a>
+<span style="color: #4F4F4B">Liliana · Human Magician › Wizard · Level 2 → 3</span>
+<div style="flex: 1 1 auto"></div>
+<nav aria-label="Character" style="display: flex; flex-wrap: wrap; gap: 8px">
+<a href="Sheet.dc.html" style="display: inline-flex; align-items: center; min-height: 40px; padding: 0 14px; border: 1px solid #D4D4CF; border-radius: 6px; text-decoration: none">Cancel level up</a>
+<a href="Log-Export.dc.html" style="display: inline-flex; align-items: center; min-height: 40px; padding: 0 14px; border: 1px solid #D4D4CF; border-radius: 6px; text-decoration: none">Log</a>
+</nav>
+</header>
+
+<div style="display: flex; flex-wrap: wrap; gap: 24px; padding: 24px; max-width: 1440px; margin: 0 auto; box-sizing: border-box; align-items: flex-start">
+
+<nav aria-label="Level 3 steps" style="flex: 1 1 220px; display: flex; flex-direction: column; gap: 4px">
+<div style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #4F4F4B; padding: 0 12px 8px">Level 3 · Wizard</div>
+<sc-for list="{{steps}}" as="s" hint-placeholder-count="8">
+<sc-if value="{{s.current}}" hint-placeholder-val="{{false}}">
+<a href="{{s.href}}" aria-current="step" style="display: flex; justify-content: space-between; align-items: center; gap: 8px; min-height: 44px; padding: 0 12px; border-radius: 6px; background: #1A1A18; color: #FFFFFF; text-decoration: none; font-weight: 600"><span>{{s.n}}. {{s.label}}</span><span style="font-size: 12px; font-weight: 500">{{s.status}}</span></a>
+</sc-if>
+<sc-if value="{{s.other}}" hint-placeholder-val="{{true}}">
+<a href="{{s.href}}" style="display: flex; justify-content: space-between; align-items: center; gap: 8px; min-height: 44px; padding: 0 12px; border-radius: 6px; text-decoration: none"><span>{{s.n}}. {{s.label}}</span><span style="font-size: 12px; color: #4F4F4B">{{s.status}}</span></a>
+</sc-if>
+</sc-for>
+</nav>
+
+<main style="flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column; gap: 20px">
+
+<section aria-labelledby="step-q" style="background: #FFFFFF; border: 1px solid #D4D4CF; border-radius: 8px; padding: 24px; display: flex; flex-direction: column; gap: 10px">
+<div style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #4F4F4B">Step 4 of 8 · Choice</div>
+<h1 id="step-q" style="margin: 0; font-size: 26px; line-height: 1.2">What magic does Liliana gain?</h1>
+<p style="margin: 0; color: #4F4F4B; max-width: 72ch">Discover a new tradition, or learn one spell from a tradition you know. Then put three spells in your Grimoire, from any tradition. You can learn spells up to your Power, which is now 2. <span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; padding: 2px 6px; border: 1px solid #A8A8A2; border-radius: 4px; color: #1A1A18; white-space: nowrap">CORE p.76</span> <span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; padding: 2px 6px; border: 1px solid #A8A8A2; border-radius: 4px; color: #1A1A18; white-space: nowrap">CORE p.111</span></p>
+<div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px">
+<span style="font-size: 12px; padding: 4px 10px; border-radius: 999px; background: #1A1A18; color: #FFFFFF">Level 3 magic 1 / 1 · Precognition</span>
+<span style="font-size: 12px; padding: 4px 10px; border-radius: 999px; border: 1px dashed #A8A8A2">Grimoire 2 / 3</span>
+</div>
+</section>
+
+<section aria-labelledby="pick-h" style="background: #FFFFFF; border: 1px solid #D4D4CF; border-radius: 8px; padding: 16px; display: flex; flex-direction: column; gap: 14px">
+<div style="display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center">
+<h2 id="pick-h" style="margin: 0; font-size: 16px; flex: 1 1 auto">Level 3 choice</h2>
+<div role="group" aria-label="Level 3 magic" style="display: inline-flex; border: 1px solid #A8A8A2; border-radius: 6px; overflow: hidden">
+<button type="button" aria-pressed="false" style="min-height: 40px; padding: 0 12px; border: 0; background: #FFFFFF; font: inherit; font-size: 13px; cursor: pointer">Discover a tradition</button>
+<button type="button" aria-pressed="true" style="min-height: 40px; padding: 0 12px; border: 0; border-left: 1px solid #A8A8A2; background: #1A1A18; color: #FFFFFF; font: inherit; font-size: 13px; cursor: pointer">Learn a spell</button>
+</div>
+</div>
+
+<div style="display: flex; flex-wrap: wrap; gap: 6px; align-items: center">
+<span style="font-size: 13px; color: #4F4F4B">Tradition</span>
+<button type="button" aria-pressed="true" style="min-height: 36px; padding: 0 12px; border: 2px solid #1A1A18; border-radius: 999px; background: #FFFFFF; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer">Time</button>
+<button type="button" aria-pressed="false" style="min-height: 36px; padding: 0 12px; border: 1px solid #A8A8A2; border-radius: 999px; background: #FFFFFF; font: inherit; font-size: 13px; cursor: pointer">Rune</button>
+<span style="font-size: 12px; color: #4F4F4B">· only traditions you have discovered</span>
+<div style="flex: 1 1 auto"></div>
+<label style="display: inline-flex; align-items: center; gap: 8px; font-size: 13px"><input type="checkbox" checked style="width: 18px; height: 18px"> Show spells you can’t take</label>
+</div>
+
+<div style="display: flex; flex-direction: column; border: 1px solid #D4D4CF; border-radius: 6px; overflow: hidden">
+<div style="display: grid; grid-template-columns: minmax(0, 2fr) 90px 60px minmax(0, 2fr); gap: 12px; padding: 8px 12px; background: #F7F7F5; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: #4F4F4B"><span>Spell</span><span>Type</span><span>Rank</span><span>Status</span></div>
+<sc-for list="{{spells}}" as="s" hint-placeholder-count="10">
+<sc-if value="{{s.sel}}" hint-placeholder-val="{{false}}">
+<button type="button" aria-pressed="true" style="display: grid; grid-template-columns: minmax(0, 2fr) 90px 60px minmax(0, 2fr); gap: 12px; align-items: center; min-height: 44px; padding: 0 12px; border: 0; border-top: 1px solid #EFEFEC; outline: 2px solid #1A1A18; outline-offset: -2px; background: #FFFFFF; font: inherit; text-align: left; cursor: pointer"><strong>{{s.name}}</strong><span>{{s.type}}</span><span>{{s.rank}}</span><span style="font-weight: 600">Selected</span></button>
+</sc-if>
+<sc-if value="{{s.ok}}" hint-placeholder-val="{{true}}">
+<button type="button" aria-pressed="false" style="display: grid; grid-template-columns: minmax(0, 2fr) 90px 60px minmax(0, 2fr); gap: 12px; align-items: center; min-height: 44px; padding: 0 12px; border: 0; border-top: 1px solid #EFEFEC; background: #FFFFFF; font: inherit; text-align: left; cursor: pointer"><span>{{s.name}}</span><span>{{s.type}}</span><span>{{s.rank}}</span><span style="color: #4F4F4B">Can learn</span></button>
+</sc-if>
+<sc-if value="{{s.known}}" hint-placeholder-val="{{false}}">
+<div style="display: grid; grid-template-columns: minmax(0, 2fr) 90px 60px minmax(0, 2fr); gap: 12px; align-items: center; min-height: 44px; padding: 0 12px; border-top: 1px solid #EFEFEC; background: #F7F7F5; color: #4F4F4B"><span>{{s.name}}</span><span>{{s.type}}</span><span>{{s.rank}}</span><span>Known · {{s.why}}</span></div>
+</sc-if>
+<sc-if value="{{s.no}}" hint-placeholder-val="{{false}}">
+<div aria-disabled="true" style="display: grid; grid-template-columns: minmax(0, 2fr) 90px 60px minmax(0, 2fr); gap: 12px; align-items: center; min-height: 44px; padding: 0 12px; border-top: 1px solid #EFEFEC; background: #F7F7F5; color: #4F4F4B"><span style="text-decoration: line-through">{{s.name}}</span><span>{{s.type}}</span><span>{{s.rank}}</span><span style="color: #1A1A18">{{s.why}}</span></div>
+</sc-if>
+</sc-for>
+</div>
+
+<label style="display: flex; align-items: flex-start; gap: 10px; font-size: 13px"><input type="checkbox" style="width: 18px; height: 18px; margin-top: 1px"><span>Also swap a spell you know for another of the same or lower rank <span style="display: block; color: #4F4F4B">Allowed whenever you learn a spell.</span></span></label>
+</section>
+
+<section aria-labelledby="grim-h" style="background: #FFFFFF; border: 1px solid #D4D4CF; border-radius: 8px; padding: 16px; display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: baseline">
+<h2 id="grim-h" style="margin: 0; font-size: 16px; flex: 1 1 auto">Grimoire · 3 spells</h2>
+<span style="font-size: 13px; color: #4F4F4B">Rank 1 or 2 · any tradition, even ones you haven’t discovered</span>
+</div>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px">
+<div style="border: 1px solid #D4D4CF; border-radius: 6px; padding: 12px; display: flex; flex-direction: column; gap: 4px"><span style="font-size: 12px; color: #4F4F4B">Slot 1</span><strong>Arcane Sight</strong><span style="font-size: 13px">Arcana · utility · rank 1</span></div>
+<div style="border: 1px solid #D4D4CF; border-radius: 6px; padding: 12px; display: flex; flex-direction: column; gap: 4px"><span style="font-size: 12px; color: #4F4F4B">Slot 2</span><strong>Tongue Rip</strong><span style="font-size: 13px">Forbidden · attack · rank 1</span><span style="font-size: 11px; padding: 2px 6px; border-radius: 4px; background: #1A1A18; color: #FFFFFF; align-self: flex-start">Dark magic</span></div>
+<button type="button" style="border: 1px dashed #1A1A18; border-radius: 6px; padding: 12px; display: flex; flex-direction: column; gap: 4px; background: #FFFFFF; font: inherit; text-align: left; cursor: pointer; min-height: 88px"><span style="font-size: 12px; color: #4F4F4B">Slot 3</span><strong>Choose a spell</strong></button>
+</div>
+<aside aria-label="Rule triggered" style="background: #F7F7F5; border: 1px solid #1A1A18; border-radius: 8px; padding: 14px 16px; display: flex; flex-direction: column; gap: 8px">
+<div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center"><span style="font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase">Rule triggered</span><span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; padding: 2px 6px; border: 1px solid #A8A8A2; border-radius: 4px; background: #FFFFFF">CORE ch. 7</span></div>
+<strong>You learned a dark magic spell (it counts as learning for your Grimoire)</strong>
+<span style="color: #4F4F4B">Roll a d6. If the number is lower than the dark magic spells you have learned (1), gain 1 Corruption.</span>
+<div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center"><span style="font-family: 'IBM Plex Mono', monospace; font-size: 13px; padding: 6px 10px; border: 1px solid #A8A8A2; border-radius: 6px; background: #FFFFFF">d6 = 3</span><span>No Corruption. Logged.</span></div>
+<span style="font-size: 13px">Also added: 1 boon on challenge rolls to resist Insanity, for each dark magic spell you know.</span>
+</aside>
+</section>
+
+<div style="display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap">
+<a href="LevelUp.dc.html" style="display: inline-flex; align-items: center; min-height: 44px; padding: 0 18px; border: 1px solid #A8A8A2; border-radius: 6px; text-decoration: none">Back: Language or scholarship</a>
+<a href="LevelUp.dc.html" style="display: inline-flex; align-items: center; min-height: 44px; padding: 0 18px; border-radius: 6px; background: #1A1A18; color: #FFFFFF; text-decoration: none; font-weight: 600">Next: Story Development</a>
+</div>
+</main>
+
+<aside aria-label="Magic summary" style="flex: 1 1 280px; display: flex; flex-direction: column; gap: 16px">
+<section style="background: #FFFFFF; border: 1px solid #D4D4CF; border-radius: 8px; padding: 16px; display: flex; flex-direction: column; gap: 10px">
+<h2 style="margin: 0; font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: #4F4F4B">Castings at Power 2</h2>
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; text-align: center">
+<div style="border: 1px solid #D4D4CF; border-radius: 6px; padding: 8px"><div style="font-size: 11px; color: #4F4F4B">Rank 0</div><div style="font-size: 20px; font-weight: 700">3</div></div>
+<div style="border: 1px solid #D4D4CF; border-radius: 6px; padding: 8px"><div style="font-size: 11px; color: #4F4F4B">Rank 1</div><div style="font-size: 20px; font-weight: 700">2</div></div>
+<div style="border: 1px solid #D4D4CF; border-radius: 6px; padding: 8px"><div style="font-size: 11px; color: #4F4F4B">Rank 2</div><div style="font-size: 20px; font-weight: 700">1</div></div>
+</div>
+<span style="font-size: 12px; color: #4F4F4B">Per spell, from the Castings table. Was 2 / 1 / — at Power 1.</span>
+</section>
+<section style="background: #FFFFFF; border: 1px solid #D4D4CF; border-radius: 8px; padding: 16px; display: flex; flex-direction: column; gap: 6px; font-size: 13px">
+<h2 style="margin: 0 0 4px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: #4F4F4B">Spells known · 8</h2>
+<sc-for list="{{known}}" as="k" hint-placeholder-count="8">
+<div style="display: flex; justify-content: space-between; gap: 8px; padding: 4px 0; border-bottom: 1px solid #EFEFEC"><span>{{k.n}}</span><span style="color: #4F4F4B">{{k.t}}</span></div>
+</sc-for>
+</section>
+<section style="background: #FFFFFF; border: 1px solid #D4D4CF; border-radius: 8px; padding: 16px; display: flex; flex-direction: column; gap: 6px; font-size: 13px">
+<h2 style="margin: 0 0 4px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: #4F4F4B">Traditions</h2>
+<div>Time · discovered at level 1</div>
+<div>Rune · discovered at level 1</div>
+</section>
+</aside>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1500}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const cur = 3;
+    const steps = [
+      ['Expert path', 'Wizard', 'LevelUp.dc.html'],
+      ['Attributes', 'Done', 'LevelUp.dc.html'],
+      ['Language or scholarship', 'Done', 'LevelUp.dc.html'],
+      ['Magic', '1 open', 'Magic.dc.html'],
+      ['Story Development', 'd6', 'LevelUp.dc.html'],
+      ['Objective', 'd20', 'LevelUp.dc.html'],
+      ['Equipment', 'Worn out', 'LevelUp.dc.html'],
+      ['Review', '', 'Sheet.dc.html']
+    ].map(([label, status, href], i) => ({ n: i + 1, label, status, href, current: i === cur, other: i !== cur }));
+    const S = (name, type, rank, state, why) => ({ name, type, rank, why: why || '', sel: state === 'sel', ok: state === 'ok', known: state === 'known', no: state === 'no' });
+    const spells = [
+      S('Swiftness', 'Utility', 0, 'known', 'level 1'),
+      S('Delay', 'Attack', 0, 'known', 'level 1, Cantrip'),
+      S('Minor Paradox', 'Attack', 1, 'ok'),
+      S('Rewrite Moment', 'Utility', 1, 'known', 'level 1'),
+      S('Precognition', 'Utility', 2, 'sel'),
+      S('Time Jump', 'Utility', 2, 'ok'),
+      S('Accelerate', 'Utility', 3, 'no', 'Rank 3 is above your Power (2)'),
+      S('Decelerate', 'Attack', 3, 'no', 'Rank 3 is above your Power (2)'),
+      S('Twain Self', 'Utility', 4, 'no', 'Rank 4 is above your Power (2)'),
+      S('Time Travel', 'Utility', 5, 'no', 'Rank 5 is above your Power (2)')
+    ];
+    const known = [
+      ['Swiftness', 'Time 0'], ['Delay', 'Time 0'], ['Rewrite Moment', 'Time 1'], ['Precognition', 'Time 2 · new'],
+      ['Translate Anything', 'Rune 0'], ['Rune of Finding', 'Rune 0'], ['Runic Shield', 'Rune 1'], ['Glyph of Fire', 'Rune 1']
+    ].map(([n, t]) => ({ n, t }));
+    return { steps, spells, known };
+  }
+}
+</script>
+</body>
+</html>

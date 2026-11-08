@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>My characters</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=IBM+Plex+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#1A1A18}a:hover{color:#4F4F4B}
+</style>
+</helmet>
+<div style="min-height: 100vh; background: #EFEFEC; font-family: Inter, system-ui, sans-serif; color: #1A1A18; font-size: 14px; line-height: 1.45">
+
+<header style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; padding: 12px 24px; background: #FFFFFF; border-bottom: 1px solid #D4D4CF">
+<a href="Home.dc.html" style="font-weight: 700; font-size: 15px; text-decoration: none">SotDL Generator</a>
+<div style="flex: 1 1 auto"></div>
+<nav aria-label="App" style="display: flex; flex-wrap: wrap; gap: 8px">
+<a href="Home.dc.html" aria-current="page" style="display: inline-flex; align-items: center; min-height: 40px; padding: 0 14px; border-radius: 6px; background: #E4E4E0; text-decoration: none; font-weight: 600">Characters</a>
+<a href="Settings-Sources.dc.html" style="display: inline-flex; align-items: center; min-height: 40px; padding: 0 14px; border: 1px solid #D4D4CF; border-radius: 6px; text-decoration: none">Default sources</a>
+<a href="Settings-Sources.dc.html" style="display: inline-flex; align-items: center; min-height: 40px; padding: 0 14px; border: 1px solid #D4D4CF; border-radius: 6px; text-decoration: none">House rule packs</a>
+</nav>
+</header>
+
+<div style="max-width: 1200px; margin: 0 auto; padding: 32px 24px; box-sizing: border-box; display: flex; flex-direction: column; gap: 24px">
+
+<div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 16px">
+<div style="display: flex; flex-direction: column; gap: 4px">
+<h1 style="margin: 0; font-size: 28px">My characters</h1>
+<p style="margin: 0; color: #4F4F4B">Each character keeps its own sources and house rules.</p>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 8px">
+<button type="button" style="min-height: 44px; padding: 0 18px; border: 1px solid #A8A8A2; border-radius: 6px; background: #FFFFFF; font: inherit; cursor: pointer">Import character file</button>
+<a href="Settings-Sources.dc.html" style="display: inline-flex; align-items: center; min-height: 44px; padding: 0 18px; border-radius: 6px; background: #1A1A18; color: #FFFFFF; text-decoration: none; font-weight: 600">New character</a>
+</div>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px">
+<sc-for list="{{chars}}" as="c" hint-placeholder-count="3">
+<article style="background: #FFFFFF; border: 1px solid #D4D4CF; border-radius: 8px; padding: 20px; display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; gap: 14px; align-items: center">
+<div aria-hidden="true" style="width: 56px; height: 56px; border-radius: 8px; background: #E4E4E0; border: 1px solid #D4D4CF; flex: 0 0 auto"></div>
+<div style="display: flex; flex-direction: column; gap: 2px; min-width: 0">
+<h2 style="margin: 0; font-size: 18px">{{c.name}}</h2>
+<span style="font-size: 13px; color: #4F4F4B">{{c.line}}</span>
+</div>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 6px">
+<span style="font-size: 12px; padding: 3px 8px; border-radius: 999px; background: #E4E4E0">{{c.status}}</span>
+<span style="font-size: 12px; padding: 3px 8px; border-radius: 999px; border: 1px solid #D4D4CF">{{c.sources}}</span>
+<span style="font-size: 12px; padding: 3px 8px; border-radius: 999px; border: 1px solid #D4D4CF">{{c.house}}</span>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 8px; padding-top: 12px; border-top: 1px solid #EFEFEC">
+<a href="{{c.primaryHref}}" style="display: inline-flex; align-items: center; min-height: 40px; padding: 0 14px; border-radius: 6px; background: #1A1A18; color: #FFFFFF; text-decoration: none; font-weight: 600; font-size: 13px">{{c.primary}}</a>
+<a href="{{c.secondaryHref}}" style="display: inline-flex; align-items: center; min-height: 40px; padding: 0 14px; border: 1px solid #A8A8A2; border-radius: 6px; text-decoration: none; font-size: 13px">{{c.secondary}}</a>
+<button type="button" aria-label="More actions for {{c.name}}" style="min-height: 40px; min-width: 40px; border: 1px solid #A8A8A2; border-radius: 6px; background: #FFFFFF; font: inherit; cursor: pointer">···</button>
+</div>
+<span style="font-size: 12px; color: #4F4F4B">Edited {{c.edited}}</span>
+</article>
+</sc-for>
+</div>
+
+<section aria-labelledby="new-h" style="background: #FFFFFF; border: 1px dashed #A8A8A2; border-radius: 8px; padding: 20px; display: flex; flex-direction: column; gap: 12px">
+<h2 id="new-h" style="margin: 0; font-size: 16px">Starting a new character</h2>
+<p style="margin: 0; color: #4F4F4B; max-width: 70ch">You pick the books and house rules first. The builder only shows options from what is active, and you can change the sources later from the character’s header.</p>
+<div style="display: flex; flex-wrap: wrap; gap: 12px">
+<label style="display: flex; flex-direction: column; gap: 4px; flex: 1 1 260px; font-size: 12px; color: #4F4F4B">Copy sources from
+<select style="min-height: 44px; padding: 0 10px; border: 1px solid #A8A8A2; border-radius: 6px; font: inherit; font-size: 14px; color: #1A1A18; background: #FFFFFF">
+<option>My default sources</option>
+<option>Liliana</option>
+<option>Brokk</option>
+<option>Core only</option>
+</select>
+</label>
+<label style="display: flex; flex-direction: column; gap: 4px; flex: 1 1 260px; font-size: 12px; color: #4F4F4B">Starting level
+<select style="min-height: 44px; padding: 0 10px; border: 1px solid #A8A8A2; border-radius: 6px; font: inherit; font-size: 14px; color: #1A1A18; background: #FFFFFF">
+<option>Level 0, then level up one at a time</option>
+</select>
+</label>
+</div>
+</section>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const chars = [
+      { name: 'Liliana', line: 'Human · Magician › Wizard › Chrononaut · Level 7', status: 'Ready to play', sources: '9 books', house: 'House rules: 1 on', primary: 'Open sheet', primaryHref: 'Sheet.dc.html', secondary: 'Level up to 8', secondaryHref: 'LevelUp.dc.html', edited: '2 days ago' },
+      { name: 'Liliana (draft)', line: 'Human · Level 0', status: 'Creating · 3 open decisions', sources: 'Only Human › Core', house: 'House rules: off', primary: 'Continue', primaryHref: 'Main.dc.html', secondary: 'Preview sheet', secondaryHref: 'Sheet.dc.html', edited: 'just now' },
+      { name: 'Brokk', line: 'Dwarf · Level 0', status: 'Creating · 2 open decisions', sources: 'Core only', house: 'House rules: off', primary: 'Continue', primaryHref: 'Core-Professions.dc.html', secondary: 'Preview sheet', secondaryHref: 'Sheet.dc.html', edited: 'yesterday' }
+    ];
+    return { chars };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Builder · Wealth and equipment</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=IBM+Plex+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#1A1A18}a:hover{color:#4F4F4B}
+</style>
+</helmet>
+<div style="min-height: 100vh; background: #EFEFEC; font-family: Inter, system-ui, sans-serif; color: #1A1A18; font-size: 14px; line-height: 1.45">
+
+<header style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; padding: 12px 24px; background: #FFFFFF; border-bottom: 1px solid #D4D4CF">
+<a href="Home.dc.html" style="font-weight: 700; font-size: 15px; text-decoration: none">SotDL Generator</a>
+<span style="color: #4F4F4B">Brokk · Dwarf · Level 0 · Creating</span>
+<div style="flex: 1 1 auto"></div>
+<nav aria-label="Character" style="display: flex; flex-wrap: wrap; gap: 8px">
+<a href="Settings-Sources.dc.html" style="display: inline-flex; align-items: center; min-height: 40px; padding: 0 14px; border: 1px solid #D4D4CF; border-radius: 6px; text-decoration: none">Sources: Core</a>
+<a href="Log-Export.dc.html" style="display: inline-flex; align-items: center; min-height: 40px; padding: 0 14px; border: 1px solid #D4D4CF; border-radius: 6px; text-decoration: none">Log</a>
+<a href="Sheet.dc.html" style="display: inline-flex; align-items: center; min-height: 40px; padding: 0 14px; border: 1px solid #D4D4CF; border-radius: 6px; text-decoration: none">Preview sheet</a>
+</nav>
+</header>
+
+<div style="display: flex; flex-wrap: wrap; gap: 24px; padding: 24px; max-width: 1440px; margin: 0 auto; box-sizing: border-box; align-items: flex-start">
+
+<nav aria-label="Creation steps" style="flex: 1 1 220px; display: flex; flex-direction: column; gap: 4px">
+<div style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #4F4F4B; padding: 0 12px 8px">Level 0 · Creation</div>
+<sc-for list="{{steps}}" as="s" hint-placeholder-count="8">
+<sc-if value="{{s.current}}" hint-placeholder-val="{{false}}">
+<a href="{{s.href}}" aria-current="step" style="display: flex; justify-content: space-between; align-items: center; gap: 8px; min-height: 44px; padding: 0 12px; border-radius: 6px; background: #1A1A18; color: #FFFFFF; text-decoration: none; font-weight: 600"><span>{{s.n}}. {{s.label}}</span><span style="font-size: 12px; font-weight: 500">{{s.status}}</span></a>
+</sc-if>
+<sc-if value="{{s.other}}" hint-placeholder-val="{{true}}">
+<a href="{{s.href}}" style="display: flex; justify-content: space-between; align-items: center; gap: 8px; min-height: 44px; padding: 0 12px; border-radius: 6px; text-decoration: none"><span>{{s.n}}. {{s.label}}</span><span style="font-size: 12px; color: #4F4F4B">{{s.status}}</span></a>
+</sc-if>
+</sc-for>
+</nav>
+
+<main style="flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column; gap: 20px">
+
+<section aria-labelledby="step-q" style="background: #FFFFFF; border: 1px solid #D4D4CF; border-radius: 8px; padding: 24px; display: flex; flex-direction: column; gap: 10px">
+<div style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #4F4F4B">Step 5 of 8 · Prescribed roll</div>
+<h1 id="step-q" style="margin: 0; font-size: 26px; line-height: 1.2">How well does Brokk live, and what does he carry?</h1>
+<p style="margin: 0; color: #4F4F4B; max-width: 72ch">Roll 3d6 on the Wealth table. Your lifestyle gives you a fixed set of equipment and some coin. With your professions and ancestry in mind, think of how you came by it. <span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; padding: 2px 6px; border: 1px solid #A8A8A2; border-radius: 4px; color: #1A1A18; white-space: nowrap">CORE p.25</span></p>
+<div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px">
+<span style="font-size: 12px; padding: 4px 10px; border-radius: 999px; background: #1A1A18; color: #FFFFFF">Rolled</span>
+<span style="font-size: 12px; padding: 4px 10px; border-radius: 999px; border: 1px dashed #A8A8A2">1 choice · 1 GM decision</span>
+</div>
+</section>
+
+<section aria-labelledby="w-h" style="background: #FFFFFF; border: 1px solid #D4D4CF; border-radius: 8px; padding: 16px; display: flex; flex-direction: column; gap: 12px">
+<h2 id="w-h" style="margin: 0; font-size: 16px">Lifestyle</h2>
+<div style="display: grid; grid-template-columns: 76px minmax(0, 1fr) auto; gap: 14px; align-items: center">
+<div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 56px; border: 1px solid #A8A8A2; border-radius: 6px; background: #F7F7F5"><span style="font-size: 22px; font-weight: 700; line-height: 1.1">15</span><span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #4F4F4B">3d6</span></div>
+<div style="display: flex; flex-direction: column; gap: 2px"><strong>Comfortable</strong><span style="color: #4F4F4B">You live well and make enough that you can save a little.</span></div>
+<button type="button" style="min-height: 40px; padding: 0 12px; border: 1px solid #A8A8A2; border-radius: 6px; background: #FFFFFF; font: inherit; font-size: 13px; cursor: pointer">Reroll</button>
+</div>
+<div style="display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 4px; font-size: 12px; text-align: center">
+<sc-for list="{{scale}}" as="w" hint-placeholder-count="6">
+<sc-if value="{{w.on}}" hint-placeholder-val="{{false}}"><div style="padding: 8px 4px; border: 2px solid #1A1A18; border-radius: 4px; font-weight: 600">{{w.label}}<div style="font-family: 'IBM Plex Mono', monospace; font-weight: 400; color: #4F4F4B">{{w.r}}</div></div></sc-if>
+<sc-if value="{{w.off}}" hint-placeholder-val="{{true}}"><div style="padding: 8px 4px; border: 1px solid #D4D4CF; border-radius: 4px; color: #4F4F4B">{{w.label}}<div style="font-family: 'IBM Plex Mono', monospace">{{w.r}}</div></div></sc-if>
+</sc-for>
+</div>
+</section>
+
+<section aria-labelledby="eq-h" style="background: #FFFFFF; border: 1px solid #D4D4CF; border-radius: 8px; padding: 16px; display: flex; flex-direction: column; gap: 14px">
+<div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; align-items: baseline">
+<h2 id="eq-h" style="margin: 0; font-size: 16px">Starting equipment · Comfortable</h2>
+<span style="font-size: 13px; color: #4F4F4B">Added to your sheet</span>
+</div>
+<ul style="margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 6px">
+<sc-for list="{{items}}" as="i" hint-placeholder-count="12">
+<li style="padding: 8px 10px; border: 1px solid #EFEFEC; border-radius: 6px; background: #F7F7F5">{{i}}</li>
+</sc-for>
+</ul>
+
+<div style="display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; padding: 12px; border: 1px solid #D4D4CF; border-radius: 6px">
+<span style="font-weight: 600; flex: 1 1 200px">Weapon · staff, club, or sling with 20 stones</span>
+<div role="group" aria-label="Weapon" style="display: inline-flex; border: 1px solid #A8A8A2; border-radius: 6px; overflow: hidden">
+<button type="button" aria-pressed="false" style="min-height: 40px; padding: 0 12px; border: 0; background: #FFFFFF; font: inherit; font-size: 13px; cursor: pointer">Staff</button>
+<button type="button" aria-pressed="true" style="min-height: 40px; padding: 0 12px; border: 0; border-left: 1px solid #A8A8A2; background: #1A1A18; color: #FFFFFF; font: inherit; font-size: 13px; cursor: pointer">Club</button>
+<button type="button" aria-pressed="false" style="min-height: 40px; padding: 0 12px; border: 0; border-left: 1px solid #A8A8A2; background: #FFFFFF; font: inherit; font-size: 13px; cursor: pointer">Sling + 20 stones</button>
+</div>
+</div>
+
+<div style="display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; padding: 12px; border: 1px solid #D4D4CF; border-radius: 6px">
+<span style="font-weight: 600; flex: 1 1 200px">Coin · 2d6 cp</span>
+<span style="font-family: 'IBM Plex Mono', monospace; padding: 6px 10px; border: 1px solid #A8A8A2; border-radius: 6px">2d6 = 7</span>
+<span>7 cp</span>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 10px; padding: 12px; border: 2px solid #1A1A18; border-radius: 6px">
+<span style="font-weight: 600">Choose one</span>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 6px">
+<button type="button" aria-pressed="false" style="min-height: 44px; padding: 8px 10px; border: 1px solid #D4D4CF; border-radius: 6px; background: #FFFFFF; font: inherit; font-size: 13px; text-align: left; cursor: pointer">Small shield</button>
+<button type="button" aria-pressed="true" style="min-height: 44px; padding: 8px 10px; border: 2px solid #1A1A18; border-radius: 6px; background: #FFFFFF; font: inherit; font-size: 13px; font-weight: 600; text-align: left; cursor: pointer">Incantation of a rank 0 spell, on a scroll</button>
+<button type="button" aria-pressed="false" style="min-height: 44px; padding: 8px 10px; border: 1px solid #D4D4CF; border-radius: 6px; background: #FFFFFF; font: inherit; font-size: 13px; text-align: left; cursor: pointer">Healer’s kit, tool kit, or writing kit</button>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; padding: 10px 12px; background: #F7F7F5; border: 1px dashed #1A1A18; border-radius: 6px">
+<span style="font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase">GM decides</span>
+<span style="flex: 1 1 220px">Which rank 0 spell is on the scroll?</span>
+<label style="display: flex; flex-direction: column; gap: 2px; font-size: 12px; color: #4F4F4B">Spell
+<select style="min-height: 40px; padding: 0 10px; border: 1px solid #A8A8A2; border-radius: 6px; font: inherit; font-size: 13px; color: #1A1A18; background: #FFFFFF"><option>Waiting for your GM</option><option>[Any rank 0 spell]</option></select>
+</label>
+<span style="font-size: 12px; color: #4F4F4B; flex: 1 1 100%">Leave it open: it stays in Open decisions and on the sheet as “GM’s choice” until you fill it.</span>
+</div>
+</div>
+</section>
+
+<section aria-labelledby="more-h" style="background: #FFFFFF; border: 1px dashed #A8A8A2; border-radius: 8px; padding: 16px; display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center">
+<h2 id="more-h" style="margin: 0; font-size: 15px; flex: 1 1 260px">Anything else? Buy with your coin or add what your GM gives you.</h2>
+<button type="button" style="min-height: 40px; padding: 0 14px; border: 1px solid #A8A8A2; border-radius: 6px; background: #FFFFFF; font: inherit; font-size: 13px; cursor: pointer">Buy equipment</button>
+<button type="button" style="min-height: 40px; padding: 0 14px; border: 1px solid #A8A8A2; border-radius: 6px; background: #FFFFFF; font: inherit; font-size: 13px; cursor: pointer">Add a GM grant</button>
+</section>
+
+<div style="display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap">
+<a href="Core-Professions.dc.html" style="display: inline-flex; align-items: center; min-height: 44px; padding: 0 18px; border: 1px solid #A8A8A2; border-radius: 6px; text-decoration: none">Back: Professions</a>
+<a href="Interesting-Thing.dc.html" style="display: inline-flex; align-items: center; min-height: 44px; padding: 0 18px; border-radius: 6px; background: #1A1A18; color: #FFFFFF; text-decoration: none; font-weight: 600">Next: Interesting thing</a>
+</div>
+</main>
+
+<aside aria-label="Character summary" style="flex: 1 1 280px; display: flex; flex-direction: column; gap: 16px">
+<section style="background: #FFFFFF; border: 1px solid #D4D4CF; border-radius: 8px; padding: 16px; display: flex; flex-direction: column; gap: 12px">
+<h2 style="margin: 0; font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: #4F4F4B">Live summary</h2>
+<div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px">
+<sc-for list="{{sumAttrs}}" as="t" hint-placeholder-count="4">
+<div style="border: 1px solid #D4D4CF; border-radius: 6px; padding: 8px 4px; text-align: center"><div style="font-size: 11px; color: #4F4F4B">{{t.k}}</div><div style="font-size: 20px; font-weight: 700">{{t.v}}</div><div style="font-size: 11px; color: #4F4F4B">{{t.m}}</div></div>
+</sc-for>
+</div>
+<div style="font-size: 13px; display: flex; flex-direction: column; gap: 4px">
+<div><strong>Wealth</strong> · Comfortable · 7 cp</div>
+<div><strong>Professions</strong> · Deep-vein prospector, Artisan (blacksmith)</div>
+<div><strong>Languages</strong> · Common Tongue, Dwarfish</div>
+</div>
+</section>
+<section style="background: #FFFFFF; border: 1px solid #D4D4CF; border-radius: 8px; padding: 16px; display: flex; flex-direction: column; gap: 8px">
+<h2 style="margin: 0; font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: #4F4F4B">Open decisions · 3</h2>
+<a href="#eq-h" style="display: flex; flex-direction: column; gap: 2px; padding: 8px 10px; border: 1px dashed #1A1A18; border-radius: 6px; text-decoration: none"><span style="font-size: 13px; font-weight: 600">Scroll spell · GM decides</span><span style="font-size: 12px; color: #4F4F4B">Wealth and equipment</span></a>
+<a href="Story.dc.html" style="display: flex; flex-direction: column; gap: 2px; padding: 8px 10px; border: 1px dashed #A8A8A2; border-radius: 6px; text-decoration: none"><span style="font-size: 13px; font-weight: 600">One additional language</span><span style="font-size: 12px; color: #4F4F4B">Story · Background 13</span></a>
+<a href="Story.dc.html" style="display: flex; flex-direction: column; gap: 2px; padding: 8px 10px; border: 1px dashed #A8A8A2; border-radius: 6px; text-decoration: none"><span style="font-size: 13px; font-weight: 600">Personality</span><span style="font-size: 12px; color: #4F4F4B">Story</span></a>
+</section>
+</aside>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1370}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const cur = 4;
+    const steps = [
+      ['Ancestry', 'Done', 'Main.dc.html'],
+      ['Attributes', 'Done', 'Attributes.dc.html'],
+      ['Story', '2 open', 'Story.dc.html'],
+      ['Professions', 'Done', 'Core-Professions.dc.html'],
+      ['Wealth and equipment', '1 GM decision', 'Core-Wealth.dc.html'],
+      ['Interesting thing', 'Not rolled', 'Interesting-Thing.dc.html'],
+      ['Roleplaying', 'Optional', 'Main.dc.html'],
+      ['Review', '', 'Sheet.dc.html']
+    ].map(([label, status, href], i) => ({ n: i + 1, label, status, href, current: i === cur, other: i !== cur }));
+    const scale = [['Destitute', '3–4'], ['Poor', '5–8'], ['Getting by', '9–13'], ['Comfortable', '14–16'], ['Wealthy', '17'], ['Rich', '18']].map(([label, r]) => ({ label, r, on: label === 'Comfortable', off: label !== 'Comfortable' }));
+    const items = ['Dagger', 'Fine clothing', 'Backpack', 'Cloak', 'Rations (1 week)', 'Waterskin', 'Rope (coil)', 'Tinderbox', 'Torches (2)', 'Healing potion'];
+    const sumAttrs = [
+      { k: 'Str', v: '10', m: '+0' }, { k: 'Agi', v: '9', m: '−1' },
+      { k: 'Int', v: '9', m: '−1' }, { k: 'Will', v: '11', m: '+1' }
+    ];
+    return { steps, scale, items, sumAttrs };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Builder · Interesting thing</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=IBM+Plex+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#1A1A18}a:hover{color:#4F4F4B}
+</style>
+</helmet>
+<div style="min-height: 100vh; background: #EFEFEC; font-family: Inter, system-ui, sans-serif; color: #1A1A18; font-size: 14px; line-height: 1.45">
+
+<header style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; padding: 12px 24px; background: #FFFFFF; border-bottom: 1px solid #D4D4CF">
+<a href="Home.dc.html" style="font-weight: 700; font-size: 15px; text-decoration: none">SotDL Generator</a>
+<span style="color: #4F4F4B">Liliana · Human · Level 0 · Creating</span>
+<div style="flex: 1 1 auto"></div>
+<nav aria-label="Character" style="display: flex; flex-wrap: wrap; gap: 8px">
+<a href="Settings-Sources.dc.html" style="display: inline-flex; align-items: center; min-height: 40px; padding: 0 14px; border: 1px solid #D4D4CF; border-radius: 6px; text-decoration: none">Sources: Only Human › Core</a>
+<a href="Log-Export.dc.html" style="display: inline-flex; align-items: center; min-height: 40px; padding: 0 14px; border: 1px solid #D4D4CF; border-radius: 6px; text-decoration: none">Log</a>
+<a href="Sheet.dc.html" style="display: inline-flex; align-items: center; min-height: 40px; padding: 0 14px; border: 1px solid #D4D4CF; border-radius: 6px; text-decoration: none">Preview sheet</a>
+</nav>
+</header>
+
+<div style="display: flex; flex-wrap: wrap; gap: 24px; padding: 24px; max-width: 1440px; margin: 0 auto; box-sizing: border-box; align-items: flex-start">
+
+<nav aria-label="Creation steps" style="flex: 1 1 220px; display: flex; flex-direction: column; gap: 4px">
+<div style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #4F4F4B; padding: 0 12px 8px">Level 0 · Creation</div>
+<sc-for list="{{steps}}" as="s" hint-placeholder-count="6">
+<sc-if value="{{s.current}}" hint-placeholder-val="{{false}}">
+<a href="{{s.href}}" aria-current="step" style="display: flex; justify-content: space-between; align-items: center; gap: 8px; min-height: 44px; padding: 0 12px; border-radius: 6px; background: #1A1A18; color: #FFFFFF; text-decoration: none; font-weight: 600"><span>{{s.n}}. {{s.label}}</span><span style="font-size: 12px; font-weight: 500">{{s.status}}</span></a>
+</sc-if>
+<sc-if value="{{s.other}}" hint-placeholder-val="{{true}}">
+<a href="{{s.href}}" style="display: flex; justify-content: space-between; align-items: center; gap: 8px; min-height: 44px; padding: 0 12px; border-radius: 6px; text-decoration: none"><span>{{s.n}}. {{s.label}}</span><span style="font-size: 12px; color: #4F4F4B">{{s.status}}</span></a>
+</sc-if>
+</sc-for>
+</nav>
+
+<main style="flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column; gap: 20px">
+
+<section aria-labelledby="step-q" style="background: #FFFFFF; border: 1px solid #D4D4CF; border-radius: 8px; padding: 24px; display: flex; flex-direction: column; gap: 10px">
+<div style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #4F4F4B">Step 4 of 6 · Prescribed roll</div>
+<h1 id="step-q" style="margin: 0; font-size: 26px; line-height: 1.2">What odd thing do you carry?</h1>
+<p style="margin: 0; color: #4F4F4B; max-width: 72ch">You start the game with one interesting thing. Roll for its type, then roll on that type’s table.</p>
+<div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px">
+<span style="font-size: 12px; padding: 4px 10px; border-radius: 999px; background: #1A1A18; color: #FFFFFF">Rolled 1 / 1</span>
+</div>
+</section>
+
+<section aria-labelledby="src-h" style="background: #FFFFFF; border: 1px solid #D4D4CF; border-radius: 8px; padding: 20px; display: flex; flex-direction: column; gap: 14px">
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px">
+<h2 id="src-h" style="margin: 0; font-size: 15px">Rolling on</h2>
+<button type="button" aria-expanded="true" aria-controls="src-pop" style="display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 12px; border: 1px solid #1A1A18; border-radius: 6px; background: #FFFFFF; font: inherit; cursor: pointer">
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px">ODDITIES</span>
+<span>Oddities, Artifacts, and Esoterica</span>
+<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+</button>
+<span style="font-size: 12px; color: #4F4F4B">first in your priority order</span>
+</div>
+
+<div id="src-pop" role="group" aria-label="Table for this roll" style="border: 1px solid #A8A8A2; border-radius: 8px; padding: 6px; display: flex; flex-direction: column; gap: 4px; max-width: 560px; background: #FFFFFF">
+<label style="display: flex; gap: 10px; align-items: flex-start; padding: 10px; border-radius: 6px; background: #F7F7F5"><input type="radio" name="src" checked style="width: 18px; height: 18px; margin-top: 2px"><span><strong>Oddities, Artifacts, and Esoterica</strong><span style="display: block; font-size: 12px; color: #4F4F4B">d20 for type (12 types), then d20 on that type’s table. Default.</span></span></label>
+<label style="display: flex; gap: 10px; align-items: flex-start; padding: 10px; border-radius: 6px"><input type="radio" name="src" style="width: 18px; height: 18px; margin-top: 2px"><span><strong>Core rulebook</strong> <span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px">CORE p.26</span><span style="display: block; font-size: 12px; color: #4F4F4B">d6, then d20. Only for this roll; your book order stays the same.</span></span></label>
+</div>
+</section>
+
+<section aria-labelledby="res-h" style="background: #FFFFFF; border: 1px solid #D4D4CF; border-radius: 8px; padding: 20px; display: flex; flex-direction: column; gap: 12px">
+<h2 id="res-h" style="margin: 0; font-size: 15px">Result</h2>
+<div style="display: grid; grid-template-columns: 76px minmax(0, 1fr); gap: 14px; align-items: start">
+<div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 56px; border: 1px solid #A8A8A2; border-radius: 6px; background: #F7F7F5"><span style="font-size: 22px; font-weight: 700; line-height: 1.1">2</span><span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #4F4F4B">d20</span></div>
+<div style="display: flex; flex-direction: column; gap: 2px"><strong>Type</strong><span>Art and Heirlooms</span></div>
+<div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 56px; border: 1px solid #A8A8A2; border-radius: 6px; background: #F7F7F5"><span style="font-size: 22px; font-weight: 700; line-height: 1.1">16</span><span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #4F4F4B">d20</span></div>
+<div style="display: flex; flex-direction: column; gap: 2px"><strong>Art and Heirlooms</strong><span>A mirror that casts a reflection which appears to be five minutes behind the present.</span></div>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 8px; padding-top: 12px; border-top: 1px solid #EFEFEC">
+<button type="button" style="min-height: 40px; padding: 0 14px; border: 1px solid #A8A8A2; border-radius: 6px; background: #FFFFFF; font: inherit; font-size: 13px; cursor: pointer">Reroll item</button>
+<button type="button" style="min-height: 40px; padding: 0 14px; border: 1px solid #A8A8A2; border-radius: 6px; background: #FFFFFF; font: inherit; font-size: 13px; cursor: pointer">Reroll type and item</button>
+<button type="button" style="min-height: 40px; padding: 0 14px; border: 1px solid #A8A8A2; border-radius: 6px; background: #FFFFFF; font: inherit; font-size: 13px; cursor: pointer">Enter result</button>
+</div>
+</section>
+
+<section aria-labelledby="sheet-h" style="background: #FFFFFF; border: 1px solid #D4D4CF; border-radius: 8px; padding: 20px; display: flex; flex-direction: column; gap: 10px">
+<h2 id="sheet-h" style="margin: 0; font-size: 15px">On your sheet · Interesting Things</h2>
+<div style="border: 1px solid #D4D4CF; border-radius: 6px; padding: 12px 14px; display: flex; flex-direction: column; gap: 6px">
+<span>A mirror that casts a reflection which appears to be five minutes behind the present.</span>
+<span style="display: flex; flex-wrap: wrap; gap: 6px"><span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; padding: 2px 6px; border: 1px solid #A8A8A2; border-radius: 4px">ODDITIES</span><span style="font-size: 11px; padding: 2px 6px; border-radius: 4px; background: #E4E4E0">Creation · rolled</span></span>
+<span style="font-size: 12px; color: #4F4F4B">No rules effect. You or your GM can add one on the sheet.</span>
+</div>
+<button type="button" style="align-self: flex-start; min-height: 40px; padding: 0 14px; border: 1px dashed #A8A8A2; border-radius: 6px; background: #FFFFFF; font: inherit; font-size: 13px; cursor: pointer">Record one granted by your GM</button>
+</section>
+
+<div style="display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap">
+<a href="Development.dc.html" style="display: inline-flex; align-items: center; min-height: 44px; padding: 0 18px; border: 1px solid #A8A8A2; border-radius: 6px; text-decoration: none">Back: Development</a>
+<a href="Sheet.dc.html" style="display: inline-flex; align-items: center; min-height: 44px; padding: 0 18px; border-radius: 6px; background: #1A1A18; color: #FFFFFF; text-decoration: none; font-weight: 600">Next: Roleplaying</a>
+</div>
+</main>
+
+<aside aria-label="Character summary" style="flex: 1 1 280px; display: flex; flex-direction: column; gap: 16px">
+<section style="background: #FFFFFF; border: 1px solid #D4D4CF; border-radius: 8px; padding: 16px; display: flex; flex-direction: column; gap: 12px">
+<h2 style="margin: 0; font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: #4F4F4B">Live summary</h2>
+<div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px">
+<sc-for list="{{sumAttrs}}" as="t" hint-placeholder-count="4">
+<div style="border: 1px solid #D4D4CF; border-radius: 6px; padding: 8px 4px; text-align: center"><div style="font-size: 11px; color: #4F4F4B">{{t.k}}</div><div style="font-size: 20px; font-weight: 700">{{t.v}}</div><div style="font-size: 11px; color: #4F4F4B">{{t.m}}</div></div>
+</sc-for>
+</div>
+<dl style="margin: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px 12px; font-size: 13px">
+<sc-for list="{{sumChars}}" as="c" hint-placeholder-count="10">
+<div style="display: flex; justify-content: space-between; gap: 8px; padding: 4px 0; border-bottom: 1px solid #EFEFEC"><dt style="color: #4F4F4B">{{c.k}}</dt><dd style="margin: 0; font-weight: 600">{{c.v}}</dd></div>
+</sc-for>
+</dl>
+</section>
+<section style="background: #FFFFFF; border: 1px solid #D4D4CF; border-radius: 8px; padding: 16px; display: flex; flex-direction: column; gap: 8px">
+<h2 style="margin: 0; font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: #4F4F4B">Open decisions · 2</h2>
+<a href="Development.dc.html" style="display: flex; flex-direction: column; gap: 2px; padding: 8px 10px; border: 1px dashed #A8A8A2; border-radius: 6px; text-decoration: none"><span style="font-size: 13px; font-weight: 600">Which profession did you work in?</span><span style="font-size: 12px; color: #4F4F4B">Development · Life Experience 1</span></a>
+<a href="Development.dc.html" style="display: flex; flex-direction: column; gap: 2px; padding: 8px 10px; border: 1px dashed #A8A8A2; border-radius: 6px; text-decoration: none"><span style="font-size: 13px; font-weight: 600">Life Experience 3, Lifestyle, Personality</span><span style="font-size: 12px; color: #4F4F4B">Development</span></a>
+</section>
+</aside>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1250}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const cur = 3;
+    const steps = [
+      ['Ancestry', 'Done', 'Main.dc.html'],
+      ['Attributes', 'Done', 'Attributes.dc.html'],
+      ['Development', '2 open', 'Development.dc.html'],
+      ['Interesting thing', 'Done', 'Interesting-Thing.dc.html'],
+      ['Roleplaying', 'Optional', 'Main.dc.html'],
+      ['Review', '', 'Sheet.dc.html']
+    ].map(([label, status, href], i) => ({ n: i + 1, label, status, href, current: i === cur, other: i !== cur }));
+    const sumAttrs = [
+      { k: 'Str', v: '9', m: '−1' }, { k: 'Agi', v: '10', m: '+0' },
+      { k: 'Int', v: '11', m: '+1' }, { k: 'Will', v: '11', m: '+1' }
+    ];
+    const sumChars = [
+      ['Perception', '11'], ['Defense', '10'], ['Health', '9'], ['Healing', '2'],
+      ['Size', '1'], ['Speed', '10'], ['Power', '0'], ['Damage', '0'],
+      ['Insanity', '0'], ['Corruption', '1']
+    ].map(([k, v]) => ({ k, v }));
+    return { steps, sumAttrs, sumChars };
+  }
+}
+</script>
+</body>
+</html>

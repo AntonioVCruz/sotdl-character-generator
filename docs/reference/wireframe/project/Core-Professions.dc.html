@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Builder · Professions</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=IBM+Plex+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#1A1A18}a:hover{color:#4F4F4B}
+</style>
+</helmet>
+<div style="min-height: 100vh; background: #EFEFEC; font-family: Inter, system-ui, sans-serif; color: #1A1A18; font-size: 14px; line-height: 1.45">
+
+<header style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; padding: 12px 24px; background: #FFFFFF; border-bottom: 1px solid #D4D4CF">
+<a href="Home.dc.html" style="font-weight: 700; font-size: 15px; text-decoration: none">SotDL Generator</a>
+<span style="color: #4F4F4B">Brokk · Dwarf · Level 0 · Creating</span>
+<div style="flex: 1 1 auto"></div>
+<nav aria-label="Character" style="display: flex; flex-wrap: wrap; gap: 8px">
+<a href="Settings-Sources.dc.html" style="display: inline-flex; align-items: center; min-height: 40px; padding: 0 14px; border: 1px solid #D4D4CF; border-radius: 6px; text-decoration: none">Sources: Core</a>
+<a href="Log-Export.dc.html" style="display: inline-flex; align-items: center; min-height: 40px; padding: 0 14px; border: 1px solid #D4D4CF; border-radius: 6px; text-decoration: none">Log</a>
+<a href="Sheet.dc.html" style="display: inline-flex; align-items: center; min-height: 40px; padding: 0 14px; border: 1px solid #D4D4CF; border-radius: 6px; text-decoration: none">Preview sheet</a>
+</nav>
+</header>
+
+<div style="display: flex; flex-wrap: wrap; gap: 24px; padding: 24px; max-width: 1440px; margin: 0 auto; box-sizing: border-box; align-items: flex-start">
+
+<nav aria-label="Creation steps" style="flex: 1 1 220px; display: flex; flex-direction: column; gap: 4px">
+<div style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #4F4F4B; padding: 0 12px 8px">Level 0 · Creation</div>
+<sc-for list="{{steps}}" as="s" hint-placeholder-count="8">
+<sc-if value="{{s.current}}" hint-placeholder-val="{{false}}">
+<a href="{{s.href}}" aria-current="step" style="display: flex; justify-content: space-between; align-items: center; gap: 8px; min-height: 44px; padding: 0 12px; border-radius: 6px; background: #1A1A18; color: #FFFFFF; text-decoration: none; font-weight: 600"><span>{{s.n}}. {{s.label}}</span><span style="font-size: 12px; font-weight: 500">{{s.status}}</span></a>
+</sc-if>
+<sc-if value="{{s.other}}" hint-placeholder-val="{{true}}">
+<a href="{{s.href}}" style="display: flex; justify-content: space-between; align-items: center; gap: 8px; min-height: 44px; padding: 0 12px; border-radius: 6px; text-decoration: none"><span>{{s.n}}. {{s.label}}</span><span style="font-size: 12px; color: #4F4F4B">{{s.status}}</span></a>
+</sc-if>
+</sc-for>
+</nav>
+
+<main style="flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column; gap: 20px">
+
+<section aria-labelledby="step-q" style="background: #FFFFFF; border: 1px solid #D4D4CF; border-radius: 8px; padding: 24px; display: flex; flex-direction: column; gap: 10px">
+<div style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #4F4F4B">Step 4 of 8 · Choice or roll</div>
+<h1 id="step-q" style="margin: 0; font-size: 26px; line-height: 1.2">What did Brokk do before adventuring?</h1>
+<p style="margin: 0; color: #4F4F4B; max-width: 72ch">You begin with two professions. Choose any, or roll a d6 for the type and a d20 on that table. You can trade a profession for a language: speak a new one, or read one you already speak. <span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; padding: 2px 6px; border: 1px solid #A8A8A2; border-radius: 4px; color: #1A1A18; white-space: nowrap">CORE p.23</span></p>
+<div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px">
+<span style="font-size: 12px; padding: 4px 10px; border-radius: 999px; background: #1A1A18; color: #FFFFFF">Professions 1 / 2</span>
+<span style="font-size: 12px; padding: 4px 10px; border-radius: 999px; border: 1px dashed #A8A8A2">1 language from Background still open</span>
+</div>
+</section>
+
+<section aria-labelledby="slot1" style="background: #FFFFFF; border: 1px solid #D4D4CF; border-radius: 8px; padding: 16px; display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center">
+<h2 id="slot1" style="margin: 0; font-size: 16px; flex: 1 1 auto">Profession 1</h2>
+<button type="button" style="min-height: 40px; padding: 0 12px; border: 1px solid #A8A8A2; border-radius: 6px; background: #FFFFFF; font: inherit; font-size: 13px; cursor: pointer">Change</button>
+</div>
+<div style="display: grid; grid-template-columns: 76px 76px minmax(0, 1fr); gap: 12px; align-items: center">
+<div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 56px; border: 1px solid #A8A8A2; border-radius: 6px; background: #F7F7F5"><span style="font-size: 20px; font-weight: 700; line-height: 1.1">2</span><span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #4F4F4B">d6 type</span></div>
+<div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 56px; border: 1px solid #A8A8A2; border-radius: 6px; background: #F7F7F5"><span style="font-size: 20px; font-weight: 700; line-height: 1.1">15</span><span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #4F4F4B">d20</span></div>
+<div style="display: flex; flex-direction: column; gap: 4px"><strong>Miner</strong><span style="font-size: 13px; color: #4F4F4B">Common Professions</span></div>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-end; padding-top: 12px; border-top: 1px solid #EFEFEC">
+<label style="display: flex; flex-direction: column; gap: 4px; flex: 1 1 240px; font-size: 12px; color: #4F4F4B">Name on the sheet
+<input type="text" value="Deep-vein prospector" style="min-height: 40px; padding: 0 12px; border: 1px solid #A8A8A2; border-radius: 6px; font: inherit; font-size: 14px; color: #1A1A18">
+</label>
+<label style="display: inline-flex; align-items: center; gap: 8px; min-height: 40px; font-size: 13px"><input type="checkbox" checked style="width: 18px; height: 18px"> Renamed with GM approval</label>
+</div>
+</section>
+
+<section aria-labelledby="slot2" style="background: #FFFFFF; border: 2px solid #1A1A18; border-radius: 8px; padding: 16px; display: flex; flex-direction: column; gap: 14px">
+<div style="display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center">
+<h2 id="slot2" style="margin: 0; font-size: 16px; flex: 1 1 auto">Profession 2</h2>
+<div role="group" aria-label="How to fill Profession 2" style="display: inline-flex; border: 1px solid #A8A8A2; border-radius: 6px; overflow: hidden">
+<button type="button" aria-pressed="false" style="min-height: 40px; padding: 0 12px; border: 0; background: #FFFFFF; font: inherit; font-size: 13px; cursor: pointer">Roll d6 + d20</button>
+<button type="button" aria-pressed="true" style="min-height: 40px; padding: 0 12px; border: 0; border-left: 1px solid #A8A8A2; background: #1A1A18; color: #FFFFFF; font: inherit; font-size: 13px; cursor: pointer">Choose</button>
+<button type="button" aria-pressed="false" style="min-height: 40px; padding: 0 12px; border: 0; border-left: 1px solid #A8A8A2; background: #FFFFFF; font: inherit; font-size: 13px; cursor: pointer">Trade for a language</button>
+</div>
+</div>
+
+<nav aria-label="Profession types" style="display: flex; flex-wrap: wrap; gap: 4px; border-bottom: 1px solid #D4D4CF">
+<sc-for list="{{types}}" as="t" hint-placeholder-count="6">
+<sc-if value="{{t.on}}" hint-placeholder-val="{{false}}"><a href="#" aria-current="true" style="display: inline-flex; align-items: center; min-height: 40px; padding: 0 12px; border-bottom: 2px solid #1A1A18; text-decoration: none; font-weight: 600; font-size: 13px"><span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #4F4F4B; margin-right: 6px">{{t.n}}</span>{{t.label}}</a></sc-if>
+<sc-if value="{{t.off}}" hint-placeholder-val="{{true}}"><a href="#" style="display: inline-flex; align-items: center; min-height: 40px; padding: 0 12px; text-decoration: none; color: #4F4F4B; font-size: 13px"><span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; margin-right: 6px">{{t.n}}</span>{{t.label}}</a></sc-if>
+</sc-for>
+</nav>
+
+<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 6px">
+<sc-for list="{{profs}}" as="p" hint-placeholder-count="12">
+<sc-if value="{{p.on}}" hint-placeholder-val="{{false}}"><button type="button" aria-pressed="true" style="min-height: 44px; padding: 6px 10px; border: 2px solid #1A1A18; border-radius: 6px; background: #FFFFFF; font: inherit; font-size: 13px; font-weight: 600; text-align: left; cursor: pointer"><span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 400; color: #4F4F4B">{{p.n}}</span> {{p.label}}</button></sc-if>
+<sc-if value="{{p.dim}}" hint-placeholder-val="{{false}}"><button type="button" disabled style="min-height: 44px; padding: 6px 10px; border: 1px dashed #D4D4CF; border-radius: 6px; background: #F7F7F5; color: #4F4F4B; font: inherit; font-size: 13px; text-align: left"><span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px">{{p.n}}</span> {{p.label}} · already yours</button></sc-if>
+<sc-if value="{{p.off}}" hint-placeholder-val="{{true}}"><button type="button" aria-pressed="false" style="min-height: 44px; padding: 6px 10px; border: 1px solid #D4D4CF; border-radius: 6px; background: #FFFFFF; font: inherit; font-size: 13px; text-align: left; cursor: pointer"><span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #4F4F4B">{{p.n}}</span> {{p.label}}</button></sc-if>
+</sc-for>
+</div>
+
+<div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 10px 12px; border: 1px dashed #1A1A18; border-radius: 6px">
+<strong style="font-size: 13px">Artisan · choose a trade</strong>
+<select aria-label="Artisan trade" style="min-height: 40px; padding: 0 10px; border: 1px solid #A8A8A2; border-radius: 6px; font: inherit; font-size: 13px; background: #FFFFFF"><option>Blacksmith</option><option>Brewer</option><option>Jeweler</option><option>Mason</option><option>Other (write it)</option></select>
+</div>
+</section>
+
+<section aria-labelledby="lang-h" style="background: #FFFFFF; border: 1px solid #D4D4CF; border-radius: 8px; padding: 16px; display: flex; flex-direction: column; gap: 10px">
+<h2 id="lang-h" style="margin: 0; font-size: 16px">Languages</h2>
+<sc-for list="{{langs}}" as="l" hint-placeholder-count="3">
+<div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 8px 0; border-bottom: 1px solid #EFEFEC">
+<strong style="flex: 1 1 160px">{{l.name}}</strong>
+<span style="font-size: 13px; color: #4F4F4B; flex: 1 1 160px">{{l.can}}</span>
+<span style="font-size: 11px; padding: 2px 6px; border-radius: 4px; background: #E4E4E0">{{l.from}}</span>
+</div>
+</sc-for>
+<div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 10px 12px; border: 1px dashed #A8A8A2; border-radius: 6px">
+<span style="font-size: 13px; flex: 1 1 auto">1 more language to speak · from Background 13</span>
+<a href="Story.dc.html" style="font-size: 13px">Choose it in Story</a>
+</div>
+</section>
+
+<div style="display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap">
+<a href="Story.dc.html" style="display: inline-flex; align-items: center; min-height: 44px; padding: 0 18px; border: 1px solid #A8A8A2; border-radius: 6px; text-decoration: none">Back: Story</a>
+<a href="Core-Wealth.dc.html" style="display: inline-flex; align-items: center; min-height: 44px; padding: 0 18px; border-radius: 6px; background: #1A1A18; color: #FFFFFF; text-decoration: none; font-weight: 600">Next: Wealth and equipment</a>
+</div>
+</main>
+
+<aside aria-label="Character summary" style="flex: 1 1 280px; display: flex; flex-direction: column; gap: 16px">
+<section style="background: #FFFFFF; border: 1px solid #D4D4CF; border-radius: 8px; padding: 16px; display: flex; flex-direction: column; gap: 12px">
+<h2 style="margin: 0; font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: #4F4F4B">Live summary</h2>
+<div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px">
+<sc-for list="{{sumAttrs}}" as="t" hint-placeholder-count="4">
+<div style="border: 1px solid #D4D4CF; border-radius: 6px; padding: 8px 4px; text-align: center"><div style="font-size: 11px; color: #4F4F4B">{{t.k}}</div><div style="font-size: 20px; font-weight: 700">{{t.v}}</div><div style="font-size: 11px; color: #4F4F4B">{{t.m}}</div></div>
+</sc-for>
+</div>
+<div style="font-size: 13px; display: flex; flex-direction: column; gap: 4px">
+<div><strong>Professions</strong> · Deep-vein prospector</div>
+<div><strong>Languages</strong> · Common Tongue, Dwarfish</div>
+<div><strong>Talents</strong> · Darksight, Hated Creature (Troglodytes)</div>
+</div>
+</section>
+<section style="background: #FFFFFF; border: 1px solid #D4D4CF; border-radius: 8px; padding: 16px; display: flex; flex-direction: column; gap: 8px">
+<h2 style="margin: 0; font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: #4F4F4B">Open decisions · 3</h2>
+<a href="#slot2" style="display: flex; flex-direction: column; gap: 2px; padding: 8px 10px; border: 1px dashed #A8A8A2; border-radius: 6px; text-decoration: none"><span style="font-size: 13px; font-weight: 600">Profession 2</span><span style="font-size: 12px; color: #4F4F4B">Professions</span></a>
+<a href="Story.dc.html" style="display: flex; flex-direction: column; gap: 2px; padding: 8px 10px; border: 1px dashed #A8A8A2; border-radius: 6px; text-decoration: none"><span style="font-size: 13px; font-weight: 600">One additional language</span><span style="font-size: 12px; color: #4F4F4B">Story · Background 13</span></a>
+<a href="Story.dc.html" style="display: flex; flex-direction: column; gap: 2px; padding: 8px 10px; border: 1px dashed #A8A8A2; border-radius: 6px; text-decoration: none"><span style="font-size: 13px; font-weight: 600">Personality</span><span style="font-size: 12px; color: #4F4F4B">Story</span></a>
+</section>
+</aside>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1430}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const cur = 3;
+    const steps = [
+      ['Ancestry', 'Done', 'Main.dc.html'],
+      ['Attributes', 'Done', 'Attributes.dc.html'],
+      ['Story', '2 open', 'Story.dc.html'],
+      ['Professions', '1 open', 'Core-Professions.dc.html'],
+      ['Wealth and equipment', 'Not rolled', 'Core-Wealth.dc.html'],
+      ['Interesting thing', 'Not rolled', 'Interesting-Thing.dc.html'],
+      ['Roleplaying', 'Optional', 'Main.dc.html'],
+      ['Review', '', 'Sheet.dc.html']
+    ].map(([label, status, href], i) => ({ n: i + 1, label, status, href, current: i === cur, other: i !== cur }));
+    const types = ['Academic', 'Common', 'Criminal', 'Martial', 'Religious', 'Wilderness'].map((label, i) => ({ label, n: i + 1, on: label === 'Common', off: label !== 'Common' }));
+    const list = ['Animal trainer', 'Apothecary or healer', 'Artisan', 'Artist', 'Boatman or ferryman', 'Butcher', 'Cook', 'Drover or herder', 'Entertainer', 'Farmer', 'Fisher or whaler', 'Groom', 'Laborer', 'Merchant', 'Miner', 'Musician', 'Sailor', 'Servant or valet'];
+    const profs = list.map((label, i) => ({ label, n: i + 1, on: label === 'Artisan', dim: label === 'Miner', off: label !== 'Artisan' && label !== 'Miner' }));
+    const langs = [
+      { name: 'Common Tongue', can: 'Speak', from: 'Dwarf' },
+      { name: 'Dwarfish', can: 'Speak, read and write', from: 'Dwarf' }
+    ];
+    const sumAttrs = [
+      { k: 'Str', v: '10', m: '+0' }, { k: 'Agi', v: '9', m: '−1' },
+      { k: 'Int', v: '9', m: '−1' }, { k: 'Will', v: '11', m: '+1' }
+    ];
+    return { steps, types, profs, langs, sumAttrs };
+  }
+}
+</script>
+</body>
+</html>

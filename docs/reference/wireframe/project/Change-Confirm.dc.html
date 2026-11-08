@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Confirm change · Age</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=IBM+Plex+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#1A1A18}a:hover{color:#4F4F4B}
+</style>
+</helmet>
+<div style="min-height: 100vh; background: #8F8F8A; font-family: Inter, system-ui, sans-serif; color: #1A1A18; font-size: 14px; line-height: 1.45; display: flex; justify-content: center; align-items: flex-start; padding: 48px 16px; box-sizing: border-box">
+
+<section role="dialog" aria-modal="true" aria-labelledby="cc-h" style="width: 100%; max-width: 760px; background: #FFFFFF; border-radius: 10px; border: 1px solid #A8A8A2; display: flex; flex-direction: column">
+
+<div style="display: flex; flex-direction: column; gap: 6px; padding: 20px 24px; border-bottom: 1px solid #D4D4CF">
+<span style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #4F4F4B">Reroll · Development › Age</span>
+<h1 id="cc-h" style="margin: 0; font-size: 22px">Your new Age changes later results</h1>
+<p style="margin: 0; color: #4F4F4B">Nothing has changed yet. Review what the new roll would do, then apply it or keep what you had.</p>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; padding: 20px 24px">
+<div style="border: 1px solid #D4D4CF; border-radius: 8px; padding: 14px; display: flex; flex-direction: column; gap: 6px">
+<span style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: #4F4F4B">Current</span>
+<span><strong style="font-size: 18px">10</strong> <span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #4F4F4B">3d6</span></span>
+<span>Adult, 26 to 35 years old.</span>
+<span style="font-size: 13px; color: #4F4F4B">Life Experiences: 3</span>
+</div>
+<div style="border: 2px solid #1A1A18; border-radius: 8px; padding: 14px; display: flex; flex-direction: column; gap: 6px">
+<span style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: #4F4F4B">New roll</span>
+<span><strong style="font-size: 18px">5</strong> <span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #4F4F4B">3d6</span></span>
+<span>Adolescent, 12 to 17 years old.</span>
+<span style="font-size: 13px; color: #4F4F4B">Life Experiences: 1 · height and weight −25%</span>
+</div>
+</div>
+
+<div style="padding: 0 24px 8px; display: flex; flex-direction: column; gap: 10px">
+<h2 style="margin: 0; font-size: 15px">Will be removed</h2>
+<sc-for list="{{removed}}" as="r" hint-placeholder-count="3">
+<div style="display: flex; flex-direction: column; gap: 4px; padding: 10px 12px; border: 1px dashed #1A1A18; border-radius: 6px">
+<strong>{{r.what}}</strong>
+<span style="font-size: 13px; color: #4F4F4B">{{r.detail}}</span>
+</div>
+</sc-for>
+
+<h2 style="margin: 8px 0 0; font-size: 15px">Will be recalculated</h2>
+<sc-for list="{{recalc}}" as="r" hint-placeholder-count="2">
+<div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; padding: 10px 12px; border: 1px solid #D4D4CF; border-radius: 6px">
+<strong>{{r.what}}</strong>
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 13px">{{r.change}}</span>
+</div>
+</sc-for>
+
+<h2 style="margin: 8px 0 0; font-size: 15px">Stays as it is</h2>
+<p style="margin: 0; color: #4F4F4B">Family, Build result, Appearance, Childhood, Life Experience 1 (You Worked! · Lifestyle +1), Personality.</p>
+</div>
+
+<p style="margin: 12px 24px 0; padding: 10px 12px; background: #F7F7F5; border-radius: 6px; font-size: 13px; color: #4F4F4B">Removed rolls stay in the character log, marked as undone.</p>
+
+<div style="display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; padding: 20px 24px">
+<a href="Development.dc.html" style="display: inline-flex; align-items: center; min-height: 44px; padding: 0 18px; border: 1px solid #A8A8A2; border-radius: 6px; text-decoration: none">Keep current Age</a>
+<a href="Development.dc.html" style="display: inline-flex; align-items: center; min-height: 44px; padding: 0 18px; border-radius: 6px; background: #1A1A18; color: #FFFFFF; text-decoration: none; font-weight: 600">Apply new Age</a>
+</div>
+</section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1000}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const removed = [
+      { what: 'Life Experience 2 · Major Setback', detail: 'You did things you regret. Its Corruption +1 and the Mark of Darkness check go with it.' },
+      { what: 'Life Experience 3', detail: 'Not rolled yet. No longer needed.' }
+    ];
+    const recalc = [
+      { what: 'Corruption', change: '1 → 0' },
+      { what: 'Height and weight', change: '−25%' },
+      { what: 'Starting Lifestyle bonus', change: '+1 → +1' }
+    ];
+    return { removed, recalc };
+  }
+}
+</script>
+</body>
+</html>

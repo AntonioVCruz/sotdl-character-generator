@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Compare versions · Human</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=IBM+Plex+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#1A1A18}a:hover{color:#4F4F4B}
+</style>
+</helmet>
+<div style="min-height: 100vh; background: #8F8F8A; font-family: Inter, system-ui, sans-serif; color: #1A1A18; font-size: 14px; line-height: 1.45; display: flex; justify-content: center; align-items: flex-start; padding: 48px 16px; box-sizing: border-box">
+
+<section role="dialog" aria-modal="true" aria-labelledby="cmp-h" style="width: 100%; max-width: 1040px; background: #FFFFFF; border-radius: 10px; border: 1px solid #A8A8A2; display: flex; flex-direction: column">
+
+<div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 12px; padding: 20px 24px; border-bottom: 1px solid #D4D4CF">
+<div style="display: flex; flex-direction: column; gap: 4px">
+<h1 id="cmp-h" style="margin: 0; font-size: 22px">Compare versions · Human</h1>
+<p style="margin: 0; color: #4F4F4B; font-size: 13px">Two active books have their own Human. Only Human is first in your priority order, so it is in use.</p>
+</div>
+<a href="Main.dc.html" aria-label="Close" style="display: inline-flex; justify-content: center; align-items: center; min-height: 44px; min-width: 44px; border: 1px solid #A8A8A2; border-radius: 6px; text-decoration: none">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+</a>
+</div>
+
+<div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; padding: 12px 24px; background: #F7F7F5; border-bottom: 1px solid #D4D4CF">
+<label style="display: inline-flex; align-items: center; gap: 8px; min-height: 40px"><input type="checkbox" style="width: 20px; height: 20px"> Show only differences</label>
+<span style="font-size: 13px; color: #4F4F4B">4 of 6 rows differ</span>
+</div>
+
+<div style="overflow-x: auto">
+<div style="min-width: 720px; display: flex; flex-direction: column">
+<div style="display: grid; grid-template-columns: 2fr 4fr 4fr 1fr; border-bottom: 1px solid #D4D4CF">
+<div style="padding: 12px 16px 12px 24px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: #4F4F4B">Rule</div>
+<div style="padding: 12px 16px; background: #F7F7F5; display: flex; flex-wrap: wrap; gap: 8px; align-items: center"><strong>Only Human</strong><span style="font-size: 11px; padding: 2px 6px; border-radius: 4px; background: #1A1A18; color: #FFFFFF">In use</span></div>
+<div style="padding: 12px 16px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center"><strong>Core</strong><span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; padding: 2px 6px; border: 1px solid #A8A8A2; border-radius: 4px">CORE p.11</span></div>
+<div style="padding: 12px 24px 12px 8px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: #4F4F4B">Status</div>
+</div>
+<sc-for list="{{rows}}" as="r" hint-placeholder-count="6">
+<div style="display: grid; grid-template-columns: 2fr 4fr 4fr 1fr; border-bottom: 1px solid #EFEFEC">
+<div style="padding: 14px 16px 14px 24px; font-weight: 600">{{r.rule}}</div>
+<div style="padding: 14px 16px; background: #F7F7F5">{{r.a}}</div>
+<div style="padding: 14px 16px">{{r.b}}</div>
+<div style="padding: 14px 24px 14px 8px; font-size: 12px; font-weight: 600">{{r.status}}</div>
+</div>
+</sc-for>
+</div>
+</div>
+
+<div style="margin: 16px 24px 0; padding: 14px 16px; border: 1px dashed #A8A8A2; border-radius: 6px; display: flex; flex-direction: column; gap: 6px">
+<strong style="font-size: 14px">If you switch this character to Core</strong>
+<ul style="margin: 0; padding-left: 18px; color: #4F4F4B; font-size: 13px; display: flex; flex-direction: column; gap: 4px">
+<li>The Development tables stay on unless you turn that component off in Sources. They work with either version.</li>
+<li>Nothing has been rolled in Development yet, so no results are lost.</li>
+<li>Only this character changes. Your book order stays the same.</li>
+</ul>
+</div>
+
+<div style="display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; padding: 20px 24px">
+<a href="Main.dc.html" style="display: inline-flex; align-items: center; min-height: 44px; padding: 0 18px; border: 1px solid #A8A8A2; border-radius: 6px; text-decoration: none">Keep Only Human</a>
+<a href="Main.dc.html" style="display: inline-flex; align-items: center; min-height: 44px; padding: 0 18px; border-radius: 6px; background: #1A1A18; color: #FFFFFF; text-decoration: none; font-weight: 600">Use Core for this character</a>
+</div>
+</section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1100}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const rows = [
+      { rule: 'Starting attributes', a: 'Strength, Agility, Intellect and Will 10; increase one by 1. Optional: roll 8 + 1d3 for each.', b: 'Strength, Agility, Intellect and Will 10; increase one by 1.', status: 'Differs' },
+      { rule: 'Characteristics', a: 'Perception = Intellect · Defense = Agility · Health = Strength · Healing Rate ¼ Health · Size ½ or 1 · Speed 10 · Power 0', b: 'Perception = Intellect · Defense = Agility · Health = Strength · Healing Rate ¼ Health · Size ½ or 1 · Speed 10 · Power 0', status: 'Same' },
+      { rule: 'Languages and professions', a: 'Common Tongue. More languages and professions come from the Development tables.', b: 'Common Tongue, plus one more language or a random profession.', status: 'Differs' },
+      { rule: 'Creation steps', a: 'Development tables (Only Human, a separate component): Family, Appearance, Childhood, Life Experiences, Lifestyle, Personality. Replace Professions, Wealth and the core human story tables. Roll and take the result.', b: 'Story tables (roll, choose or invent), Professions (two) and Wealth (3d6).', status: 'Differs' },
+      { rule: 'Level 4 · Expert Human', a: 'Health +5. Learn one spell, gain Determined, or discover a tradition.', b: 'Health +5. Learn one spell or gain Determined.', status: 'Differs' },
+      { rule: 'Talents', a: 'Determined (at level 4)', b: 'Determined (at level 4)', status: 'Same' }
+    ];
+    return { rows };
+  }
+}
+</script>
+</body>
+</html>

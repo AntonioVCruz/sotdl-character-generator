@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Builder · Ancestry</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=IBM+Plex+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#1A1A18}a:hover{color:#4F4F4B}
+</style>
+</helmet>
+<div style="min-height: 100vh; background: #EFEFEC; font-family: Inter, system-ui, sans-serif; color: #1A1A18; font-size: 14px; line-height: 1.45">
+
+<header style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; padding: 12px 24px; background: #FFFFFF; border-bottom: 1px solid #D4D4CF">
+<a href="Home.dc.html" style="font-weight: 700; font-size: 15px; text-decoration: none">SotDL Generator</a>
+<span style="color: #4F4F4B">Liliana · Human · Level 0 · Creating</span>
+<div style="flex: 1 1 auto"></div>
+<nav aria-label="Character" style="display: flex; flex-wrap: wrap; gap: 8px">
+<a href="Settings-Sources.dc.html" style="display: inline-flex; align-items: center; min-height: 40px; padding: 0 14px; border: 1px solid #D4D4CF; border-radius: 6px; text-decoration: none">Sources: Only Human › Core</a>
+<a href="Log-Export.dc.html" style="display: inline-flex; align-items: center; min-height: 40px; padding: 0 14px; border: 1px solid #D4D4CF; border-radius: 6px; text-decoration: none">Log</a>
+<a href="Sheet.dc.html" style="display: inline-flex; align-items: center; min-height: 40px; padding: 0 14px; border: 1px solid #D4D4CF; border-radius: 6px; text-decoration: none">Preview sheet</a>
+</nav>
+</header>
+
+<div style="display: flex; flex-wrap: wrap; gap: 24px; padding: 24px; max-width: 1440px; margin: 0 auto; box-sizing: border-box; align-items: flex-start">
+
+<nav aria-label="Creation steps" style="flex: 1 1 220px; display: flex; flex-direction: column; gap: 4px">
+<div style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #4F4F4B; padding: 0 12px 8px">Level 0 · Creation</div>
+<sc-for list="{{steps}}" as="s" hint-placeholder-count="7">
+<sc-if value="{{s.current}}" hint-placeholder-val="{{false}}">
+<a href="{{s.href}}" aria-current="step" style="display: flex; justify-content: space-between; align-items: center; gap: 8px; min-height: 44px; padding: 0 12px; border-radius: 6px; background: #1A1A18; color: #FFFFFF; text-decoration: none; font-weight: 600"><span>{{s.n}}. {{s.label}}</span><span style="font-size: 12px; font-weight: 500">{{s.status}}</span></a>
+</sc-if>
+<sc-if value="{{s.other}}" hint-placeholder-val="{{true}}">
+<a href="{{s.href}}" style="display: flex; justify-content: space-between; align-items: center; gap: 8px; min-height: 44px; padding: 0 12px; border-radius: 6px; text-decoration: none"><span>{{s.n}}. {{s.label}}</span><span style="font-size: 12px; color: #4F4F4B">{{s.status}}</span></a>
+</sc-if>
+</sc-for>
+<p style="margin: 12px 12px 0; padding-top: 12px; border-top: 1px solid #D4D4CF; font-size: 12px; color: #4F4F4B">Professions, Wealth and the core story tables are replaced by <strong>Development</strong> (Only Human tables).</p>
+</nav>
+
+<main style="flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column; gap: 20px">
+
+<section aria-labelledby="step-q" style="background: #FFFFFF; border: 1px solid #D4D4CF; border-radius: 8px; padding: 24px; display: flex; flex-direction: column; gap: 10px">
+<div style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #4F4F4B">Step 1 of 6 · Choice</div>
+<h1 id="step-q" style="margin: 0; font-size: 26px; line-height: 1.2">What is your character’s ancestry?</h1>
+<p style="margin: 0; color: #4F4F4B; max-width: 70ch">Choose one ancestry. It sets your starting attributes, characteristics, languages and talents, and decides which story tables you roll later. <span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; padding: 2px 6px; border: 1px solid #A8A8A2; border-radius: 4px; color: #1A1A18; white-space: nowrap">CORE p.9</span></p>
+<div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px">
+<span style="font-size: 12px; padding: 4px 10px; border-radius: 999px; background: #1A1A18; color: #FFFFFF">Chosen 1 / 1</span>
+<span style="font-size: 12px; padding: 4px 10px; border-radius: 999px; border: 1px dashed #A8A8A2">2 subdecisions open</span>
+</div>
+</section>
+
+<div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end">
+<label style="display: flex; flex-direction: column; gap: 4px; flex: 1 1 260px; font-size: 12px; color: #4F4F4B">Search ancestries
+<input type="search" placeholder="Name or trait" style="min-height: 44px; padding: 0 12px; border: 1px solid #A8A8A2; border-radius: 6px; font: inherit; font-size: 14px; color: #1A1A18; background: #FFFFFF; box-sizing: border-box">
+</label>
+<label style="display: flex; flex-direction: column; gap: 4px; flex: 0 1 220px; font-size: 12px; color: #4F4F4B">Book
+<select style="min-height: 44px; padding: 0 10px; border: 1px solid #A8A8A2; border-radius: 6px; font: inherit; font-size: 14px; color: #1A1A18; background: #FFFFFF">
+<option>All active books (8)</option>
+<option>Core only</option>
+</select>
+</label>
+<span style="font-size: 12px; color: #4F4F4B; padding-bottom: 12px">6 core · 2 from supplements</span>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px">
+<sc-for list="{{ancestries}}" as="a" hint-placeholder-count="8">
+<sc-if value="{{a.selected}}" hint-placeholder-val="{{false}}">
+<button type="button" aria-pressed="true" style="text-align: left; font: inherit; color: inherit; cursor: pointer; display: flex; flex-direction: column; gap: 8px; padding: 16px; border: 2px solid #1A1A18; border-radius: 8px; background: #FFFFFF">
+<span style="display: flex; justify-content: space-between; align-items: baseline; gap: 8px"><strong style="font-size: 16px">{{a.name}}</strong><span style="font-size: 12px; font-weight: 600">Selected</span></span>
+<span style="font-size: 13px; color: #4F4F4B">{{a.mech}}</span>
+<span style="display: flex; flex-wrap: wrap; gap: 6px"><span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; padding: 2px 6px; border: 1px solid #A8A8A2; border-radius: 4px">{{a.src}}</span><span style="font-size: 11px; padding: 2px 6px; border-radius: 4px; background: #E4E4E0">{{a.type}}</span><span style="font-size: 11px; padding: 2px 6px; border-radius: 4px; border: 1px dashed #A8A8A2">{{a.versions}}</span></span>
+</button>
+</sc-if>
+<sc-if value="{{a.other}}" hint-placeholder-val="{{true}}">
+<button type="button" aria-pressed="false" style="text-align: left; font: inherit; color: inherit; cursor: pointer; display: flex; flex-direction: column; gap: 8px; padding: 16px; border: 1px solid #D4D4CF; border-radius: 8px; background: #FFFFFF">
+<strong style="font-size: 16px">{{a.name}}</strong>
+<span style="font-size: 13px; color: #4F4F4B">{{a.mech}}</span>
+<span style="display: flex; flex-wrap: wrap; gap: 6px"><span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; padding: 2px 6px; border: 1px solid #A8A8A2; border-radius: 4px">{{a.src}}</span><span style="font-size: 11px; padding: 2px 6px; border-radius: 4px; background: #E4E4E0">{{a.type}}</span></span>
+</button>
+</sc-if>
+</sc-for>
+</div>
+
+<section aria-labelledby="detail-h" style="background: #FFFFFF; border: 1px solid #D4D4CF; border-radius: 8px; padding: 24px; display: flex; flex-direction: column; gap: 16px">
+<div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px">
+<div style="display: flex; flex-direction: column; gap: 4px">
+<h2 id="detail-h" style="margin: 0; font-size: 20px">Human</h2>
+<span style="font-size: 13px; color: #4F4F4B">Showing the version from <strong style="color: #1A1A18">Only Human</strong> (first in your priority order)</span>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center">
+<div role="group" aria-label="Version" style="display: inline-flex; border: 1px solid #A8A8A2; border-radius: 6px; overflow: hidden">
+<button type="button" aria-pressed="true" style="min-height: 40px; padding: 0 14px; border: 0; background: #1A1A18; color: #FFFFFF; font: inherit; font-size: 13px; cursor: pointer">Only Human</button>
+<button type="button" aria-pressed="false" style="min-height: 40px; padding: 0 14px; border: 0; border-left: 1px solid #A8A8A2; background: #FFFFFF; color: #1A1A18; font: inherit; font-size: 13px; cursor: pointer">Core p.11</button>
+</div>
+<a href="Compare-Versions.dc.html" style="display: inline-flex; align-items: center; min-height: 40px; padding: 0 14px; border: 1px solid #A8A8A2; border-radius: 6px; text-decoration: none; font-size: 13px">Compare versions</a>
+</div>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px">
+<div style="display: flex; flex-direction: column; gap: 6px">
+<h3 style="margin: 0; font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: #4F4F4B">Starting attributes</h3>
+<p style="margin: 0">Strength 10, Agility 10, Intellect 10, Will 10. Increase one by 1.</p>
+<p style="margin: 0; font-size: 13px; color: #4F4F4B">Or roll 8 + 1d3 for each, if your table allows it (set in Sources).</p>
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<h3 style="margin: 0; font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: #4F4F4B">Characteristics</h3>
+<p style="margin: 0">Perception = Intellect · Defense = Agility · Health = Strength · Healing Rate = ¼ Health · Size ½ or 1 · Speed 10 · Power 0</p>
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<h3 style="margin: 0; font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: #4F4F4B">Languages and professions</h3>
+<p style="margin: 0">Common Tongue. Further languages and professions come from the Development tables.</p>
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<h3 style="margin: 0; font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: #4F4F4B">Level 4 · Expert Human</h3>
+<p style="margin: 0">Health +5. Learn one spell, gain Determined, or discover a tradition.</p>
+<p style="margin: 0; font-size: 13px; color: #4F4F4B">“Discover a tradition” is the extra option from Only Human.</p>
+</div>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 10px; padding-top: 16px; border-top: 1px solid #D4D4CF">
+<h3 style="margin: 0; font-size: 15px">Decide now <span style="font-weight: 400; color: #4F4F4B; font-size: 13px">· you can also leave these for later</span></h3>
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px">
+<span style="min-width: 120px">Size</span>
+<button type="button" aria-pressed="false" style="min-height: 44px; min-width: 56px; padding: 0 14px; border: 1px solid #A8A8A2; border-radius: 6px; background: #FFFFFF; font: inherit; cursor: pointer">½</button>
+<button type="button" aria-pressed="true" style="min-height: 44px; min-width: 56px; padding: 0 14px; border: 2px solid #1A1A18; border-radius: 6px; background: #FFFFFF; font: inherit; font-weight: 600; cursor: pointer">1</button>
+</div>
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px">
+<span style="min-width: 120px">+1 attribute</span>
+<span style="font-size: 13px; color: #4F4F4B">Chosen in the next step, Attributes.</span>
+<a href="Attributes.dc.html" style="font-size: 13px">Go there</a>
+</div>
+</div>
+
+<div style="display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; padding: 12px 14px; background: #F7F7F5; border: 1px dashed #A8A8A2; border-radius: 6px; font-size: 13px; color: #4F4F4B">
+<span>Description and lore: <span style="font-family: 'IBM Plex Mono', monospace; color: #1A1A18">ONLY HUMAN p.—</span> · <span style="font-family: 'IBM Plex Mono', monospace; color: #1A1A18">CORE p.11</span></span>
+<button type="button" style="min-height: 36px; padding: 0 12px; border: 1px solid #A8A8A2; border-radius: 6px; background: #FFFFFF; font: inherit; font-size: 13px; cursor: pointer">Add your own text</button>
+<button type="button" style="min-height: 36px; padding: 0 12px; border: 1px solid #A8A8A2; border-radius: 6px; background: #FFFFFF; font: inherit; font-size: 13px; cursor: pointer">Import text pack</button>
+</div>
+</section>
+
+<div style="display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap">
+<button type="button" disabled style="min-height: 44px; padding: 0 18px; border: 1px solid #D4D4CF; border-radius: 6px; background: #F7F7F5; color: #4F4F4B; font: inherit">Back</button>
+<a href="Attributes.dc.html" style="display: inline-flex; align-items: center; min-height: 44px; padding: 0 18px; border-radius: 6px; background: #1A1A18; color: #FFFFFF; text-decoration: none; font-weight: 600">Next: Attributes</a>
+</div>
+</main>
+
+<aside aria-label="Character summary" style="flex: 1 1 280px; display: flex; flex-direction: column; gap: 16px">
+<section style="background: #FFFFFF; border: 1px solid #D4D4CF; border-radius: 8px; padding: 16px; display: flex; flex-direction: column; gap: 12px">
+<h2 style="margin: 0; font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: #4F4F4B">Live summary</h2>
+<div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px">
+<sc-for list="{{attrs}}" as="t" hint-placeholder-count="4">
+<div style="border: 1px solid #D4D4CF; border-radius: 6px; padding: 8px 4px; text-align: center"><div style="font-size: 11px; color: #4F4F4B">{{t.k}}</div><div style="font-size: 20px; font-weight: 700">{{t.v}}</div><div style="font-size: 11px; color: #4F4F4B">{{t.m}}</div></div>
+</sc-for>
+</div>
+<dl style="margin: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px 12px; font-size: 13px">
+<sc-for list="{{chars}}" as="c" hint-placeholder-count="10">
+<div style="display: flex; justify-content: space-between; gap: 8px; padding: 4px 0; border-bottom: 1px solid #EFEFEC"><dt style="color: #4F4F4B">{{c.k}}</dt><dd style="margin: 0; font-weight: 600">{{c.v}}</dd></div>
+</sc-for>
+</dl>
+</section>
+<section style="background: #FFFFFF; border: 1px solid #D4D4CF; border-radius: 8px; padding: 16px; display: flex; flex-direction: column; gap: 8px">
+<h2 style="margin: 0; font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: #4F4F4B">Open decisions · {{pendingCount}}</h2>
+<sc-for list="{{pending}}" as="p" hint-placeholder-count="3">
+<a href="{{p.href}}" style="display: flex; flex-direction: column; gap: 2px; padding: 8px 10px; border: 1px dashed #A8A8A2; border-radius: 6px; text-decoration: none"><span style="font-size: 13px; font-weight: 600">{{p.what}}</span><span style="font-size: 12px; color: #4F4F4B">{{p.where}}</span></a>
+</sc-for>
+</section>
+</aside>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1540}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const cur = 0;
+    const steps = [
+      ['Ancestry', 'Done', 'Main.dc.html'],
+      ['Attributes', '1 open', 'Attributes.dc.html'],
+      ['Development', 'Not started', 'Development.dc.html'],
+      ['Interesting thing', 'Not rolled', 'Interesting-Thing.dc.html'],
+      ['Roleplaying', 'Optional', 'Main.dc.html'],
+      ['Review', '', 'Sheet.dc.html']
+    ].map(([label, status, href], i) => ({ n: i + 1, label, status, href, current: i === cur, other: i !== cur }));
+    const ancestries = [
+      { name: 'Human', mech: 'Str 10 · Agi 10 · Int 10 · Will 10, +1 to one · Size ½ or 1 · Speed 10', src: 'ONLY HUMAN', type: 'Replaces core', versions: '2 versions', selected: true },
+      { name: 'Changeling', mech: 'Str 9 · Agi 10 · Int 10 · Will 10 · Perception +1 · Speed 10 · Iron Vulnerability', src: 'CORE p.13', type: 'Core' },
+      { name: 'Clockwork', mech: 'Defense 13 · Size 1 · Speed 8 · Purpose and Form tables (d20)', src: 'CORE p.15', type: 'Core' },
+      { name: 'Dwarf', mech: 'Str 10 · Agi 9 · Int 10 · Will 10 · Health +4 · Size ½ · Speed 8 · Hated Creature', src: 'CORE p.17', type: 'Core' },
+      { name: 'Goblin', mech: 'Str 8 · Agi 12 · Int 10 · Will 9 · Size ½ · Speed 10 · Iron Vulnerability', src: 'CORE p.19', type: 'Core' },
+      { name: 'Orc', mech: 'Str 11 · Agi 10 · Int 9 · Will 9 · Speed 12 · Corruption 1', src: 'CORE p.21', type: 'Core' },
+      { name: '[Supplement ancestry]', mech: '[Starting scores and key traits]', src: '[BOOK p.—]', type: 'Adds' },
+      { name: '[Supplement ancestry]', mech: '[Starting scores and key traits]', src: '[BOOK p.—]', type: 'Adds' }
+    ].map((a) => ({ ...a, selected: !!a.selected, other: !a.selected }));
+    const attrs = [
+      { k: 'Str', v: '10', m: '+0' }, { k: 'Agi', v: '10', m: '+0' },
+      { k: 'Int', v: '10', m: '+0' }, { k: 'Will', v: '10', m: '+0' }
+    ];
+    const chars = [
+      ['Perception', '10'], ['Defense', '10'], ['Health', '10'], ['Healing', '2'],
+      ['Size', '1'], ['Speed', '10'], ['Power', '0'], ['Damage', '0'],
+      ['Insanity', '0'], ['Corruption', '0']
+    ].map(([k, v]) => ({ k, v }));
+    const pending = [
+      { what: '+1 to one attribute', where: 'Attributes · Human', href: 'Attributes.dc.html' },
+      { what: 'Development tables', where: 'Development · Only Human', href: 'Development.dc.html' },
+      { what: 'Interesting thing', where: 'Interesting thing · Oddities', href: 'Interesting-Thing.dc.html' }
+    ];
+    return { steps, ancestries, attrs, chars, pending, pendingCount: pending.length };
+  }
+}
+</script>
+</body>
+</html>

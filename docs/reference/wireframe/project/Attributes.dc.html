@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Builder · Attributes</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=IBM+Plex+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#1A1A18}a:hover{color:#4F4F4B}
+</style>
+</helmet>
+<div style="min-height: 100vh; background: #EFEFEC; font-family: Inter, system-ui, sans-serif; color: #1A1A18; font-size: 14px; line-height: 1.45">
+
+<header style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; padding: 12px 24px; background: #FFFFFF; border-bottom: 1px solid #D4D4CF">
+<a href="Home.dc.html" style="font-weight: 700; font-size: 15px; text-decoration: none">SotDL Generator</a>
+<span style="color: #4F4F4B">Liliana · Human · Level 0 · Creating</span>
+<div style="flex: 1 1 auto"></div>
+<nav aria-label="Character" style="display: flex; flex-wrap: wrap; gap: 8px">
+<a href="Settings-Sources.dc.html" style="display: inline-flex; align-items: center; min-height: 40px; padding: 0 14px; border: 1px solid #D4D4CF; border-radius: 6px; text-decoration: none">Sources: Only Human › Core</a>
+<a href="Log-Export.dc.html" style="display: inline-flex; align-items: center; min-height: 40px; padding: 0 14px; border: 1px solid #D4D4CF; border-radius: 6px; text-decoration: none">Log</a>
+<a href="Sheet.dc.html" style="display: inline-flex; align-items: center; min-height: 40px; padding: 0 14px; border: 1px solid #D4D4CF; border-radius: 6px; text-decoration: none">Preview sheet</a>
+</nav>
+</header>
+
+<div style="display: flex; flex-wrap: wrap; gap: 24px; padding: 24px; max-width: 1440px; margin: 0 auto; box-sizing: border-box; align-items: flex-start">
+
+<nav aria-label="Creation steps" style="flex: 1 1 220px; display: flex; flex-direction: column; gap: 4px">
+<div style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #4F4F4B; padding: 0 12px 8px">Level 0 · Creation</div>
+<sc-for list="{{steps}}" as="s" hint-placeholder-count="7">
+<sc-if value="{{s.current}}" hint-placeholder-val="{{false}}">
+<a href="{{s.href}}" aria-current="step" style="display: flex; justify-content: space-between; align-items: center; gap: 8px; min-height: 44px; padding: 0 12px; border-radius: 6px; background: #1A1A18; color: #FFFFFF; text-decoration: none; font-weight: 600"><span>{{s.n}}. {{s.label}}</span><span style="font-size: 12px; font-weight: 500">{{s.status}}</span></a>
+</sc-if>
+<sc-if value="{{s.other}}" hint-placeholder-val="{{true}}">
+<a href="{{s.href}}" style="display: flex; justify-content: space-between; align-items: center; gap: 8px; min-height: 44px; padding: 0 12px; border-radius: 6px; text-decoration: none"><span>{{s.n}}. {{s.label}}</span><span style="font-size: 12px; color: #4F4F4B">{{s.status}}</span></a>
+</sc-if>
+</sc-for>
+</nav>
+
+<main style="flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column; gap: 20px">
+
+<section aria-labelledby="step-q" style="background: #FFFFFF; border: 1px solid #D4D4CF; border-radius: 8px; padding: 24px; display: flex; flex-direction: column; gap: 10px">
+<div style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #4F4F4B">Step 2 of 6 · Fixed scores and choice</div>
+<h1 id="step-q" style="margin: 0; font-size: 26px; line-height: 1.2">How strong, quick, clever and willful are you?</h1>
+<p style="margin: 0; color: #4F4F4B; max-width: 72ch">Humans start with 10 in every attribute and increase one of them by 1. Then, once, you may lower one attribute by 1 to raise another by 1. <span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; padding: 2px 6px; border: 1px solid #A8A8A2; border-radius: 4px; color: #1A1A18; white-space: nowrap">CORE p.11</span></p>
+<div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px">
+<span style="font-size: 12px; padding: 4px 10px; border-radius: 999px; background: #1A1A18; color: #FFFFFF">Human +1 · 1 / 1 (Will)</span>
+<span style="font-size: 12px; padding: 4px 10px; border-radius: 999px; background: #1A1A18; color: #FFFFFF">Adjustment · used (Strength → Intellect)</span>
+</div>
+</section>
+
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 12px 16px; background: #FFFFFF; border: 1px solid #D4D4CF; border-radius: 8px">
+<span style="font-weight: 600">Method</span>
+<span>Fixed scores</span>
+<div style="flex: 1 1 auto"></div>
+<button type="button" disabled aria-describedby="roll-why" style="display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 12px; border: 1px dashed #A8A8A2; border-radius: 6px; background: #F7F7F5; color: #4F4F4B; font: inherit; font-size: 13px">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.3" fill="currentColor"/><circle cx="12" cy="12" r="1.3" fill="currentColor"/><circle cx="15.5" cy="15.5" r="1.3" fill="currentColor"/></svg>
+Roll 8 + 1d3 each
+</button>
+<span id="roll-why" style="flex: 1 1 100%; font-size: 12px; color: #4F4F4B">Rolling is off: the Only Human optional rule “Random attributes” is disabled in <a href="Settings-Sources.dc.html">Sources</a>.</span>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px">
+<sc-for list="{{attrs}}" as="a" hint-placeholder-count="4">
+<section aria-label="{{a.name}}" style="background: #FFFFFF; border: 1px solid #D4D4CF; border-radius: 8px; padding: 16px; display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; justify-content: space-between; align-items: baseline; gap: 8px">
+<h2 style="margin: 0; font-size: 16px">{{a.name}}</h2>
+<span style="font-size: 13px; color: #4F4F4B">mod {{a.mod}}</span>
+</div>
+<div style="font-size: 44px; font-weight: 700; line-height: 1">{{a.score}}</div>
+<div style="display: flex; flex-direction: column; gap: 2px; font-size: 12px; color: #4F4F4B; font-family: 'IBM Plex Mono', monospace">
+<sc-for list="{{a.parts}}" as="p" hint-placeholder-count="2"><span>{{p}}</span></sc-for>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 6px; padding-top: 10px; border-top: 1px solid #EFEFEC">
+<sc-if value="{{a.isHuman}}" hint-placeholder-val="{{false}}">
+<button type="button" aria-pressed="true" style="min-height: 40px; padding: 0 10px; border: 2px solid #1A1A18; border-radius: 6px; background: #FFFFFF; font: inherit; font-size: 12px; font-weight: 600; cursor: pointer">Human +1</button>
+</sc-if>
+<sc-if value="{{a.notHuman}}" hint-placeholder-val="{{true}}">
+<button type="button" aria-pressed="false" style="min-height: 40px; padding: 0 10px; border: 1px solid #A8A8A2; border-radius: 6px; background: #FFFFFF; font: inherit; font-size: 12px; cursor: pointer">Human +1</button>
+</sc-if>
+<button type="button" aria-pressed="{{a.downOn}}" aria-label="Lower {{a.name}} by 1" style="min-height: 40px; min-width: 44px; border: 1px solid #A8A8A2; border-radius: 6px; background: #FFFFFF; font: inherit; font-size: 13px; cursor: pointer">−1</button>
+<button type="button" aria-pressed="{{a.upOn}}" aria-label="Raise {{a.name}} by 1" style="min-height: 40px; min-width: 44px; border: 1px solid #A8A8A2; border-radius: 6px; background: #FFFFFF; font: inherit; font-size: 13px; cursor: pointer">+1</button>
+</div>
+</section>
+</sc-for>
+</div>
+
+<section aria-labelledby="char-h" style="background: #FFFFFF; border: 1px solid #D4D4CF; border-radius: 8px; padding: 20px; display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; align-items: baseline">
+<h2 id="char-h" style="margin: 0; font-size: 18px">Characteristics</h2>
+<span style="font-size: 13px; color: #4F4F4B">Calculated. They update when attributes change.</span>
+</div>
+<div style="display: flex; flex-direction: column">
+<sc-for list="{{chars}}" as="c" hint-placeholder-count="10">
+<div style="display: grid; grid-template-columns: minmax(110px, 1fr) minmax(0, 3fr) 60px; gap: 12px; align-items: baseline; padding: 10px 0; border-bottom: 1px solid #EFEFEC">
+<span style="font-weight: 600">{{c.name}}</span>
+<span style="font-size: 13px; color: #4F4F4B">{{c.formula}}</span>
+<span style="text-align: right; font-size: 18px; font-weight: 700">{{c.value}}</span>
+</div>
+</sc-for>
+</div>
+</section>
+
+<div style="display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap">
+<a href="Main.dc.html" style="display: inline-flex; align-items: center; min-height: 44px; padding: 0 18px; border: 1px solid #A8A8A2; border-radius: 6px; text-decoration: none">Back: Ancestry</a>
+<a href="Development.dc.html" style="display: inline-flex; align-items: center; min-height: 44px; padding: 0 18px; border-radius: 6px; background: #1A1A18; color: #FFFFFF; text-decoration: none; font-weight: 600">Next: Development</a>
+</div>
+</main>
+
+<aside aria-label="Character summary" style="flex: 1 1 280px; display: flex; flex-direction: column; gap: 16px">
+<section style="background: #FFFFFF; border: 1px solid #D4D4CF; border-radius: 8px; padding: 16px; display: flex; flex-direction: column; gap: 12px">
+<h2 style="margin: 0; font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: #4F4F4B">Live summary</h2>
+<div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px">
+<sc-for list="{{sumAttrs}}" as="t" hint-placeholder-count="4">
+<div style="border: 1px solid #D4D4CF; border-radius: 6px; padding: 8px 4px; text-align: center"><div style="font-size: 11px; color: #4F4F4B">{{t.k}}</div><div style="font-size: 20px; font-weight: 700">{{t.v}}</div><div style="font-size: 11px; color: #4F4F4B">{{t.m}}</div></div>
+</sc-for>
+</div>
+<dl style="margin: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px 12px; font-size: 13px">
+<sc-for list="{{sumChars}}" as="c" hint-placeholder-count="10">
+<div style="display: flex; justify-content: space-between; gap: 8px; padding: 4px 0; border-bottom: 1px solid #EFEFEC"><dt style="color: #4F4F4B">{{c.k}}</dt><dd style="margin: 0; font-weight: 600">{{c.v}}</dd></div>
+</sc-for>
+</dl>
+</section>
+<section style="background: #FFFFFF; border: 1px solid #D4D4CF; border-radius: 8px; padding: 16px; display: flex; flex-direction: column; gap: 8px">
+<h2 style="margin: 0; font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: #4F4F4B">Open decisions · 2</h2>
+<a href="Development.dc.html" style="display: flex; flex-direction: column; gap: 2px; padding: 8px 10px; border: 1px dashed #A8A8A2; border-radius: 6px; text-decoration: none"><span style="font-size: 13px; font-weight: 600">Development tables</span><span style="font-size: 12px; color: #4F4F4B">Development · Only Human</span></a>
+<a href="Interesting-Thing.dc.html" style="display: flex; flex-direction: column; gap: 2px; padding: 8px 10px; border: 1px dashed #A8A8A2; border-radius: 6px; text-decoration: none"><span style="font-size: 13px; font-weight: 600">Interesting thing</span><span style="font-size: 12px; color: #4F4F4B">Interesting thing · Oddities</span></a>
+</section>
+</aside>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1560}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const cur = 1;
+    const steps = [
+      ['Ancestry', 'Done', 'Main.dc.html'],
+      ['Attributes', 'Done', 'Attributes.dc.html'],
+      ['Development', 'Not started', 'Development.dc.html'],
+      ['Interesting thing', 'Not rolled', 'Interesting-Thing.dc.html'],
+      ['Roleplaying', 'Optional', 'Main.dc.html'],
+      ['Review', '', 'Sheet.dc.html']
+    ].map(([label, status, href], i) => ({ n: i + 1, label, status, href, current: i === cur, other: i !== cur }));
+    const attrs = [
+      { name: 'Strength', score: 9, mod: '−1', parts: ['Base 10', 'Adjustment −1'], human: false, down: true, up: false },
+      { name: 'Agility', score: 10, mod: '+0', parts: ['Base 10'], human: false, down: false, up: false },
+      { name: 'Intellect', score: 11, mod: '+1', parts: ['Base 10', 'Adjustment +1'], human: false, down: false, up: true },
+      { name: 'Will', score: 11, mod: '+1', parts: ['Base 10', 'Human +1'], human: true, down: false, up: false }
+    ].map((a) => ({ ...a, isHuman: a.human, notHuman: !a.human, downOn: a.down ? 'true' : 'false', upOn: a.up ? 'true' : 'false' }));
+    const chars = [
+      { name: 'Perception', formula: 'Intellect 11', value: '11' },
+      { name: 'Defense', formula: 'Agility 10 · no armor', value: '10' },
+      { name: 'Health', formula: 'Strength 9', value: '9' },
+      { name: 'Healing Rate', formula: '¼ Health, round down, minimum 1', value: '2' },
+      { name: 'Size', formula: 'Chosen in Ancestry (½ or 1)', value: '1' },
+      { name: 'Speed', formula: 'Human', value: '10' },
+      { name: 'Power', formula: 'Human', value: '0' },
+      { name: 'Damage', formula: 'Starts at 0', value: '0' },
+      { name: 'Insanity', formula: 'Starts at 0 · maximum equals Will (11)', value: '0' },
+      { name: 'Corruption', formula: 'Starts at 0', value: '0' }
+    ];
+    const sumAttrs = [
+      { k: 'Str', v: '9', m: '−1' }, { k: 'Agi', v: '10', m: '+0' },
+      { k: 'Int', v: '11', m: '+1' }, { k: 'Will', v: '11', m: '+1' }
+    ];
+    const sumChars = [
+      ['Perception', '11'], ['Defense', '10'], ['Health', '9'], ['Healing', '2'],
+      ['Size', '1'], ['Speed', '10'], ['Power', '0'], ['Damage', '0'],
+      ['Insanity', '0'], ['Corruption', '0']
+    ].map(([k, v]) => ({ k, v }));
+    return { steps, attrs, chars, sumAttrs, sumChars };
+  }
+}
+</script>
+</body>
+</html>

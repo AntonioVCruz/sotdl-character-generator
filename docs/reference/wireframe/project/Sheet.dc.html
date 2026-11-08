@@ -1,0 +1,300 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Play sheet · Liliana</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=IBM+Plex+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#1A1A18}a:hover{color:#4F4F4B}
+@media (max-width: 640px){.sheet-portrait{display:none}}
+summary::-webkit-details-marker{display:none}
+</style>
+</helmet>
+<div style="min-height: 100vh; background: #EFEFEC; font-family: Inter, system-ui, sans-serif; color: #1A1A18; font-size: 14px; line-height: 1.45">
+
+<header style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; padding: 12px 24px; background: #FFFFFF; border-bottom: 1px solid #D4D4CF">
+<a href="Home.dc.html" style="font-weight: 700; font-size: 15px; text-decoration: none">SotDL Generator</a>
+<button type="button" aria-label="View Liliana’s portrait" style="width: 56px; height: 56px; padding: 0; border: 1px solid #A8A8A2; border-radius: 8px; background: #E4E4E0; color: #4F4F4B; display: inline-flex; align-items: center; justify-content: center; cursor: pointer">
+<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>
+</button>
+<div style="display: flex; flex-direction: column">
+<strong style="font-size: 18px">Liliana</strong>
+<span style="font-size: 13px; color: #4F4F4B">Human · Magician › Wizard › Chrononaut · Level 7</span>
+</div>
+<div style="flex: 1 1 auto"></div>
+<nav aria-label="Sheet actions" style="display: flex; flex-wrap: wrap; gap: 8px">
+<button type="button" aria-pressed="false" style="min-height: 40px; padding: 0 14px; border: 1px solid #A8A8A2; border-radius: 6px; background: #FFFFFF; font: inherit; cursor: pointer">Edit sheet</button>
+<a href="Log-Export.dc.html" style="display: inline-flex; align-items: center; min-height: 40px; padding: 0 14px; border: 1px solid #A8A8A2; border-radius: 6px; text-decoration: none">Log</a>
+<a href="Log-Export.dc.html" style="display: inline-flex; align-items: center; min-height: 40px; padding: 0 14px; border: 1px solid #A8A8A2; border-radius: 6px; text-decoration: none">Export</a>
+<a href="LevelUp.dc.html" style="display: inline-flex; align-items: center; min-height: 40px; padding: 0 14px; border-radius: 6px; background: #1A1A18; color: #FFFFFF; text-decoration: none; font-weight: 600">Level up to 8</a>
+</nav>
+</header>
+
+<div style="max-width: 1440px; margin: 0 auto; padding: 24px; box-sizing: border-box; display: flex; flex-direction: column; gap: 20px">
+
+<section role="status" aria-labelledby="trig-h" style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; padding: 14px 16px; background: #FFFFFF; border: 2px solid #1A1A18; border-radius: 8px">
+<div style="flex: 1 1 420px; display: flex; flex-direction: column; gap: 2px">
+<span style="font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase">Rule triggered · Corruption 1 → 2</span>
+<strong id="trig-h">Check for a Mark of Darkness</strong>
+<span style="font-size: 13px; color: #4F4F4B">Roll a d20. If the number is lower than 2, roll on the Mark of Darkness table. A mark you already have becomes 2d6 Insanity instead.</span>
+</div>
+<button type="button" style="min-height: 44px; padding: 0 16px; border: 0; border-radius: 6px; background: #1A1A18; color: #FFFFFF; font: inherit; font-weight: 600; cursor: pointer">Roll d20</button>
+<button type="button" style="min-height: 44px; padding: 0 16px; border: 1px solid #A8A8A2; border-radius: 6px; background: #FFFFFF; font: inherit; cursor: pointer">Enter result</button>
+<button type="button" style="min-height: 44px; padding: 0 16px; border: 1px solid #A8A8A2; border-radius: 6px; background: #FFFFFF; font: inherit; cursor: pointer">Undo Corruption</button>
+</section>
+
+<div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start">
+
+<div style="flex: 999 1 640px; min-width: 0; display: flex; flex-direction: column; gap: 20px">
+
+<section aria-label="Attributes" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px">
+<sc-for list="{{attrs}}" as="a" hint-placeholder-count="4">
+<div style="background: #FFFFFF; border: 1px solid #D4D4CF; border-radius: 8px; padding: 14px; display: flex; flex-direction: column; gap: 4px">
+<span style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: #4F4F4B">{{a.k}}</span>
+<span style="display: flex; align-items: baseline; gap: 10px"><span style="font-size: 34px; font-weight: 700; line-height: 1">{{a.v}}</span><span style="font-size: 16px; font-weight: 600">{{a.m}}</span></span>
+</div>
+</sc-for>
+</section>
+
+<section aria-labelledby="char-h" style="background: #FFFFFF; border: 1px solid #D4D4CF; border-radius: 8px; padding: 16px; display: flex; flex-direction: column; gap: 14px">
+<h2 id="char-h" style="margin: 0; font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: #4F4F4B">Characteristics</h2>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px">
+
+<div style="border: 1px solid #D4D4CF; border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 8px">
+<div style="display: flex; justify-content: space-between; align-items: baseline"><strong>Health</strong><span style="font-size: 13px; color: #4F4F4B">Healing Rate 7</span></div>
+<div style="display: flex; align-items: baseline; gap: 6px"><span style="font-size: 28px; font-weight: 700">24</span><span style="color: #4F4F4B">/ 30 left</span></div>
+<div aria-hidden="true" style="height: 10px; border-radius: 999px; background: #E4E4E0; overflow: hidden"><div style="width: 80%; height: 100%; background: #1A1A18"></div></div>
+<div style="display: flex; flex-wrap: wrap; gap: 6px; align-items: center">
+<span style="font-size: 13px">Damage 6</span>
+<button type="button" aria-label="Remove 1 damage" style="min-height: 36px; min-width: 40px; border: 1px solid #A8A8A2; border-radius: 6px; background: #FFFFFF; font: inherit; cursor: pointer">−</button>
+<button type="button" aria-label="Add 1 damage" style="min-height: 36px; min-width: 40px; border: 1px solid #A8A8A2; border-radius: 6px; background: #FFFFFF; font: inherit; cursor: pointer">+</button>
+<button type="button" style="min-height: 36px; padding: 0 10px; border: 1px solid #A8A8A2; border-radius: 6px; background: #FFFFFF; font: inherit; font-size: 13px; cursor: pointer">Heal</button>
+</div>
+</div>
+
+<div style="border: 2px solid #1A1A18; border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 8px">
+<div style="display: flex; justify-content: space-between; align-items: baseline"><strong>Speed</strong><span style="font-size: 11px; padding: 2px 6px; border-radius: 4px; background: #1A1A18; color: #FFFFFF">1 effect on</span></div>
+<span style="font-size: 28px; font-weight: 700">14</span>
+<div role="tooltip" style="display: flex; flex-direction: column; gap: 4px; padding: 10px; background: #F7F7F5; border: 1px solid #D4D4CF; border-radius: 6px; font-size: 13px">
+<span style="font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #4F4F4B">How this is calculated</span>
+<span style="display: flex; justify-content: space-between"><span>Human</span><span style="font-family: 'IBM Plex Mono', monospace">10</span></span>
+<span style="display: flex; justify-content: space-between"><span>Rune of Speed · effect</span><span style="font-family: 'IBM Plex Mono', monospace">+4</span></span>
+<span style="display: flex; justify-content: space-between; border-top: 1px solid #D4D4CF; padding-top: 4px; font-weight: 600"><span>Speed</span><span style="font-family: 'IBM Plex Mono', monospace">14</span></span>
+</div>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; align-content: start">
+<sc-for list="{{chars}}" as="c" hint-placeholder-count="6">
+<div style="border: 1px solid #D4D4CF; border-radius: 6px; padding: 8px 10px; display: flex; flex-direction: column"><span style="font-size: 12px; color: #4F4F4B">{{c.k}}</span><span style="font-size: 18px; font-weight: 700">{{c.v}}</span><span style="font-size: 11px; color: #4F4F4B">{{c.note}}</span></div>
+</sc-for>
+</div>
+</div>
+</section>
+
+<section aria-labelledby="sp-h" style="background: #FFFFFF; border: 1px solid #D4D4CF; border-radius: 8px; padding: 16px; display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: baseline">
+<h2 id="sp-h" style="margin: 0; font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: #4F4F4B; flex: 1 1 auto">Spells · Power 3</h2>
+<button type="button" style="min-height: 36px; padding: 0 12px; border: 1px solid #A8A8A2; border-radius: 6px; background: #FFFFFF; font: inherit; font-size: 13px; cursor: pointer">Rest: regain all castings</button>
+</div>
+<div style="display: flex; flex-direction: column">
+<sc-for list="{{spells}}" as="s" hint-placeholder-count="8">
+<div style="display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(120px, auto); gap: 12px; align-items: center; min-height: 44px; border-bottom: 1px solid #EFEFEC">
+<span><strong>{{s.n}}</strong> <span style="font-size: 12px; color: #4F4F4B">{{s.src}}</span></span>
+<span style="font-size: 13px; color: #4F4F4B">{{s.t}}</span>
+<span role="group" aria-label="Castings of {{s.n}}: {{s.left}} left" style="display: flex; gap: 4px; justify-content: flex-end">
+<sc-for list="{{s.dots}}" as="d" hint-placeholder-count="2">
+<sc-if value="{{d.full}}" hint-placeholder-val="{{true}}"><span aria-hidden="true" style="width: 16px; height: 16px; border-radius: 999px; background: #1A1A18; border: 2px solid #1A1A18; box-sizing: border-box"></span></sc-if>
+<sc-if value="{{d.used}}" hint-placeholder-val="{{false}}"><span aria-hidden="true" style="width: 16px; height: 16px; border-radius: 999px; background: #FFFFFF; border: 2px solid #A8A8A2; box-sizing: border-box"></span></sc-if>
+</sc-for>
+</span>
+</div>
+</sc-for>
+</div>
+</section>
+
+<section aria-labelledby="tal-h" style="background: #FFFFFF; border: 1px solid #D4D4CF; border-radius: 8px; padding: 16px; display: flex; flex-direction: column; gap: 8px">
+<h2 id="tal-h" style="margin: 0; font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: #4F4F4B">Talents</h2>
+<sc-for list="{{talents}}" as="t" hint-placeholder-count="5">
+<details style="border-bottom: 1px solid #EFEFEC; padding: 8px 0">
+<summary style="cursor: pointer; min-height: 28px; display: flex; flex-wrap: wrap; gap: 8px; align-items: baseline"><strong>{{t.n}}</strong><span style="font-size: 12px; color: #4F4F4B">{{t.from}}</span><span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; padding: 1px 6px; border: 1px solid #A8A8A2; border-radius: 4px">{{t.ref}}</span></summary>
+<p style="margin: 6px 0 0; font-size: 13px; color: #4F4F4B">{{t.mech}}</p>
+</details>
+</sc-for>
+</section>
+
+<section aria-labelledby="f-h" style="background: #FFFFFF; border: 1px solid #D4D4CF; border-radius: 8px; padding: 16px; display: flex; flex-direction: column; gap: 12px">
+<h2 id="f-h" style="margin: 0; font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: #4F4F4B">Character</h2>
+<div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start">
+<figure class="sheet-portrait" style="flex: 1 1 220px; max-width: 280px; margin: 0; display: flex; flex-direction: column; gap: 8px">
+<div role="img" aria-label="Portrait of Liliana (placeholder)" style="aspect-ratio: 3 / 4; border: 1px dashed #A8A8A2; border-radius: 8px; background: #E4E4E0; color: #4F4F4B; display: flex; align-items: center; justify-content: center">
+<svg width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 6px">
+<button type="button" style="min-height: 36px; padding: 0 12px; border: 1px solid #A8A8A2; border-radius: 6px; background: #FFFFFF; font: inherit; font-size: 13px; cursor: pointer">Change image</button>
+<button type="button" style="min-height: 36px; padding: 0 12px; border: 1px solid #A8A8A2; border-radius: 6px; background: #FFFFFF; font: inherit; font-size: 13px; cursor: pointer">Remove</button>
+</div>
+<figcaption style="font-size: 12px; color: #4F4F4B">Also used in the header and in exports. On phones only the header thumbnail shows; tap it to view the full image.</figcaption>
+</figure>
+<div style="flex: 999 1 480px; min-width: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px">
+<sc-for list="{{fields}}" as="f" hint-placeholder-count="12">
+<div style="border: 1px solid #D4D4CF; border-radius: 6px; padding: 10px 12px; display: flex; flex-direction: column; gap: 6px">
+<div style="display: flex; justify-content: space-between; gap: 8px; align-items: center"><strong style="font-size: 13px">{{f.k}}</strong><button type="button" aria-label="Add to {{f.k}}" style="min-height: 32px; min-width: 32px; border: 1px solid #D4D4CF; border-radius: 6px; background: #FFFFFF; font: inherit; cursor: pointer">+</button></div>
+<sc-for list="{{f.items}}" as="i" hint-placeholder-count="1">
+<div style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 13px">{{i.v}}</span><span style="font-size: 11px; color: #4F4F4B">{{i.o}}</span></div>
+</sc-for>
+<sc-if value="{{f.empty}}" hint-placeholder-val="{{false}}"><span style="font-size: 13px; color: #4F4F4B">{{f.emptyText}}</span></sc-if>
+</div>
+</sc-for>
+</div>
+</div>
+</section>
+</div>
+
+<aside aria-label="Effects and resources" style="flex: 1 1 300px; display: flex; flex-direction: column; gap: 16px">
+<section aria-labelledby="atk-h" style="background: #FFFFFF; border: 1px solid #D4D4CF; border-radius: 8px; padding: 16px; display: flex; flex-direction: column; gap: 8px">
+<div style="display: flex; justify-content: space-between; align-items: baseline; gap: 8px">
+<h2 id="atk-h" style="margin: 0; font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: #4F4F4B">Attacks</h2>
+<span style="font-size: 11px; color: #4F4F4B">with talents and effects applied</span>
+</div>
+<sc-for list="{{attacks}}" as="k" hint-placeholder-count="3">
+<div style="border: 1px solid #D4D4CF; border-radius: 6px; padding: 10px 12px; display: flex; flex-direction: column; gap: 6px">
+<div style="display: flex; justify-content: space-between; gap: 8px; align-items: baseline"><strong>{{k.n}}</strong><span style="font-size: 11px; padding: 2px 6px; border-radius: 4px; background: #E4E4E0; white-space: nowrap">{{k.tag}}</span></div>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px">
+<div style="display: flex; flex-direction: column"><span style="font-size: 11px; color: #4F4F4B">Attack</span><span><strong style="font-family: 'IBM Plex Mono', monospace; font-size: 18px">{{k.atk}}</strong> <span style="font-size: 13px">{{k.bb}}</span></span></div>
+<div style="display: flex; flex-direction: column"><span style="font-size: 11px; color: #4F4F4B">Damage</span><strong style="font-family: 'IBM Plex Mono', monospace; font-size: 18px">{{k.dmg}}</strong></div>
+</div>
+<span style="font-size: 12px; color: #4F4F4B">{{k.why}}</span>
+<sc-if value="{{k.custom}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; gap: 6px; padding-top: 6px; border-top: 1px solid #EFEFEC">
+<button type="button" aria-label="Edit {{k.n}}" style="min-height: 32px; padding: 0 10px; border: 1px solid #A8A8A2; border-radius: 6px; background: #FFFFFF; font: inherit; font-size: 12px; cursor: pointer">Edit</button>
+<button type="button" aria-label="Remove {{k.n}}" style="min-height: 32px; padding: 0 10px; border: 1px solid #A8A8A2; border-radius: 6px; background: #FFFFFF; font: inherit; font-size: 12px; cursor: pointer">Remove</button>
+</div>
+</sc-if>
+</div>
+</sc-for>
+<p style="margin: 0; font-size: 12px; color: #4F4F4B">Natural weapons: none. They appear here when your ancestry, a talent or an effect grants them.</p>
+<details style="display: flex; flex-direction: column; gap: 8px">
+<summary style="list-style: none; cursor: pointer; min-height: 40px; display: flex; align-items: center; justify-content: center; padding: 0 12px; border: 1px dashed #A8A8A2; border-radius: 6px; background: #FFFFFF; font-size: 13px">+ Add custom attack</summary>
+<div style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px; padding: 12px; border: 1px solid #1A1A18; border-radius: 6px">
+<label style="display: flex; flex-direction: column; gap: 2px; font-size: 12px; color: #4F4F4B">Name<input type="text" placeholder="e.g. Thrown dagger" style="min-height: 36px; padding: 0 10px; border: 1px solid #A8A8A2; border-radius: 6px; font: inherit; font-size: 13px; color: #1A1A18"></label>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px">
+<label style="display: flex; flex-direction: column; gap: 2px; font-size: 12px; color: #4F4F4B">Attribute<select style="min-height: 36px; padding: 0 8px; border: 1px solid #A8A8A2; border-radius: 6px; font: inherit; font-size: 13px; color: #1A1A18; background: #FFFFFF"><option>Agility</option><option>Strength</option><option>Intellect</option><option>Will</option></select></label>
+<label style="display: flex; flex-direction: column; gap: 2px; font-size: 12px; color: #4F4F4B">Boons (use − for banes)<input type="number" value="0" style="min-height: 36px; padding: 0 10px; border: 1px solid #A8A8A2; border-radius: 6px; font: inherit; font-size: 13px; color: #1A1A18"></label>
+</div>
+<label style="display: flex; flex-direction: column; gap: 2px; font-size: 12px; color: #4F4F4B">Damage<input type="text" placeholder="e.g. 1d3" style="min-height: 36px; padding: 0 10px; border: 1px solid #A8A8A2; border-radius: 6px; font: inherit; font-size: 13px; color: #1A1A18"></label>
+<label style="display: inline-flex; align-items: center; gap: 8px; font-size: 13px"><input type="checkbox" checked style="width: 18px; height: 18px"> Apply my talents and effects</label>
+<div aria-live="polite" style="display: flex; flex-direction: column; gap: 2px; padding: 8px 10px; background: #F7F7F5; border-radius: 6px"><span style="font-size: 11px; color: #4F4F4B">Preview</span><span><strong style="font-family: 'IBM Plex Mono', monospace">+3</strong> · 1 boon · <strong style="font-family: 'IBM Plex Mono', monospace">1d3</strong></span><span style="font-size: 12px; color: #4F4F4B">Agility +3 · 1 boon from Rune of Speed</span></div>
+<div style="display: flex; flex-wrap: wrap; gap: 8px">
+<button type="button" style="min-height: 36px; padding: 0 14px; border: 0; border-radius: 6px; background: #1A1A18; color: #FFFFFF; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer">Add attack</button>
+<button type="button" style="min-height: 36px; padding: 0 14px; border: 1px solid #A8A8A2; border-radius: 6px; background: #FFFFFF; font: inherit; font-size: 13px; cursor: pointer">Cancel</button>
+</div>
+</div>
+</details>
+</section>
+<section aria-labelledby="fx-h" style="background: #FFFFFF; border: 1px solid #D4D4CF; border-radius: 8px; padding: 16px; display: flex; flex-direction: column; gap: 6px">
+<h2 id="fx-h" style="margin: 0 0 4px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: #4F4F4B">Effects in play</h2>
+<sc-for list="{{effects}}" as="e" hint-placeholder-count="5">
+<label style="display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-bottom: 1px solid #EFEFEC"><input type="checkbox" checked="{{e.on}}" style="width: 20px; height: 20px; margin-top: 1px"><span style="display: flex; flex-direction: column"><strong style="font-size: 13px">{{e.n}}</strong><span style="font-size: 12px; color: #4F4F4B">{{e.d}}</span></span></label>
+</sc-for>
+<button type="button" style="margin-top: 6px; min-height: 40px; padding: 0 12px; border: 1px dashed #A8A8A2; border-radius: 6px; background: #FFFFFF; font: inherit; font-size: 13px; cursor: pointer">+ Add a temporary effect</button>
+</section>
+
+<section aria-labelledby="st-h" style="background: #FFFFFF; border: 1px solid #D4D4CF; border-radius: 8px; padding: 16px; display: flex; flex-direction: column; gap: 10px">
+<h2 id="st-h" style="margin: 0; font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: #4F4F4B">Insanity and Corruption</h2>
+<div style="display: flex; justify-content: space-between; align-items: center; gap: 8px"><span><strong>Insanity</strong> 2 / 15 <span style="font-size: 12px; color: #4F4F4B">(max = Will)</span></span><span style="display: flex; gap: 4px"><button type="button" aria-label="Remove 1 Insanity" style="min-height: 36px; min-width: 40px; border: 1px solid #A8A8A2; border-radius: 6px; background: #FFFFFF; font: inherit; cursor: pointer">−</button><button type="button" aria-label="Add 1 Insanity" style="min-height: 36px; min-width: 40px; border: 1px solid #A8A8A2; border-radius: 6px; background: #FFFFFF; font: inherit; cursor: pointer">+</button></span></div>
+<div style="display: flex; justify-content: space-between; align-items: center; gap: 8px"><span><strong>Corruption</strong> 2 <span style="font-size: 12px; color: #4F4F4B">(0–3: no effect)</span></span><span style="display: flex; gap: 4px"><button type="button" aria-label="Remove 1 Corruption" style="min-height: 36px; min-width: 40px; border: 1px solid #A8A8A2; border-radius: 6px; background: #FFFFFF; font: inherit; cursor: pointer">−</button><button type="button" aria-label="Add 1 Corruption" style="min-height: 36px; min-width: 40px; border: 1px solid #A8A8A2; border-radius: 6px; background: #FFFFFF; font: inherit; cursor: pointer">+</button></span></div>
+<span style="font-size: 12px; color: #4F4F4B">Changes here go to the log as play events.</span>
+</section>
+
+<section aria-labelledby="eq-h" style="background: #FFFFFF; border: 1px solid #D4D4CF; border-radius: 8px; padding: 16px; display: flex; flex-direction: column; gap: 6px; font-size: 13px">
+<h2 id="eq-h" style="margin: 0 0 4px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: #4F4F4B">Equipment and money</h2>
+<div><strong>Money</strong> · 3 gc, 14 ss, 6 cp</div>
+<div><strong>Weapons</strong> · Staff (equipped), dagger</div>
+<div><strong>Armor</strong> · none · Defense uses Agility</div>
+<div><strong>Grimoire</strong> · 3 spells</div>
+<div style="color: #4F4F4B">+ 12 more items</div>
+</section>
+
+<section style="background: #F7F7F5; border: 1px dashed #A8A8A2; border-radius: 8px; padding: 14px; display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #4F4F4B">
+<strong style="color: #1A1A18; font-size: 13px">In Edit sheet</strong>
+<span>Values calculated from your choices stay locked; change them in the builder or add a modifier. Text fields, items and house-rule entries can be edited freely, and every edit goes to the log.</span>
+</section>
+</aside>
+</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":2260}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const attrs = [
+      { k: 'Strength', v: 9, m: '−1' }, { k: 'Agility', v: 13, m: '+3' },
+      { k: 'Intellect', v: 11, m: '+1' }, { k: 'Will', v: 15, m: '+5' }
+    ];
+    const chars = [
+      { k: 'Defense', v: 13, note: 'Agility · no armor' },
+      { k: 'Perception', v: 11, note: 'Intellect' },
+      { k: 'Power', v: 3, note: 'Levels 1, 3, 7' },
+      { k: 'Size', v: 1, note: 'Human' },
+      { k: 'Insanity', v: 2, note: 'of 15' },
+      { k: 'Corruption', v: 2, note: 'Mark check pending' }
+    ];
+    const dots = (total, left) => Array.from({ length: total }, (_, i) => ({ full: i < left, used: i >= left }));
+    const spells = [
+      { n: 'Swiftness', src: 'Time 0', t: 'Utility', total: 4, left: 4 },
+      { n: 'Delay', src: 'Time 0', t: 'Attack', total: 4, left: 3 },
+      { n: 'Rewrite Moment', src: 'Time 1', t: 'Utility', total: 2, left: 1 },
+      { n: 'Precognition', src: 'Time 2', t: 'Utility', total: 1, left: 1 },
+      { n: 'Accelerate', src: 'Time 3', t: 'Utility', total: 1, left: 0 },
+      { n: 'Runic Shield', src: 'Rune 1', t: 'Utility', total: 2, left: 2 },
+      { n: 'Glyph of Fire', src: 'Rune 1', t: 'Attack', total: 2, left: 2 },
+      { n: 'Tongue Rip', src: 'Forbidden 1 · Grimoire', t: 'Attack', total: 0, left: 0 }
+    ].map((s) => ({ ...s, dots: dots(s.total, s.left) }));
+    const talents = [
+      { n: 'Cantrip', from: 'Magician · level 1', ref: 'CORE p.55', mech: 'Whenever you discover a tradition, you learn an extra rank 0 spell from it.' },
+      { n: 'Sense Magic', from: 'Magician · level 1', ref: 'CORE p.55', mech: 'You learn the sense magic spell.' },
+      { n: 'Grimoire', from: 'Wizard · level 3', ref: 'CORE p.76', mech: '1 boon on Intellect rolls to recall magic lore. Holds three spells of rank 1 or higher.' },
+      { n: 'Grimoire Casting', from: 'Wizard · level 3', ref: 'CORE p.76', mech: 'Cast a Grimoire spell by spending a casting of a learned spell of the same or higher rank.' },
+      { n: 'Determined', from: 'Expert Human · level 4', ref: 'CORE p.11', mech: 'When you roll a 1 on a boon die, you can reroll it and use the new number.' }
+    ];
+    const I = (v, o) => ({ v, o });
+    const F = (k, items, emptyText) => ({ k, items, empty: items.length === 0, emptyText: emptyText || '' });
+    const fields = [
+      F('Appearance', [I('Adult, 26–35 · average build · attractive', 'Development · Only Human')]),
+      F('Background', [I('Educated; worked in the family trade; did things she regrets', 'Development · Only Human')]),
+      F('Personality', [I('[Personality result]', 'Development · Only Human')]),
+      F('Religion', [], 'None recorded'),
+      F('Languages', [I('Common Tongue · speak, read, write', 'Childhood · Only Human'), I('High Archaic · read', 'Magician · level 1')]),
+      F('Professions', [I('[Family profession]', 'Childhood · Only Human'), I('Academic: magic', 'Magician · level 1')]),
+      F('Interesting Things', [I('A mirror whose reflection runs five minutes behind', 'Creation · Oddities')]),
+      F('Companions', [], 'None'),
+      F('Other Possessions', [I('Family signet ring', 'Added by player')]),
+      F('Marks of Darkness', [], 'None yet · check pending'),
+      F('Quirks', [], 'None · set by your GM'),
+      F('Objective', [I('[Objective]', 'Expert · level 3 · chosen')])
+    ];
+    const effects = [
+      { n: 'Rune of Speed', d: 'Speed +4 and 1 boon on attack rolls while active', on: true },
+      { n: 'Battle Prowess', d: '+1d6 damage with weapon attacks', on: false },
+      { n: 'Swiftness', d: '[Effect from spell] · Time 0', on: false },
+      { n: 'Precognition', d: '[Effect from spell] · Time 2', on: false },
+      { n: 'Runic Shield', d: '[Effect from spell] · Rune 1', on: false }
+    ];
+    const attacks = [
+      { n: 'Staff', tag: 'Equipped · two-handed · finesse', atk: '+3', bb: '1 boon', dmg: '1d6 + 1', why: 'Agility +3 (finesse beats Strength −1) · 1 boon from Rune of Speed', custom: false },
+      { n: 'Unarmed strike', tag: 'Always · finesse', atk: '+3', bb: '1 boon', dmg: '1', why: 'Agility +3 (finesse) · 1 boon from Rune of Speed', custom: false },
+      { n: 'Thrown dagger', tag: 'Custom', atk: '+3', bb: '1 boon', dmg: '1d3', why: 'Added by player · Agility · short range · effects applied', custom: true }
+    ];
+    return { attrs, chars, spells, talents, fields, effects, attacks };
+  }
+}
+</script>
+</body>
+</html>
