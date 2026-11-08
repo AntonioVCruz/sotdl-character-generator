@@ -19,3 +19,9 @@ Thumbs.db
 *.log
 .env
 .env.*
+
+# Skills instaladas localmente (Agentic SDLC Kit)
+.agents/
+.claude/skills/
+agent/
+skills-lock.json
