@@ -1,0 +1,21 @@
+# Conteúdo extraído dos livros: somente local, nunca versionado.
+/content/*
+!/content/README.md
+
+# Livros e materiais licenciados, em qualquer pasta.
+*.pdf
+
+# Dependências e artefatos de build.
+node_modules/
+dist/
+build/
+coverage/
+
+# Sistema e editores.
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.log
+.env
+.env.*
