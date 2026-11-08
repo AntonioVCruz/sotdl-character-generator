@@ -5,23 +5,37 @@
 Planejamento e estruturação, por Spec-Driven Development, de um gerador de personagens para *Shadow of the Demon Lord* (SotDL). O produto deste repositório são **documentos de especificação**, não código.
 
 - Não escrever código de implementação. Exceção: trechos ilustrativos dentro de uma spec (ex.: um esquema de dados), quando ajudarem a decisão.
-- O gerador é um projeto pessoal, não comercial, para portfólio. Público: jogadores e mestres em geral, inclusive quem não domina as regras.
+- O produto é uma aplicação web, usada pelo navegador. Projeto pessoal, não comercial, para portfólio. Público: jogadores e mestres em geral, inclusive quem não domina as regras.
 
-## Insumos e hierarquia
+## Insumos
 
-Os insumos ficam em `docs/reference/`. Em caso de conflito, vale esta ordem:
+Ficam em `docs/reference/`:
 
-1. `design-principles.md`: autoridade para decisões de produto e UX.
-2. `wireframe/`: referência de fluxo e telas.
-3. `character-sheet.html`: o resultado que o gerador deve produzir. É a ficha final, não a interface do gerador.
-4. `lessons-learned.md`: erros da tentativa anterior a evitar.
+- `principios-gerador-sotdl.md`: princípios (P1–P34) e decisões (D1–D34) do produto. As seções 1 e 2 resumem as regras do jogo; as seções 3 e 4 são as decisões de produto.
+- `wireframe/wireframe-spec-sotdl.md` e `screens/`: telas, componentes, interações e dados implícitos.
+- `wireframe/project/`: fonte do canvas do wireframe. Não é código da aplicação.
+- `character-sheet.html`: a ficha da Liliana. Referência de **conteúdo e organização** da ficha, não de comportamento (P13).
+- `lessons-learned.md`: erros da tentativa anterior a evitar.
 
-Regras do jogo: o conteúdo dos livros fica em `content/` (somente local, fora do Git).
-- `content/pdfs/`: os livros. São a fonte da verdade.
-- `content/extracted/`: extrações em Markdown da tentativa anterior, ainda não verificadas. Podem ser usadas para localizar regras rapidamente, mas qualquer dado que entre numa spec deve ser conferido no PDF correspondente.
-O que vier da memória, ou só de `content/extracted/` sem conferência, deve ser marcado como **não verificado**.
+Regras do jogo ficam em `content/` (somente local, fora do Git):
 
-Se uma spec contradisser os princípios ou o wireframe, aponte o conflito e pergunte. Não resolva sozinho.
+- `content/pdfs/`: os livros.
+- `content/extracted/`: extrações em Markdown da tentativa anterior, ainda não verificadas. Servem para localizar regras rapidamente; qualquer dado que entre numa spec deve ser conferido no PDF.
+
+## Fonte da verdade
+
+Depende do tipo de pergunta:
+
+| Pergunta | Fonte da verdade |
+| --- | --- |
+| O que a regra do jogo diz? | Os PDFs em `content/pdfs/`. As seções 1 e 2 dos princípios são um resumo; o que estiver marcado como [Não verificado] precisa ser conferido. |
+| Como o gerador trata a regra? | Os princípios. Decisões que se afastam do texto do livro de propósito (ex.: D1, D22, D23, D24, D30) prevalecem sobre ele. |
+| Como o produto funciona e se apresenta? | Os princípios, que prevalecem sobre o wireframe e a ficha da Liliana. |
+| O que entra em cada entrega? | A especificação de requisitos (SRS), conforme as salvaguardas de escopo abaixo. |
+
+**Os princípios definem o produto; o SRS define a ordem.** Nenhuma decisão dos princípios é revogada por estar fora do MVP: ela entra no SRS com prioridade Should ou Could.
+
+O que vier da memória, ou só de `content/extracted/` sem conferência, deve ser marcado como **não verificado**. Se uma spec contradisser os princípios ou o wireframe, aponte o conflito e pergunte. Não resolva sozinho.
 
 ## Metodologia
 
@@ -36,32 +50,34 @@ Esta fase termina em `implementation-planning`. Scaffolding, implementação e o
 
 Por etapa:
 
-- **requirements-engineering:** fechar primeiro o corte do MVP (seção abaixo). Tudo fora dele entra como Should ou Could, sem detalhamento.
-- **software-architecture:** o modelo de fontes e o esqueleto vs. camada editável são o núcleo do sistema. Tratar ambos explicitamente, com ADRs próprias, e validá-los contra casos reais dos suplementos em `content/`.
-- **ux-foundations:** não criar um design do zero. Usar o modo de ingerir os insumos existentes (princípios e wireframe).
-- Seguir os formatos e IDs do kit. Não criar um esquema de IDs paralelo.
+- **requirements-engineering:** fechar primeiro o corte do MVP e a demonstrabilidade (ver "Pontos críticos"). Todo o restante dos princípios entra como Should ou Could, sem detalhamento.
+- **software-architecture:** o modelo de fontes e componentes (P2–P2f, P14a, P17–P20, P26) e o esqueleto vs. camada editável (P11, P12, P16, P23) são o núcleo do sistema. Tratar ambos explicitamente, com ADRs próprias, e validá-los contra casos reais dos suplementos em `content/`. A arquitetura deve comportar a visão completa dos princípios, mesmo que o MVP use só parte dela.
+- **ux-foundations:** não criar um design do zero. Usar o modo de ingerir os insumos existentes (princípios, spec do wireframe e telas).
+- Seguir os formatos e IDs do kit. Não criar um esquema de IDs paralelo. Os IDs dos princípios (P*, D*) e das telas (SCR-*) podem ser citados como origem de um requisito.
 
 ## Salvaguardas de escopo
 
-A tentativa anterior falhou por escopo inflado e excesso de processo (ver `docs/reference/lessons-learned.md`). Por isso:
+A tentativa anterior falhou por escopo inflado e excesso de processo (ver `docs/reference/lessons-learned.md`). Os princípios descrevem um produto amplo; a lição é não construí-lo de uma vez.
 
-- **MVP:** [A DEFINIR na etapa de requisitos. Ponto de partida sugerido: criação no nível 0, um pequeno conjunto de ancestralidades, rolagens, ficha final e edição final.] Evolução de níveis, gerenciamento em sessão (efeitos ativos, conjuração, descanso) e cobertura de todos os suplementos ficam fora do MVP.
-- Ao enumerar requisitos, não expandir áreas fora do MVP. Registrar o que ficou de fora numa seção "Fora do escopo" e seguir em frente.
+- **MVP:** [A DEFINIR na etapa de requisitos. Ponto de partida sugerido: criação no nível 0 com um pequeno conjunto de ancestralidades, rolagens e escolhas, ficha final e ajuste manual.]
+- **Fora do MVP por padrão** (Should ou Could, salvo decisão em contrário na etapa de requisitos): a ficha como ferramenta de jogo (D17, P13c, P11c, P34 em jogo, D31, D34), subida de nível e mudanças pós-nível (P13b, D16, D32), pacotes da casa importáveis e sua atualização (P21, P6a, D13), editor e importação de textos (P9a) e cobertura de todos os suplementos.
+- Ao enumerar requisitos, não expandir áreas fora do MVP. Registrá-las com sua prioridade e seguir em frente.
 - Produzir **apenas documentos de decisão**: requisitos, arquitetura, ADRs, UX e plano. Nada de relatórios de entrega, status, fechamento, matrizes de aceite ou registros do trabalho realizado.
 - Preferir documentos curtos. Se um documento precisar de um resumo para ser entendido, ele está longo demais.
 - O plano deve prever um esqueleto funcional de ponta a ponta antes de qualquer ampliação de conteúdo.
 
 ## Pontos críticos do domínio
 
-- **Fontes:** o escopo de conteúdo inclui o livro básico e todos os suplementos. Alguns suplementos expandem opções do core; outros as substituem ou revisam (ancestralidades, tabelas de coisas interessantes, Forbidden Rules). Cada elemento tem uma fonte padrão, e o usuário pode trocá-la. Definir o que acontece com escolhas já feitas quando a fonte muda e como a interface mostra a origem de cada regra.
-- **Esqueleto vs. camada editável:** ao final, o usuário pode editar valores e adicionar ou remover elementos, desde que não quebre o esqueleto gerado. Definir o que é estrutural e travado e como a interface comunica essa diferença.
-- **Escolha vs. rolagem:** a criação mistura decisões e rolagens em tabelas. Respeitar a distribuição publicada (3d6 são três dados, não um número uniforme de 3 a 18) e distinguir rolagem em tabela oficial de sorteio entre opções válidas.
-- **Demonstrabilidade:** o repositório é público e não pode conter conteúdo dos livros. A especificação deve responder cedo: o que um visitante sem os livros consegue fazer no app?
+- **Fontes:** o conteúdo inclui o livro básico e todos os suplementos, que expandem, substituem ou revisam o core em sete padrões (seção 2.2 dos princípios). Os princípios já decidem o mecanismo: livros com componentes, ordem de prioridade, exceção no cartão e por rolagem.
+- **Esqueleto vs. camada editável:** derivados sempre calculados (D2), ajuste manual como camada nomeada (P12), concessões do mestre como camada própria (P23), mudança a montante desfaz dependentes com confirmação (P6).
+- **Escolha vs. rolagem:** quatro regimes de decisão (seção 1.1). O gerador registra, não fiscaliza (P7). Respeitar a distribuição publicada: 3d6 são três dados, não um número uniforme de 3 a 18.
+- **Demonstrabilidade (em aberto):** o repositório é público e não pode conter conteúdo dos livros, e o conteúdo oficial vive em pacotes (P21a). Se esses pacotes ficarem só em `content/`, um visitante público não consegue usar o app. A etapa de requisitos deve decidir cedo o que um visitante sem os livros consegue fazer.
+- **Aplicação web (em aberto, para a arquitetura):** decidir onde ficam os personagens (navegador ou servidor), se há contas de usuário (P2 e P9 falam em escopo "por usuário"; P21 em compartilhar pacotes) e onde hospedar, considerando o custo de um projeto pessoal. O MVP pode adotar a opção mais simples, desde que não impeça as demais depois.
 
 ## Propriedade intelectual
 
 - Este repositório é **público**. Nunca copiar texto, tabelas ou arte dos livros para fora de `content/`.
-- Nos documentos, referenciar livro e página em vez de transcrever regras. Nomes de elementos (ancestralidades, caminhos, magias) podem ser citados.
+- Nos documentos, referenciar livro e página em vez de transcrever regras (P22). Nomes de elementos (ancestralidades, caminhos, magias) podem ser citados.
 - PDFs nunca são versionados (`*.pdf` está no `.gitignore`).
 
 ## Repositório anterior
@@ -70,6 +86,7 @@ A tentativa anterior falhou por escopo inflado e excesso de processo (ver `docs/
 
 ## Convenções
 
-- Documentos em português. Termos mecânicos oficiais do jogo em inglês (Strength, Agility, Health, Defense, novice path etc.), como nos livros.
+- Documentos de especificação em português. Termos mecânicos oficiais do jogo em inglês (Strength, Agility, Health, Defense, novice path etc.), como nos livros.
+- Interface, conteúdo e ficha gerada do produto em inglês (P25, D12).
 - Decisões em aberto: apresentar as alternativas com prós e contras e deixar a decisão comigo.
 - Commits pequenos, um por documento ou decisão relevante.
