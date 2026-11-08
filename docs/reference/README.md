@@ -9,4 +9,4 @@ Insumos definidos antes do planejamento. Os artefatos de especificação partem 
 | `character-sheet.html` | Ficha final: o resultado que o gerador deve produzir. |
 | `lessons-learned.md` | Lições da tentativa anterior (`sotdl-character-forge`). Informam a especificação, mas o código antigo não é base para ela. |
 
-Os arquivos ainda não foram adicionados.
+Já adicionado: `lessons-learned.md`. Faltam os princípios de design, o wireframe e a ficha final.
