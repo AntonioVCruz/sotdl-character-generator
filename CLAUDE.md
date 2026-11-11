@@ -90,5 +90,6 @@ A tentativa anterior falhou por escopo inflado e excesso de processo (ver `docs/
 
 - Documentos de especificação em português. Termos mecânicos oficiais do jogo em inglês (Strength, Agility, Health, Defense, novice path etc.), como nos livros.
 - Interface, conteúdo e ficha gerada do produto em inglês (P25, D12).
+- Todo trabalho de interface (telas, componentes, estilos) segue `docs/design.md`, com os valores de `docs/tokens.json`: usar os tokens e componentes definidos ali, nunca valores soltos. Telas e fluxos estão em `docs/ux-foundations.md`, pelos IDs `SCR-WEB-*`.
 - Decisões em aberto: apresentar as alternativas com prós e contras e deixar a decisão comigo.
 - Commits pequenos, um por documento ou decisão relevante.
