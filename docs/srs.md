@@ -1,6 +1,6 @@
 # Especificação de Requisitos de Software: Gerador de personagens SotDL
 
-> Versão: 1.0 · Status: Finalizado · Última atualização: 2026-11-08
+> Versão: 1.0.1 · Status: Finalizado · Última atualização: 2026-11-11
 > Sintaxe dos requisitos: EARS, em português — "Quando ⟨evento⟩, o sistema deve ⟨resposta⟩"; "Enquanto ⟨estado⟩, o sistema deve …"; "Onde ⟨recurso⟩, o sistema deve …"; "Se ⟨situação indesejada⟩, então o sistema deve …"; ubíquo: "O sistema deve …"
 
 ## Histórico de revisões
@@ -8,6 +8,7 @@
 | Versão | Data | Autor | Mudanças |
 |---|---|---|---|
 | 1.0 | 2026-11-08 | Antônio Cruz | Especificação inicial finalizada: 230 FR (12 áreas), 22 NFR, 14 casos de uso. |
+| 1.0.1 | 2026-11-11 | Antônio Cruz | Q2 resolvida na etapa de arquitetura (empilhamento conferido no core); nota da FR-CALC-011 atualizada. Nenhum requisito mudou. |
 
 ## 1. Introdução
 
@@ -293,7 +294,7 @@ Páginas aproximadas do core, a confirmar nos dados do pacote: Human p.11–12, 
 | FR-CALC-008 | O sistema deve arredondar cada valor conforme a fórmula declarada. | Must | Active | Sem regra global de arredondamento. |
 | FR-CALC-009 | Quando uma decisão, fonte, atributo ou ajuste mudar, o sistema deve recalcular os valores dependentes e atualizar o resumo vivo, a etapa e a ficha. | Must | Active | Health acompanha Strength. Sem botão "recalcular". |
 | FR-CALC-010 | Quando um resultado de tabela tiver efeito mecânico, o sistema deve incluí-lo no cálculo com a origem do resultado. | Must | Active | P28. Ex.: Corruption +1, Size 1. |
-| FR-CALC-011 | Quando mais de um efeito somar ao mesmo valor, o sistema deve acumulá-los. | Must | Active | Regras gerais de empilhamento não verificadas (Apêndice B, Q2). |
+| FR-CALC-011 | Quando mais de um efeito somar ao mesmo valor, o sistema deve acumulá-los. | Must | Active | Conferido no core: bônus e penalidades de fontes diferentes são cumulativos (p. 32), dano extra também (p. 39); boons e banes se cancelam um a um (p. 33). Exceções declaradas por efeito (Apêndice B, Q2). |
 | FR-CALC-012 | Quando o personagem possuir um escudo, o sistema deve exibi-lo com o seu efeito e não incluí-lo no cálculo da Defense. | Must | Active | Equipar é estado de jogo (Could). Defense com escudo: ajuste manual. |
 | FR-CALC-013 | Quando o personagem usar armadura, o sistema deve substituir a Defense base pela da armadura e indicar quando a Strength estiver abaixo do mínimo exigido. | Should | Active | P11b; princípios §1.5. Nenhum pacote do core traz armadura. Não detalhado. |
 | FR-CALC-014 | Quando um efeito temporário estiver ligado, o sistema deve incluí-lo no cálculo sem registrá-lo no log. | Could | Active | P11c. Ficha de jogo. Não detalhado. |
@@ -490,4 +491,4 @@ Mudanças a montante: trocar uma escolha, rerrolar, trocar de modo numa tabela d
 | # | Questão | Origem | Estado |
 |---|---|---|---|
 | Q1 | O site fica aberto ao público no MVP ou restrito à mesa até consultar a Schwalb? | Nota final dos princípios | Resolvida: aberto ao público desde o MVP, sem controle de acesso. |
-| Q2 | Quais são as regras gerais de empilhamento de efeitos no core? O MVP acumula todos os efeitos que somam (FR-CALC-011). | P11b [Não verificado] | Conferir no livro antes da arquitetura. |
+| Q2 | Quais são as regras gerais de empilhamento de efeitos no core? O MVP acumula todos os efeitos que somam (FR-CALC-011). | P11b [Não verificado] | Resolvida (2026-11-11): o core não tem regra geral de "não empilha"; bônus e penalidades de fontes diferentes se somam (p. 32), dano extra também (p. 39), boons e banes se cancelam um a um (p. 33). Efeitos que não se acumulam declaram isso nos dados (ADR-004). |
