@@ -59,7 +59,7 @@ Por etapa:
 
 A tentativa anterior falhou por escopo inflado e excesso de processo (ver `docs/reference/lessons-learned.md`). Os princípios descrevem um produto amplo; a lição é não construí-lo de uma vez.
 
-- **MVP:** definido na seção 1.2.1 do SRS (`docs/srs.md`): criação no nível 0 pelo fluxo do core com Human, Dwarf e Clockwork, fontes com adição e substituição de entidade, log de criação, ficha final, ajuste manual e impressão.
+- **MVP:** definido na seção 1.2.1 do SRS (`docs/srs.md`): criação no nível 0 pelo fluxo do core com Human, Dwarf e Clockwork, fontes com adição e substituição de entidade, log de criação, ficha final, ajuste manual, impressão e exportar/importar o arquivo do personagem.
 - **Fora do MVP por padrão** (Should ou Could, salvo decisão em contrário na etapa de requisitos): a ficha como ferramenta de jogo (D17, P13c, P11c, P34 em jogo, D31, D34), subida de nível e mudanças pós-nível (P13b, D16, D32), pacotes da casa importáveis e sua atualização (P21, P6a, D13), editor e importação de textos (P9a) e cobertura de todos os suplementos.
 - Ao enumerar requisitos, não expandir áreas fora do MVP. Registrá-las com sua prioridade e seguir em frente.
 - Produzir **apenas documentos de decisão**: requisitos, arquitetura, ADRs, UX e plano. Nada de relatórios de entrega, status, fechamento, matrizes de aceite ou registros do trabalho realizado.

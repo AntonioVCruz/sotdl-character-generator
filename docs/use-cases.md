@@ -1,6 +1,6 @@
 # Casos de uso: Gerador de personagens SotDL
 
-> Fonte: `docs/srs.md` · Última atualização: 2026-11-08
+> Fonte: `docs/srs.md` (v1.1) · Última atualização: 2026-11-11
 > Escopo: MVP (requisitos Must). Requisitos Should e Could não têm caso de uso.
 
 ## Atores
@@ -68,11 +68,13 @@ graph LR
         uc12(("UC-012 Ver e imprimir a ficha"))
         uc13(("UC-013 Ajustar a ficha"))
         uc14(("UC-014 Consultar o log"))
+        uc15(("UC-015 Exportar e importar o personagem"))
     end
 
     jogador --> uc12
     jogador --> uc13
     jogador --> uc14
+    jogador --> uc15
 ```
 
 ---
@@ -359,3 +361,23 @@ graph LR
 **Fluxos alternativos**
 - 2a. O jogador filtra por All, Choices, Rolls ou Edits.
 - 2b. O jogador oculta as entradas desfeitas.
+
+## UC-015: Exportar e importar o personagem
+
+- **Atores:** Jogador
+- **Descrição:** Guardar o personagem num arquivo e recriá-lo a partir dele, como cópia de segurança ou para usar em outro navegador.
+- **Pré-condições:** Para exportar, o personagem existe.
+- **Pós-condições (sucesso):** Exportar: o arquivo foi baixado. Importar: existe um personagem novo com as fontes, decisões, ajustes e log do arquivo.
+- **Rastreia:** FR-CHAR-018, FR-CHAR-019, FR-CHAR-023, NFR-SEC-002
+
+**Fluxo principal**
+1. O jogador aciona a exportação de um personagem.
+2. O sistema gera e baixa o arquivo do personagem.
+3. Em outro momento ou navegador, o jogador aciona a importação e escolhe o arquivo.
+4. O sistema valida o arquivo e cria um personagem novo com o conteúdo dele.
+
+**Fluxos alternativos**
+- 4a. Alguma decisão do arquivo não existe no pacote atual: o sistema a reabre como decisão aberta, avisa e registra no log (FR-CONT-016).
+
+**Fluxos de exceção**
+- 4b. O arquivo não é um arquivo de personagem válido: o sistema recusa, informa o motivo e não altera os personagens salvos.

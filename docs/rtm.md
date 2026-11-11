@@ -1,6 +1,6 @@
 # Matriz de rastreabilidade de requisitos (RTM)
 
-> Fonte: `docs/srs.md`, `docs/use-cases.md` · Última atualização: 2026-11-08
+> Fonte: `docs/srs.md`, `docs/use-cases.md` · Última atualização: 2026-11-11
 > As colunas Design, Plan e Test são preenchidas pelas etapas seguintes, cada uma só na sua coluna: arquitetura e design detalhado (Design), planejamento (Plan), verificação (Test). Sempre acrescentar, nunca sobrescrever.
 
 | Req ID | Requisito (curto) | Prioridade | Status | Origem | Caso(s) de uso | Design ref | Plan ref | Test ref |
@@ -22,11 +22,12 @@
 | FR-CHAR-015 | Exibir um estado vazio que diz o que o app faz, avisa que o texto das regras vem do… | Must | Active | D35 | UC-001 | _TBD_ | _TBD_ | _TBD_ |
 | FR-CHAR-016 | Informar ao usuário que eles ficam disponíveis somente naquele navegador | Must | Active | Entrevista de requisitos | UC-001 | _TBD_ | _TBD_ | _TBD_ |
 | FR-CHAR-017 | Avisar o usuário e recarregar o personagem antes de aceitar nova mudança | Should | Active | Entrevista de requisitos | — | _TBD_ | _TBD_ | _TBD_ |
-| FR-CHAR-018 | Gerar um arquivo que reabre o personagem no gerador com suas fontes e regras | Should | Active | P8a | — | _TBD_ | _TBD_ | _TBD_ |
-| FR-CHAR-019 | Recriar o personagem com suas fontes e regras | Should | Active | P8a, SCR-01 | — | _TBD_ | _TBD_ | _TBD_ |
+| FR-CHAR-018 | Gerar um arquivo que reabre o personagem no gerador com suas fontes e regras | Must | Active | P8a | UC-015 | _TBD_ | _TBD_ | _TBD_ |
+| FR-CHAR-019 | Recriar o personagem com suas fontes e regras | Must | Active | P8a, SCR-01 | UC-015 | _TBD_ | _TBD_ | _TBD_ |
 | FR-CHAR-020 | Criar uma cópia independente dele | Could | Active | Entrevista de requisitos | — | _TBD_ | _TBD_ | _TBD_ |
 | FR-CHAR-021 | Permitir copiar as fontes de outro personagem | Could | Active | SCR-01 | — | _TBD_ | _TBD_ | _TBD_ |
 | FR-CHAR-022 | Aplicá-las a cada personagem novo | Could | Active | SCR-01, P2 | — | _TBD_ | _TBD_ | _TBD_ |
+| FR-CHAR-023 | Recusar arquivo importado inválido, informar o motivo e manter os personagens salvos | Must | Active | NFR-SEC-002 | UC-015 | _TBD_ | _TBD_ | _TBD_ |
 | FR-SRC-001 | Listar os livros em ordem de prioridade, com o estado ligado ou desligado de cada um | Must | Active | P2, D7, SCR-02 | UC-002 | _TBD_ | _TBD_ | _TBD_ |
 | FR-SRC-002 | Incluir apenas os livros que têm conteúdo no pacote oficial | Must | Active | Entrevista de requisitos | UC-002 | _TBD_ | _TBD_ | _TBD_ |
 | FR-SRC-003 | Manter o core sempre ligado e na última posição da lista | Must | Active | P2b, D37 | UC-002 | _TBD_ | _TBD_ | _TBD_ |
@@ -244,7 +245,7 @@
 | NFR-REL-002 | Sem SLA formal; meta de 99% de disponibilidade mensal | Must | Active | Entrevista de requisitos (NFR) | — | _TBD_ | _TBD_ | _TBD_ |
 | NFR-REL-003 | Depois da primeira visita, o app funciona sem conexão para criar, consultar e imprimir… | Should | Active | Entrevista de requisitos (NFR) | — | _TBD_ | _TBD_ | _TBD_ |
 | NFR-SEC-001 | Todo o tráfego usa HTTPS, e nenhum segredo fica no repositório | Must | Active | Entrevista de requisitos (NFR) | — | _TBD_ | _TBD_ | _TBD_ |
-| NFR-SEC-002 | Arquivos importados são tratados só como dados, nunca executados; arquivos inválidos… | Should | Active | Entrevista de requisitos (NFR) | — | _TBD_ | _TBD_ | _TBD_ |
+| NFR-SEC-002 | Arquivos importados são tratados só como dados, nunca executados; arquivos inválidos… | Must | Active | Entrevista de requisitos (NFR) | UC-015 | _TBD_ | _TBD_ | _TBD_ |
 | NFR-PRIV-001 | O app não coleta dados pessoais nem usa analytics, cookies de rastreamento ou serviços… | Must | Active | Entrevista de requisitos (NFR) | — | _TBD_ | _TBD_ | _TBD_ |
 | NFR-ACC-001 | Construtor, ficha e log seguem a WCAG 2.2 AA, com todas as ações acessíveis por… | Must | Active | Entrevista de requisitos (NFR) | — | _TBD_ | _TBD_ | _TBD_ |
 | NFR-USE-001 | Nenhum termo interno do sistema aparece na interface, verificado por revisão dos… | Must | Active | Entrevista de requisitos (NFR) | — | _TBD_ | _TBD_ | _TBD_ |

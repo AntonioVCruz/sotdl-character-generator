@@ -1,6 +1,6 @@
 # Especificação de Requisitos de Software: Gerador de personagens SotDL
 
-> Versão: 1.0.1 · Status: Finalizado · Última atualização: 2026-11-11
+> Versão: 1.1 · Status: Finalizado · Última atualização: 2026-11-11
 > Sintaxe dos requisitos: EARS, em português — "Quando ⟨evento⟩, o sistema deve ⟨resposta⟩"; "Enquanto ⟨estado⟩, o sistema deve …"; "Onde ⟨recurso⟩, o sistema deve …"; "Se ⟨situação indesejada⟩, então o sistema deve …"; ubíquo: "O sistema deve …"
 
 ## Histórico de revisões
@@ -9,6 +9,7 @@
 |---|---|---|---|
 | 1.0 | 2026-11-08 | Antônio Cruz | Especificação inicial finalizada: 230 FR (12 áreas), 22 NFR, 14 casos de uso. |
 | 1.0.1 | 2026-11-11 | Antônio Cruz | Q2 resolvida na etapa de arquitetura (empilhamento conferido no core); nota da FR-CALC-011 atualizada. Nenhum requisito mudou. |
+| 1.1 | 2026-11-11 | Antônio Cruz | Exportar e importar o arquivo do personagem passa para o MVP (Must), contra a limpeza de dados do Safari (ADR-002): FR-CHAR-018 e 019 viram Must, FR-CHAR-023 entra, NFR-SEC-002 vira Must, UC-015 entra. 231 FR. |
 
 ## 1. Introdução
 
@@ -37,17 +38,17 @@ O MVP cria um personagem de nível 0 e entrega a ficha. O fluxo vem de ponta a p
 | 9 | Ficha final em tela: campos fixos do nível 0 com origem; mecânica e página, sem texto dos livros. | P28, P9, P22 |
 | 10 | Ajuste manual: modificador ou substituição, nomeado, reversível, no log; cobre o que não foi modelado. | P12, P11d |
 | 11 | Imprimir a ficha (PDF pelo navegador). | P8a (parcial) |
+| 12 | Arquivo do personagem: exportar e importar, como cópia de segurança e para mudar de navegador. | P8a (parcial); ADR-002 |
 
 **Should** (próximos incrementos, na ordem sugerida):
-1. Arquivo do personagem: exportar e importar (P8a).
-2. Componentes por livro e regras opcionais com estado padrão (P2e, P14a, D3, D20); atributos aleatórios e pacote da casa embarcado (P14b, P27, D23, D24).
-3. Revisão de procedimento e substituição de tabela: *Only Human* e *Oddities* (padrões 3, 4 e 7; P2f, D21, D22, P6b, P26).
-4. Versão local no cartão e comparação (P2c, P2d, D9).
-5. Motivos de indisponível e inelegível, resumo das fontes, lista de livros navegável (P3, P31, P15, P2a).
-6. Concessões e decisões do mestre (P23, D15). No MVP, decisões do mestre entram por escrever/informar.
-7. Gatilhos de regra na criação (P34). No MVP, o resultado entra por ajuste manual (P11d).
-8. Demais ancestralidades do core; mudar escolha pelo log (D32); exportar o log (P8a).
-9. Subida de nível 1–10 com paths e magia (P13b, D16).
+1. Componentes por livro e regras opcionais com estado padrão (P2e, P14a, D3, D20); atributos aleatórios e pacote da casa embarcado (P14b, P27, D23, D24).
+2. Revisão de procedimento e substituição de tabela: *Only Human* e *Oddities* (padrões 3, 4 e 7; P2f, D21, D22, P6b, P26).
+3. Versão local no cartão e comparação (P2c, P2d, D9).
+4. Motivos de indisponível e inelegível, resumo das fontes, lista de livros navegável (P3, P31, P15, P2a).
+5. Concessões e decisões do mestre (P23, D15). No MVP, decisões do mestre entram por escrever/informar.
+6. Gatilhos de regra na criação (P34). No MVP, o resultado entra por ajuste manual (P11d).
+7. Demais ancestralidades do core; mudar escolha pelo log (D32); exportar o log (P8a).
+8. Subida de nível 1–10 com paths e magia (P13b, D16).
 
 **Could:** ficha como ferramenta de jogo (D17, P13c, P11c, D31, D34, D33); pacotes da casa importáveis e sua atualização (P21, P21b, P6a, D13); editor e pacote de textos (P9a, D18); demais suplementos.
 
@@ -90,7 +91,7 @@ Ver Apêndice A.
 Produto novo e independente, sem integração com sistemas externos no MVP. O conteúdo de jogo chega em pacotes num formato documentado, o mesmo para o core, suplementos e conteúdo da casa (P21a). O livro físico ou em PDF do usuário complementa o app: é onde se lê o texto descritivo (D35). Onde ficam os dados, se há contas e onde hospedar são decisões da arquitetura.
 
 ### 2.2 Funções do produto (resumo)
-- Gerenciar personagens (criar, listar, continuar, excluir).
+- Gerenciar personagens (criar, listar, continuar, excluir, exportar e importar).
 - Configurar as fontes de cada personagem (livros ativos e ordem de prioridade).
 - Conduzir a criação de nível 0 por etapas guiadas por dependências.
 - Registrar cada decisão como escolha, rolagem ou resultado informado.
@@ -150,11 +151,12 @@ Navegador moderno, em computador e celular (largura a partir de 390px, SCR-16). 
 | FR-CHAR-015 | Enquanto não houver personagem salvo, o sistema deve exibir um estado vazio que diz o que o app faz, avisa que o texto das regras vem do livro e oferece "New character". | Must | Active | D35. |
 | FR-CHAR-016 | Onde os personagens forem guardados apenas no navegador, o sistema deve informar ao usuário que eles ficam disponíveis somente naquele navegador. | Must | Active | Depende da decisão de arquitetura. |
 | FR-CHAR-017 | Se o personagem aberto for alterado em outra aba, então o sistema deve avisar o usuário e recarregar o personagem antes de aceitar nova mudança. | Should | Active | Evita perda silenciosa. |
-| FR-CHAR-018 | Quando o usuário exportar o arquivo do personagem, o sistema deve gerar um arquivo que reabre o personagem no gerador com suas fontes e regras. | Should | Active | P8a. Não detalhado. |
-| FR-CHAR-019 | Quando o usuário importar um arquivo de personagem, o sistema deve recriar o personagem com suas fontes e regras. | Should | Active | P8a, SCR-01. Não detalhado. |
+| FR-CHAR-018 | Quando o usuário exportar o arquivo do personagem, o sistema deve gerar um arquivo que reabre o personagem no gerador com suas fontes e regras. | Must | Active | P8a. Inclui decisões, ajustes e log. Promovido na v1.1 (ADR-002). |
+| FR-CHAR-019 | Quando o usuário importar um arquivo de personagem, o sistema deve recriar o personagem com suas fontes e regras. | Must | Active | P8a, SCR-01. Sempre cria um personagem novo, sem sobrescrever. Decisões que não existem no pacote atual seguem a FR-CONT-016. Promovido na v1.1. |
 | FR-CHAR-020 | Quando o usuário acionar "Duplicate" num personagem, o sistema deve criar uma cópia independente dele. | Could | Active | Não detalhado. |
 | FR-CHAR-021 | Quando o usuário criar um personagem, o sistema deve permitir copiar as fontes de outro personagem. | Could | Active | SCR-01. Não detalhado. |
 | FR-CHAR-022 | Onde o usuário tiver definido fontes padrão, o sistema deve aplicá-las a cada personagem novo. | Could | Active | SCR-01 "Default sources"; P2. Não detalhado. |
+| FR-CHAR-023 | Se o arquivo importado não for um arquivo de personagem válido, então o sistema deve recusá-lo, informar o motivo e manter os personagens salvos inalterados. | Must | Active | NFR-SEC-002. Acrescentado na v1.1. |
 
 #### 3.1.2 Fontes por personagem (FR-SRC)
 
@@ -429,7 +431,7 @@ Mudanças a montante: trocar uma escolha, rerrolar, trocar de modo numa tabela d
 - **Hardware:** nenhum requisito específico.
 - **Software:** navegador com impressão para PDF (FR-SHEET-013). Nenhum serviço de terceiros no MVP (NFR-PRIV-001). Onde os dados ficam é decisão da arquitetura.
 - **Comunicação:** HTTPS (NFR-SEC-001). Nenhuma API externa.
-- **Formatos de dados:** pacote de conteúdo, documentado e com data de publicação (FR-CONT-001, FR-CONT-010); arquivo do personagem (Should, FR-CHAR-018); pacote de textos (Could, P9a). A sintaxe dos formatos é decisão da arquitetura.
+- **Formatos de dados:** pacote de conteúdo, documentado e com data de publicação (FR-CONT-001, FR-CONT-010); arquivo do personagem (FR-CHAR-018, FR-CHAR-019); pacote de textos (Could, P9a). A sintaxe dos formatos é decisão da arquitetura.
 
 ### 3.3 Requisitos não funcionais
 
@@ -444,7 +446,7 @@ Mudanças a montante: trocar uma escolha, rerrolar, trocar de modo numa tabela d
 | NFR-REL-002 | Disponibilidade | Sem SLA formal; meta de 99% de disponibilidade mensal. | Must |
 | NFR-REL-003 | Disponibilidade | Depois da primeira visita, o app funciona sem conexão para criar, consultar e imprimir personagens. | Should |
 | NFR-SEC-001 | Segurança | Todo o tráfego usa HTTPS, e nenhum segredo fica no repositório. | Must |
-| NFR-SEC-002 | Segurança | Arquivos importados são tratados só como dados, nunca executados; arquivos inválidos são recusados com mensagem. | Should |
+| NFR-SEC-002 | Segurança | Arquivos importados são tratados só como dados, nunca executados; arquivos inválidos são recusados com mensagem. | Must |
 | NFR-PRIV-001 | Privacidade | O app não coleta dados pessoais nem usa analytics, cookies de rastreamento ou serviços de rastreamento de terceiros. | Must |
 | NFR-ACC-001 | Acessibilidade | Construtor, ficha e log seguem a WCAG 2.2 AA, com todas as ações acessíveis por teclado; verificação automática (axe) sem violações graves e revisão manual das telas do MVP. | Must |
 | NFR-USE-001 | Usabilidade | Nenhum termo interno do sistema aparece na interface, verificado por revisão dos textos visíveis antes de cada publicação. | Must |
