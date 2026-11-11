@@ -2,9 +2,9 @@
 
 ## Propósito deste repositório
 
-Planejamento e estruturação, por Spec-Driven Development, de um gerador de personagens para *Shadow of the Demon Lord* (SotDL). O produto deste repositório são **documentos de especificação**, não código.
+Especificação e implementação, por Spec-Driven Development, de um gerador de personagens para *Shadow of the Demon Lord* (SotDL). Os documentos em `docs/` são a fonte para o código.
 
-- Não escrever código de implementação. Exceção: trechos ilustrativos dentro de uma spec (ex.: um esquema de dados), quando ajudarem a decisão.
+- O código implementa o que está especificado. Mudanças de escopo passam primeiro pelos documentos (SRS, arquitetura ou plano), pelo caminho de emenda do kit.
 - O produto é uma aplicação web, usada pelo navegador. Projeto pessoal, não comercial, para portfólio. Público: jogadores e mestres em geral, inclusive quem não domina as regras.
 
 ## Insumos
@@ -46,7 +46,12 @@ Usar o Agentic SDLC Kit, na ordem do pipeline, uma etapa por vez e só avançand
 3. `ux-foundations`
 4. `implementation-planning`
 
-Esta fase termina em `implementation-planning`. Scaffolding, implementação e o ciclo por feature ficam fora deste momento.
+Construção, também pelo kit:
+1. `project-scaffolding`: gera o esqueleto funcional do plano.
+2. Ciclo por feature, na ordem do plano: `detailed-design` → `ui-design` → `feature-implementation` → `acceptance-verification`.
+3. `initial-deployment` só depois que o esqueleto funcional estiver aceito.
+
+Uma feature por vez. Não começar a próxima antes da verificação de aceite da anterior.
 
 Por etapa:
 
@@ -62,7 +67,7 @@ A tentativa anterior falhou por escopo inflado e excesso de processo (ver `docs/
 - **MVP:** definido na seção 1.2.1 do SRS (`docs/srs.md`): criação no nível 0 pelo fluxo do core com Human, Dwarf e Clockwork, fontes com adição e substituição de entidade, log de criação, ficha final, ajuste manual, impressão e exportar/importar o arquivo do personagem.
 - **Fora do MVP por padrão** (Should ou Could, salvo decisão em contrário na etapa de requisitos): a ficha como ferramenta de jogo (D17, P13c, P11c, P34 em jogo, D31, D34), subida de nível e mudanças pós-nível (P13b, D16, D32), pacotes da casa importáveis e sua atualização (P21, P6a, D13), editor e importação de textos (P9a) e cobertura de todos os suplementos.
 - Ao enumerar requisitos, não expandir áreas fora do MVP. Registrá-las com sua prioridade e seguir em frente.
-- Produzir **apenas documentos de decisão**: requisitos, arquitetura, ADRs, UX e plano. Nada de relatórios de entrega, status, fechamento, matrizes de aceite ou registros do trabalho realizado.
+- Produzir apenas documentos de decisão, mais os artefatos que o kit exige na construção (design por feature, tasks.md, relatório de aceite e matriz de rastreabilidade). Relatórios de aceite curtos: veredito, o que foi verificado e o que falhou. Nada de relatórios de entrega, status ou fechamento além disso.
 - Preferir documentos curtos. Se um documento precisar de um resumo para ser entendido, ele está longo demais.
 - O plano deve prever um esqueleto funcional de ponta a ponta antes de qualquer ampliação de conteúdo.
 
