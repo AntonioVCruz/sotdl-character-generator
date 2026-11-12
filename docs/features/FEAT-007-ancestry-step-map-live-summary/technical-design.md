@@ -86,7 +86,7 @@ Formula = number
 - o nome de cada vaga raiz (`slots`) é único no procedimento, porque é a chave da vaga;
 - `step` de uma concessão existe no procedimento;
 - referência de fórmula a um id que existe nos livros carregados;
-- **nenhum ciclo entre fórmulas** (ADR-004 §2). O grafo considera as fórmulas padrão dos itens `characteristic` e as de cada ancestralidade, e o erro aponta a fórmula que fecha o ciclo (ex.: `components[0].items[5].formula`, "cycle: Health → Healing Rate → Health"). O `EngineError` do `evaluate` continua como invariante (§3.3).
+- **nenhum ciclo entre fórmulas** (ADR-004 §2). Monta-se um grafo **por ancestralidade**: as fórmulas padrão dos itens `characteristic`, com as que aquela ancestralidade substitui, e não a união de todas, para que duas ancestralidades com fórmulas cruzadas não acusem ciclo falso. O erro aponta a fórmula que fecha o ciclo (ex.: `components[0].items[5].formula`, "cycle: Health → Healing Rate → Health"). O `EngineError` do `evaluate` continua como invariante (§3.3).
 
 ### 3.2 `app`: sessão do personagem e comandos
 

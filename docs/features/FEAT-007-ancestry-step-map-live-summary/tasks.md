@@ -19,7 +19,7 @@
     - prefixo desconhecido recusado;
     - `requires` para frente recusado;
     - nome de vaga raiz repetido recusado;
-    - ciclo entre fórmulas (padrão e de ancestralidade) recusado, com o caminho da fórmula no erro;
+    - ciclo entre fórmulas no grafo de uma ancestralidade (padrão mais as que ela substitui) recusado, com o caminho da fórmula no erro; duas ancestralidades com fórmulas cruzadas não acusam ciclo;
     - documento do esqueleto recusado.
 
 - [ ] **T2. Pacote do core: Dwarf, Human e regras-base** (design §4; FR-CONT-003 parcial, FR-STEP-003)
