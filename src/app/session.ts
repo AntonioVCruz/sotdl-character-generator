@@ -1,5 +1,13 @@
-import { characterDocumentSchema, loadBook, PackLoadError, type Book, type CharacterDocument, type PackSource } from '../content'
-import { EngineError, evaluate, resolve, type CharacterView, type Rules } from '../engine'
+import {
+  characterDocumentSchema,
+  loadBook,
+  PackLoadError,
+  type Book,
+  type CharacterDocument,
+  type DecisionValue,
+  type PackSource,
+} from '../content'
+import { EngineError, evaluate, resolve, type CharacterView, type Rules, type SlotView } from '../engine'
 import type { CharacterRepository } from '../storage'
 
 // Sessão do personagem (technical-design §3.2): store externo lido pelo React com `useSyncExternalStore`
@@ -32,7 +40,8 @@ export type Snapshot =
 
 export type DecideResult =
   | { ok: true }
-  | { ok: false; reason: 'unknown-slot' | 'invalid-value' }
+  // `already-decided`: o ajuste é uma vez só (FEAT-008 D3); `not-decided`: `clear` de vaga sem decisão.
+  | { ok: false; reason: 'unknown-slot' | 'invalid-value' | 'already-decided' | 'not-decided' }
   // D8: mudança com dependentes é recusada até a FEAT-011.
   | { ok: false; reason: 'has-dependents'; dependents: string[] }
   | { ok: false; reason: 'save-failed' }
@@ -82,6 +91,24 @@ export function createRulesLoader(packs: PackSource = {}): LoadRules {
   }
 }
 
+/** O valor cabe na vaga: uma opção viva, ou, no ajuste, dois atributos vigentes e diferentes. */
+function isValid(slot: SlotView, value: DecisionValue): boolean {
+  switch (slot.kind) {
+    case 'choose-entity':
+      return slot.options.some((option) => option.id === value)
+    case 'choose-value':
+      return typeof value === 'number' && slot.options.includes(value)
+    case 'attribute-shift': {
+      const isAttribute = (id: string) => slot.options.some((option) => option.id === id)
+      return typeof value === 'object' && value.decrease !== value.increase && isAttribute(value.decrease) && isAttribute(value.increase)
+    }
+    // Sem resolvedor até a FEAT-016 (D9 da FEAT-007).
+    case 'attribute-increase':
+    case 'language-or-profession':
+      return false
+  }
+}
+
 export function createCharacterSession({ repository, loadRules, now = () => new Date() }: SessionDeps) {
   let snapshot: Snapshot = { status: 'loading', id: '' }
   const listeners = new Set<() => void>()
@@ -109,6 +136,29 @@ export function createCharacterSession({ repository, loadRules, now = () => new 
       return ok ? { ok: true } : { ok: false, reason: 'save-failed' }
     })
   }
+
+  /** Aplica as decisões novas, comum a `decide` e `clear`: documento novo, `evaluate`, dependentes, tela e gravação. */
+  function commit(before: Extract<Snapshot, { status: 'ready' }>, decisions: CharacterDocument['decisions']): Promise<DecideResult> {
+    const document: CharacterDocument = {
+      ...before.document,
+      revision: before.document.revision + 1,
+      updatedAt: now().toISOString(),
+      decisions,
+    }
+    const view = evaluate(before.rules, document)
+
+    // Dependentes: decisões cuja vaga estava viva antes e deixa de estar depois. Órfãs antigas não contam.
+    const live = new Set(view.slots.map((candidate) => candidate.key))
+    const dependents = before.view.slots
+      .map((candidate) => candidate.key)
+      .filter((candidate) => !live.has(candidate) && candidate in before.document.decisions)
+    if (dependents.length) return Promise.resolve({ ok: false, reason: 'has-dependents', dependents })
+
+    set({ ...before, document, view, save: 'saving' })
+    return persist()
+  }
+
+  const liveSlot = (key: string) => (snapshot.status === 'ready' ? snapshot.view.slots.find((slot) => slot.key === key) : undefined)
 
   return {
     subscribe(listener: () => void) {
@@ -152,35 +202,25 @@ export function createCharacterSession({ repository, loadRules, now = () => new 
       if (current()) set({ status: 'ready', id, document: parsed.data, rules, view, save: 'saved' })
     },
 
-    /** Único comando da FEAT-007: confirma uma ancestralidade ou o Size. A tela muda antes da gravação (NFR-PERF-002). */
-    async decide(key: string, value: string | number): Promise<DecideResult> {
-      if (snapshot.status !== 'ready') return { ok: false, reason: 'unknown-slot' }
-      const before = snapshot
-      const slot = before.view.slots.find((candidate) => candidate.key === key)
-      if (!slot) return { ok: false, reason: 'unknown-slot' }
-      const valid =
-        slot.kind === 'choose-entity'
-          ? slot.options.some((option) => option.id === value)
-          : slot.kind === 'choose-value' && typeof value === 'number' && slot.options.includes(value)
-      if (!valid) return { ok: false, reason: 'invalid-value' }
+    /**
+     * Confirma uma decisão: ancestralidade, Size ou o par do ajuste. Decidir de novo substitui, salvo no
+     * `attribute-shift`, que é uma vez só (FR-STEP-010; FEAT-008 D3). A tela muda antes da gravação (NFR-PERF-002).
+     */
+    async decide(key: string, value: DecisionValue): Promise<DecideResult> {
+      const slot = liveSlot(key)
+      if (snapshot.status !== 'ready' || !slot) return { ok: false, reason: 'unknown-slot' }
+      if (slot.kind === 'attribute-shift' && slot.decided) return { ok: false, reason: 'already-decided' }
+      if (!isValid(slot, value)) return { ok: false, reason: 'invalid-value' }
+      return commit(snapshot, { ...snapshot.document.decisions, [key]: { mode: 'chosen', value } })
+    },
 
-      const document: CharacterDocument = {
-        ...before.document,
-        revision: before.document.revision + 1,
-        updatedAt: now().toISOString(),
-        decisions: { ...before.document.decisions, [key]: { mode: 'chosen', value } },
-      }
-      const view = evaluate(before.rules, document)
-
-      // Dependentes: decisões cuja vaga estava viva antes e deixa de estar depois. Órfãs antigas não contam.
-      const live = new Set(view.slots.map((candidate) => candidate.key))
-      const dependents = before.view.slots
-        .map((candidate) => candidate.key)
-        .filter((candidate) => !live.has(candidate) && candidate in before.document.decisions)
-      if (dependents.length) return { ok: false, reason: 'has-dependents', dependents }
-
-      set({ ...before, document, view, save: 'saving' })
-      return persist()
+    /** Limpa a decisão de uma vaga (FR-STEP-011; FEAT-008 D4): o valor sai de novo do `evaluate`, sem ela. */
+    async clear(key: string): Promise<DecideResult> {
+      const slot = liveSlot(key)
+      if (snapshot.status !== 'ready' || !slot) return { ok: false, reason: 'unknown-slot' }
+      if (!slot.decided) return { ok: false, reason: 'not-decided' }
+      const decisions = Object.fromEntries(Object.entries(snapshot.document.decisions).filter(([candidate]) => candidate !== key))
+      return commit(snapshot, decisions)
     },
 
     /** FR-CHAR-010: grava de novo o documento atual. */

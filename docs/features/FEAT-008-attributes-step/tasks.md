@@ -67,7 +67,7 @@
     - `core-pack.test.ts`: `FR-CALC-006: the core pack declares the Defense, Perception, Healing Rate and Insanity limits`;
     - `npm run typecheck`, `npm run lint`, `npm run packs:check`, `npm test` e `npm run e2e` verdes.
 
-- [ ] **T4. Sessão: `decide` com par, `already-decided` e `clear`** (design §3.2; FR-STEP-009, 010, 011; D3, D4)
+- [x] **T4. Sessão: `decide` com par, `already-decided` e `clear`** (design §3.2; FR-STEP-009, 010, 011; D3, D4)
   - Em `src/app/session.ts`: validação do par; recusa em vaga `attribute-shift` decidida; `clear(key)`; cálculo de dependentes num ajudante comum a `decide` e `clear`.
   - **Pronto quando:** os testes de `session.test.ts` (repositório em memória, pacote fictício) passam para:
     - `FR-STEP-009`: aplicar grava só o par, e a tela muda antes da gravação;

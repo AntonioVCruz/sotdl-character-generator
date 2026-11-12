@@ -251,3 +251,119 @@ describe('character session: decide', () => {
     expect(ready(session).save).toBe('saved')
   })
 })
+
+// O mesmo pacote com um segundo atributo e a vaga opcional do ajuste em Traits (FEAT-008).
+files['/packs/test.adjust.json'] = book('test.adjust', [
+  ...items.map((item) =>
+    item.id === 'step:traits'
+      ? { ...item, slots: { adjust: { kind: 'attribute-shift', amount: 1, optional: true } } }
+      : 'attributes' in item
+        ? { ...item, attributes: { ...item.attributes, 'attribute:wits': 10 } }
+        : item,
+  ),
+  { id: 'attribute:wits', name: 'Wits', page: 3, modifier: { add: [{ ref: 'self' }, -10] } },
+])
+const pair = { decrease: 'attribute:might', increase: 'attribute:wits' }
+const adjustable = (decisions: Record<string, string | number> = { ancestry: 'ancestry:troll' }) => stored(decisions, ['test.adjust'])
+const adjusted = () => {
+  const document = adjustable()
+  return { ...document, decisions: { ...document.decisions, adjust: { mode: 'chosen', value: pair } } }
+}
+const attributeScores = (session: Awaited<ReturnType<typeof opened>>['session']) =>
+  ready(session).view.summary.attributes.map((attribute) => [attribute.name, attribute.score])
+
+describe('character session: score adjustment and clear', () => {
+  it('FR-STEP-009: applying saves only the pair, and the view changes before the save', async () => {
+    const { session, docs } = await opened(adjustable())
+    const result = session.decide('adjust', pair)
+    expect(ready(session).save).toBe('saving')
+    expect(attributeScores(session)).toEqual([
+      ['Might', 11],
+      ['Wits', 11],
+    ])
+    await expect(result).resolves.toEqual({ ok: true })
+    expect(docs.get('id-1')).toEqual({
+      ...adjustable(),
+      revision: 2,
+      updatedAt: '2026-01-02T00:00:00.000Z',
+      decisions: { ancestry: { mode: 'chosen', value: 'ancestry:troll' }, adjust: { mode: 'chosen', value: pair } },
+    })
+  })
+
+  it('FR-STEP-010: a second adjustment gives already-decided, changing and saving nothing; an invalid pair gives invalid-value', async () => {
+    const { session, repository } = await opened(adjusted())
+    const before = ready(session)
+    await expect(session.decide('adjust', { decrease: 'attribute:wits', increase: 'attribute:might' })).resolves.toEqual({
+      ok: false,
+      reason: 'already-decided',
+    })
+    expect(session.getSnapshot()).toBe(before)
+
+    const fresh = await opened(adjustable())
+    const freshBefore = ready(fresh.session)
+    for (const invalid of [
+      { decrease: 'attribute:might', increase: 'attribute:might' },
+      { decrease: 'characteristic:stature', increase: 'attribute:wits' },
+      'attribute:wits',
+    ]) {
+      await expect(fresh.session.decide('adjust', invalid)).resolves.toEqual({ ok: false, reason: 'invalid-value' })
+    }
+    expect(fresh.session.getSnapshot()).toBe(freshBefore)
+    expect(repository.save).not.toHaveBeenCalled()
+    expect(fresh.repository.save).not.toHaveBeenCalled()
+  })
+
+  it('FR-STEP-011: clear restores both attributes, saves the document without the key, and a new adjustment applies', async () => {
+    const { session, docs } = await opened(adjusted())
+    expect(attributeScores(session)).toEqual([
+      ['Might', 11],
+      ['Wits', 11],
+    ])
+    await expect(session.clear('adjust')).resolves.toEqual({ ok: true })
+    expect(attributeScores(session)).toEqual([
+      ['Might', 12],
+      ['Wits', 10],
+    ])
+    expect(docs.get('id-1')).toMatchObject({ revision: 2, decisions: { ancestry: { value: 'ancestry:troll' } } })
+    expect(Object.keys((docs.get('id-1') as CharacterDocument).decisions)).toEqual(['ancestry'])
+
+    await expect(session.decide('adjust', { decrease: 'attribute:wits', increase: 'attribute:might' })).resolves.toEqual({ ok: true })
+    expect(attributeScores(session)).toEqual([
+      ['Might', 13],
+      ['Wits', 9],
+    ])
+    await expect(session.clear('adjust')).resolves.toEqual({ ok: true })
+    await expect(session.clear('adjust')).resolves.toEqual({ ok: false, reason: 'not-decided' })
+    await expect(session.clear('nowhere')).resolves.toEqual({ ok: false, reason: 'unknown-slot' })
+  })
+
+  it('FR-STEP-011: clear of a slot with decided children gives has-dependents; clearing Size, then switching ancestry, applies (AC-11)', async () => {
+    const { session, repository } = await opened(adjustable({ ancestry: 'ancestry:gnome', 'ancestry=gnome/stature': 1 }))
+    const before = ready(session)
+    await expect(session.clear('ancestry')).resolves.toEqual({ ok: false, reason: 'has-dependents', dependents: ['ancestry=gnome/stature'] })
+    expect(session.getSnapshot()).toBe(before)
+    expect(repository.save).not.toHaveBeenCalled()
+
+    await expect(session.clear('ancestry=gnome/stature')).resolves.toEqual({ ok: true })
+    expect(ready(session).view.slots.find((slot) => slot.key === 'ancestry=gnome/stature')).toMatchObject({ decided: false })
+    await expect(session.decide('ancestry', 'ancestry:troll')).resolves.toEqual({ ok: true })
+    expect(ready(session).view.ancestry).toBe('ancestry:troll')
+  })
+
+  it('FR-STEP-011: a failed save on clear keeps the new state, and retrySave saves it', async () => {
+    const { session, docs, control } = await opened(adjusted())
+    control.failSave = true
+    await expect(session.clear('adjust')).resolves.toEqual({ ok: false, reason: 'save-failed' })
+    expect(ready(session).save).toBe('failed')
+    expect(attributeScores(session)).toEqual([
+      ['Might', 12],
+      ['Wits', 10],
+    ])
+    expect(docs.get('id-1')).toMatchObject({ revision: 1, decisions: { adjust: { value: pair } } })
+
+    control.failSave = false
+    await expect(session.retrySave()).resolves.toEqual({ ok: true })
+    expect(docs.get('id-1')).toMatchObject({ revision: 2 })
+    expect(Object.keys((docs.get('id-1') as CharacterDocument).decisions)).toEqual(['ancestry'])
+  })
+})
