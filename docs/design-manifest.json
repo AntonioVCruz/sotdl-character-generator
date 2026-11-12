@@ -1,0 +1,77 @@
+{
+  "version": 1,
+  "policy": {
+    "fallback": "code-native",
+    "note": "Decidido pelo usuário em 2026-11-12 (FEAT-007): spec em código (estratégia C) para todas as telas; sobrescrevível por tela a pedido."
+  },
+  "screens": {
+    "SCR-WEB-003": {
+      "name": "Builder · 1 Ancestry",
+      "surface": "WEB",
+      "feature": "FEAT-007",
+      "strategy": "code-native",
+      "source": {
+        "tool": null,
+        "locator": "features/FEAT-007-ancestry-step-map-live-summary/ui-design.md#scr-web-003--ancestry-step"
+      },
+      "states": {
+        "covered": ["default", "selected", "chosen", "size-open", "size-decided", "dependents-blocked", "save-failed", "loading", "error"],
+        "gaps": [],
+        "supplements": [
+          { "state": "builder-frame", "strategy": "code-native", "source": "features/FEAT-007-ancestry-step-map-live-summary/ui-design.md#builder-frame" }
+        ]
+      },
+      "contract_bindings": [
+        "app.session.open / getSnapshot (technical-design §3.2)",
+        "app.session.decide (technical-design §3.2)",
+        "app.session.retrySave (technical-design §3.2)",
+        "engine.CharacterView: steps, slots, openDecisions, summary (technical-design §3.3)",
+        "engine.preview (technical-design §3.3)",
+        "engine.ancestryDetail (technical-design §3.3)",
+        "ui routes #/characters/:id/:step?slot= (technical-design §3.4)"
+      ],
+      "conformance": {
+        "result": "escalation-pending",
+        "corrections": ["button-primary padding 18px → --space-4 (provisório, E4-d)"],
+        "escalations": [
+          "E1 step-map: estado bloqueado visível e motivo sem tooltip",
+          "E2 option-card: estado 'current' (Your choice)",
+          "E3 conjunto de ícones",
+          "E4 tokens: size.pill, opacity.disabled, border-width.alert, typography.stat-sm; padding do button-primary"
+        ]
+      },
+      "status": "escalation-pending",
+      "designed_at": "2026-11-12"
+    },
+    "SCR-WEB-016": {
+      "name": "Builder · layout de celular",
+      "surface": "WEB",
+      "feature": "FEAT-007",
+      "strategy": "code-native",
+      "source": {
+        "tool": null,
+        "locator": "features/FEAT-007-ancestry-step-map-live-summary/ui-design.md#scr-web-016--builder-mobile-layout"
+      },
+      "states": {
+        "covered": ["collapsed", "selector-open", "summary-open"],
+        "gaps": [],
+        "supplements": []
+      },
+      "contract_bindings": [
+        "app.session.getSnapshot (technical-design §3.2)",
+        "engine.CharacterView: steps, summary, openDecisions (technical-design §3.3)",
+        "ui routes #/characters/:id/:step?slot= (technical-design §3.4)"
+      ],
+      "conformance": {
+        "result": "escalation-pending",
+        "corrections": [],
+        "escalations": [
+          "E1 step-map: estado bloqueado (também no popover)",
+          "E3 conjunto de ícones (voltar, ···, indicadores de abrir)"
+        ]
+      },
+      "status": "escalation-pending",
+      "designed_at": "2026-11-12"
+    }
+  }
+}
