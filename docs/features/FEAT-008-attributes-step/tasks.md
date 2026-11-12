@@ -81,7 +81,8 @@
 - [ ] **T6. ui: integração da etapa Attributes** (design §3.4; SCR-WEB-005 do ui-design; FR-STEP-007 a 011, FR-STEP-008 só exibição, FR-CALC-002, 003, 007)
   - Integração apenas; o desenho da tela, os estados e os textos são do ui-design:
     - `Builder` despacha `attribute-shift` para a nova `AttributesStep`;
-    - a `AttributesStep` consome os dados da tabela da §3.4: `preview`, `decide`, `clear`, e `already-decided` para oferecer desfazer;
+    - a `AttributesStep` consome os dados da tabela da §3.4: `preview`, `decide` e `clear`;
+    - com o ajuste aplicado, os dois grupos ficam só leitura (`isReadOnly`), com o motivo e "Undo adjustment" visíveis (ui-design, estado `applied`);
     - o +1 do Human aparece como pendência sem controle, com o id da vaga para o atalho;
     - o `FallbackStep` deixa de servir a Attributes;
     - `LiveSummary` e `copy.ts` rotulam as parcelas `modifier` e `limit`;
@@ -89,7 +90,9 @@
     - `e2e/ancestry.spec.ts`: o título da etapa Attributes passa do fallback para a pergunta do ui-design (design §7).
   - **Pronto quando:**
     - a tela renderiza conforme o ui-design no desktop, no intermediário e no celular, conferida por screenshot;
-    - os testes de componente passam: `Builder.test.tsx` `FR-STEP-010: a second adjustment is refused and the step offers to undo the current one`; composição com parcelas de ajuste e de limite (`FR-CALC-002`, `FR-CALC-007`);
+    - os testes de componente passam:
+      - `Builder.test.tsx` `FR-STEP-010: a second adjustment is refused and the step offers to undo the current one`: clicar num segmento com o ajuste aplicado não chama `decide`, o par aplicado continua selecionado, e o motivo e "Undo adjustment" estão visíveis;
+      - composição com parcelas de ajuste e de limite (`FR-CALC-002`, `FR-CALC-007`);
     - `npm run lint` passa (fronteiras da §5.2);
     - `npm run e2e` passa nos 5 projetos.
 

@@ -161,7 +161,7 @@ No core: com Dwarf, Attributes fica `done` logo ao escolher a ancestralidade; co
 | Ajuste: opções, estado e escolha atual | `view.slots` da vaga `attribute-shift` (`options`, `decided`, `value`) |
 | O que o ajuste muda | `engine.preview(rules, document, key, { decrease, increase })` |
 | Aplicar / desfazer | `session.decide(key, { decrease, increase })` · `session.clear(key)` |
-| Segunda tentativa | `DecideResult.reason === 'already-decided'` → oferecer desfazer (FR-STEP-010) |
+| Ajuste aplicado | grupos só leitura, motivo e "Undo adjustment" visíveis; a tela não chama `decide` com o ajuste aplicado (ui-design, estado `applied`). `already-decided` continua no comando (D3) |
 | +1 do Human | `view.slots` com `kind: 'attribute-increase'` desta etapa |
 
 - Escolher o atributo que desce e o que sobe é estado local da tela. Só a confirmação vira comando (D7 da FEAT-007).

@@ -220,4 +220,4 @@ Fechados para a FEAT-008, revisados contra a NFR-USE-001 e o `design.md` §6. Ne
   - **Telas:** SCR-WEB-005.
   - **Situação:** aprovada pelo usuário em 2026-11-12; a emenda do `design.md` vem em outra rodada, pela ux-foundations. Até ela entrar, a entrada do manifesto fica `escalation-pending`; o desktop e o intermediário não dependem dela.
 - **Fora desta feature:** controle do +1 (FEAT-016), atributos rolados e o botão de rolar desabilitado do wireframe (P14b; o MVP não tem regra opcional que os ligue), ajuste manual (FEAT-019), limpar o Size na Ancestry (FEAT-011).
-- **RTM:** sem mudança, a pedido do usuário. A Design ref das FRs da FEAT-008 continua apontando o `technical-design.md`.
+- **RTM:** recebeu o `ui-design.md` na Design ref das 8 FRs que a tela realiza (FR-STEP-007, 009, 010, 011; FR-CALC-002, 003, 007, 009) em `becce32`.
