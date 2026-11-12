@@ -88,6 +88,8 @@ Formula = number
 - referência de fórmula a um id que existe nos livros carregados;
 - **nenhum ciclo entre fórmulas** (ADR-004 §2). Monta-se um grafo **por ancestralidade**: as fórmulas padrão dos itens `characteristic`, com as que aquela ancestralidade substitui, e não a união de todas, para que duas ancestralidades com fórmulas cruzadas não acusem ciclo falso. O erro aponta a fórmula que fecha o ciclo (ex.: `components[0].items[5].formula`, "cycle: Health → Healing Rate → Health"). O `EngineError` do `evaluate` continua como invariante (§3.3).
 
+Na carga, as referências de fórmula são conferidas dentro do próprio livro; a conferência entre livros é da FEAT-003.
+
 ### 3.2 `app`: sessão do personagem e comandos
 
 `createCharacterSession(deps)` substitui o `openCharacter` do esqueleto. É um store externo lido pelo React com `useSyncExternalStore` (ADR-006).
