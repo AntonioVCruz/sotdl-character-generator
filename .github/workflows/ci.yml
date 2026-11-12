@@ -76,7 +76,6 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npm run build
       - run: npm run lighthouse
       - name: Lighthouse reports
         if: always()

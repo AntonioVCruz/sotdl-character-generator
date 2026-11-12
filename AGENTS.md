@@ -137,4 +137,4 @@ Funcionam no PowerShell. Os scripts `pre*` geram os tokens antes de cada um.
 | `npm run packs:check` | schema estrito e ids removidos em `packs/` |
 | `npm run build` · `npm run preview` | build · serve o build |
 | `npm run e2e` | Playwright contra o build (instale os navegadores uma vez com `npx playwright install`) |
-| `npm run lighthouse` | Lighthouse CI na Home do build |
+| `npm run lighthouse` | build e Lighthouse CI na Home |

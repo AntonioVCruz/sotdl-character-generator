@@ -35,7 +35,7 @@ npm test                     # unitários (Vitest)
 npm run test:coverage        # com relatório em coverage/ (sem limite)
 npx playwright install       # uma vez: navegadores do E2E
 npm run e2e                  # E2E contra o build, com axe
-npm run build; npm run lighthouse   # LCP da Home
+npm run lighthouse           # build e LCP da Home
 ```
 
 Também: `npm run typecheck`, `npm run lint` (inclui as fronteiras entre módulos) e `npm run packs:check`. A lista completa está no [AGENTS.md](AGENTS.md).

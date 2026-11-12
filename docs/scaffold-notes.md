@@ -107,3 +107,16 @@ Os testes usam só pacotes fictícios (`test.*`).
 - **Deploy escrito, não executado:** o job `deploy` só roda em push no `main` com `vars.PAGES_ENABLED == 'true'`. A variável não existe; a etapa `initial-deployment` liga o Pages (fonte: GitHub Actions) e cria a variável.
 - **Configuração:** a única variável é `BASE_PATH`, lida pelo `vite.config.ts` (`base`) e pelo Playwright e o Lighthouse. Nenhum segredo existe. O modelo é o `.env.example`, só com nomes. O `.env` local (fora do Git) foi gerado com `BASE_PATH=/`; para recriá-lo, copie o `.env.example` e preencha com `/`. O CI usa `/<repositório>/`.
 - **Validação do workflow:** o YAML foi lido e conferido localmente (jobs, `needs` e scripts npm existem). O actionlint não rodou, porque exigiria baixar uma imagem Docker. O primeiro push valida o resto.
+
+## Verificação (2026-11-12)
+
+- **Clone novo com `npm ci`:** typecheck, lint, test, packs:check, build, e2e (15 testes em 5 projetos) e lighthouse passaram, sem passo manual. Os tokens gerados não existiam no clone, e os scripts `pre*` os criaram.
+- **Testes de que as checagens funcionam:**
+  - sem `docs/tokens.json`, o build falha;
+  - uma violação de fronteira é rejeitada pelo lint;
+  - um id removido de `packs/` é acusado pelo `packs:check`;
+  - o teste de falha de gravação falha quando o `abort` sai;
+  - a asserção do Lighthouse falha com teto de 100 ms.
+- **`npm run dev`** serve a página e `packs/`.
+- **`npm run lighthouse`** faz o próprio build: sem isso, mediria o `dist/` deixado pelo E2E, que tem outra base de caminho (`NO_FCP`).
+- **Pendente até o `initial-deployment`:** a metade publicada do "pronto quando" (criar, recarregar e ver na Home no endereço do Pages).
