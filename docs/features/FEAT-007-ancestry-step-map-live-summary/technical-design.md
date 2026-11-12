@@ -81,12 +81,12 @@ Formula = number
 
 `grant:<id>` lê o valor decidido na vaga concedida pela própria entidade. Sem decisão, o resultado é `null` (pendente).
 
-**Regras de formato verificadas na carga** (subconjunto; o resto é da FEAT-003):
+**Regras de formato verificadas na carga** (subconjunto; o resto é da FEAT-003). Cada erro sai com o caminho no arquivo:
 - `requires` de uma etapa só aponta para etapas anteriores no `procedure`;
+- o nome de cada vaga raiz (`slots`) é único no procedimento, porque é a chave da vaga;
 - `step` de uma concessão existe no procedimento;
-- referência de fórmula a um id que existe nos livros carregados.
-
-Ciclo de fórmula: o `evaluate` acusa `EngineError` (§3.3); a rejeição na carga é da FEAT-003.
+- referência de fórmula a um id que existe nos livros carregados;
+- **nenhum ciclo entre fórmulas** (ADR-004 §2). O grafo considera as fórmulas padrão dos itens `characteristic` e as de cada ancestralidade, e o erro aponta a fórmula que fecha o ciclo (ex.: `components[0].items[5].formula`, "cycle: Health → Healing Rate → Health"). O `EngineError` do `evaluate` continua como invariante (§3.3).
 
 ### 3.2 `app`: sessão do personagem e comandos
 
@@ -119,14 +119,15 @@ DecideResult =
 | — | `undefined` | `not-found` | "This character is not saved in this browser." |
 | `characterDocumentSchema.safeParse` | inválido (inclui os documentos do esqueleto, D1) | `unreadable` | "This character can't be read by this version of the app." |
 | `loadBook` de cada livro em `sources.order` | `PackLoadError` | `pack-load-failed` | "The rules for this character could not be loaded. Nothing was changed." (FR-HELP-004; nada é gravado) |
-| `resolve` → `evaluate` | — | — | snapshot `ready` |
+| `resolve` → `evaluate` | lança `EngineError` (id definido em dois livros, ciclo que escapou da carga) | `pack-load-failed` | a mesma; nada é gravado e o snapshot não fica em `loading` |
+| — | — | — | snapshot `ready` |
 
 `resolve` é memoizado pela ordem de fontes mais os livros carregados (architecture.md §8, Desempenho).
 
 **`decide(key, value)`**, comando único da FEAT-007, usado por "confirmar ancestralidade" e por "Size":
 1. A vaga `key` precisa estar viva no `view` atual (`unknown-slot` se não estiver), e `value` precisa estar entre as opções dela (`invalid-value`).
 2. O novo documento é o atual com `decisions[key] = { mode: 'chosen', value }`, mais `revision + 1` e `updatedAt`.
-3. `evaluate` do novo documento. As decisões do documento que não correspondem a nenhuma vaga viva são dependentes órfãos. Se houver algum, o comando devolve `has-dependents` e nada muda (D8).
+3. `evaluate` do novo documento. Dependentes são as decisões cuja vaga estava viva antes e deixa de estar depois, por causa desta mudança: as chaves vivas do `view` atual menos as do novo, cruzadas com as decisões gravadas. Decisões que já eram órfãs antes não contam. Se houver dependentes, o comando devolve `has-dependents` com as chaves e nada muda (D8).
 4. O snapshot passa ao novo estado (`save: 'saving'`), e só então a gravação começa: a tela nunca espera o IndexedDB (NFR-PERF-002).
 5. `repository.save(document, summarize(document, rules))`. Em sucesso, `save: 'saved'`. Em falha, `save: 'failed'`: o estado novo fica na tela e o comando devolve `save-failed` (FR-CHAR-010). `retrySave()` grava de novo o documento atual.
 
@@ -144,7 +145,7 @@ ancestryDetail(rules, ancestryId): AncestryDetail
 formatFormula(rules, formula, ownerId?): string
 ```
 
-- **`Rules`**: itens vigentes por id, cada um com a procedência `{ book, abbr, page, type: 'core' | 'adds' }` (FR-SRC-010). O tipo sai da camada do livro; `replaces` é da FEAT-005. Também traz o procedimento, as etapas na ordem, os atributos e as características na ordem do pacote e as ancestralidades. Só componentes com `default: 'on'` entram (exceção por personagem é Should). Se o mesmo id vier de dois livros, vale o primeiro da ordem (ADR-003 §5.3); `revises` e `replaces` são da FEAT-005.
+- **`Rules`**: itens vigentes por id, cada um com a procedência `{ book, abbr, page, type: 'core' | 'adds' }` (FR-SRC-010). O tipo sai da camada do livro; `replaces` é da FEAT-005. Também traz o procedimento, as etapas na ordem, os atributos e as características na ordem do pacote e as ancestralidades. Só componentes com `default: 'on'` entram (exceção por personagem é Should). Um id definido em dois livros carregados é erro (ADR-003 §2): `resolve` lança `EngineError` com o id e os dois livros, e o `open` cai em `pack-load-failed` (§3.2). `revises` e `replaces`, que tornam isso válido, são da FEAT-005.
 - **`CharacterView`**:
 
 ```ts
@@ -156,27 +157,35 @@ formatFormula(rules, formula, ownerId?): string
   slots: SlotView[],      // { key, kind, stepId, decided, value?, options?, source: { id, name } | null }
   openDecisions: { key, kind, stepId, source: { id, name } | null, target? }[],   // FR-FLOW-010, FR-DEC-011
   summary: {              // FR-FLOW-012
-    attributes: { id, name, score: number | null, modifier: number | null }[],
-    characteristics: { id, name, value: number | null, formula: string, pendingOn?: SlotKey }[],
+    attributes: { id, name, score: number | null, modifier: number | null, composition: Stage[] }[],
+    characteristics: { id, name, value: number | null, formula: string, pendingOn?: SlotKey,
+                       composition: Stage[] }[],
     gained: { languages: { id, name, abilities }[], talents: { id, name, page }[] }
   }
 }
+
+Stage = { stage: 'base', value: number | null, formula?: string,
+          origin: { kind: 'ancestry', id, name } | { kind: 'default', id } }
 ```
 
+  - **`composition`**: só o primeiro estágio do P11b, o termo base, com a origem.
+    - Atributo: o score da ancestralidade (origem `ancestry`).
+    - Característica: a fórmula vigente, com a origem `ancestry` quando a ancestralidade a define e `default` quando vem do item `characteristic`. Exemplos: Dwarf, Health = Strength + 4 → 14; Healing Rate do padrão → 3.
+    - Ponto de extensão da FEAT-008: os demais estágios do P11b (modificadores, efeitos que definem e somam, limites, ajuste) entram como itens seguintes de `composition`.
   - **`status`** de cada etapa:
-    - `locked`: algum `requires` com vaga própria em aberto (FR-FLOW-004, 005);
+    - `locked`: alguma etapa de `requires` tem **vaga raiz** (`slots`) em aberto (FR-FLOW-004, 005). Vagas concedidas (`grants`) nunca bloqueiam etapas (P4, FR-FLOW-007): o Human com Size em aberto deixa as demais liberadas;
     - `optional`: `optional: true`;
     - `not-started`: nenhuma vaga da etapa decidida;
     - `open`: alguma decidida e N em aberto;
     - `done`: todas decididas e pelo menos uma vaga.
   - **`options`** de `choose-entity`: cada ancestralidade com id, nome, procedência e `mechanics: string[]`. De `choose-value`: os números.
-- **Árvore de vagas** (ADR-004 §3). Raízes: os `slots` de cada etapa, com chave = nome da vaga (`ancestry`). Uma decisão em `choose-entity` abre as `grants` da entidade escolhida como filhas, com chave `<mãe>=<parte local do valor>/<grantId>`, ex.: `ancestry=human/size`. Gramática: `^[a-z0-9-]+(=[a-z0-9.-]+/[a-z0-9-]+)*$`.
+- **Árvore de vagas** (ADR-004 §3). Raízes: os `slots` de cada etapa, com chave = nome da vaga (`ancestry`). Uma decisão em `choose-entity` abre as `grants` da entidade escolhida como filhas, com chave `<mãe>=<parte local do valor>/<grantId>`, ex.: `ancestry=human/size`. Gramática: `^[a-z0-9-]+(=[a-z0-9.-]+/[a-z0-9-]+)*$`. É mais estreita que os exemplos da ADR-004 (`table:…`, `/1`); a FEAT-009 e a FEAT-012 podem alargá-la sem invalidar chaves existentes.
 - **Valores** (FR-CALC-001; nada derivado é gravado):
   - score do atributo: o da ancestralidade (`null` sem ancestralidade);
   - modificador: a fórmula do item `attribute` com `self` = score;
   - característica: a fórmula da ancestralidade para aquela característica, ou a padrão do item (D5), avaliada em ordem de referências;
   - `null` propaga (pendente) e registra `pendingOn` com a vaga que falta;
-  - ciclo → `EngineError`.
+  - ciclo → `EngineError`, como invariante: a carga já recusa ciclos dentro de um livro (§3.1), e o `EngineError` pega o que só aparece com livros combinados.
   - O +1 do Human não altera atributos nesta feature (vaga aberta até a FEAT-016).
 - **`preview`**: `evaluate` do documento hipotético com a decisão. `changes` lista atributos, características e etapas cujo valor ou estado mudaria, antigo → novo (FR-FLOW-014). É puro: nada é gravado (D7).
 - **`ancestryDetail`**:
@@ -204,6 +213,13 @@ formatFormula(rules, formula, ownerId?): string
   - Next e Back pela ordem do `view.steps`: Next só para etapa liberada, mesmo com pendência na atual (FR-FLOW-007, 008);
   - a seleção de uma ancestralidade é estado local da tela, com `preview` para o "o que muda" e confirmação por `decide`;
   - a pergunta de cada etapa e os rótulos das pendências são texto do app, por id de etapa e por `kind` de vaga, nunca do pacote (D6).
+- **Texto genérico de fallback** para etapas sem texto próprio no app, já que o motor não conhece etapas pelo nome (ADR-003 §6). Rascunho; o texto final é do ui-design:
+  - pergunta: pelo `kind` da primeira vaga raiz (`choose-entity` → "Choose your {entity kind}"); sem vaga, "{Step name}";
+  - linha de regra: "{Regime label} · {ABBR} p.{page}"; sem página, só o rótulo;
+  - `lockedBy`: "Complete {step name} first"; a Ancestry tem texto próprio, "Choose an ancestry first".
+- **Regime** sempre como rótulo do app, nunca o valor do enum (lição 5): `choice` → "Choice", `roll-or-choose` → "Roll, choose or write your own", `roll` → "Roll", `derived` → "Calculated", `free` → "Your own". Sem regime, não aparece.
+- **Aviso de `has-dependents`** (D8), rascunho; o texto final é do ui-design. Ele nomeia a escolha que impede a troca, a partir de `dependents` (rótulo da vaga pelo `kind` e nome da entidade de origem):
+  - "You can't switch to Dwarf yet: your Size choice for Human depends on your current ancestry. Changing choices that others depend on comes in a later version."
 - Telas, componentes e o layout de celular (SCR-WEB-003, SCR-WEB-016; `design.md` §4: `step-map`, `step-header`, `option-card`, `subdecision`, `live-summary`, `open-decisions`) são do ui-design.
 
 ## 4. Mudanças de esquema
@@ -240,7 +256,7 @@ CharacterDocument = {
 | `characteristic:size`, `speed` | sem padrão (a ancestralidade define) | 10 | sim |
 | `ancestry:human` | 10/10/10/10; Size = `grant:size`; Speed 10; Common Tongue (speak); grants `size` (choose-value, options ½ e 1, etapa Ancestry), `attribute-increase` (1, etapa Attributes), `language-or-profession` (etapa Professions & languages); nível 4: Health +5, uma magia ou Determined | 11 (mecânica na 12) | sim |
 | `ancestry:dwarf` | Str 10, Agi 9, Int 10, Wil 10; Perception = Intellect + 1; Health = Strength + 4; Size ½; Speed 8; Common Tongue (speak), Dwarfish (speak, read, write); talentos Darksight, Hated Creature, Robust Constitution; nível 4: Health +6, uma magia ou Shake it Off | 17 | sim |
-| `language:common-tongue`, `language:dwarfish` | — | 10 | sim |
+| `language:common-tongue`, `language:dwarfish` | — | 10 | sim: descritos no quadro "Languages of the Northern Reach" (impressa 10). A seção "Languages" da p.23 é a regra de trocar profissão por idioma, já usada como página da etapa Professions & languages |
 | `talent:darksight`, `hated-creature`, `robust-constitution`, `shake-it-off` · `talent:determined` | só id, nome e página (efeitos não modelados) | 17 · 12 | sim |
 
 Não verificado: nenhum dado desta feature. A vaga da Hated Creature (tabela Hatred, impressa 18) é da FEAT-009.
@@ -288,17 +304,17 @@ sequenceDiagram
 | :-- | :-- | :-- |
 | AC-1 | Dado um personagem novo, quando o construtor abre, só Ancestry está liberada; as outras 7 etapas aparecem no mapa como bloqueadas, com `lockedBy: [step:ancestry]` exposto como "Choose an ancestry first" no nome acessível, e não abrem por clique nem por URL. | FR-FLOW-004, 005; UC-001 5 |
 | AC-2 | Na etapa Ancestry aparecem Dwarf e Human, uma vez cada, com a linha de mecânica gerada dos dados (Dwarf inclui "Health = Strength + 4", "Speed 8", "Size 1/2"), o selo "CORE p.17"/"CORE p.11" e o tipo "Core". | FR-STEP-001, FR-SRC-010, FR-CONT-009; UC-003 1 |
-| AC-3 | Ao selecionar uma ancestralidade, aparecem atributos iniciais, características, idiomas, talentos, benefício de nível 4 e página da descrição, sem texto do livro, e a prévia do que muda (atributos, características e etapas liberadas), sem gravar nada. | FR-STEP-002, FR-FLOW-014; UC-003 2–3 |
+| AC-3 | Ao selecionar uma ancestralidade, aparecem atributos iniciais, características, idiomas e profissões (no Human, a pendência de idioma ou profissão), talentos, benefício de nível 4 e página da descrição, sem texto do livro, e a prévia do que muda (atributos, características e etapas liberadas), sem gravar nada. | FR-STEP-002, FR-FLOW-014; UC-003 2–3 |
 | AC-4 | Ao confirmar Human, surge a subdecisão Size (½ ou 1). Adiada, ela entra em Open decisions com atalho que abre a etapa Ancestry na vaga; o +1 e o idioma ou profissão do Human também aparecem como pendências, nas etapas deles. A contagem inclui as três. | FR-STEP-003, FR-DEC-011, FR-FLOW-010, 011; UC-003 4a |
 | AC-5 | Depois da escolha, o mapa mostra o estado de cada etapa na ordem do procedimento, com a atual destacada; a etapa liberada abre pelo mapa; Next abre a seguinte mesmo com pendência na atual; Back volta. | FR-FLOW-001, 002, 006, 007, 008 |
 | AC-6 | O cabeçalho da etapa mostra regime, pergunta, linha de regra com página ("CORE p.9" em Ancestry) e contadores (decididas/total e abertas). | FR-FLOW-009 |
-| AC-7 | O resumo vivo mostra os quatro atributos com modificador e as características calculadas pelas fórmulas do pacote (Dwarf: Health 14, Perception 11, Healing Rate 3, Speed 8, Size 1/2) e se atualiza ao trocar a escolha. O documento gravado só tem entradas; nenhum valor derivado. | FR-FLOW-012, 013, FR-CALC-001 |
-| AC-8 | Trocar Dwarf por Human sem outras decisões aplica direto e recalcula etapas e resumo. Com dependentes (Human com Size decidido → Dwarf), o comando devolve `has-dependents` e nada muda (até a FEAT-011). | FR-FLOW-003, D8; UC-003 4c |
+| AC-7 | O resumo vivo mostra os quatro atributos com modificador e as características calculadas pelas fórmulas do pacote (Dwarf: Health 14, Perception 11, Healing Rate 3, Speed 8, Size 1/2), cada valor com o termo base e a origem (Dwarf ou padrão), e se atualiza ao trocar a escolha. O documento gravado só tem entradas; nenhum valor derivado. | FR-FLOW-012, 013, FR-CALC-001 |
+| AC-8 | Trocar Dwarf por Human sem outras decisões aplica direto e recalcula etapas e resumo. Com dependentes criados por esta troca (Human com Size decidido → Dwarf), o comando devolve `has-dependents` e nada muda (até a FEAT-011), e o aviso nomeia a escolha que impede. Decisões que já eram órfãs não bloqueiam. Size em aberto não bloqueia nenhuma etapa. | FR-FLOW-003, 004, 007, D8; UC-003 4c |
 | AC-9 | Abaixo de 768px vale o layout de celular do SCR-WEB-016 para as etapas: seletor no topo, resumo recolhível, Back e Next fixos. | FR-FLOW-018 |
 | AC-10 | A decisão sobrevive a recarregar a página. Renomear uma entidade no pacote, mantendo o id, preserva a decisão. | FR-CONT-006, NFR-REL-001 |
-| AC-11 | Se o IndexedDB falhar ao abrir o personagem, o construtor mostra a mensagem de `storage-unavailable`, em vez de ficar em "Loading…"; documento inválido mostra `unreadable`; pacote que não carrega mostra `pack-load-failed` e nada é gravado. | FR-HELP-004, 005, NFR-USE-001 |
+| AC-11 | Se o IndexedDB falhar ao abrir o personagem, o construtor mostra a mensagem de `storage-unavailable`, em vez de ficar em "Loading…"; documento inválido mostra `unreadable`; pacote que não carrega, ou regras que o motor recusa (id em dois livros, ciclo), mostram `pack-load-failed` e nada é gravado. | FR-HELP-004, 005, NFR-USE-001 |
 | AC-12 | Se a gravação de uma decisão falhar, a decisão fica na tela, o aviso aparece e "Try again" grava o estado atual. | FR-CHAR-010 |
-| AC-13 | O pacote do core passa no schema estrito e no `packs:check`; um campo de texto num item é recusado. | FR-CONT-003 (parcial), FR-CONT-004 |
+| AC-13 | O pacote do core passa no schema estrito e no `packs:check`; um campo de texto num item, um nome de vaga raiz repetido e um ciclo entre fórmulas são recusados com o caminho no erro. | FR-CONT-003 (parcial), FR-CONT-004; ADR-004 §2 |
 
 **NFRs:**
 - NFR-PERF-001: a Home continua sem pacotes (E2E existente).
@@ -337,7 +353,7 @@ sequenceDiagram
 - **D8. Mudança com dependentes é recusada até a FEAT-011.**
   - Motivo: P6 (dependentes só saem com confirmação); FR-CHG-001/002/005 são da FEAT-011.
   - Alternativa rejeitada: aplicar e deixar órfãs inertes no documento (estado escondido).
-  - Consequência: a ui mostra um aviso simples; a FEAT-011 troca pelo diálogo de impacto.
+  - Consequência: a ui mostra um aviso que nomeia a escolha que impede (§3.4); a FEAT-011 troca pelo diálogo de impacto.
 - **D9. +1 e idioma ou profissão do Human como concessões já declaradas.**
   - Motivo: o plano (§5, "ficam como decisões abertas até o FEAT-016").
   - Consequência: os `kind` `attribute-increase` e `language-or-profession` existem sem resolvedor; a FEAT-016 pode estendê-los antes da publicação.
@@ -353,7 +369,7 @@ sequenceDiagram
 - **Escalações de arquitetura:** nenhuma. Vagas, concessões, fórmulas e componentes são formas físicas das entidades das ADR-003/004.
 - **Log:** a ADR-004 §5 diz que todo comando gera entradas de log; a FR-LOG-001 está na FEAT-009. Até lá, `decide` não escreve no log.
 - **FEAT-001:** a Home trata falha do `listCharacters` como lista vazia; deve mostrar mensagem como a §3.2.
-- **FEAT-003:** validação completa (integridade referencial, ciclo de fórmula na carga, consistência do `index.json` com os livros, página obrigatória).
+- **FEAT-003:** validação completa (integridade referencial, consistência do `index.json` com os livros, página obrigatória).
 - **FEAT-011:** substituir o `has-dependents` pelo diálogo de impacto.
 - **`CONTENT_VERSION`:** continua `0.0.0` (scaffold-notes).
 - **Texto do app:** perguntas das etapas, rótulos das pendências e mensagens da §3.2 são rascunho; o ui-design fecha (NFR-USE-001).
