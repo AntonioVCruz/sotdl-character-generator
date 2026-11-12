@@ -42,6 +42,7 @@
       - `FR-STEP-007`: os quatro atributos do Dwarf com modificador e composição;
       - `FR-FLOW-001`: Attributes `done` com Dwarf; Attributes e Professions & languages `open` com Human (AC-15);
       - as duas expectativas da FEAT-007 que mudam (design §7): `FR-FLOW-014: preview of Dwarf → Human…` com Attributes `done → open` e Professions & languages `not-started → open`, e `FR-FLOW-014: preview from no ancestry…` com Attributes `locked → done`;
+    - `session.test.ts`: a terceira expectativa da FEAT-007 que muda (design §7), `FR-CONT-006: renaming the entity in the pack…`, com os estados `['done', 'open']`;
     - `core-pack.test.ts`: a vaga `adjustment` de `step:attributes`;
     - `Builder.test.tsx`: `FR-STEP-009: the optional adjustment slot is not shown as pending in the step` (Dwarf na etapa Attributes, sem "It stays in Open decisions");
     - `npm run typecheck`, `npm run lint`, `npm run packs:check` (nenhum id removido), `npm test` e `npm run e2e` verdes.

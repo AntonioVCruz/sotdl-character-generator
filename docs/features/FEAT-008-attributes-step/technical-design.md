@@ -316,11 +316,12 @@ sequenceDiagram
   - NFR-PERF-002: a emulação 4× no `mobile-chrome` substitui a medição manual no celular (§5), e a guarda unitária usa também um pacote fictício do porte de um nível 0 completo (§5).
 - **Mudanças em contratos da FEAT-007:**
   - Acréscimos: `SlotDef`, `DecisionValue`, `Stage`, `limits`, `clear` e as razões novas do `DecideResult`.
-  - A regra de `status` da FEAT-007 §3.3 muda (§3.3, "Estado da etapa"). Mudam duas expectativas em `core-view.test.ts`, ambas na T2:
-    - `FR-FLOW-014: preview of Dwarf → Human…` passa a listar também Attributes `done → open` e Professions & languages `not-started → open`;
-    - `FR-FLOW-014: preview from no ancestry…` passa a listar Attributes `locked → done`.
+  - A regra de `status` da FEAT-007 §3.3 muda (§3.3, "Estado da etapa"). Mudam três expectativas, todas na T2:
+    - `core-view.test.ts`, `FR-FLOW-014: preview of Dwarf → Human…` passa a listar também Attributes `done → open` e Professions & languages `not-started → open`;
+    - `core-view.test.ts`, `FR-FLOW-014: preview from no ancestry…` passa a listar Attributes `locked → done`;
+    - `src/app/session.test.ts`, `FR-CONT-006: renaming the entity in the pack…`: os estados passam de `['done', 'not-started']` a `['done', 'open']`, porque o Gnome do pacote de teste concede o boost na etapa Traits (o mesmo efeito do Professions & languages com Human).
   - No E2E `ancestry.spec.ts`, a etapa Attributes deixa de ter o título de fallback "Attributes" e passa a ter a pergunta do ui-design.
-  - Com Human, o mapa de etapas mostra "1 open" também em Attributes e em Professions & languages, e a prévia da troca Dwarf → Human na etapa Ancestry ganha as duas linhas de etapa (dados, sem mudança na tela). Nenhum outro teste da FEAT-007 verifica o estado dessas duas etapas; os demais continuam válidos sem mudança.
+  - Com Human, o mapa de etapas mostra "1 open" também em Attributes e em Professions & languages, e a prévia da troca Dwarf → Human na etapa Ancestry ganha as duas linhas de etapa (dados, sem mudança na tela). Fora as três expectativas acima, nenhum teste da FEAT-007 verifica o estado de uma etapa que a regra nova muda; os demais continuam válidos sem mudança.
 
 ## 8. Escalações e pendências
 
