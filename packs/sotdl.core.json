@@ -2,16 +2,97 @@
   "format": 1,
   "id": "sotdl.core",
   "name": "Shadow of the Demon Lord",
+  "abbr": "CORE",
   "layer": "core",
   "published": "2015",
-  "steps": [
-    { "id": "step:ancestry", "name": "Ancestry", "page": 9 },
-    { "id": "step:attributes", "name": "Attributes", "page": 10 },
-    { "id": "step:story", "name": "Story", "page": 11 },
-    { "id": "step:professions-languages", "name": "Professions & languages", "page": 23 },
-    { "id": "step:wealth-equipment", "name": "Wealth & equipment", "page": 25 },
-    { "id": "step:interesting-thing", "name": "Interesting thing", "page": 26 },
-    { "id": "step:roleplaying", "name": "Roleplaying", "page": 27 },
-    { "id": "step:review", "name": "Review" }
+  "components": [
+    {
+      "id": "base",
+      "type": "adds",
+      "default": "on",
+      "items": [
+        {
+          "id": "procedure:level-0",
+          "steps": [
+            "step:ancestry",
+            "step:attributes",
+            "step:story",
+            "step:professions-languages",
+            "step:wealth-equipment",
+            "step:interesting-thing",
+            "step:roleplaying",
+            "step:review"
+          ]
+        },
+        { "id": "step:ancestry", "name": "Ancestry", "page": 9, "regime": "choice", "slots": { "ancestry": { "kind": "choose-entity", "of": "ancestry" } } },
+        { "id": "step:attributes", "name": "Attributes", "page": 10, "requires": ["step:ancestry"] },
+        { "id": "step:story", "name": "Story", "page": 11, "requires": ["step:ancestry"] },
+        { "id": "step:professions-languages", "name": "Professions & languages", "page": 23, "requires": ["step:ancestry"] },
+        { "id": "step:wealth-equipment", "name": "Wealth & equipment", "page": 25, "requires": ["step:ancestry"] },
+        { "id": "step:interesting-thing", "name": "Interesting thing", "page": 26, "requires": ["step:ancestry"] },
+        { "id": "step:roleplaying", "name": "Roleplaying", "page": 27, "optional": true, "requires": ["step:ancestry"] },
+        { "id": "step:review", "name": "Review", "requires": ["step:ancestry"] },
+
+        { "id": "attribute:strength", "name": "Strength", "page": 10, "modifier": { "add": [{ "ref": "self" }, -10] } },
+        { "id": "attribute:agility", "name": "Agility", "page": 10, "modifier": { "add": [{ "ref": "self" }, -10] } },
+        { "id": "attribute:intellect", "name": "Intellect", "page": 10, "modifier": { "add": [{ "ref": "self" }, -10] } },
+        { "id": "attribute:will", "name": "Will", "page": 10, "modifier": { "add": [{ "ref": "self" }, -10] } },
+
+        { "id": "characteristic:perception", "name": "Perception", "page": 10, "formula": { "ref": "attribute:intellect" } },
+        { "id": "characteristic:defense", "name": "Defense", "page": 10, "formula": { "ref": "attribute:agility" } },
+        { "id": "characteristic:health", "name": "Health", "page": 10, "formula": { "ref": "attribute:strength" } },
+        {
+          "id": "characteristic:healing-rate",
+          "name": "Healing Rate",
+          "page": 10,
+          "formula": { "round": "down", "of": { "div": [{ "ref": "characteristic:health" }, 4] } }
+        },
+        { "id": "characteristic:size", "name": "Size", "page": 10 },
+        { "id": "characteristic:speed", "name": "Speed", "page": 10 },
+        { "id": "characteristic:power", "name": "Power", "page": 10, "formula": 0 },
+        { "id": "characteristic:damage", "name": "Damage", "page": 10, "formula": 0 },
+        { "id": "characteristic:insanity", "name": "Insanity", "page": 10, "formula": 0 },
+        { "id": "characteristic:corruption", "name": "Corruption", "page": 10, "formula": 0 },
+
+        { "id": "language:common-tongue", "name": "Common Tongue", "page": 10 },
+        { "id": "language:dwarfish", "name": "Dwarfish", "page": 10 },
+
+        { "id": "talent:determined", "name": "Determined", "page": 12 },
+        { "id": "talent:darksight", "name": "Darksight", "page": 17 },
+        { "id": "talent:hated-creature", "name": "Hated Creature", "page": 17 },
+        { "id": "talent:robust-constitution", "name": "Robust Constitution", "page": 17 },
+        { "id": "talent:shake-it-off", "name": "Shake it Off", "page": 17 },
+
+        {
+          "id": "ancestry:human",
+          "name": "Human",
+          "page": 11,
+          "attributes": { "attribute:strength": 10, "attribute:agility": 10, "attribute:intellect": 10, "attribute:will": 10 },
+          "characteristics": { "characteristic:size": { "ref": "grant:size" }, "characteristic:speed": 10 },
+          "languages": { "language:common-tongue": ["speak"] },
+          "level4": { "characteristics": { "characteristic:health": 5 }, "oneOf": [{ "spells": 1 }, { "talent": "talent:determined" }] },
+          "grants": {
+            "size": { "kind": "choose-value", "step": "step:ancestry", "target": "characteristic:size", "options": [0.5, 1] },
+            "attribute-increase": { "kind": "attribute-increase", "step": "step:attributes", "amount": 1 },
+            "language-or-profession": { "kind": "language-or-profession", "step": "step:professions-languages" }
+          }
+        },
+        {
+          "id": "ancestry:dwarf",
+          "name": "Dwarf",
+          "page": 17,
+          "attributes": { "attribute:strength": 10, "attribute:agility": 9, "attribute:intellect": 10, "attribute:will": 10 },
+          "characteristics": {
+            "characteristic:perception": { "add": [{ "ref": "attribute:intellect" }, 1] },
+            "characteristic:health": { "add": [{ "ref": "attribute:strength" }, 4] },
+            "characteristic:size": 0.5,
+            "characteristic:speed": 8
+          },
+          "languages": { "language:common-tongue": ["speak"], "language:dwarfish": ["speak", "read", "write"] },
+          "talents": ["talent:darksight", "talent:hated-creature", "talent:robust-constitution"],
+          "level4": { "characteristics": { "characteristic:health": 6 }, "oneOf": [{ "spells": 1 }, { "talent": "talent:shake-it-off" }] }
+        }
+      ]
+    }
   ]
 }

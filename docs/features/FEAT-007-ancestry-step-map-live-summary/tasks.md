@@ -22,7 +22,7 @@
     - ciclo entre fórmulas no grafo de uma ancestralidade (padrão mais as que ela substitui) recusado, com o caminho da fórmula no erro; duas ancestralidades com fórmulas cruzadas não acusam ciclo;
     - documento do esqueleto recusado.
 
-- [ ] **T2. Pacote do core: Dwarf, Human e regras-base** (design §4; FR-CONT-003 parcial, FR-STEP-003)
+- [x] **T2. Pacote do core: Dwarf, Human e regras-base** (design §4; FR-CONT-003 parcial, FR-STEP-003)
   - Reescrever `packs/sotdl.core.json` e `packs/index.json` no formato novo com os dados da tabela da §4, todos conferidos no PDF (impressa = PDF − 1).
   - Registrar no `docs/scaffold-notes.md`: a troca do documento v1 e o passo de apagar o banco de desenvolvimento.
   - **Pronto quando:**

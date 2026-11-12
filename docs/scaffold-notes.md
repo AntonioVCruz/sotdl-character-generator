@@ -49,12 +49,9 @@ Stubs (substituídos pela FEAT indicada no código):
 
 | Onde | O que faz hoje | Quem substitui |
 | :-- | :-- | :-- |
-| `engine.resolve` | procedimento do primeiro livro da ordem que declara etapas | FEAT-007 |
-| `engine.evaluate` | toda etapa "Not started" | FEAT-007 |
 | `dice` | só a fonte `globalThis.crypto`; sem sorteio de faces | FEAT-009 |
 | Home | lista nome e nível; sem cartões, estado, ordem, exclusão nem aviso | FEAT-001 |
 | About | texto provisório | FEAT-022 |
-| Documento v1 | `decisions` e `log` vazios, sem forma | FEAT-007, FEAT-020 |
 | `CONTENT_VERSION` | `0.0.0` | versionamento dos pacotes (design detalhado) |
 | `packs:check`, ids removidos | compara com o commit anterior (base do PR ou `github.event.before`) | `initial-deployment`: passa a comparar com o último commit publicado (ADR-008, "versão publicada anterior") |
 | `packs/index.json` | nome, camada e data repetem os do livro, sem checagem de consistência | FEAT-003 |
@@ -63,7 +60,7 @@ Fora do esqueleto, por decisão: aviso entre abas por `BroadcastChannel` (FEAT-0
 
 ## Pacote do core (`packs/`)
 
-Formato mínimo: livro (`format`, `id`, `name`, `layer`, `published`) e etapa (`id`, `name`, `page`), com objetos estritos. Conferido no PDF do core (página impressa = página do PDF − 1):
+Formato 1 da FEAT-007 (`docs/features/FEAT-007-ancestry-step-map-live-summary/technical-design.md` §3.1), com objetos estritos. Páginas das etapas conferidas no PDF do core (página impressa = página do PDF − 1):
 
 | Etapa | Página | Âncora no livro |
 | :-- | :-- | :-- |
@@ -79,7 +76,11 @@ Sem conferência no PDF:
 - **Review:** etapa do próprio gerador, sem página no livro. Por isso `page` é opcional na etapa.
 - **`published: "2015"`:** a página de créditos só dá o ano (© 2015); o PDF é a "revised edition", sem data completa. Por isso o schema aceita `YYYY`, `YYYY-MM` ou `YYYY-MM-DD`. A precisão da data fica para o design detalhado.
 
-Os testes usam só pacotes fictícios (`test.*`).
+Os testes usam só pacotes fictícios (`test.*`), exceto o `src/content/core-pack.test.ts`, que confere o pacote real.
+
+## Documento do personagem v1 (FEAT-007)
+
+O documento v1 foi redefinido sem migração (technical-design D1): camadas `sources`, `decisions`, `text` e `log`, envelope com `createdAt`/`updatedAt`, sem `name` no topo nem `level`. Personagens criados pelo esqueleto não abrem mais (mensagem de "can't be opened"). Para limpar o banco de desenvolvimento: DevTools → Application → IndexedDB → `sotdl-generator` → Delete database.
 
 ## Testes (ADR-008)
 

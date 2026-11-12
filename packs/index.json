@@ -1,6 +1,6 @@
 {
   "format": 1,
   "books": [
-    { "id": "sotdl.core", "name": "Shadow of the Demon Lord", "layer": "core", "published": "2015" }
+    { "id": "sotdl.core", "name": "Shadow of the Demon Lord", "abbr": "CORE", "layer": "core", "published": "2015" }
   ]
 }
