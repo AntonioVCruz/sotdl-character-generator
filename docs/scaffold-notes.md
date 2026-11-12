@@ -43,7 +43,7 @@ Delegada ao scaffolding pela ADR-002 (não é emenda): **`idb`** como wrapper do
 
 ## Esqueleto (plano §2)
 
-Caminho: Home → **New character** → `app.createCharacter` → `content.loadBookIndex` (busca `<BASE_URL>packs/index.json` e valida com o schema Zod) → documento v1 → `storage.save` (documento e metadados numa transação do IndexedDB; `persist()` no primeiro salvamento) → `#/characters/<id>` → `app.openCharacter` → `content.loadBook` → `engine.resolve`/`evaluate` → mapa de etapas. Ao recarregar, a Home lista pelos metadados, sem ler documentos nem pacotes.
+Caminho: Home → **New character** → `app.createCharacter` → `content.loadBookIndex` (busca `<BASE_URL>packs/index.json` e valida com o schema Zod) → documento v1 → `storage.save` (documento e metadados numa transação do IndexedDB; `persist()` no primeiro salvamento) → `#/characters/<id>`, redirecionado para `#/characters/<id>/<etapa>` → `Builder` → `useCharacterSession` → `createCharacterSession().open` (`src/app/session.ts`) → `storage.get` → `content.loadBook` → `engine.resolve`/`evaluate` → mapa de etapas, etapa e resumo vivo. Ao recarregar, a Home lista pelos metadados, sem ler documentos nem pacotes.
 
 Stubs (substituídos pela FEAT indicada no código):
 
@@ -55,6 +55,7 @@ Stubs (substituídos pela FEAT indicada no código):
 | `CONTENT_VERSION` | `0.0.0` | versionamento dos pacotes (design detalhado) |
 | `packs:check`, ids removidos | compara com o commit anterior (base do PR ou `github.event.before`) | `initial-deployment`: passa a comparar com o último commit publicado (ADR-008, "versão publicada anterior") |
 | `packs/index.json` | nome, camada e data repetem os do livro, sem checagem de consistência | FEAT-003 |
+| referências de fórmula entre livros | conferidas só dentro do livro | FEAT-003 |
 
 Fora do esqueleto, por decisão: aviso entre abas por `BroadcastChannel` (FEAT-031) e logger estruturado. A NFR-OBS-001 e a arquitetura §8 dizem "nenhuma telemetria"; fica só o error boundary.
 
