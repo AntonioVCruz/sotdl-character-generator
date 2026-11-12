@@ -11,7 +11,9 @@ const packsDir = resolve(import.meta.dirname, 'packs')
 const CSP = [
   "default-src 'self'",
   "script-src 'self'",
-  "style-src 'self'",
+  // Hash do <style> que o usePress do React Aria injeta (touch-action dos elementos pressionáveis).
+  // Se uma versão nova mudar o texto, o E2E acusa a violação de CSP.
+  "style-src 'self' 'sha256-38RhXrc7EdReTKsOm23ZPOCUgniTUUcjky8QOOrQx6o='",
   "img-src 'self'",
   "font-src 'self'",
   "connect-src 'self'",

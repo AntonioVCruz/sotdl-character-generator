@@ -1,5 +1,8 @@
 import { z } from 'zod'
 
+// CSP sem eval (ADR-007): o Zod 4 testa `new Function` para ligar o JIT; sem JIT, valida igual.
+z.config({ jitless: true })
+
 // Formato do pacote no esqueleto técnico: só o índice e o procedimento de 8 etapas.
 // Ancestralidade, fórmula e concessão entram no design detalhado da FEAT-007 (ADR-003, ADR-005).
 // Objetos estritos: campo desconhecido é recusado, o que barra texto livre no pacote oficial (P22, FR-CONT-004).

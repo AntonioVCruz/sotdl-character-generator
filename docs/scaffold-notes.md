@@ -78,3 +78,19 @@ Sem conferência no PDF:
 - **`published: "2015"`:** a página de créditos só dá o ano (© 2015); o PDF é a "revised edition", sem data completa. Por isso o schema aceita `YYYY`, `YYYY-MM` ou `YYYY-MM-DD`. A precisão da data fica para o design detalhado.
 
 Os testes usam só pacotes fictícios (`test.*`).
+
+## Testes (ADR-008)
+
+- **Vitest 5.1**: `src/**/*.test.ts(x)` ao lado do código, mais os testes dos scripts em `scripts/`. Ambiente `node`; testes de componente declaram `// @vitest-environment jsdom` (Testing Library 16 + user-event). Storage com `fake-indexeddb`.
+- **Cobertura**: provedor v8, só relatada (`npm run test:coverage` → `coverage/`), sem limite e sem gate no CI.
+- **Nome de teste**: começa pelo FR que verifica (NFR-MAINT-002); testes de fundação sem FR citam a ADR ou NFR (ex.: `ADR-009: …`).
+- **Playwright 1.65** (`create-playwright@1.17.139 --quiet --lang=TypeScript --browser=chromium --browser=firefox --browser=webkit --no-examples`, sem `--gha`, porque o E2E roda no `ci.yml`). Projetos: Chromium, Firefox, WebKit, Pixel 7 e iPhone 15. O `webServer` faz o build com `BASE_PATH=/sotdl-character-generator/` e serve com `vite preview` (porta 4173), então a CSP está ativa e URL fixa em "/" quebra o teste. Tipos do E2E em `tsconfig.e2e.json`.
+- **`e2e/skeleton.spec.ts`**: o fluxo do "pronto quando" (criar, recarregar, ver na Home), a cor de fundo vinda do `tokens.json`, a Home sem pedir pacotes nem o chunk do construtor, os pacotes buscados sob a base de caminho e nenhuma violação de CSP. O axe (`@axe-core/playwright` 4.14, WCAG 2.2 AA, falha em `serious` e `critical`) fica em testes separados, porque injeta script e estilo e geraria violações de CSP.
+- **Lighthouse CI 0.16** (`lighthouserc.desktop.cjs`, `lighthouserc.mobile.cjs`): Home do build, 3 execuções, asserção sobre a mediana do LCP (2500 ms no preset desktop e 4000 ms no perfil móvel padrão). Relatórios em `.lighthouseci/`, sem envio externo. Primeira medição local: cerca de 0,21 s no desktop e 0,76 s no celular. Com teto de 100 ms, a asserção falha como esperado.
+
+## Desvios encontrados ao rodar
+
+- **CSP e Zod 4:** o Zod testa `Function('')` para ligar o JIT, o que gera uma violação de `script-src`. `z.config({ jitless: true })` em `src/content/schemas.ts`.
+- **CSP e React Aria:** o `usePress` injeta um `<style>` (`touch-action` em `[data-react-aria-pressable]`). Liberado só o hash SHA-256 desse bloco no `style-src`. Se uma versão nova mudar o texto, o E2E acusa.
+- **axe e React Aria:** depois de `isPending`, o anunciador (`[data-live-announcer]`) guarda por 7 s um nó `role="img"` com `aria-labelledby` para o botão. Quando o app navega, o botão some e o axe acusa `role-img-alt`. É um nó oculto e transitório de terceiros, por isso fica excluído da análise.
+- **Firefox do Playwright no Windows:** duas análises do axe na mesma página derrubam o navegador ("Page crashed"). Cada análise roda num teste próprio.
