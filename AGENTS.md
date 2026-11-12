@@ -47,7 +47,7 @@ Usar o Agentic SDLC Kit, na ordem do pipeline, uma etapa por vez e só avançand
 4. `implementation-planning`
 
 Construção, também pelo kit:
-1. `project-scaffolding`: gera o esqueleto funcional do plano.
+1. `project-scaffolding`: gera o esqueleto técnico do plano (§2).
 2. Ciclo por feature, na ordem do plano: `detailed-design` → `ui-design` → `feature-implementation` → `acceptance-verification`.
 3. `initial-deployment` depois que o esqueleto técnico (§2 do plano) estiver aceito.
 
@@ -98,6 +98,7 @@ A tentativa anterior falhou por escopo inflado e excesso de processo (ver `docs/
 - Todo trabalho de interface (telas, componentes, estilos) segue `docs/design.md`, com os valores de `docs/tokens.json`: usar os tokens e componentes definidos ali, nunca valores soltos. Telas e fluxos estão em `docs/ux-foundations.md`, pelos IDs `SCR-WEB-*`.
 - Decisões em aberto: apresentar as alternativas com prós e contras e deixar a decisão comigo.
 - Commits pequenos, um por documento ou decisão relevante.
+
 ## Documentos do projeto
 
 - Requisitos: [`docs/srs.md`](docs/srs.md), [`docs/use-cases.md`](docs/use-cases.md), [`docs/rtm.md`](docs/rtm.md).

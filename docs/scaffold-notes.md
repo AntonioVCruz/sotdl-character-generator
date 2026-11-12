@@ -38,7 +38,7 @@ Delegada ao scaffolding pela ADR-002 (não é emenda): **`idb`** como wrapper do
   - `media.generated.css`: os breakpoints como `@custom-media --bp-md`, `--bp-below-md`, `--bp-xl` e `--bp-below-xl`, injetados em todo CSS pelo `@csstools/postcss-global-data` e expandidos pelo `postcss-custom-media` (`postcss.config.js`);
   - `breakpoints.generated.ts`: as mesmas consultas para `matchMedia`.
 - Os scripts `predev`, `prebuild`, `pretypecheck`, `prelint`, `pretest` e `pretest:coverage` rodam o gerador. Sem `tokens.json`, nada compila.
-- Fontes pelo `@fontsource`, empacotadas pelo Vite: Spectral 600, Inter 400/500/600/700 e IBM Plex Mono 500. O `@fontsource-variable/inter` foi descartado porque registra a família como "Inter Variable", e os tokens dizem "Inter".
+- Fontes pelo `@fontsource`, empacotadas pelo Vite: Spectral 600, Inter 400/500/600 e IBM Plex Mono 500 (nenhum estilo tipográfico usa 700). O `@fontsource-variable/inter` foi descartado porque registra a família como "Inter Variable", e os tokens dizem "Inter".
 - Casca: `app-header` (marca e About), Home, `#/about` provisório, construtor com três zonas carregado sob demanda (`React.lazy`), anel de foco, `@media print` base, error boundary na raiz e por rota.
 
 ## Esqueleto (plano §2)
@@ -56,6 +56,8 @@ Stubs (substituídos pela FEAT indicada no código):
 | About | texto provisório | FEAT-022 |
 | Documento v1 | `decisions` e `log` vazios, sem forma | FEAT-007, FEAT-020 |
 | `CONTENT_VERSION` | `0.0.0` | versionamento dos pacotes (design detalhado) |
+| `packs:check`, ids removidos | compara com o commit anterior (base do PR ou `github.event.before`) | `initial-deployment`: passa a comparar com o último commit publicado (ADR-008, "versão publicada anterior") |
+| `packs/index.json` | nome, camada e data repetem os do livro, sem checagem de consistência | FEAT-003 |
 
 Fora do esqueleto, por decisão: aviso entre abas por `BroadcastChannel` (FEAT-031) e logger estruturado. A NFR-OBS-001 e a arquitetura §8 dizem "nenhuma telemetria"; fica só o error boundary.
 
