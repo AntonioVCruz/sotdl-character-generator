@@ -119,7 +119,7 @@
     - `NFR-ACC-001: the Attributes step with an adjustment applied has no serious axe violations`.
   - **Pronto quando:** `npm run e2e` passa nos 5 projetos, sem violação de CSP, e `npm run typecheck` e `npm run lint` passam.
 
-- [ ] **T9. Verificação** (design §6)
+- [x] **T9. Verificação** (design §6)
   - Rodar `npm run typecheck`, `npm run lint`, `npm test`, `npm run packs:check`, `npm run build` e `npm run e2e`.
   - Conferir cada AC-1 a AC-15 contra o teste que a cobre. Todo teste novo começa pelo FR ou NFR que verifica (NFR-MAINT-002).
   - Confirmar que nenhum arquivo de produção de `src/engine` (fora `*.test.ts`) cita id de livro, de etapa ou de ancestralidade. Os testes com o pacote real podem citar Dwarf, Human e nomes de etapa (ADR-003).

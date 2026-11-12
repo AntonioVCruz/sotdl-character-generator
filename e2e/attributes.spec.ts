@@ -76,6 +76,9 @@ test('FR-STEP-007, FR-CALC-003: from New character, a Dwarf sees the four attrib
   await expect(main.getByText('Step 2 of 8 · Choice')).toBeVisible()
   await expect(main.locator('.step-header')).toContainText('CORE p.10')
   await expect(main.getByText('Nothing required')).toBeVisible()
+  // FR-FLOW-001 (AC-15): no mapa de etapas, Attributes fica "Done" logo ao escolher o Dwarf.
+  const map = page.locator('.builder__map-list .step-map__row')
+  await expect(map.nth(1)).toContainText('Done')
 
   for (const name of ['Strength 10 Modifier +0', 'Agility 9 Modifier −1', 'Intellect 10 Modifier +0', 'Will 10 Modifier +0']) {
     await expect(row(page, name)).toBeVisible()
@@ -209,10 +212,22 @@ test('FR-STEP-008: a Human sees the +1 as pending in Attributes, and the Open de
   await expect(main.getByText("You can't make this choice here yet. It stays in Open decisions.")).toHaveCount(0)
   await expect(main.getByText('Chosen 0 of 1')).toBeVisible()
   await expect(main.getByText('1 open', { exact: true })).toBeVisible()
+  // FR-FLOW-001 (AC-15): com Human, Attributes e Professions & languages com "1 open" no mapa; Story segue "Not started".
+  const map = page.locator('.builder__map-list .step-map__row')
+  await expect(map.nth(1)).toContainText('1 open')
+  await expect(map.nth(2)).toContainText('Not started')
+  await expect(map.nth(3)).toContainText('1 open')
 
-  // O atalho de Open decisions, a partir de outra etapa, abre Attributes com o foco na pendência.
-  await page.getByRole('button', { name: 'Back' }).click()
-  await expect(page).toHaveURL(/\/ancestry$/)
+  // AC-9: Story a Review continuam com o FallbackStep, e o texto provisório da FEAT-007 segue lá.
+  await page.getByRole('button', { name: 'Next: Story' }).click()
+  await expect(page).toHaveURL(/\/story$/)
+  await expect(main.getByText("There's nothing to decide in this step yet.")).toBeVisible()
+  await page.getByRole('button', { name: 'Next: Professions & languages' }).click()
+  await expect(main.getByText("You can't make this choice here yet. It stays in Open decisions.")).toBeVisible()
+
+  // O atalho de Open decisions, a partir de outra etapa (aqui, Professions & languages), abre Attributes com o foco
+  // na pendência.
+  await expect(page).toHaveURL(/\/professions-languages$/)
   const aside = await liveSummary(page, testInfo)
   await aside.getByRole('link', { name: /^\+1 to one attribute\s*Attributes · Human$/ }).click()
   await expect(page).toHaveURL(/\/attributes\?slot=ancestry%3Dhuman%2Fattribute-increase$/)
