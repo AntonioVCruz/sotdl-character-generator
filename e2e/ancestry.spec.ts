@@ -156,6 +156,12 @@ test('FR-STEP-001, FR-FLOW-012, FR-FLOW-003, FR-DEC-011, FR-FLOW-011, NFR-REL-00
   // FR-FLOW-010, FR-FLOW-011: as três pendências do Human e o atalho que abre a Ancestry na vaga do Size.
   aside = await summary(page, testInfo)
   await expect(aside.getByRole('heading', { name: 'Open decisions · 3' })).toBeVisible()
+  // AC-4: as três pendências do Human, cada uma na etapa em que se resolve.
+  const decisions = aside.locator('a.open-decision')
+  await expect(decisions).toHaveCount(3)
+  await expect(decisions.nth(0)).toHaveText(/^Size\s*Ancestry · Human$/)
+  await expect(decisions.nth(1)).toHaveText(/^\+1 to one attribute\s*Attributes · Human$/)
+  await expect(decisions.nth(2)).toHaveText(/^Extra language or profession\s*Professions & languages · Human$/)
   await aside.getByRole('link', { name: /^Size\s*Ancestry · Human$/ }).click()
   await expect(page).toHaveURL(/\/ancestry\?slot=ancestry%3Dhuman%2Fsize$/)
   await expect(page.locator('#slot-ancestry_human_size')).toBeFocused()
@@ -166,6 +172,64 @@ test('FR-STEP-001, FR-FLOW-012, FR-FLOW-003, FR-DEC-011, FR-FLOW-011, NFR-REL-00
   await expect(page.getByRole('radiogroup', { name: 'Size' })).toBeVisible()
 
   expect(csp).toEqual([])
+})
+
+test('FR-STEP-002, FR-FLOW-014: selecting an ancestry shows its detail and what it changes, and saves nothing', async ({ page }) => {
+  await createCharacter(page)
+
+  await card(page, 'Dwarf').click()
+  const detail = page.locator('section.ancestry-detail')
+  await expect(detail.getByRole('heading', { level: 2, name: 'Dwarf' })).toBeVisible()
+  await expect(detail).toContainText('Description: CORE p.17')
+  await expect(detail).toContainText('Strength 10, Agility 9, Intellect 10, Will 10')
+  await expect(detail).toContainText('Perception = Intellect + 1')
+  await expect(detail).toContainText('Health = Strength + 4')
+  await expect(detail).toContainText('Dwarfish: speak, read, write')
+  await expect(detail).toContainText('Robust Constitution')
+  await expect(detail).toContainText('Health +6; one spell or Shake it Off')
+  // A prévia: atributos, características e etapas, antes de confirmar.
+  const line = (name: string) => detail.locator('.preview-box__line').filter({ hasText: name })
+  await expect(line('Agility')).toContainText('— → 9')
+  await expect(line('Health')).toContainText('— → 14')
+  await expect(detail).toContainText('Opens the other 7 steps')
+
+  // No Human, a pendência de idioma ou profissão.
+  await card(page, 'Human').click()
+  await expect(page.locator('section.ancestry-detail')).toContainText(
+    'One extra language or a random profession, chosen in Professions & languages.',
+  )
+
+  // Selecionar não grava nada: depois de recarregar, nenhuma escolha e as etapas seguem bloqueadas.
+  await page.reload()
+  await expect(page.getByRole('heading', { level: 1, name: "What is your character's ancestry?" })).toBeVisible()
+  await expect(page.getByRole('radio', { name: /your choice/ })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'Next: Attributes' })).toBeDisabled()
+})
+
+test('FR-FLOW-003, D8: switching Human with Size decided to Dwarf is refused with a warning, and nothing changes', async ({ page }, testInfo) => {
+  await createCharacter(page)
+  await choose(page, 'Human')
+  await page.locator('label.segmented-control__segment').filter({ hasText: /^1$/ }).click()
+  await expect(page.getByText('Decided.')).toBeVisible()
+
+  await card(page, 'Dwarf').click()
+  await page.getByRole('button', { name: 'Choose Dwarf' }).click()
+  await expect(page.getByRole('status').filter({ hasText: "You can't switch" })).toHaveText(
+    "You can't switch to Dwarf yet: your Size choice for Human depends on your current ancestry. Changing a choice that others depend on isn't available yet.",
+  )
+
+  // Nada muda: Human continua a escolha, o Size continua decidido e o resumo é o do Human.
+  const unchanged = async () => {
+    await expect(page.getByRole('radio', { name: 'Human, your choice' })).toBeChecked()
+    await expect(page.getByRole('radiogroup', { name: 'Size' }).getByRole('radio', { name: '1', exact: true })).toBeChecked()
+    const aside = await summary(page, testInfo)
+    await expect(aside.getByRole('button', { name: /Health\s*10/ })).toBeVisible()
+    await expect(aside.getByRole('heading', { name: 'Open decisions · 2' })).toBeVisible()
+    await closeSummary(page, testInfo)
+  }
+  await unchanged()
+  await page.reload()
+  await unchanged()
 })
 
 // Sem vigiar a CSP: o axe injeta script e estilo. Uma análise por teste (scaffold-notes).
