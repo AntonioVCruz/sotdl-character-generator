@@ -103,6 +103,7 @@ Assinaturas da FEAT-007 mantidas. `preview` passa a aceitar `DecisionValue` e se
 | `manual` | ajuste manual | Ponto de extensão: FEAT-019 (P12). |
 
 - Os atributos são calculados primeiro. Toda referência de fórmula ou de limite a um atributo ou característica lê o **total** dele, depois de todos os estágios (FR-CALC-009). Ex.: Healing Rate lê a Health já limitada. `evaluateFormulas` ganha um passo de acabamento por id, e as referências dos limites passam pelo mesmo resolvedor, com a mesma detecção de ciclo.
+- O modificador do atributo (`self − 10`) lê o score total, depois do ajuste: Intellect 11 dá +1 e Strength 9 dá −1 (AC-2).
 - O arredondamento é só o que a fórmula declara (`round`), sem regra global (FR-CALC-008). Um valor sem `round` continua fracionário (Size 1/2).
 - Pendente (`null`) propaga por todos os estágios. Um limite cujo próprio valor está pendente não corta.
 
@@ -219,7 +220,8 @@ sequenceDiagram
 | `engine` | `evaluate.ts` | vaga `attribute-shift` na árvore; vaga opcional fora de contadores, pendências e bloqueio; regra de estado da etapa; coleta de efeitos; estágios e composição; `limits` no resumo; `preview` com `DecisionValue` |
 | `engine` | `formula.ts` | passo de acabamento por id em `evaluateFormulas` (referência lê o total); `formatFormula` sem mudança |
 | `app` | `session.ts` | `decide` com par e `already-decided`; `clear`; dependentes num ajudante comum aos dois |
-| `ui` | `builder/AttributesStep.tsx` (novo), `screens/Builder.tsx`, `builder/LiveSummary.tsx`, `builder/copy.ts` | despacho por `kind`; integração da §3.4; rótulos das parcelas novas. A tela é do ui-design |
+| `ui` | `builder/copy.ts`, `builder/LiveSummary.tsx`, `builder/FallbackStep.tsx` | rótulo do `attribute-shift`; rótulos das parcelas `modifier` (T2) e `limit` (T3); vaga opcional fora das pendências (T2) |
+| `ui` | `builder/AttributesStep.tsx` (novo), `screens/Builder.tsx` | despacho por `kind`; integração da §3.4 (T6). A tela é do ui-design |
 | `packs/` | `sotdl.core.json` | §4 |
 | `e2e/` | `ancestry.spec.ts`, `attributes.spec.ts` (novo), `perf.spec.ts` (novo) | §6 e T7, T8 |
 

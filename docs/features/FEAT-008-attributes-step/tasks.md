@@ -16,7 +16,7 @@
   - **Pronto quando:** os testes de `schemas.test.ts` (pacotes fictícios) passam para:
     - `FR-CALC-006`: limite válido aceito; limite com id inexistente, `self` ou `grant:` recusado com caminho; ciclo que passa por um limite recusado com caminho;
     - `FR-STEP-009`: `attribute-shift` com `amount` 1 aceito e com `amount` 0 recusado; documento com `{ decrease, increase }` aceito e com campo a mais recusado.
-  - Os testes existentes continuam verdes.
+  - Os testes existentes continuam verdes, e `npm run typecheck` e `npm run lint` passam.
 
 - [ ] **T2. Motor: vaga `attribute-shift`, vaga opcional, estado da etapa e estágio `modifier`; vaga do ajuste no pacote** (design §3.3 "Vaga `attribute-shift`", "Estado da etapa" e "Composição", §4; FR-STEP-007, 009, FR-CALC-002; D1, D2, D5, D6)
   - Em `src/engine/evaluate.ts`:
@@ -26,7 +26,10 @@
     - dois efeitos `modifier` com origem `slot`, e a variante `modifier` de `Stage`;
     - `preview` com `DecisionValue`.
   - Em `packs/sotdl.core.json`: `slots.adjustment` de `step:attributes` (tabela da §4).
-  - Em `src/ui/builder/copy.ts`: o rótulo do `kind` `attribute-shift` em `decisionTitle` (rascunho da §3.4), para o `switch` continuar exaustivo. A tela vem na T6.
+  - Em `src/ui`, só o que a variante nova exige; a tela vem na T6:
+    - `builder/copy.ts`: o rótulo do `kind` `attribute-shift` em `decisionTitle` (rascunho da §3.4), para o `switch` continuar exaustivo;
+    - `builder/LiveSummary.tsx`: `stageLabel` trata a parcela `modifier`, cuja origem `slot` não tem `name`, com o rótulo "Score adjustment" do ui-design;
+    - `builder/FallbackStep.tsx`: ignora vagas `optional`, para o ajuste do Dwarf não aparecer como pendência até a T6.
   - **Pronto quando:** os testes passam para:
     - `evaluate.test.ts`, com pacote fictício:
       - `FR-STEP-009`: o par aplica −1 e +1 com a origem da vaga, e decisão inválida (mesmo atributo, id que não é atributo) é ignorada;
@@ -40,7 +43,8 @@
       - `FR-FLOW-001`: Attributes `done` com Dwarf; Attributes e Professions & languages `open` com Human (AC-15);
       - as duas expectativas da FEAT-007 que mudam (design §7): `FR-FLOW-014: preview of Dwarf → Human…` com Attributes `done → open` e Professions & languages `not-started → open`, e `FR-FLOW-014: preview from no ancestry…` com Attributes `locked → done`;
     - `core-pack.test.ts`: a vaga `adjustment` de `step:attributes`;
-    - `npm run packs:check` (nenhum id removido), `npm test` e `npm run e2e` verdes.
+    - `Builder.test.tsx`: `FR-STEP-009: the optional adjustment slot is not shown as pending in the step` (Dwarf na etapa Attributes, sem "It stays in Open decisions");
+    - `npm run typecheck`, `npm run lint`, `npm run packs:check` (nenhum id removido), `npm test` e `npm run e2e` verdes.
 
 - [ ] **T3. Motor: estágio `limit` e acabamento; limites e regime no pacote** (design §3.3 "Ordem de cálculo", "Composição" e "Linha legível", §4; FR-CALC-003, 005, 006, 007, 008, 009; D5, D7, D8)
   - Em `src/engine/formula.ts`: passo de acabamento por id em `evaluateFormulas`, para que a referência leia o total; referências de limite pelo mesmo resolvedor, com detecção de ciclo.
@@ -49,6 +53,7 @@
     - a variante `limit` de `Stage`;
     - `limits` em `CharacteristicSummary`.
   - Em `packs/sotdl.core.json`: `regime: 'choice'` de `step:attributes` e os quatro limites (tabela da §4, já conferidos; impressa = PDF − 1).
+  - Em `src/ui/builder/LiveSummary.tsx`: `stageLabel` trata a parcela `limit` com os rótulos do ui-design, "Capped at {limite}" e "Raised to minimum {limite}".
   - **Pronto quando:** os testes passam para:
     - `evaluate.test.ts` e `formula.test.ts`, com pacote fictício. O efeito de `modifier` vem de uma vaga `attribute-shift` decidida no documento, pela T2, sem injeção pelo teste:
       - `FR-CALC-005`: parcelas na ordem; limite depois do modificador; referência lê o valor limitado;
@@ -59,7 +64,7 @@
       - `FR-CALC-003`: fórmula e limites legíveis das dez características;
       - `FR-CALC-009`: os valores da AC-5 (Dwarf e Human);
     - `core-pack.test.ts`: `FR-CALC-006: the core pack declares the Defense, Perception, Healing Rate and Insanity limits`;
-    - `npm run packs:check`, `npm test` e `npm run e2e` verdes.
+    - `npm run typecheck`, `npm run lint`, `npm run packs:check`, `npm test` e `npm run e2e` verdes.
 
 - [ ] **T4. Sessão: `decide` com par, `already-decided` e `clear`** (design §3.2; FR-STEP-009, 010, 011; D3, D4)
   - Em `src/app/session.ts`: validação do par; recusa em vaga `attribute-shift` decidida; `clear(key)`; cálculo de dependentes num ajudante comum a `decide` e `clear`.
@@ -69,6 +74,7 @@
     - `FR-STEP-011`: `clear` restaura os dois atributos, grava o documento sem a chave e permite um ajuste novo; `clear` de vaga sem decisão devolve `not-decided`;
     - `FR-STEP-011`: `clear` com filhas decididas devolve `has-dependents`; `clear` do Size seguido da troca de ancestralidade aplica direto (AC-11);
     - `FR-STEP-011`: falha de gravação no `clear` mantém o estado, e o `retrySave` grava.
+  - `npm run typecheck` e `npm run lint` passam.
 
 - [ ] **T5. Guarda de tempo do `evaluate`** (design §5, "Guarda unitária"; NFR-PERF-002; ADR-008)
   - `src/engine/evaluate.perf.test.ts`, 200 execuções por caso:
@@ -76,7 +82,8 @@
     - o pacote fictício do porte da §5: 36 vagas decididas, 20 efeitos, 4 modificadores e 10 características com fórmula numa cadeia de profundidade 3, e 4 limites.
   - **Pronto quando:** passam local e no CI:
     - `NFR-PERF-002: evaluate of the most complete core character stays under 20 ms at p95`;
-    - `NFR-PERF-002: evaluate of a complete level 0 sized fixture (36 decisions, 20 effects, 14 formulas) stays under 20 ms at p95`.
+    - `NFR-PERF-002: evaluate of a complete level 0 sized fixture (36 decisions, 20 effects, 14 formulas and 4 limits) stays under 20 ms at p95`.
+  - `npm run typecheck` e `npm run lint` passam.
 
 - [ ] **T6. ui: integração da etapa Attributes** (design §3.4; SCR-WEB-005 do ui-design; FR-STEP-007 a 011, FR-STEP-008 só exibição, FR-CALC-002, 003, 007)
   - Integração apenas; o desenho da tela, os estados e os textos são do ui-design:
@@ -85,7 +92,7 @@
     - com o ajuste aplicado, os dois grupos ficam só leitura (`isReadOnly`), com o motivo e "Undo adjustment" visíveis (ui-design, estado `applied`);
     - o +1 do Human aparece como pendência sem controle, com o id da vaga para o atalho;
     - o `FallbackStep` deixa de servir a Attributes;
-    - `LiveSummary` e `copy.ts` rotulam as parcelas `modifier` e `limit`;
+    - a composição da etapa usa os rótulos das parcelas `modifier` e `limit` que o `LiveSummary` já tem (T2, T3);
     - o contador do cabeçalho na etapa `done` só com a vaga opcional, como o ui-design definir;
     - `e2e/ancestry.spec.ts`: o título da etapa Attributes passa do fallback para a pergunta do ui-design (design §7).
   - **Pronto quando:**
@@ -93,12 +100,12 @@
     - os testes de componente passam:
       - `Builder.test.tsx` `FR-STEP-010: a second adjustment is refused and the step offers to undo the current one`: clicar num segmento com o ajuste aplicado não chama `decide`, o par aplicado continua selecionado, e o motivo e "Undo adjustment" estão visíveis;
       - composição com parcelas de ajuste e de limite (`FR-CALC-002`, `FR-CALC-007`);
-    - `npm run lint` passa (fronteiras da §5.2);
+    - `npm run typecheck` e `npm run lint` passam (fronteiras da §5.2);
     - `npm run e2e` passa nos 5 projetos.
 
 - [ ] **T7. E2E de desempenho** (design §5, método da NFR-PERF-002; AC-13)
   - `e2e/perf.spec.ts`, só nos projetos `chromium` e `mobile-chrome` (com 4× de CPU no segundo), com a medida, os elementos observados por layout, as amostras e o anexo JSON da §5.
-  - **Pronto quando:** `NFR-PERF-002: after a decision the step and the live summary update within 100 ms (desktop) and 200 ms (mobile) at p95` passa contra o build local, e o JSON aparece no relatório do Playwright.
+  - **Pronto quando:** `NFR-PERF-002: after a decision the step and the live summary update within 100 ms (desktop) and 200 ms (mobile) at p95` passa contra o build local, o JSON aparece no relatório do Playwright, e `npm run typecheck` e `npm run lint` passam.
 
 - [ ] **T8. E2E do fluxo crítico 1 até o UC-004** (ADR-008 fluxo 1; UC-004; AC-14)
   - `e2e/attributes.spec.ts`, nos 5 projetos, contra o build. Cada teste começa em "New character" pela interface e escolhe a ancestralidade como o `ancestry.spec.ts`, sem semear o IndexedDB. Os ajudantes `createCharacter` e `watchCsp` passam para um módulo comum de `e2e/`, usado pelos dois specs.
@@ -109,10 +116,10 @@
     - `FR-STEP-011, FR-CALC-009: undoing restores the scores, a new adjustment applies, and it survives reload`;
     - `FR-STEP-008: a Human sees the +1 as pending in Attributes, and the Open decisions shortcut focuses it` (só a exibição);
     - `NFR-ACC-001: the Attributes step with an adjustment applied has no serious axe violations`.
-  - **Pronto quando:** `npm run e2e` passa nos 5 projetos, sem violação de CSP.
+  - **Pronto quando:** `npm run e2e` passa nos 5 projetos, sem violação de CSP, e `npm run typecheck` e `npm run lint` passam.
 
 - [ ] **T9. Verificação** (design §6)
   - Rodar `npm run typecheck`, `npm run lint`, `npm test`, `npm run packs:check`, `npm run build` e `npm run e2e`.
   - Conferir cada AC-1 a AC-15 contra o teste que a cobre. Todo teste novo começa pelo FR ou NFR que verifica (NFR-MAINT-002).
-  - Confirmar que nenhum arquivo de `src/engine` cita id de livro, de etapa ou de ancestralidade.
+  - Confirmar que nenhum arquivo de produção de `src/engine` (fora `*.test.ts`) cita id de livro, de etapa ou de ancestralidade. Os testes com o pacote real podem citar Dwarf, Human e nomes de etapa (ADR-003).
   - **Pronto quando:** tudo verde local e no CI, e cada critério tem teste apontado.
