@@ -37,8 +37,8 @@
       - `FR-FLOW-001`: etapa só com vaga opcional fica `done`; com obrigatória concedida aberta, `open`; sem vagas, `not-started`;
     - `core-view.test.ts`, com o pacote real:
       - `FR-STEP-007`: os quatro atributos do Dwarf com modificador e composição;
-      - `FR-FLOW-001`: Attributes `done` com Dwarf e `open` com Human (AC-15);
-      - as duas expectativas da FEAT-007 que mudam (design §7): `FR-FLOW-014: preview of Dwarf → Human…` com Attributes `done → open`, e `FR-FLOW-014: preview from no ancestry…` com Attributes `locked → done`;
+      - `FR-FLOW-001`: Attributes `done` com Dwarf; Attributes e Professions & languages `open` com Human (AC-15);
+      - as duas expectativas da FEAT-007 que mudam (design §7): `FR-FLOW-014: preview of Dwarf → Human…` com Attributes `done → open` e Professions & languages `not-started → open`, e `FR-FLOW-014: preview from no ancestry…` com Attributes `locked → done`;
     - `core-pack.test.ts`: a vaga `adjustment` de `step:attributes`;
     - `npm run packs:check` (nenhum id removido), `npm test` e `npm run e2e` verdes.
 
@@ -85,11 +85,13 @@
     - o +1 do Human aparece como pendência sem controle, com o id da vaga para o atalho;
     - o `FallbackStep` deixa de servir a Attributes;
     - `LiveSummary` e `copy.ts` rotulam as parcelas `modifier` e `limit`;
-    - o contador do cabeçalho na etapa `done` só com a vaga opcional, como o ui-design definir.
+    - o contador do cabeçalho na etapa `done` só com a vaga opcional, como o ui-design definir;
+    - `e2e/ancestry.spec.ts`: o título da etapa Attributes passa do fallback para a pergunta do ui-design (design §7).
   - **Pronto quando:**
     - a tela renderiza conforme o ui-design no desktop, no intermediário e no celular, conferida por screenshot;
     - os testes de componente passam: `Builder.test.tsx` `FR-STEP-010: a second adjustment is refused and the step offers to undo the current one`; composição com parcelas de ajuste e de limite (`FR-CALC-002`, `FR-CALC-007`);
-    - `npm run lint` passa (fronteiras da §5.2).
+    - `npm run lint` passa (fronteiras da §5.2);
+    - `npm run e2e` passa nos 5 projetos.
 
 - [ ] **T7. E2E de desempenho** (design §5, método da NFR-PERF-002; AC-13)
   - `e2e/perf.spec.ts`, só nos projetos `chromium` e `mobile-chrome` (com 4× de CPU no segundo), com a medida, os elementos observados por layout, as amostras e o anexo JSON da §5.
@@ -104,7 +106,6 @@
     - `FR-STEP-011, FR-CALC-009: undoing restores the scores, a new adjustment applies, and it survives reload`;
     - `FR-STEP-008: a Human sees the +1 as pending in Attributes, and the Open decisions shortcut focuses it` (só a exibição);
     - `NFR-ACC-001: the Attributes step with an adjustment applied has no serious axe violations`.
-  - `e2e/ancestry.spec.ts`: o título da etapa Attributes passa do fallback para a pergunta do ui-design (design §7).
   - **Pronto quando:** `npm run e2e` passa nos 5 projetos, sem violação de CSP.
 
 - [ ] **T9. Verificação** (design §6)

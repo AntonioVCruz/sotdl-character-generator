@@ -147,7 +147,7 @@ SlotView (acréscimo) = SlotBase & { kind: 'attribute-shift', amount, optional?:
 - `open`: alguma obrigatória aberta, e alguma vaga da etapa decidida ou concedida (aberta por decisão de outra etapa);
 - `not-started`: o resto: sem vaga nenhuma, ou só vagas raiz obrigatórias, todas abertas.
 
-No core: com Dwarf, Attributes fica `done` logo ao escolher a ancestralidade; com Human, `open` pelo +1; Story a Review, sem vagas, continuam `not-started`. Ancestry não muda (`not-started` antes da escolha, `open` com o Size do Human aberto).
+No core: com Dwarf, Attributes fica `done` logo ao escolher a ancestralidade; com Human, Attributes fica `open` pelo +1, e Professions & languages também, pela concessão de idioma ou profissão (`step:professions-languages`); as outras etapas sem vagas continuam `not-started`. Ancestry não muda (`not-started` antes da escolha, `open` com o Size do Human aberto).
 
 ### 3.4 `ui`: pontos de integração
 
@@ -268,7 +268,7 @@ sequenceDiagram
 | AC-12 | A carga recusa, com o caminho no erro: limite que referencia id inexistente, `self` ou `grant:` em limite, ciclo que passa por um limite e `attribute-shift` com `amount` 0. O pacote do core passa no `packs:check`. | FR-CALC-006; ADR-004 §2 |
 | AC-13 | p95 do intervalo entre a confirmação de uma decisão e a atualização da etapa e do resumo: ≤ 100 ms no perfil de notebook e ≤ 200 ms no perfil de celular, pelo método da §5. | NFR-PERF-002 |
 | AC-14 | O E2E do fluxo crítico 1 percorre o UC-004 a partir de "New character", pela interface: Dwarf (ver, ajustar, tentar de novo, desfazer, recarregar) e Human (+1 pendente), nos 5 projetos. | UC-004; ADR-008 fluxo 1 |
-| AC-15 | Com Dwarf, a etapa Attributes fica "Done" logo ao escolher a ancestralidade, com ou sem o ajuste; com Human, "1 open" pelo +1. Story a Review, sem vagas, continuam "Not started". No preview de Dwarf → Human, Attributes passa de `done` a `open`. | FR-FLOW-001, FR-FLOW-014; D2 |
+| AC-15 | Com Dwarf, a etapa Attributes fica "Done" logo ao escolher a ancestralidade, com ou sem o ajuste; com Human, "1 open" pelo +1, e Professions & languages também "1 open", pela concessão de idioma ou profissão. As outras etapas sem vagas continuam "Not started". No preview de Dwarf → Human, Attributes passa de `done` a `open` e Professions & languages de `not-started` a `open`. | FR-FLOW-001, FR-FLOW-014; D2 |
 
 **NFRs:** NFR-PERF-002 (AC-13); NFR-ACC-001 (axe sem violação grave na etapa Attributes com ajuste aplicado); NFR-L10N-001 (tudo em inglês); NFR-MAINT-002 (cada FR desta feature com teste que o cita).
 
@@ -315,10 +315,10 @@ sequenceDiagram
 - **Mudanças em contratos da FEAT-007:**
   - Acréscimos: `SlotDef`, `DecisionValue`, `Stage`, `limits`, `clear` e as razões novas do `DecideResult`.
   - A regra de `status` da FEAT-007 §3.3 muda (§3.3, "Estado da etapa"). Mudam duas expectativas em `core-view.test.ts`, ambas na T2:
-    - `FR-FLOW-014: preview of Dwarf → Human…` passa a listar também Attributes `done → open`;
+    - `FR-FLOW-014: preview of Dwarf → Human…` passa a listar também Attributes `done → open` e Professions & languages `not-started → open`;
     - `FR-FLOW-014: preview from no ancestry…` passa a listar Attributes `locked → done`.
   - No E2E `ancestry.spec.ts`, a etapa Attributes deixa de ter o título de fallback "Attributes" e passa a ter a pergunta do ui-design.
-  - Os demais testes da FEAT-007 continuam válidos sem mudança.
+  - Com Human, o mapa de etapas mostra "1 open" também em Attributes e em Professions & languages, e a prévia da troca Dwarf → Human na etapa Ancestry ganha as duas linhas de etapa (dados, sem mudança na tela). Nenhum outro teste da FEAT-007 verifica o estado dessas duas etapas; os demais continuam válidos sem mudança.
 
 ## 8. Escalações e pendências
 
