@@ -15,10 +15,24 @@
         "locator": "features/FEAT-007-ancestry-step-map-live-summary/ui-design.md#scr-web-003--ancestry-step"
       },
       "states": {
-        "covered": ["default", "selected", "chosen", "size-open", "size-decided", "dependents-blocked", "save-failed", "loading", "error"],
+        "covered": [
+          "default",
+          "selected",
+          "chosen",
+          "size-open",
+          "size-decided",
+          "dependents-blocked",
+          "save-failed",
+          "loading",
+          "error"
+        ],
         "gaps": [],
         "supplements": [
-          { "state": "builder-frame", "strategy": "code-native", "source": "features/FEAT-007-ancestry-step-map-live-summary/ui-design.md#builder-frame" }
+          {
+            "state": "builder-frame",
+            "strategy": "code-native",
+            "source": "features/FEAT-007-ancestry-step-map-live-summary/ui-design.md#builder-frame"
+          }
         ]
       },
       "contract_bindings": [
@@ -31,16 +45,13 @@
         "ui routes #/characters/:id/:step?slot= (technical-design §3.4)"
       ],
       "conformance": {
-        "result": "escalation-pending",
-        "corrections": ["button-primary padding 18px → --space-4 (provisório, E4-d)"],
-        "escalations": [
-          "E1 step-map: estado bloqueado visível e motivo sem tooltip",
-          "E2 option-card: estado 'current' (Your choice)",
-          "E3 conjunto de ícones",
-          "E4 tokens: size.pill, opacity.disabled, border-width.alert, typography.stat-sm; padding do button-primary"
-        ]
+        "result": "pass",
+        "corrections": [
+          "Re-verificado em 2026-11-12 contra o design.md emendado (E1–E4): step-map bloqueado sem tooltip; option-card current distinto da seleção; ícones Lucide; tokens size.pill, opacity.disabled, border-width.alert, typography.stat-sm, size.icon-sm/md, icon.stroke; button-primary com padding --space-4; About no rodapé da página"
+        ],
+        "escalations": []
       },
-      "status": "escalation-pending",
+      "status": "designed",
       "designed_at": "2026-11-12"
     },
     "SCR-WEB-016": {
@@ -53,7 +64,11 @@
         "locator": "features/FEAT-007-ancestry-step-map-live-summary/ui-design.md#scr-web-016--builder-mobile-layout"
       },
       "states": {
-        "covered": ["collapsed", "selector-open", "summary-open"],
+        "covered": [
+          "collapsed",
+          "selector-open",
+          "summary-open"
+        ],
         "gaps": [],
         "supplements": []
       },
@@ -63,14 +78,13 @@
         "ui routes #/characters/:id/:step?slot= (technical-design §3.4)"
       ],
       "conformance": {
-        "result": "escalation-pending",
-        "corrections": [],
-        "escalations": [
-          "E1 step-map: estado bloqueado (também no popover)",
-          "E3 conjunto de ícones (voltar, ···, indicadores de abrir)"
-        ]
+        "result": "pass",
+        "corrections": [
+          "Re-verificado em 2026-11-12 contra o design.md emendado (E1–E4): ícones arrow-left, ellipsis e chevrons; About no menu ···; step-map bloqueado no popover"
+        ],
+        "escalations": []
       },
-      "status": "escalation-pending",
+      "status": "designed",
       "designed_at": "2026-11-12"
     }
   }
