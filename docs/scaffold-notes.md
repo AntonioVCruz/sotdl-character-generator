@@ -94,3 +94,16 @@ Os testes usam só pacotes fictícios (`test.*`).
 - **CSP e React Aria:** o `usePress` injeta um `<style>` (`touch-action` em `[data-react-aria-pressable]`). Liberado só o hash SHA-256 desse bloco no `style-src`. Se uma versão nova mudar o texto, o E2E acusa.
 - **axe e React Aria:** depois de `isPending`, o anunciador (`[data-live-announcer]`) guarda por 7 s um nó `role="img"` com `aria-labelledby` para o botão. Quando o app navega, o botão some e o axe acusa `role-img-alt`. É um nó oculto e transitório de terceiros, por isso fica excluído da análise.
 - **Firefox do Playwright no Windows:** duas análises do axe na mesma página derrubam o navegador ("Page crashed"). Cada análise roda num teste próprio.
+
+## CI, configuração e deploy
+
+- **`.github/workflows/ci.yml`**, em push no `main` e em PR, com quatro jobs:
+  - `check`: tipos, lint, Vitest com cobertura publicada como artefato, `packs:check` e build;
+  - `e2e`: `playwright install --with-deps` e `npm run e2e`;
+  - `lighthouse`: build e LCP;
+  - `deploy`: depende dos três anteriores.
+- Actions na versão maior atual: checkout v7, setup-node v7, upload-artifact v7, configure-pages v6, upload-pages-artifact v5, deploy-pages v5. Node 22.
+- **`packs:check` no CI:** `PACKS_BASE_REF` é `origin/<base>` em PR e `github.event.before` em push. Sem base (primeiro push de um branch, ou commit sumido depois de force-push), a comparação é pulada com aviso. No local, compara com `HEAD`.
+- **Deploy escrito, não executado:** o job `deploy` só roda em push no `main` com `vars.PAGES_ENABLED == 'true'`. A variável não existe; a etapa `initial-deployment` liga o Pages (fonte: GitHub Actions) e cria a variável.
+- **Configuração:** a única variável é `BASE_PATH`, lida pelo `vite.config.ts` (`base`) e pelo Playwright e o Lighthouse. Nenhum segredo existe. O modelo é o `.env.example`, só com nomes. O `.env` local (fora do Git) foi gerado com `BASE_PATH=/`; para recriá-lo, copie o `.env.example` e preencha com `/`. O CI usa `/<repositório>/`.
+- **Validação do workflow:** o YAML foi lido e conferido localmente (jobs, `needs` e scripts npm existem). O actionlint não rodou, porque exigiria baixar uma imagem Docker. O primeiro push valida o resto.
