@@ -47,7 +47,7 @@
     - `Builder.test.tsx`: `FR-STEP-009: the optional adjustment slot is not shown as pending in the step` (Dwarf na etapa Attributes, sem "It stays in Open decisions");
     - `npm run typecheck`, `npm run lint`, `npm run packs:check` (nenhum id removido), `npm test` e `npm run e2e` verdes.
 
-- [ ] **T3. Motor: estágio `limit` e acabamento; limites e regime no pacote** (design §3.3 "Ordem de cálculo", "Composição" e "Linha legível", §4; FR-CALC-003, 005, 006, 007, 008, 009; D5, D7, D8)
+- [x] **T3. Motor: estágio `limit` e acabamento; limites e regime no pacote** (design §3.3 "Ordem de cálculo", "Composição" e "Linha legível", §4; FR-CALC-003, 005, 006, 007, 008, 009; D5, D7, D8)
   - Em `src/engine/formula.ts`: passo de acabamento por id em `evaluateFormulas`, para que a referência leia o total; referências de limite pelo mesmo resolvedor, com detecção de ciclo.
   - Em `src/engine/evaluate.ts`:
     - ordem fixa `base → modifier → define → sum → limit → manual`; só `base`, `modifier` e `limit` produzem parcelas;

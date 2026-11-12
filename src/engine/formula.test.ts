@@ -57,6 +57,39 @@ describe('formulas', () => {
     expect(() => evaluateFormulas(formulas, leaf, nameOf)).toThrow('cycle: Vigor → Recovery → Vigor')
   })
 
+  it('FR-CALC-008: each formula rounds as it declares (down, up, nearest), and one without round stays fractional', () => {
+    const formulas = new Map<string, Formula>([
+      ['characteristic:down-low', { round: 'down', of: { div: [9, 4] } }],
+      ['characteristic:up-low', { round: 'up', of: { div: [9, 4] } }],
+      ['characteristic:nearest-low', { round: 'nearest', of: { div: [9, 4] } }],
+      ['characteristic:down-high', { round: 'down', of: { div: [11, 4] } }],
+      ['characteristic:up-high', { round: 'up', of: { div: [11, 4] } }],
+      ['characteristic:nearest-high', { round: 'nearest', of: { div: [11, 4] } }],
+      ['characteristic:half', { div: [1, 2] }],
+    ])
+    const values = Object.fromEntries([...evaluateFormulas(formulas, leaf)].map(([id, result]) => [id.slice(15), result.value]))
+    // 2.25 e 2.75: o `nearest` fica com o `down` num e com o `up` no outro.
+    expect(values).toEqual({ 'down-low': 2, 'up-low': 3, 'nearest-low': 2, 'down-high': 2, 'up-high': 3, 'nearest-high': 3, half: 0.5 })
+  })
+
+  it('FR-CALC-005: the finishing step runs per id before any reference reads it, and its formulas share the cycle check', () => {
+    const formulas = new Map<string, Formula>([
+      ['characteristic:vigor', { add: [{ ref: 'attribute:might' }, 4] }],
+      ['characteristic:recovery', { add: [{ ref: 'characteristic:vigor' }, 1] }],
+    ])
+    // Acabamento que corta Vigor em 15: Recovery lê o total acabado.
+    const cap = (id: string, value: { value: number | null }) => (id === 'characteristic:vigor' ? { value: Math.min(value.value!, 15) } : value)
+    const values = evaluateFormulas(formulas, leaf, undefined, cap)
+    expect(values.get('characteristic:vigor')?.value).toBe(15)
+    expect(values.get('characteristic:recovery')?.value).toBe(16)
+
+    // Um limite de Vigor que lê Recovery, que lê Vigor: o mesmo resolvedor acusa o ciclo.
+    const nameOf = (id: string) => (names.items.get(id) as { name?: string } | undefined)?.name ?? id
+    const cyclic = (id: string, value: { value: number | null }, evaluate: (formula: Formula) => { value: number | null }) =>
+      id === 'characteristic:vigor' ? evaluate({ ref: 'characteristic:recovery' }) : value
+    expect(() => evaluateFormulas(formulas, leaf, nameOf, cyclic)).toThrow('cycle: Vigor → Recovery → Vigor')
+  })
+
   it('FR-CONT-009: formats formulas as readable text', () => {
     expect(formatFormula(names, { add: [{ ref: 'attribute:might' }, 4] })).toBe('Might + 4')
     expect(formatFormula(names, { add: [{ ref: 'attribute:might' }, -2] })).toBe('Might − 2')

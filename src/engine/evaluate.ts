@@ -1,5 +1,5 @@
 import type { AncestryItem, AttributeShift, CharacterDocument, DecisionValue, Formula, GrantedSlot, Regime, SlotDef } from '../content'
-import { evaluateFormula, evaluateFormulas, formatFormula, type Value } from './formula'
+import { evaluateFormula, evaluateFormulas, formatFormula, type Finish, type Value } from './formula'
 import { differsFromDefault, mechanics } from './mechanics'
 import { isKind, type Provenance, type Rules } from './resolve'
 
@@ -75,8 +75,11 @@ export type Stage =
       origin: { kind: 'ancestry'; id: string; name: string } | { kind: 'default'; id: string }
     }
   | { stage: 'modifier'; value: number; origin: { kind: 'slot'; key: string; stepId: string; slotKind: SlotKind } }
+  // Só quando o limite corta (FR-CALC-007): `value` é a diferença, `limit` o valor do limite e `formula` o texto dele.
+  | { stage: 'limit'; value: number; bound: 'max' | 'min'; limit: number; formula: string; origin: { kind: 'default'; id: string } }
 
 type ModifierStage = Extract<Stage, { stage: 'modifier' }>
+type LimitStage = Extract<Stage, { stage: 'limit' }>
 
 export interface AttributeSummary {
   id: string
@@ -93,6 +96,8 @@ export interface CharacteristicSummary {
   formula: string
   /** Vaga cuja decisão falta para o valor (ex.: `ancestry=human/size`). */
   pendingOn?: string
+  /** Os limites declarados, cortando ou não, para a linha legível (FR-CALC-003). */
+  limits: { bound: 'max' | 'min'; formula: string; limit: Value }[]
   composition: Stage[]
 }
 
@@ -298,11 +303,35 @@ function summarize(
     const formula = ancestry?.characteristics?.[characteristic.id] ?? characteristic.formula
     if (formula !== undefined) formulas.set(characteristic.id, formula)
   }
-  const values = evaluateFormulas(
-    formulas,
-    (ref) => (ref.startsWith('grant:') ? grantValue(ref.slice('grant:'.length)).value : (scores.get(ref) ?? null)),
-    nameOf,
-  )
+  // Estágios depois da fórmula, na ordem fixa (P11b): `limit`, sobre o termo base. `define` e `sum` (FEAT-009) e
+  // `manual` (FEAT-019) entram aqui. Um limite pendente não corta.
+  const limitsOf = new Map(rules.characteristics.flatMap((c) => (c.limits ? [[c.id, c.limits] as const] : [])))
+  const bases = new Map<string, Value>()
+  const cuts = new Map<string, LimitStage[]>()
+  const finish: Finish = (id, evaluated, evaluateLimit) => {
+    bases.set(id, evaluated.value)
+    const limits = limitsOf.get(id)
+    if (!limits || evaluated.value === null) return evaluated
+    let value = evaluated.value
+    const stages: LimitStage[] = []
+    for (const bound of ['max', 'min'] as const) {
+      const formula = limits[bound]
+      const limit = formula === undefined ? null : evaluateLimit(formula).value
+      if (formula === undefined || limit === null) continue
+      const limited = bound === 'max' ? Math.min(value, limit) : Math.max(value, limit)
+      if (limited === value) continue
+      stages.push({ stage: 'limit', value: limited - value, bound, limit, formula: formatFormula(rules, formula), origin: { kind: 'default', id } })
+      value = limited
+    }
+    if (!stages.length) return evaluated
+    cuts.set(id, stages)
+    return { value }
+  }
+  const leaf = (ref: string) => (ref.startsWith('grant:') ? grantValue(ref.slice('grant:'.length)).value : (scores.get(ref) ?? null))
+  const values = evaluateFormulas(formulas, leaf, nameOf, finish)
+  // Valor de um limite para a linha legível, com as mesmas referências (totais).
+  const limitValue = (formula: Formula) =>
+    evaluateFormula(formula, (ref) => (ref.startsWith('characteristic:') ? (values.get(ref)?.value ?? null) : leaf(ref))).value
 
   const characteristics = rules.characteristics.map((characteristic): CharacteristicSummary => {
     const formula = formulas.get(characteristic.id)
@@ -310,16 +339,24 @@ function summarize(
     const text = formula === undefined ? '' : formatFormula(rules, formula, ancestry?.id)
     const fromAncestry = origin && ancestry?.characteristics?.[characteristic.id] !== undefined
     const pendingKey = pendingOn?.startsWith('grant:') ? grantValue(pendingOn.slice('grant:'.length)).key : undefined
-    const composition: Stage[] =
-      formula === undefined
-        ? []
-        : [{ stage: 'base', value, formula: text, origin: fromAncestry ? origin : { kind: 'default', id: characteristic.id } }]
+    const base: Stage = {
+      stage: 'base',
+      value: bases.get(characteristic.id) ?? null,
+      formula: text,
+      origin: fromAncestry ? origin : { kind: 'default', id: characteristic.id },
+    }
+    const composition: Stage[] = formula === undefined ? [] : [base, ...(cuts.get(characteristic.id) ?? [])]
+    const limits = (['max', 'min'] as const).flatMap((bound) => {
+      const limit = characteristic.limits?.[bound]
+      return limit === undefined ? [] : [{ bound, formula: formatFormula(rules, limit), limit: limitValue(limit) }]
+    })
     return {
       id: characteristic.id,
       name: characteristic.name,
       value,
       formula: text,
       ...(pendingKey && { pendingOn: pendingKey }),
+      limits,
       composition,
     }
   })

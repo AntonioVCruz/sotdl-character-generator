@@ -293,3 +293,101 @@ describe('evaluate: score adjustment slot (attribute-shift)', () => {
     expect(gnome.openDecisions.map((decision) => decision.key)).toEqual(['ancestry=gnome/boost'])
   })
 })
+
+// Pacote fictício com limites: máximo numérico, mínimo, máximo por atributo, limite que não corta e limite pendente.
+// O modificador vem da vaga `attribute-shift` decidida no documento.
+const limitBook: Book = {
+  ...book,
+  components: [
+    {
+      id: 'base',
+      type: 'adds',
+      default: 'on',
+      items: [
+        { id: 'procedure:test', steps: ['step:origin', 'step:scores'] },
+        { id: 'step:origin', name: 'Origin', page: 1, slots: { ancestry: { kind: 'choose-entity', of: 'ancestry' } } },
+        { id: 'step:scores', name: 'Scores', page: 2, requires: ['step:origin'], slots: { adjust: { kind: 'attribute-shift', amount: 1, optional: true } } },
+        { id: 'attribute:might', name: 'Might', page: 3, modifier: { add: [{ ref: 'self' }, -10] } },
+        { id: 'attribute:wits', name: 'Wits', page: 3, modifier: { add: [{ ref: 'self' }, -10] } },
+        { id: 'characteristic:power', name: 'Power', page: 3, formula: { add: [{ ref: 'attribute:might' }, { ref: 'attribute:might' }] }, limits: { max: 25 } },
+        { id: 'characteristic:reach', name: 'Reach', page: 3, formula: { add: [{ ref: 'characteristic:power' }, 1] } },
+        { id: 'characteristic:footing', name: 'Footing', page: 3, formula: { add: [{ ref: 'attribute:wits' }, -12] }, limits: { min: 1 } },
+        { id: 'characteristic:madness', name: 'Madness', page: 3, formula: 12, limits: { max: { ref: 'attribute:wits' } } },
+        { id: 'characteristic:calm', name: 'Calm', page: 3, formula: 3, limits: { max: 25 } },
+        { id: 'characteristic:stature', name: 'Stature', page: 3 },
+        { id: 'characteristic:poise', name: 'Poise', page: 3, formula: 30, limits: { max: { ref: 'characteristic:stature' } } },
+        {
+          id: 'ancestry:troll',
+          name: 'Troll',
+          page: 6,
+          attributes: { 'attribute:might': 12, 'attribute:wits': 9 },
+          characteristics: { 'characteristic:stature': { ref: 'grant:stature' } },
+          grants: { stature: { kind: 'choose-value', step: 'step:origin', target: 'characteristic:stature', options: [1, 2] } },
+        },
+      ],
+    },
+  ],
+}
+const limitRules = resolve([limitBook], ['test.book'])
+// Might 12 → 13 e Wits 9 → 8.
+const boosted = () => shifted({ ancestry: 'ancestry:troll', adjust: { decrease: 'attribute:wits', increase: 'attribute:might' } })
+const characteristic = (view: ReturnType<typeof evaluate>, name: string) => view.summary.characteristics.find((c) => c.name === name)!
+
+describe('evaluate: calculation order, limits and composition', () => {
+  it('FR-CALC-005: parts come in stage order; the limit applies after the modifier; a reference reads the limited value', () => {
+    const view = evaluate(limitRules, boosted())
+    expect(view.summary.attributes[0].composition.map((stage) => [stage.stage, stage.value])).toEqual([
+      ['base', 12],
+      ['modifier', 1],
+    ])
+    // Sem o ajuste, 2 × 12 = 24 não passa do máximo; com ele, 2 × 13 = 26 é cortado para 25.
+    expect(characteristic(evaluate(limitRules, shifted({ ancestry: 'ancestry:troll' })), 'Power').value).toBe(24)
+    expect(characteristic(view, 'Power').composition.map((stage) => [stage.stage, stage.value])).toEqual([
+      ['base', 26],
+      ['limit', -1],
+    ])
+    expect(characteristic(view, 'Power').value).toBe(25)
+    expect(characteristic(view, 'Reach').value).toBe(26)
+  })
+
+  it('FR-CALC-006, FR-CALC-007: a maximum cuts with a negative part, a minimum raises, a maximum given by an attribute cuts by it', () => {
+    const view = evaluate(limitRules, boosted())
+    expect(characteristic(view, 'Power').composition[1]).toEqual({
+      stage: 'limit',
+      value: -1,
+      bound: 'max',
+      limit: 25,
+      formula: '25',
+      origin: { kind: 'default', id: 'characteristic:power' },
+    })
+    expect(characteristic(view, 'Footing')).toMatchObject({ value: 1, limits: [{ bound: 'min', formula: '1', limit: 1 }] })
+    expect(characteristic(view, 'Footing').composition[1]).toMatchObject({ stage: 'limit', value: 5, bound: 'min', limit: 1 })
+    expect(characteristic(view, 'Madness')).toMatchObject({ value: 8, limits: [{ bound: 'max', formula: 'Wits', limit: 8 }] })
+    expect(characteristic(view, 'Madness').composition[1]).toMatchObject({ stage: 'limit', value: -4, formula: 'Wits', limit: 8 })
+  })
+
+  it('FR-CALC-006, FR-CALC-007: no part when the limit does not cut, and a pending limit does not cut', () => {
+    const view = evaluate(limitRules, boosted())
+    expect(characteristic(view, 'Calm')).toMatchObject({ value: 3, limits: [{ bound: 'max', formula: '25', limit: 25 }] })
+    expect(characteristic(view, 'Calm').composition.map((stage) => stage.stage)).toEqual(['base'])
+    // O máximo de Poise lê Stature, que espera a decisão da vaga.
+    expect(characteristic(view, 'Poise')).toMatchObject({ value: 30, limits: [{ bound: 'max', formula: 'Stature', limit: null }] })
+    expect(characteristic(view, 'Poise').composition.map((stage) => stage.stage)).toEqual(['base'])
+    const decided = evaluate(limitRules, { ...boosted(), decisions: { ...boosted().decisions, 'ancestry=troll/stature': { mode: 'chosen', value: 2 } } })
+    expect(characteristic(decided, 'Poise')).toMatchObject({ value: 2, limits: [{ limit: 2 }] })
+  })
+
+  it('FR-CALC-002: the total of every attribute and characteristic is the sum of its parts', () => {
+    for (const document of [boosted(), shifted({ ancestry: 'ancestry:troll' })]) {
+      const view = evaluate(limitRules, document)
+      const totals = [
+        ...view.summary.attributes.map((a) => [a.score, a.composition] as const),
+        ...view.summary.characteristics.filter((c) => c.value !== null).map((c) => [c.value, c.composition] as const),
+      ]
+      for (const [total, composition] of totals) {
+        expect(composition.length).toBeGreaterThan(0)
+        expect(total).toBe(composition.reduce((sum, stage) => sum + stage.value!, 0))
+      }
+    }
+  })
+})

@@ -23,13 +23,21 @@ export interface Evaluated {
 export type LeafValue = (ref: string) => Value
 
 /**
+ * Acabamento de um valor depois da fórmula (FEAT-008 §3.3): os estágios seguintes, como os limites. `evaluate` resolve
+ * outra fórmula (a de um limite) pelo mesmo resolvedor, com a mesma detecção de ciclo.
+ */
+export type Finish = (id: string, value: Evaluated, evaluate: (formula: Formula) => Evaluated) => Evaluated
+
+/**
  * Avalia fórmulas que se referem umas às outras (`characteristic:*`), em ordem de referências.
- * Referência a outra característica do conjunto é resolvida pelo próprio conjunto; ciclo lança `EngineError`.
+ * Referência a outra característica do conjunto é resolvida pelo próprio conjunto e lê o valor já acabado, o total
+ * (FR-CALC-009); ciclo lança `EngineError`.
  */
 export function evaluateFormulas(
   formulas: ReadonlyMap<string, Formula>,
   leaf: LeafValue,
   nameOf: (id: string) => string = (id) => id,
+  finish: Finish = (_, value) => value,
 ): Map<string, Evaluated> {
   const results = new Map<string, Evaluated>()
   const stack: string[] = []
@@ -46,7 +54,7 @@ export function evaluateFormulas(
       throw new EngineError(`cycle: ${cycle.map(nameOf).join(' → ')}`)
     }
     stack.push(ref)
-    const result = evaluateTree(formulas.get(ref)!, valueOf)
+    const result = finish(ref, evaluateTree(formulas.get(ref)!, valueOf), (formula) => evaluateTree(formula, valueOf))
     stack.pop()
     results.set(ref, result)
     return result

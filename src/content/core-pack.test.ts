@@ -47,6 +47,17 @@ describe('official core pack', () => {
     expect(step && isItemOf(step, 'step') && step.slots).toEqual({ adjustment: { kind: 'attribute-shift', amount: 1, optional: true } })
   })
 
+  it('FR-CALC-006: the core pack declares the Defense, Perception, Healing Rate and Insanity limits', () => {
+    const items = book.components.flatMap((c) => c.items)
+    const limits = Object.fromEntries(items.flatMap((item) => (isItemOf(item, 'characteristic') && item.limits ? [[item.id, item.limits]] : [])))
+    expect(limits).toEqual({
+      'characteristic:perception': { max: 25 },
+      'characteristic:defense': { max: 25 },
+      'characteristic:healing-rate': { min: 1 },
+      'characteristic:insanity': { max: { ref: 'attribute:will' } },
+    })
+  })
+
   it('FR-FLOW-002: keeps the 8 steps of the level 0 procedure, every step after Ancestry requiring it', () => {
     const items = book.components.flatMap((c) => c.items)
     const procedure = items.find((item) => isItemOf(item, 'procedure'))

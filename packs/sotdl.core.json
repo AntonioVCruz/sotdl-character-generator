@@ -29,6 +29,7 @@
           "id": "step:attributes",
           "name": "Attributes",
           "page": 10,
+          "regime": "choice",
           "requires": ["step:ancestry"],
           "slots": { "adjustment": { "kind": "attribute-shift", "amount": 1, "optional": true } }
         },
@@ -44,20 +45,21 @@
         { "id": "attribute:intellect", "name": "Intellect", "page": 10, "modifier": { "add": [{ "ref": "self" }, -10] } },
         { "id": "attribute:will", "name": "Will", "page": 10, "modifier": { "add": [{ "ref": "self" }, -10] } },
 
-        { "id": "characteristic:perception", "name": "Perception", "page": 10, "formula": { "ref": "attribute:intellect" } },
-        { "id": "characteristic:defense", "name": "Defense", "page": 10, "formula": { "ref": "attribute:agility" } },
+        { "id": "characteristic:perception", "name": "Perception", "page": 10, "formula": { "ref": "attribute:intellect" }, "limits": { "max": 25 } },
+        { "id": "characteristic:defense", "name": "Defense", "page": 10, "formula": { "ref": "attribute:agility" }, "limits": { "max": 25 } },
         { "id": "characteristic:health", "name": "Health", "page": 10, "formula": { "ref": "attribute:strength" } },
         {
           "id": "characteristic:healing-rate",
           "name": "Healing Rate",
           "page": 10,
-          "formula": { "round": "down", "of": { "div": [{ "ref": "characteristic:health" }, 4] } }
+          "formula": { "round": "down", "of": { "div": [{ "ref": "characteristic:health" }, 4] } },
+          "limits": { "min": 1 }
         },
         { "id": "characteristic:size", "name": "Size", "page": 10 },
         { "id": "characteristic:speed", "name": "Speed", "page": 10 },
         { "id": "characteristic:power", "name": "Power", "page": 10, "formula": 0 },
         { "id": "characteristic:damage", "name": "Damage", "page": 10, "formula": 0 },
-        { "id": "characteristic:insanity", "name": "Insanity", "page": 10, "formula": 0 },
+        { "id": "characteristic:insanity", "name": "Insanity", "page": 10, "formula": 0, "limits": { "max": { "ref": "attribute:will" } } },
         { "id": "characteristic:corruption", "name": "Corruption", "page": 10, "formula": 0 },
 
         { "id": "language:common-tongue", "name": "Common Tongue", "page": 10 },

@@ -167,6 +167,40 @@ describe('Attributes step with the core pack', () => {
   })
 })
 
+describe('characteristics with formula and limits, with the core pack', () => {
+  const adjust = (ancestry: string, decrease: string, increase: string) => {
+    const document = character({ ancestry })
+    document.decisions.adjustment = { mode: 'chosen', value: { decrease: `attribute:${decrease}`, increase: `attribute:${increase}` } }
+    return document
+  }
+
+  it('FR-CALC-003: the ten characteristics of the Dwarf with readable formula, limits and value', () => {
+    const view = evaluate(rules, character({ ancestry: 'ancestry:dwarf' }))
+    expect(view.summary.characteristics.map((c) => [c.name, c.formula, c.limits, c.value])).toEqual([
+      ['Perception', 'Intellect + 1', [{ bound: 'max', formula: '25', limit: 25 }], 11],
+      ['Defense', 'Agility', [{ bound: 'max', formula: '25', limit: 25 }], 9],
+      ['Health', 'Strength + 4', [], 14],
+      ['Healing Rate', 'Health / 4, rounded down', [{ bound: 'min', formula: '1', limit: 1 }], 3],
+      ['Size', '1/2', [], 0.5],
+      ['Speed', '8', [], 8],
+      ['Power', '0', [], 0],
+      ['Damage', '0', [], 0],
+      ['Insanity', '0', [{ bound: 'max', formula: 'Will', limit: 10 }], 0],
+      ['Corruption', '0', [], 0],
+    ])
+  })
+
+  it('FR-CALC-009: changing an attribute recalculates its dependents (Dwarf and Human, AC-5)', () => {
+    expect(values(evaluate(rules, adjust('ancestry:dwarf', 'strength', 'intellect')))).toMatchObject({
+      Perception: 12,
+      Health: 13,
+      'Healing Rate': 3,
+    })
+    expect(values(evaluate(rules, adjust('ancestry:human', 'strength', 'will')))).toMatchObject({ Health: 9, 'Healing Rate': 2 })
+    expect(values(evaluate(rules, adjust('ancestry:dwarf', 'will', 'agility')))).toMatchObject({ Defense: 10, Insanity: 0 })
+  })
+})
+
 describe('ancestry options and detail with the core pack', () => {
   it('FR-STEP-001, FR-CONT-009, FR-SRC-010: Dwarf and Human appear once each, with the generated mechanics line and provenance', () => {
     const slot = evaluate(rules, character()).slots.find((s) => s.key === 'ancestry')!

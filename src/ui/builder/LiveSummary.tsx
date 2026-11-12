@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { ChevronDown, ChevronUp } from 'lucide-react'
 import { Button, Disclosure, DisclosurePanel } from 'react-aria-components'
-import type { CharacterView, OpenDecision, Stage, StepView } from '../../engine'
+import { formatNumber, type CharacterView, type OpenDecision, type Stage, type StepView } from '../../engine'
 import { href } from '../router'
 import { decisionTitle, decisionWhere, formatModifier, formatValue } from './copy'
 import { Eyebrow, PillCounter } from './parts'
@@ -119,6 +119,11 @@ function Composition({ trigger, stages, total, name, pending }: {
 function stageLabel(stage: Stage, pending?: string): string {
   // A origem `slot` não tem nome: o rótulo vem do `kind` da vaga (D6 da FEAT-007).
   if (stage.stage === 'modifier') return decisionTitle({ kind: stage.origin.slotKind }, (id) => id)
+  if (stage.stage === 'limit') {
+    // Limite numérico como número; por referência, com o valor ("Will (10)"), como na linha de fórmula (ui-design).
+    const limit = stage.formula === formatNumber(stage.limit) ? stage.formula : `${stage.formula} (${formatNumber(stage.limit)})`
+    return stage.bound === 'max' ? `Capped at ${limit}` : `Raised to minimum ${limit}`
+  }
   if (stage.origin.kind === 'default') return `Standard rule: ${stage.formula}`
   if (pending) return `${stage.origin.name}: ${pending}, open`
   if (stage.formula === undefined) return `${stage.origin.name} starting score`
