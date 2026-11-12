@@ -87,13 +87,13 @@
         "ui routes #/characters/:id/:step?slot= (FEAT-007 technical-design §3.4)"
       ],
       "conformance": {
-        "result": "escalation-pending",
-        "corrections": [],
-        "escalations": [
-          "E5: segmented-control de 4 segmentos em grade de 2 colunas quando não cabe numa linha (celular e reflow de 320 px); aprovada pelo usuário em 2026-11-12, emenda do design.md §4 pendente pela ux-foundations"
-        ]
+        "result": "pass",
+        "corrections": [
+          "Re-verificado em 2026-11-12 contra o design.md emendado (E5, b70733c): segmented-control de 4 segmentos em grade de 2 colunas quando não cabe numa linha (celular e reflow de 320 px), com alvos de 44 px em ponteiro grosso"
+        ],
+        "escalations": []
       },
-      "status": "escalation-pending",
+      "status": "designed",
       "designed_at": "2026-11-12"
     },
     "SCR-WEB-016": {

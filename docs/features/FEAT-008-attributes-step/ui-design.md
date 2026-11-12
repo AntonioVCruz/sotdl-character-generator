@@ -1,7 +1,7 @@
 # UI Design: FEAT-008 — Etapa Attributes: ajuste ±1, características com fórmula e composição
 
 > Feature de: `docs/implementation-plan.md` · Par com: `technical-design.md`
-> Telas: SCR-WEB-005 · Modo: por feature · Status: Draft (E5 aprovada; emenda do `design.md` pendente) · Data: 2026-11-12
+> Telas: SCR-WEB-005 · Modo: por feature · Status: Verified (re-verificação após a emenda E5 do design system, 2026-11-12) · Data: 2026-11-12
 
 Autoridade: `docs/design.md` e `docs/tokens.json`. Todo valor visual abaixo é token (`--…`) ou classe `.typography-*`; breakpoints pelos `@custom-media` da FEAT-007. Ícones Lucide, decorativos com `aria-hidden`. A moldura (mapa, resumo vivo, Open decisions, Back e Next, celular) é a da FEAT-007 ([Builder frame](../FEAT-007-ancestry-step-map-live-summary/ui-design.md#builder-frame) e SCR-WEB-016), sem mudança. Texto da interface em inglês, fechado em [Textos](#textos). Nenhum texto dos livros (P22).
 
@@ -30,7 +30,7 @@ Autoridade: `docs/design.md` e `docs/tokens.json`. Todo valor visual abaixo é t
 | Linhas de característica | `view.summary.characteristics[]`: `name`, `value`, `formula`, `limits`, `composition`, `pendingOn` |
 | Gravação | `snapshot.save`, `session.retrySave()` |
 
-- **Conformidade:** conforme ao `design.md`, com uma exceção escalada: o `segmented-control` de 4 segmentos não cabe a 360 px nem no reflow de 320 px (E5, [Escalações](#escalações-e-pendências)). O resto usa componentes e tokens existentes.
+- **Conformidade:** conforme ao `design.md` emendado (E5, 2026-11-12, `b70733c`): o `segmented-control` de 4 segmentos usa a regra de quebra em grade de 2 colunas abaixo da largura em que cabe. O resto usa componentes e tokens existentes, sem valor solto nem variante local.
 
 ### default
 
@@ -163,7 +163,7 @@ Os da moldura da FEAT-007, sem mudança (esqueletos; erro de abertura no card ce
   - **celular (< `--bp-md`, SCR-WEB-016):**
     - corpo em uma coluna, `step-header` sem card, `h1` em `--font-size-display-mobile`, padding de card `--space-4`;
     - linhas de atributo e de característica em duas linhas: nome e valor na primeira, a linha de fórmula (ou "Modifier …") abaixo do nome;
-    - `segmented-control` de 4 segmentos em grade de 2 colunas (E5);
+    - `segmented-control` de 4 segmentos em grade de 2 colunas (regra de quebra do `design.md` §4): Strength e Agility na primeira linha, Intellect e Will na segunda, setas na mesma ordem, alvos de `--size-touch-target` em ponteiro grosso;
     - ações do ajuste em largura total;
     - Back e Next fixos e a barra de resumo recolhida embaixo, com os quatro scores. Ela é o elemento que o `perf.spec.ts` observa nesse projeto.
   - Reflow a 320 CSS px sem rolagem horizontal (`design.md` §5).
@@ -214,10 +214,12 @@ Fechados para a FEAT-008, revisados contra a NFR-USE-001 e o `design.md` §6. Ne
 
 ## Escalações e pendências
 
-- **E5. `segmented-control` com 4 segmentos em tela estreita** (proposta de emenda ao `design.md` §4, Formulários, pela ux-foundations; não editado aqui):
+Nenhuma escalação aberta.
+
+- **E5. `segmented-control` com 4 segmentos em tela estreita** (emenda ao `design.md` §4, Formulários, pela ux-foundations):
   - **O que falta:** o componente é "grupo de 2 a 4 botões unidos", sem regra para quando não cabe. Os quatro nomes de atributo, com o padding de segmento da FEAT-007 (`--space-4`), dão cerca de 300 px; a `subdecision` no celular tem cerca de 296 px de área útil a 360 px e 256 px no reflow de 320 px.
   - **Proposta:** "Quando os segmentos não cabem numa linha, o grupo vira uma grade de 2 colunas de largura igual, com os mesmos divisores internos (`--border-width-default` `--color-border-control`), a mesma ordem de leitura e as mesmas setas."
   - **Telas:** SCR-WEB-005.
-  - **Situação:** aprovada pelo usuário em 2026-11-12; a emenda do `design.md` vem em outra rodada, pela ux-foundations. Até ela entrar, a entrada do manifesto fica `escalation-pending`; o desktop e o intermediário não dependem dela.
+  - **Situação:** aprovada pelo usuário e aplicada em 2026-11-12 (`docs/design.md` em `b70733c`, com os alvos de 44 px em ponteiro grosso e sem token novo). A tela foi re-verificada contra a emenda: a 360 px e no reflow de 320 px, cada coluna tem cerca de 148 px e 128 px, e o segmento mais largo (Strength, com o padding `--space-4`) cabe. Entrada do manifesto em `designed`.
 - **Fora desta feature:** controle do +1 (FEAT-016), atributos rolados e o botão de rolar desabilitado do wireframe (P14b; o MVP não tem regra opcional que os ligue), ajuste manual (FEAT-019), limpar o Size na Ancestry (FEAT-011).
 - **RTM:** recebeu o `ui-design.md` na Design ref das 8 FRs que a tela realiza (FR-STEP-007, 009, 010, 011; FR-CALC-002, 003, 007, 009) em `becce32`.
