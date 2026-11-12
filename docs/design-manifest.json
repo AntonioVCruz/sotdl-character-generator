@@ -68,7 +68,6 @@
           "default",
           "selecting",
           "applied",
-          "refused",
           "undone",
           "increase-pending",
           "save-failed",
@@ -80,7 +79,7 @@
       },
       "contract_bindings": [
         "app.session.getSnapshot (FEAT-007 technical-design §3.2)",
-        "app.session.decide com AttributeShift (technical-design §3.2)",
+        "app.session.decide com AttributeShift (technical-design §3.2; a tela não o chama com o ajuste aplicado)",
         "app.session.clear (technical-design §3.2)",
         "app.session.retrySave (FEAT-007 technical-design §3.2)",
         "engine.CharacterView: steps, slots (attribute-shift, attribute-increase), openDecisions, summary.attributes, summary.characteristics com limits e composition (technical-design §3.3)",
@@ -91,7 +90,7 @@
         "result": "escalation-pending",
         "corrections": [],
         "escalations": [
-          "E5: segmented-control de 4 segmentos em grade de 2 colunas quando não cabe numa linha (celular e reflow de 320 px); proposta ao design.md §4 pela ux-foundations"
+          "E5: segmented-control de 4 segmentos em grade de 2 colunas quando não cabe numa linha (celular e reflow de 320 px); aprovada pelo usuário em 2026-11-12, emenda do design.md §4 pendente pela ux-foundations"
         ]
       },
       "status": "escalation-pending",

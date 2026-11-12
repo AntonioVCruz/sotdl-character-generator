@@ -1,7 +1,7 @@
 # UI Design: FEAT-008 — Etapa Attributes: ajuste ±1, características com fórmula e composição
 
 > Feature de: `docs/implementation-plan.md` · Par com: `technical-design.md`
-> Telas: SCR-WEB-005 · Modo: por feature · Status: Draft (escalação E5 pendente) · Data: 2026-11-12
+> Telas: SCR-WEB-005 · Modo: por feature · Status: Draft (E5 aprovada; emenda do `design.md` pendente) · Data: 2026-11-12
 
 Autoridade: `docs/design.md` e `docs/tokens.json`. Todo valor visual abaixo é token (`--…`) ou classe `.typography-*`; breakpoints pelos `@custom-media` da FEAT-007. Ícones Lucide, decorativos com `aria-hidden`. A moldura (mapa, resumo vivo, Open decisions, Back e Next, celular) é a da FEAT-007 ([Builder frame](../FEAT-007-ancestry-step-map-live-summary/ui-design.md#builder-frame) e SCR-WEB-016), sem mudança. Texto da interface em inglês, fechado em [Textos](#textos). Nenhum texto dos livros (P22).
 
@@ -26,7 +26,7 @@ Autoridade: `docs/design.md` e `docs/tokens.json`. Todo valor visual abaixo é t
 | Ajuste: opções, estado, par atual | `view.slots` da vaga `attribute-shift` desta etapa: `options`, `decided`, `value` |
 | Prévia | `engine.preview(rules, document, key, { decrease, increase }).changes` |
 | Aplicar · desfazer | `session.decide(key, { decrease, increase })` · `session.clear(key)` → `DecideResult` |
-| Segunda tentativa | `DecideResult.reason === 'already-decided'` |
+| Ajuste aplicado (só leitura) | `slot.decided` e `slot.value` da vaga `attribute-shift` |
 | Linhas de característica | `view.summary.characteristics[]`: `name`, `value`, `formula`, `limits`, `composition`, `pendingOn` |
 | Gravação | `snapshot.save`, `session.retrySave()` |
 
@@ -39,7 +39,7 @@ Etapa aberta, ajuste não usado. Exemplo: Dwarf.
 1. **`step-header`** (card, como na FEAT-007):
    - eyebrow `STEP 2 OF 8 · CHOICE`, com a marca de identidade acima;
    - `h1`: "How strong, quick, clever and willful is your character?";
-   - linha de regra em `.typography-body` `--color-text-secondary`: "Your ancestry sets your starting scores. Once, you may lower one score by 1 to raise another by 1." + `source-badge` `CORE p.10`;
+   - linha de regra em `.typography-body` `--color-text-secondary`: "Your ancestry sets your starting scores. Once, you may raise one score by 1 and lower another by 1." + `source-badge` `CORE p.10`;
    - contadores: ver [Contadores](#contadores).
 2. **Card Attributes** (`card`):
    - `h2` "Attributes" em `.typography-title`;
@@ -58,7 +58,7 @@ Etapa aberta, ajuste não usado. Exemplo: Dwarf.
      2. "Lower another attribute by 1". Desabilitada (`--opacity-disabled`) até haver escolha na primeira, com o motivo visível em `.typography-meta` abaixo dela, ligado por `aria-describedby`: "Choose the attribute to raise first.";
    - ações, alinhadas à direita, `--space-4` acima: `button-primary` "Apply adjustment", desabilitado com o motivo ao lado em `.typography-meta`: "Choose both attributes first." (P31).
 4. **Card Characteristics** (`card`):
-   - `h2` "Characteristics" em `.typography-title` e, na mesma linha à direita, "Calculated from your attributes. They update when your scores change." em `.typography-meta`;
+   - `h2` "Characteristics" em `.typography-title` e, na mesma linha à direita, "Some come from your attributes and update when your scores change." em `.typography-meta`;
    - dez `characteristic-row` na ordem do pacote: nome em `.typography-label` · fórmula e limite em `.typography-meta` `--color-text-secondary` · valor em `.typography-stat` à direita; Disclosure para o `value-composition`;
    - **linha de fórmula** (FR-CALC-003): `formula` de `formatFormula`, seguida dos limites, separados por vírgula:
      - mínimo: ", minimum {limite}"; máximo: ", maximum {limite}";
@@ -90,11 +90,11 @@ O ajuste não usado não ganha pílula: ele não é pendência (D2), e pílula t
 | `base` de atributo | "{Ancestry} starting score" (FEAT-007) | "10" |
 | `base` de característica | "{Ancestry}: {fórmula}" · "Standard rule: {fórmula}" (FEAT-007) | "14" |
 | `modifier` do ajuste | "Score adjustment" | "+1" · "−1" |
-| `limit` máximo, só quando corta | "Capped at {limite}" ("Capped at 25") | "−2" |
-| `limit` mínimo, só quando corta | "Raised to minimum {limite}" | "+1" |
+| `limit` máximo, só quando corta | "Capped at {limite}": "Capped at 25" · "Capped at Will (10)" | "−2" |
+| `limit` mínimo, só quando corta | "Raised to minimum {limite}": "Raised to minimum 1" | "+1" |
 | total | "{Name}", com divisor acima, semibold | "11" |
 
-Sinais com o menos tipográfico (−). O total é sempre a soma das parcelas (D5).
+O `{limite}` segue a linha de fórmula: limite numérico como número; limite por referência como "{referência} ({valor})", e o valor existe sempre, porque limite pendente não corta. Sinais com o menos tipográfico (−). O total é sempre a soma das parcelas (D5).
 
 ### selecting
 
@@ -112,21 +112,17 @@ O jogador escolhe na primeira `subdecision` (ex.: Intellect).
 
 ### applied
 
-`session.decide` devolveu `ok` (ajuste decidido).
+`session.decide` devolveu `ok` (ajuste decidido). Este estado também cobre a segunda tentativa (FR-STEP-010).
 
-- As duas `subdecision` passam de tracejada a sólida (`--color-border-divider`), como o Size decidido da FEAT-007, e mostram o par aplicado nos segmentos. A prévia e "Apply adjustment" saem.
-- Abaixo delas, a linha de estado "Applied: Intellect +1, Strength −1." em `.typography-meta` (`tabindex="-1"`) e, à direita, `button-secondary` "Undo adjustment".
+- As duas `subdecision` passam de tracejada a sólida (`--color-border-divider`), como o Size decidido da FEAT-007. A prévia e "Apply adjustment" saem.
+- **Só leitura:** os dois `segmented-control` ficam com `isReadOnly` (React Aria), com o par aplicado selecionado. Os segmentos continuam focáveis e legíveis, sem `--opacity-disabled` (não estão desabilitados) e sem mudança de fundo no hover. Clicar, tocar ou usar as setas não muda a seleção e não chama comando nenhum.
+- Abaixo dos grupos:
+  - a linha de estado "Applied: Intellect +1, Strength −1." em `.typography-meta` (`tabindex="-1"`);
+  - o motivo, visível em `.typography-meta`, ligado aos dois grupos por `aria-describedby`: "To change it, undo the current adjustment first." (P31);
+  - ao lado deles, à direita, `button-secondary` "Undo adjustment".
+- **Segunda tentativa:** é tentar mudar um segmento só leitura. Nada muda, nada é gravado, e não há alerta transitório: o motivo e a oferta de desfazer já estão visíveis, e o leitor de tela lê o motivo ao focar o grupo. A recusa do comando (`already-decided`, D3) continua valendo para quem chamar `decide` sem passar pela tela, e é coberta pelos testes de sessão da T4.
 - Pílula "Adjustment used" no cabeçalho; linhas e resumo com os valores novos; a composição de Intellect e Strength ganha a parcela "Score adjustment".
 - **Foco e anúncio:** o foco vai para a linha de estado, que o leitor de tela lê. O resumo vivo anuncia os valores em `aria-live="polite"` (FEAT-007).
-
-### refused
-
-Segunda tentativa: com o ajuste aplicado, o jogador muda um segmento. A ui chama `session.decide` com o par novo, e o comando devolve `already-decided` (FR-STEP-010; a recusa vem do motor, não da tela, D3).
-
-- Os segmentos voltam ao par aplicado; nada muda nem é gravado.
-- `inline-alert` warning (ícone `triangle-alert`), `role="status"`, entre as `subdecision` e a linha de estado, logo acima de "Undo adjustment": "You've already made your adjustment, and it can be made only once. To change it, undo the current one first."
-- O foco fica no segmento do par aplicado (o grupo continua o mesmo); o alerta é anunciado pelo `role="status"`.
-- O alerta some na próxima ação do jogador nesta etapa. É warning, não danger: nada deu errado.
 
 ### undone
 
@@ -158,7 +154,7 @@ Os da moldura da FEAT-007, sem mudança (esqueletos; erro de abertura no card ce
 
 - **Teclado:**
   - ordem de foco: cabeçalho → linhas de atributo → `segmented-control` de subir → de baixar → "Apply adjustment" ou "Undo adjustment" → linhas de característica → Back → Next;
-  - `segmented-control` com setas (radiogroup), pulando segmento desabilitado; o grupo desabilitado sai da ordem de foco, e o motivo continua visível;
+  - `segmented-control` com setas (radiogroup), pulando segmento desabilitado; o grupo desabilitado sai da ordem de foco, e o motivo continua visível; no grupo só leitura (ajuste aplicado), as setas movem o foco sem mudar a seleção;
   - Disclosure com Enter e Espaço;
   - a pendência do +1 só recebe foco pelo atalho.
 - **Notas responsivas:**
@@ -173,8 +169,8 @@ Os da moldura da FEAT-007, sem mudança (esqueletos; erro de abertura no card ce
   - Reflow a 320 CSS px sem rolagem horizontal (`design.md` §5).
 - **Decisões:**
   - **O ajuste em duas `subdecision`, não em botões −1/+1 em cada atributo (como no wireframe).** Motivo: P30 (subdecisões em ordem), FR-FLOW-014 (a prévia do par inteiro antes de aplicar) e uma ação só, que vira um comando. Alternativa rejeitada: os botões por cartão do wireframe SCR-05, que aplicariam meio ajuste por clique e não têm prévia do par.
-  - **Primeiro o que sobe, depois o que desce.** Motivo: a regra da p.10 descreve o ajuste a partir do aumento, e o exemplo do P30 põe "aumentar" antes de "diminuir". Alternativa rejeitada: descer primeiro, a ordem em que o pedido da revisão listou as duas. Fica para revisão do usuário.
-  - **A segunda tentativa passa pelo comando.** Motivo: D3 do technical-design (a recusa vem do modelo); o padrão de troca recusada da FEAT-007 (`dependents-blocked`: a seleção volta e um warning explica). Alternativa rejeitada: travar os segmentos depois de aplicar, o que deixaria a recusa da FR-STEP-010 sem estado visível.
+  - **Primeiro o que sobe, depois o que desce.** Motivo: a regra da p.10 descreve o ajuste a partir do aumento, e o exemplo do P30 põe "aumentar" antes de "diminuir". Alternativa rejeitada: descer primeiro. Confirmada pelo usuário em 2026-11-12.
+  - **Depois de aplicar, os grupos ficam só leitura, com o motivo visível.** Motivo: P31 (o que não se pode fazer aparece com o motivo, antes da tentativa) e FR-STEP-010 (recusar e oferecer desfazer): o motivo e "Undo adjustment" ficam visíveis o tempo todo. A recusa do comando (D3) continua no modelo e é coberta pelos testes de sessão da T4. Alternativa rejeitada: deixar o segmento mudar, chamar `decide` e mostrar um alerta transitório com `already-decided`, que oferece a tentativa só para recusá-la.
   - **Atributos em linhas, não em cartões.** Motivo: os controles saíram dos cartões, e o resumo vivo ao lado já tem os quatro mini-cartões; a linha repete a forma do `characteristic-row`, com o modificador no lugar da fórmula. Alternativa rejeitada: os cartões grandes do wireframe, que duplicariam o resumo no desktop.
 
 ## Decisões entre telas
@@ -192,7 +188,7 @@ Fechados para a FEAT-008, revisados contra a NFR-USE-001 e o `design.md` §6. Ne
 | :-- | :-- |
 | Eyebrow | "STEP 2 OF 8 · CHOICE" |
 | Pergunta (`h1`) | "How strong, quick, clever and willful is your character?" |
-| Linha de regra | "Your ancestry sets your starting scores. Once, you may lower one score by 1 to raise another by 1." + `CORE p.10` |
+| Linha de regra | "Your ancestry sets your starting scores. Once, you may raise one score by 1 and lower another by 1." + `CORE p.10` |
 | Contadores | "Chosen {d} of {t}" · "{n} open" · "Nothing required" · "Adjustment used" |
 | Card de atributos | "Attributes" · "Modifier {mod}" |
 | Nome acessível da linha de atributo | "{Attribute} {score}, modifier {mod}" |
@@ -202,15 +198,15 @@ Fechados para a FEAT-008, revisados contra a NFR-USE-001 e o `design.md` §6. Ne
 | Prévia | "IF YOU APPLY THIS ADJUSTMENT" · "{Name} {de} → {para}" |
 | Ações | "Apply adjustment" · "Undo adjustment" |
 | Aplicado | "Applied: {Raised} +1, {Lowered} −1." |
-| Segunda tentativa | "You've already made your adjustment, and it can be made only once. To change it, undo the current one first." |
+| Motivo do só leitura | "To change it, undo the current adjustment first." |
 | Desfeito (oculto) | "Adjustment undone." |
 | +1 pendente | "+1 to one attribute" · "From {Ancestry}. Choosing it here isn't available yet. It stays in Open decisions, and your scores don't include it until then." |
-| Card de características | "Characteristics" · "Calculated from your attributes. They update when your scores change." |
+| Card de características | "Characteristics" · "Some come from your attributes and update when your scores change." |
 | Linha de fórmula | "{fórmula}" · ", minimum {limite}" · ", maximum {limite}" · "{referência} ({valor})" · "Fixed" |
 | Nome acessível da característica | "{Characteristic} {value}" · pendente: "{Characteristic}, open" |
 | Next | "Next: Story" |
 
-**Composição:** "Score adjustment" · "Capped at {limite}" · "Raised to minimum {limite}", mais os da FEAT-007 ("{Ancestry} starting score", "{Ancestry}: {fórmula}", "Standard rule: {fórmula}", "HOW THIS IS CALCULATED").
+**Composição:** "Score adjustment" · "Capped at {limite}" · "Raised to minimum {limite}" (limite: "25" ou "{referência} ({valor})", ex.: "Capped at Will (10)"), mais os da FEAT-007 ("{Ancestry} starting score", "{Ancestry}: {fórmula}", "Standard rule: {fórmula}", "HOW THIS IS CALCULATED").
 
 **Rótulo de pendência** (acréscimo à tabela da FEAT-007; o ajuste nunca é pendência, então só aparece onde o título da vaga é pedido): `attribute-shift` → "Score adjustment".
 
@@ -221,7 +217,7 @@ Fechados para a FEAT-008, revisados contra a NFR-USE-001 e o `design.md` §6. Ne
 - **E5. `segmented-control` com 4 segmentos em tela estreita** (proposta de emenda ao `design.md` §4, Formulários, pela ux-foundations; não editado aqui):
   - **O que falta:** o componente é "grupo de 2 a 4 botões unidos", sem regra para quando não cabe. Os quatro nomes de atributo, com o padding de segmento da FEAT-007 (`--space-4`), dão cerca de 300 px; a `subdecision` no celular tem cerca de 296 px de área útil a 360 px e 256 px no reflow de 320 px.
   - **Proposta:** "Quando os segmentos não cabem numa linha, o grupo vira uma grade de 2 colunas de largura igual, com os mesmos divisores internos (`--border-width-default` `--color-border-control`), a mesma ordem de leitura e as mesmas setas."
-  - **Telas:** SCR-WEB-005. Até a emenda, a entrada do manifesto fica `escalation-pending`; o desktop e o intermediário não dependem dela.
-- **Para revisão do usuário:** a ordem das subdecisões (subir antes de descer), registrada nas Decisões.
+  - **Telas:** SCR-WEB-005.
+  - **Situação:** aprovada pelo usuário em 2026-11-12; a emenda do `design.md` vem em outra rodada, pela ux-foundations. Até ela entrar, a entrada do manifesto fica `escalation-pending`; o desktop e o intermediário não dependem dela.
 - **Fora desta feature:** controle do +1 (FEAT-016), atributos rolados e o botão de rolar desabilitado do wireframe (P14b; o MVP não tem regra opcional que os ligue), ajuste manual (FEAT-019), limpar o Size na Ancestry (FEAT-011).
 - **RTM:** sem mudança, a pedido do usuário. A Design ref das FRs da FEAT-008 continua apontando o `technical-design.md`.
