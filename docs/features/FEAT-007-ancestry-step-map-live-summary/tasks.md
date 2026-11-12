@@ -37,7 +37,7 @@
     - ciclo acusado como `EngineError` (invariante; a carga já recusa, no T1);
     - texto "Strength + 4", "Health / 4, rounded down" e "1/2 or 1".
 
-- [ ] **T4. `resolve` real** (design §3.3 `Rules`; FR-SRC-010, FR-CONT-006)
+- [x] **T4. `resolve` real** (design §3.3 `Rules`; FR-SRC-010, FR-CONT-006)
   - `src/engine/resolve.ts`: itens vigentes dos componentes ligados, na ordem de fontes; procedência com livro, `abbr`, página e tipo `core`/`adds`; procedimento, etapas, atributos e características em ordem.
   - **Pronto quando:** os testes com dois livros fictícios passam para:
     - procedência e tipo;
