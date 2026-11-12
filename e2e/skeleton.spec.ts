@@ -1,9 +1,10 @@
 import { readFileSync } from 'node:fs'
 import AxeBuilder from '@axe-core/playwright'
-import { expect, test, type Page } from '@playwright/test'
+import { expect, test, type Page, type TestInfo } from '@playwright/test'
 
 // Esqueleto técnico (plano §2), metade local do "pronto quando": criar um personagem, recarregar e vê-lo na Home;
-// a CSP do build não registra violação; o axe não acusa violação grave na casca.
+// a CSP do build não registra violação; o axe não acusa violação grave na casca. Com a FEAT-007, o construtor abre
+// na etapa Ancestry, e o About fica no rodapé no desktop e no menu "···" no celular.
 
 const tokens = JSON.parse(readFileSync(new URL('../docs/tokens.json', import.meta.url), 'utf8'))
 
@@ -26,16 +27,25 @@ async function watchCsp(page: Page) {
   return violations
 }
 
+const isMobile = (testInfo: TestInfo) => testInfo.project.name.startsWith('mobile')
+
 async function createCharacter(page: Page) {
   await page.getByRole('button', { name: 'New character' }).click()
-  await expect(page).toHaveURL(/#\/characters\/[\w-]+$/)
-  await expect(page.getByRole('navigation', { name: 'Steps' }).getByRole('listitem')).toHaveCount(8)
+  await expect(page).toHaveURL(/#\/characters\/[\w-]+\/ancestry$/)
+  await expect(page.getByRole('heading', { level: 1, name: "What is your character's ancestry?" })).toBeVisible()
+}
+
+/** O mapa de etapas: lista no desktop; no celular, dentro do popover do seletor. */
+async function stepMap(page: Page, testInfo: TestInfo) {
+  if (!isMobile(testInfo)) return page.getByRole('navigation', { name: 'Creation steps' })
+  await page.getByRole('button', { name: /Step 1 of 8/ }).click()
+  return page.getByRole('dialog', { name: 'Creation steps' })
 }
 
 test('FR-CHAR-001, FR-CHAR-009: New character creates a level 0 character that is still on the Home after a reload', async ({
   page,
   baseURL,
-}) => {
+}, testInfo) => {
   const csp = await watchCsp(page)
   const requests: string[] = []
   page.on('request', (request) => requests.push(request.url()))
@@ -51,20 +61,28 @@ test('FR-CHAR-001, FR-CHAR-009: New character creates a level 0 character that i
   expect(requests.filter((url) => url.includes('/packs/') || /Builder-[\w-]+\.js/.test(url))).toEqual([])
 
   await createCharacter(page)
-  const steps = page.getByRole('navigation', { name: 'Steps' }).getByRole('listitem')
+  const steps = (await stepMap(page, testInfo)).getByRole('listitem')
+  await expect(steps).toHaveCount(8)
   await expect(steps.first()).toContainText('Ancestry')
   await expect(steps.first()).toContainText('Not started')
+  if (isMobile(testInfo)) await page.keyboard.press('Escape')
 
   // Pacotes buscados a partir da base de caminho, não de "/".
   expect(requests.filter((url) => url.includes('/packs/'))).toEqual(
     expect.arrayContaining([`${baseURL}packs/index.json`, `${baseURL}packs/sotdl.core.json`]),
   )
 
-  await page.getByRole('link', { name: 'SotDL Generator' }).click()
+  await page.getByRole('link', { name: isMobile(testInfo) ? 'Back to My characters' : 'SotDL Generator' }).click()
   await page.reload()
   await expect(page.getByRole('list', { name: 'Saved characters' }).getByRole('link')).toHaveText(['Unnamed character'])
 
-  await page.getByRole('link', { name: 'About' }).click()
+  // FR-HELP-001: About no rodapé (desktop) ou no menu "···" (celular).
+  if (isMobile(testInfo)) {
+    await page.getByRole('button', { name: 'More' }).click()
+    await page.getByRole('menuitem', { name: 'About' }).click()
+  } else {
+    await page.getByRole('contentinfo').getByRole('link', { name: 'About' }).click()
+  }
   await expect(page.getByRole('heading', { name: 'About' })).toBeVisible()
 
   expect(csp).toEqual([])

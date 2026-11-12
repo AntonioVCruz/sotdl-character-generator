@@ -94,7 +94,7 @@
   - Componentes e layout pelo manifesto do ui-design (`docs/design-manifest.json`), consumindo o snapshot do T8 e o `preview`/`ancestryDetail` do engine.
   - **Pronto quando:** as duas telas renderizam e seguem a spec do ui-design, no desktop e abaixo de 768px.
 
-- [ ] **T10. E2E do caminho de criação até a ancestralidade** (UC-001 → UC-003 do fluxo crítico 1, ADR-008)
+- [x] **T10. E2E do caminho de criação até a ancestralidade** (UC-001 → UC-003 do fluxo crítico 1, ADR-008)
   - Atualizar o `e2e/skeleton.spec.ts` (mapa novo) e acrescentar um `e2e/ancestry.spec.ts`:
     - criar;
     - ver as etapas bloqueadas;

@@ -1,0 +1,154 @@
+import AxeBuilder from '@axe-core/playwright'
+import { expect, test, type Page, type TestInfo } from '@playwright/test'
+
+// FEAT-007 (fluxo crítico 1, UC-001 → UC-003; ADR-008): criar, ver as etapas bloqueadas, escolher Dwarf, conferir o
+// resumo, trocar para Human com Size adiado, usar o atalho de Open decisions e recarregar. Roda nos 5 projetos,
+// inclusive os de celular (SCR-WEB-016), contra o build com a CSP ativa.
+
+const isMobile = (testInfo: TestInfo) => testInfo.project.name.startsWith('mobile')
+
+async function watchCsp(page: Page) {
+  const violations: string[] = []
+  await page.addInitScript(() => {
+    document.addEventListener('securitypolicyviolation', (event) => {
+      console.error(`CSP violation: ${event.violatedDirective} ${event.blockedURI}`)
+    })
+  })
+  page.on('console', (message) => {
+    if (/content.security.policy|CSP violation/i.test(message.text())) violations.push(message.text())
+  })
+  return violations
+}
+
+async function createCharacter(page: Page) {
+  await page.goto('')
+  await page.getByRole('button', { name: 'New character' }).click()
+  await expect(page).toHaveURL(/#\/characters\/[\w-]+\/ancestry$/)
+  await expect(page.getByRole('heading', { level: 1, name: "What is your character's ancestry?" })).toBeVisible()
+  return page.url().replace(/\/ancestry$/, '')
+}
+
+/** O mapa de etapas: lista no desktop; no celular, no popover do seletor (fechar com Escape). */
+async function stepMap(page: Page, testInfo: TestInfo) {
+  if (!isMobile(testInfo)) return page.getByRole('navigation', { name: 'Creation steps' })
+  await page.getByRole('button', { name: /^Step \d of 8/ }).click()
+  return page.getByRole('dialog', { name: 'Creation steps' })
+}
+
+async function closeMap(page: Page, testInfo: TestInfo) {
+  if (isMobile(testInfo)) await page.keyboard.press('Escape')
+}
+
+/** O resumo: coluna no desktop; no celular, o painel aberto pela barra "Summary". */
+async function summary(page: Page, testInfo: TestInfo) {
+  const toggle = page.getByRole('button', { name: 'Summary' })
+  if (isMobile(testInfo) && (await toggle.getAttribute('aria-expanded')) !== 'true') await toggle.click()
+  return page.getByRole('complementary', { name: 'Summary' })
+}
+
+async function closeSummary(page: Page, testInfo: TestInfo) {
+  const toggle = page.getByRole('button', { name: 'Summary' })
+  if (isMobile(testInfo) && (await toggle.getAttribute('aria-expanded')) === 'true') await toggle.click()
+}
+
+const card = (page: Page, name: string) => page.locator('label.option-card').filter({ hasText: name })
+
+async function choose(page: Page, name: string) {
+  await card(page, name).click()
+  await page.getByRole('button', { name: `Choose ${name}` }).click()
+  await expect(page.getByRole('radio', { name: `${name}, your choice` })).toBeChecked()
+}
+
+test('FR-FLOW-004, FR-FLOW-005: a new character has only Ancestry open; the other 7 steps are locked and do not open by URL', async ({
+  page,
+}, testInfo) => {
+  const builder = await createCharacter(page)
+  const map = await stepMap(page, testInfo)
+  const steps = map.getByRole('listitem')
+  await expect(steps).toHaveCount(8)
+  await expect(map.getByRole('link')).toHaveCount(1)
+  for (let i = 1; i < 8; i++) await expect(steps.nth(i)).toContainText('Locked')
+  await expect(steps.nth(1)).toContainText('2. Attributes, locked. Choose an ancestry first.')
+  await expect(map).toContainText('Choose an ancestry first to open the other steps.')
+  await closeMap(page, testInfo)
+
+  // Next bloqueado com o motivo visível; a URL de uma etapa bloqueada volta para a Ancestry.
+  await expect(page.getByRole('button', { name: 'Next: Attributes' })).toBeDisabled()
+  await expect(page.getByText('Choose an ancestry first.', { exact: true })).toBeVisible()
+  await page.goto(`${builder}/story`)
+  await expect(page).toHaveURL(/\/ancestry$/)
+})
+
+test('FR-STEP-001, FR-FLOW-012, FR-FLOW-003, FR-DEC-011, FR-FLOW-011, NFR-REL-001: choose Dwarf, switch to Human with Size left open, follow the shortcut, reload', async ({
+  page,
+}, testInfo) => {
+  const csp = await watchCsp(page)
+  await createCharacter(page)
+
+  // FR-STEP-001, FR-CONT-009, FR-SRC-010: cada ancestralidade uma vez, com a linha de mecânica e os selos.
+  await expect(page.locator('label.option-card')).toHaveCount(2)
+  await expect(card(page, 'Dwarf')).toContainText('Health = Strength + 4')
+  await expect(card(page, 'Dwarf')).toContainText('Speed 8')
+  await expect(card(page, 'Dwarf')).toContainText('Size 1/2')
+  await expect(card(page, 'Dwarf')).toContainText('CORE p.17')
+  await expect(card(page, 'Human')).toContainText('CORE p.11')
+  await expect(card(page, 'Dwarf')).toContainText('Core')
+
+  // FR-STEP-002, FR-FLOW-014: o detalhe e a prévia aparecem antes de confirmar.
+  await card(page, 'Dwarf').click()
+  await expect(page.getByText('Health +6; one spell or Shake it Off')).toBeVisible()
+  await expect(page.getByText('If you choose Dwarf')).toBeVisible()
+  await expect(page.getByText('Opens the other 7 steps')).toBeVisible()
+
+  await page.getByRole('button', { name: 'Choose Dwarf' }).click()
+  await expect(page.getByRole('radio', { name: 'Dwarf, your choice' })).toBeChecked()
+
+  // FR-FLOW-012: o resumo vivo calcula pelas fórmulas do pacote.
+  let aside = await summary(page, testInfo)
+  await expect(aside.getByRole('button', { name: /Health\s*14/ })).toBeVisible()
+  await expect(aside.getByRole('button', { name: /Perception\s*11/ })).toBeVisible()
+  await expect(aside.getByRole('button', { name: /Healing Rate\s*3/ })).toBeVisible()
+  await closeSummary(page, testInfo)
+
+  // FR-FLOW-003: as etapas se liberam.
+  const map = await stepMap(page, testInfo)
+  await expect(map.getByRole('link')).toHaveCount(8)
+  await expect(map.getByRole('listitem').nth(6)).toContainText('Optional')
+  await closeMap(page, testInfo)
+
+  // Troca sem dependentes aplica direto; Size do Human fica em aberto (FR-STEP-003, FR-DEC-011).
+  await choose(page, 'Human')
+  await expect(page.getByRole('radiogroup', { name: 'Size' })).toBeVisible()
+  await expect(page.getByText('Or decide later: it stays in Open decisions.')).toBeVisible()
+
+  // FR-FLOW-007: Next abre a seguinte mesmo com a pendência na atual.
+  await page.getByRole('button', { name: 'Next: Attributes' }).click()
+  await expect(page).toHaveURL(/\/attributes$/)
+  await expect(page.getByRole('heading', { level: 1, name: 'Attributes' })).toBeVisible()
+
+  // FR-FLOW-010, FR-FLOW-011: as três pendências do Human e o atalho que abre a Ancestry na vaga do Size.
+  aside = await summary(page, testInfo)
+  await expect(aside.getByRole('heading', { name: 'Open decisions · 3' })).toBeVisible()
+  await aside.getByRole('link', { name: /^Size\s*Ancestry · Human$/ }).click()
+  await expect(page).toHaveURL(/\/ancestry\?slot=ancestry%3Dhuman%2Fsize$/)
+  await expect(page.locator('#slot-ancestry_human_size')).toBeFocused()
+
+  // NFR-REL-001: a decisão sobrevive a recarregar.
+  await page.reload()
+  await expect(page.getByRole('radio', { name: 'Human, your choice' })).toBeChecked()
+  await expect(page.getByRole('radiogroup', { name: 'Size' })).toBeVisible()
+
+  expect(csp).toEqual([])
+})
+
+// Sem vigiar a CSP: o axe injeta script e estilo. Uma análise por teste (scaffold-notes).
+test('NFR-ACC-001: the builder with an ancestry chosen has no serious or critical axe violations', async ({ page }) => {
+  await createCharacter(page)
+  await choose(page, 'Human')
+  const { violations } = await new AxeBuilder({ page })
+    .exclude('[data-live-announcer]')
+    .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])
+    .analyze()
+  const serious = violations.filter((v) => v.impact === 'serious' || v.impact === 'critical')
+  expect(serious.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join(', ')}`)).toEqual([])
+})
