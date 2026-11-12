@@ -1,4 +1,11 @@
-import { formatNumber, type OpenDecision, type SlotView, type StepStatus, type StepView } from '../../engine'
+import {
+  formatNumber,
+  type CharacteristicSummary,
+  type OpenDecision,
+  type SlotView,
+  type StepStatus,
+  type StepView,
+} from '../../engine'
 
 // Texto do construtor (ui-design §Textos, NFR-L10N-001). Nenhum id, enum ou nome de vaga aparece na tela (lição 5);
 // pergunta da etapa e rótulos das pendências são do app, por id de etapa e por `kind` de vaga (D6).
@@ -25,11 +32,16 @@ export const statusLabel = (step: Pick<StepView, 'status' | 'open'>) =>
 const ENTITY_LABEL: Record<string, string> = { ancestry: 'ancestry' }
 
 /** Texto próprio das etapas que já têm tela; as demais usam o fallback. */
-const STEP_TEXT: Record<string, { question: string; rule: string; lockReason: string }> = {
+const STEP_TEXT: Record<string, { question: string; rule: string; lockReason?: string }> = {
   'step:ancestry': {
     question: "What is your character's ancestry?",
     rule: 'Choose one ancestry. It sets your starting attributes, characteristics, languages and talents.',
     lockReason: 'Choose an ancestry first.',
+  },
+  // ui-design da FEAT-008, Textos.
+  'step:attributes': {
+    question: 'How strong, quick, clever and willful is your character?',
+    rule: 'Your ancestry sets your starting scores. Once, you may raise one score by 1 and lower another by 1.',
   },
 }
 
@@ -59,6 +71,24 @@ export const formatValue = (value: number | null) => (value === null ? '—' : f
 /** Modificador com sinal, com o sinal de menos tipográfico ("+0", "−1"). */
 export const formatModifier = (value: number | null) =>
   value === null ? '—' : value < 0 ? `−${Math.abs(value)}` : `+${value}`
+
+/** Limite como na linha de fórmula: numérico como número ("25"); por referência, com o valor ("Will (10)"). */
+export function limitText(formula: string, limit: number | null): string {
+  if (limit === null || formula === formatNumber(limit)) return formula
+  return `${formula} (${formatNumber(limit)})`
+}
+
+/**
+ * Linha de fórmula de uma característica (FR-CALC-003; ui-design da FEAT-008): a fórmula, "Fixed" quando ela é só um
+ * número, e os limites ("Health / 4, rounded down, minimum 1", "Fixed, maximum Will (10)").
+ */
+export function formulaLine(characteristic: CharacteristicSummary): string {
+  const formula = /^-?\d+(\/\d+)?$/.test(characteristic.formula) ? 'Fixed' : characteristic.formula
+  const limits = characteristic.limits.map(
+    ({ bound, formula: text, limit }) => `${bound === 'max' ? 'maximum' : 'minimum'} ${limitText(text, limit)}`,
+  )
+  return [formula, ...limits].filter(Boolean).join(', ')
+}
 
 export const sourceBadge = (provenance: { abbr: string; page?: number }) =>
   provenance.page === undefined ? provenance.abbr : `${provenance.abbr} p.${provenance.page}`

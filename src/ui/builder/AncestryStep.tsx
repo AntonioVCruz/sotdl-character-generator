@@ -164,7 +164,7 @@ function AncestryDetailCard({ ancestryId, isCurrent, snapshot, session, titleRef
         <DecideNow snapshot={snapshot} session={session} ancestryId={ancestryId} nameOf={nameOf} />
       ) : (
         <>
-          <PreviewBox before={view} {...preview(rules, document, 'ancestry', ancestryId)} name={detail.name} />
+          <PreviewBox before={view} {...preview(rules, document, 'ancestry', ancestryId)} title={`If you choose ${detail.name}`} />
           <div className="ancestry-detail__action">
             <Button className="button-primary typography-label" onPress={onChoose}>
               {`Choose ${detail.name}`}
@@ -187,12 +187,12 @@ function DetailBlock({ title, children }: { title: string; children: ReactNode }
   )
 }
 
-/** Prévia do que muda (FR-FLOW-014): atributos, características e etapas, antigo → novo. */
-function PreviewBox({ before, view, changes, name }: {
+/** Prévia do que muda (FR-FLOW-014): atributos, características e etapas, antigo → novo. Também a do ajuste (FEAT-008). */
+export function PreviewBox({ before, view, changes, title }: {
   before: CharacterView
   view: CharacterView
   changes: ReturnType<typeof preview>['changes']
-  name: string
+  title: string
 }) {
   const values = [...changes.attributes, ...changes.characteristics]
   const unlocked = changes.steps.filter((step) => step.from === 'locked')
@@ -201,7 +201,7 @@ function PreviewBox({ before, view, changes, name }: {
   const stepLines = [...others, ...(unlocked.length > 6 ? [] : unlocked)]
   return (
     <div className="preview-box">
-      <Eyebrow secondary>{`If you choose ${name}`}</Eyebrow>
+      <Eyebrow secondary>{title}</Eyebrow>
       <ul className="preview-box__lines">
         {values.map((change) => (
           <li key={change.id} className="preview-box__line typography-meta">

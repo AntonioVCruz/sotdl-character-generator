@@ -6,6 +6,8 @@ import { PillCounter, SourceBadge } from './parts'
 export function StepHeader({ step, steps, slots, rules }: { step: StepView; steps: StepView[]; slots: SlotView[]; rules: Rules }) {
   const rule = stepRule(step)
   const provenance = rules.items.get(step.id)?.provenance
+  // O ajuste não usado não ganha pílula: ele não é pendência (D2 da FEAT-008).
+  const adjusted = slots.some((slot) => slot.stepId === step.id && slot.kind === 'attribute-shift' && slot.decided)
   return (
     <div className="step-header">
       <p className="typography-eyebrow step-header__eyebrow">
@@ -18,10 +20,16 @@ export function StepHeader({ step, steps, slots, rules }: { step: StepView; step
           {rule} {provenance?.page !== undefined && <SourceBadge provenance={provenance} />}
         </p>
       )}
-      {step.total > 0 && (
+      {(step.total > 0 || step.status === 'done') && (
         <p className="step-header__counters">
-          <PillCounter done={step.open === 0}>{`Chosen ${step.decided} of ${step.total}`}</PillCounter>
+          {step.total > 0 ? (
+            <PillCounter done={step.open === 0}>{`Chosen ${step.decided} of ${step.total}`}</PillCounter>
+          ) : (
+            // Etapa `done` só com vaga opcional (ui-design da FEAT-008, Contadores).
+            <PillCounter done>Nothing required</PillCounter>
+          )}
           {step.open > 0 && <PillCounter>{`${step.open} open`}</PillCounter>}
+          {adjusted && <PillCounter done>Adjustment used</PillCounter>}
         </p>
       )}
     </div>

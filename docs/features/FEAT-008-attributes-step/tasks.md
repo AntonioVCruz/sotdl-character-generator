@@ -86,7 +86,7 @@
     - `NFR-PERF-002: evaluate of a complete level 0 sized fixture (36 decisions, 20 effects, 14 formulas and 4 limits) stays under 20 ms at p95`.
   - `npm run typecheck` e `npm run lint` passam.
 
-- [ ] **T6. ui: integração da etapa Attributes** (design §3.4; SCR-WEB-005 do ui-design; FR-STEP-007 a 011, FR-STEP-008 só exibição, FR-CALC-002, 003, 007)
+- [x] **T6. ui: integração da etapa Attributes** (design §3.4; SCR-WEB-005 do ui-design; FR-STEP-007 a 011, FR-STEP-008 só exibição, FR-CALC-002, 003, 007)
   - Integração apenas; o desenho da tela, os estados e os textos são do ui-design:
     - `Builder` despacha `attribute-shift` para a nova `AttributesStep`;
     - a `AttributesStep` consome os dados da tabela da §3.4: `preview`, `decide` e `clear`;

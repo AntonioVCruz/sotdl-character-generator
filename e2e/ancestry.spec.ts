@@ -138,7 +138,7 @@ test('FR-STEP-001, FR-FLOW-012, FR-FLOW-003, FR-DEC-011, FR-FLOW-011, NFR-REL-00
   // FR-FLOW-007: Next abre a seguinte mesmo com a pendência na atual.
   await page.getByRole('button', { name: 'Next: Attributes' }).click()
   await expect(page).toHaveURL(/\/attributes$/)
-  await expect(page.getByRole('heading', { level: 1, name: 'Attributes' })).toBeVisible()
+  await expect(page.getByRole('heading', { level: 1, name: 'How strong, quick, clever and willful is your character?' })).toBeVisible()
   // FR-DEC-011 (AC-4): o +1 do Human aparece como pendência na etapa dele.
   await expect(page.getByRole('main').getByText('+1 to one attribute')).toBeVisible()
 

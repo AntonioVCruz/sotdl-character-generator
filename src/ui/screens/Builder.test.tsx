@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { createCharacterSession, createRulesLoader, type CharacterSession, type Repository } from '../../app'
@@ -58,6 +58,31 @@ files['/packs/test.adjust.json'] = {
       ),
     },
   ],
+}
+// Etapa com o ajuste e dois atributos, e uma característica com máximo (FEAT-008, T6).
+files['/packs/test.scores.json'] = {
+  ...core,
+  id: 'test.scores',
+  components: [
+    {
+      id: 'base',
+      type: 'adds',
+      default: 'on',
+      items: [
+        { id: 'procedure:test', steps: ['step:ancestry', 'step:scores'] },
+        { id: 'step:ancestry', name: 'Ancestry', page: 1, regime: 'choice', slots: { ancestry: { kind: 'choose-entity', of: 'ancestry' } } },
+        { id: 'step:scores', name: 'Scores', page: 2, requires: ['step:ancestry'], slots: { adjust: { kind: 'attribute-shift', amount: 1, optional: true } } },
+        { id: 'attribute:might', name: 'Might', page: 3, modifier: { add: [{ ref: 'self' }, -10] } },
+        { id: 'attribute:wits', name: 'Wits', page: 3, modifier: { add: [{ ref: 'self' }, -10] } },
+        { id: 'characteristic:power', name: 'Power', page: 3, formula: { add: [{ ref: 'attribute:might' }, { ref: 'attribute:might' }] }, limits: { max: 25 } },
+        { id: 'ancestry:troll', name: 'Troll', page: 6, attributes: { 'attribute:might': 12, 'attribute:wits': 10 } },
+      ],
+    },
+  ],
+}
+const withAdjustment = () => {
+  const document = stored({ ancestry: 'ancestry:troll' }, ['test.scores'])
+  return { ...document, decisions: { ...document.decisions, adjust: { mode: 'chosen', value: { decrease: 'attribute:wits', increase: 'attribute:might' } } } }
 }
 const fetch = async (url: string) => ({ ok: url in files, status: url in files ? 200 : 404, json: async () => files[url] })
 
@@ -180,8 +205,62 @@ describe('Builder states', () => {
   it('FR-STEP-009: the optional adjustment slot is not shown as pending in the step', async () => {
     setup({ document: stored({ ancestry: 'ancestry:troll' }, ['test.adjust']) })
     renderBuilder('traits')
-    expect(await screen.findByText("There's nothing to decide in this step yet.")).toBeTruthy()
+    // A etapa tem tela própria (T6): o ajuste aparece como opcional, não como pendência.
+    const card = (await screen.findByRole('heading', { name: 'Score adjustment' })).closest('section')!
+    expect(within(card).getByText('Optional. You can make it once.')).toBeTruthy()
     expect(screen.queryByText(/It stays in Open decisions/)).toBeNull()
     expect(screen.getByRole('heading', { name: 'Open decisions · 0' })).toBeTruthy()
+  })
+})
+
+describe('Attributes step', () => {
+  afterEach(cleanup)
+
+  it('FR-STEP-010: a second adjustment is refused and the step offers to undo the current one', async () => {
+    const { session, repository } = setup({ document: withAdjustment() })
+    const decide = vi.spyOn(session, 'decide')
+    renderBuilder('scores')
+    const raise = await screen.findByRole('radiogroup', { name: 'Raise one attribute by 1' })
+    const lower = screen.getByRole('radiogroup', { name: 'Lower another attribute by 1' })
+    const radio = (group: HTMLElement, name: string) => within(group).getByRole('radio', { name }) as HTMLInputElement
+
+    await userEvent.click(radio(raise, 'Wits'))
+    await userEvent.click(radio(lower, 'Might'))
+    expect(decide).not.toHaveBeenCalled()
+    expect(radio(raise, 'Might').checked).toBe(true)
+    expect(radio(lower, 'Wits').checked).toBe(true)
+    expect(screen.getByText('Applied: Might +1, Wits −1.')).toBeTruthy()
+    const reason = screen.getByText('To change it, undo the current adjustment first.')
+    expect(raise.getAttribute('aria-describedby')).toBe(reason.id)
+    expect(lower.getAttribute('aria-describedby')).toBe(reason.id)
+    expect(screen.getByRole('button', { name: 'Undo adjustment' })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Apply adjustment' })).toBeNull()
+    expect(repository.save).not.toHaveBeenCalled()
+  })
+
+  it('FR-CALC-002, FR-CALC-007: the composition lists the adjustment and the limit, and the total is their sum', async () => {
+    setup({ document: withAdjustment() })
+    renderBuilder('scores')
+    await screen.findByRole('heading', { name: 'Score adjustment' })
+    const main = screen.getByRole('main')
+    // As linhas do value-composition aberto da linha do gatilho.
+    const lines = (trigger: HTMLElement) =>
+      within(trigger.closest('li')!.querySelector<HTMLElement>('.value-composition:not([hidden])')!)
+        .getAllByRole('listitem')
+        .map((item) => item.textContent)
+
+    const might = within(main).getByRole('button', { name: 'Might 13, modifier +3' })
+    await userEvent.click(might)
+    expect(lines(might)).toEqual(['Troll starting score12', 'Score adjustment+1', 'Might13'])
+
+    const power = within(main).getByRole('button', { name: 'Power 25' })
+    expect(power.getAttribute('aria-describedby')).toBeTruthy()
+    expect(document.getElementById(power.getAttribute('aria-describedby')!)!.textContent).toBe('Might + Might, maximum 25')
+    await userEvent.click(power)
+    expect(lines(power)).toEqual([
+      'Standard rule: Might + Might26',
+      'Capped at 25−1',
+      'Power25',
+    ])
   })
 })

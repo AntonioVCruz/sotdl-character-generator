@@ -2,8 +2,8 @@ import type { SlotView, StepView } from '../../engine'
 import { decisionTitle, slotElementId } from './copy'
 
 /**
- * Etapa sem tela própria ainda (Attributes a Review): as pendências concedidas desta etapa, sem resolvê-las.
- * Cada feature de etapa (FEAT-008, 009, 012 a 016) troca este corpo pela tela dela.
+ * Etapa sem tela própria ainda (Story a Review): as pendências concedidas desta etapa, sem resolvê-las.
+ * Cada feature de etapa (FEAT-009, 012 a 016) troca este corpo pela tela dela.
  */
 export function FallbackStep({ step, slots, nameOf }: { step: StepView; slots: SlotView[]; nameOf: (id: string) => string }) {
   // A vaga opcional nunca é pendência (FEAT-008 D2).

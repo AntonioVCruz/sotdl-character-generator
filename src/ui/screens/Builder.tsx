@@ -5,6 +5,7 @@ import type { CharacterSession, Snapshot } from '../../app'
 import type { CharacterView, StepView } from '../../engine'
 import { AppHeader, PageFooter } from '../AppHeader'
 import { AncestryStep } from '../builder/AncestryStep'
+import { AttributesStep } from '../builder/AttributesStep'
 import { formatValue, lockReason, OPEN_MESSAGE, SAVE_FAILED, slotElementId, statusLabel } from '../builder/copy'
 import { FallbackStep } from '../builder/FallbackStep'
 import { LiveSummary, OpenDecisions } from '../builder/LiveSummary'
@@ -131,8 +132,11 @@ function BuilderReady({ session, snapshot, route }: {
         <main className="builder__step">
           <SaveAlert session={session} snapshot={snapshot} />
           <StepHeader step={current} steps={view.steps} slots={view.slots} rules={rules} />
+          {/* O corpo sai do `kind` da vaga raiz da etapa, nunca do nome dela (ADR-003 §6). */}
           {stepRoot?.kind === 'choose-entity' && stepRoot.of === 'ancestry' ? (
             <AncestryStep session={session} snapshot={snapshot} slot={stepRoot} nameOf={nameOf} />
+          ) : stepRoot?.kind === 'attribute-shift' ? (
+            <AttributesStep session={session} snapshot={snapshot} slot={stepRoot} nameOf={nameOf} />
           ) : (
             <FallbackStep step={current} slots={view.slots} nameOf={nameOf} />
           )}

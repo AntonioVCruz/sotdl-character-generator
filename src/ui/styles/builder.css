@@ -781,3 +781,129 @@ a.step-map__item--current:hover {
 .skeleton--mini {
   height: var(--size-control);
 }
+
+/* Etapa Attributes (ui-design da FEAT-008, SCR-WEB-005): os cards ocupam a coluna; só o texto corrido tem a medida. */
+.builder__step > .card {
+  max-width: none;
+}
+
+.card__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-1) var(--space-3);
+}
+
+.card__note,
+.characteristic-row__rule,
+.adjustment__reason {
+  color: var(--color-text-secondary);
+}
+
+/* characteristic-row (design.md §4): nome · fórmula (ou modificador) · valor, e o value-composition ao abrir. */
+.characteristic-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.characteristic-row + .characteristic-row {
+  border-top: var(--border-width-default) solid var(--color-border-divider);
+}
+
+.characteristic-row .composition-trigger {
+  display: grid;
+  /* Colunas por fração, para que todas as linhas alinhem a fórmula e o valor. */
+  grid-template-columns: minmax(0, 2fr) minmax(0, 4fr) minmax(0, 1fr) auto;
+  grid-template-areas: 'name rule value icon';
+  align-items: center;
+  gap: var(--space-1) var(--space-3);
+  padding: var(--space-3) 0;
+}
+
+.characteristic-row .composition-trigger > svg {
+  grid-area: icon;
+}
+
+.characteristic-row__name {
+  grid-area: name;
+  display: grid;
+  justify-items: start;
+  gap: var(--space-0-5);
+}
+
+.characteristic-row__rule {
+  grid-area: rule;
+}
+
+.characteristic-row__value {
+  grid-area: value;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Ajuste: duas subdecision, a prévia e as ações à direita (--space-4 acima, somando o gap do card). */
+.adjustment__groups {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.adjustment__actions,
+.adjustment__applied {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  margin-top: var(--space-1);
+}
+
+.adjustment__actions {
+  justify-content: flex-end;
+}
+
+.adjustment__applied {
+  justify-content: space-between;
+}
+
+.segmented-control__segment[data-disabled] {
+  opacity: var(--opacity-disabled);
+  cursor: not-allowed;
+}
+
+.segmented-control__segment[data-readonly] {
+  cursor: default;
+}
+
+@media (--bp-below-md) {
+  .characteristic-row .composition-trigger {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    grid-template-areas:
+      'name value icon'
+      'rule value icon';
+  }
+
+  /* Quebra do segmented-control (design.md §4, E5): grade de 2 colunas, mesmos divisores e mesma ordem. */
+  .segmented-control--wrap {
+    display: grid;
+    flex-basis: 100%;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .segmented-control--wrap .segmented-control__segment + .segmented-control__segment {
+    border-left: 0;
+  }
+
+  .segmented-control--wrap .segmented-control__segment:nth-child(even) {
+    border-left: var(--border-width-default) solid var(--color-border-control);
+  }
+
+  .segmented-control--wrap .segmented-control__segment:nth-child(n + 3) {
+    border-top: var(--border-width-default) solid var(--color-border-control);
+  }
+
+  .adjustment__actions > .button-primary,
+  .adjustment__applied > .button-secondary {
+    width: 100%;
+  }
+}

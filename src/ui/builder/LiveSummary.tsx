@@ -1,9 +1,9 @@
 import type { ReactNode } from 'react'
 import { ChevronDown, ChevronUp } from 'lucide-react'
 import { Button, Disclosure, DisclosurePanel } from 'react-aria-components'
-import { formatNumber, type CharacterView, type OpenDecision, type Stage, type StepView } from '../../engine'
+import type { CharacterView, OpenDecision, Stage, StepView } from '../../engine'
 import { href } from '../router'
-import { decisionTitle, decisionWhere, formatModifier, formatValue } from './copy'
+import { decisionTitle, decisionWhere, formatModifier, formatValue, limitText } from './copy'
 import { Eyebrow, PillCounter } from './parts'
 
 /** `live-summary` (FR-FLOW-012, 013): atributos, características com composição e ganhos. */
@@ -80,18 +80,23 @@ export function LiveSummary({ view, nameOf }: { view: CharacterView; nameOf: (id
   )
 }
 
-/** Linha que abre o `value-composition` (P11): termo base com a origem e o total. */
-function Composition({ trigger, stages, total, name, pending }: {
+/**
+ * Linha que abre o `value-composition` (P11): as parcelas com a origem e o total. Também usada pela etapa Attributes,
+ * com os mesmos rótulos (ui-design da FEAT-008); `label` e `describedBy` dão o nome acessível e a descrição do gatilho.
+ */
+export function Composition({ trigger, stages, total, name, pending, label, describedBy }: {
   trigger: ReactNode
   stages: Stage[]
   total: number | null
   name: string
   pending?: string
+  label?: string
+  describedBy?: string
 }) {
   if (stages.length === 0) return <div className="composition-trigger composition-trigger--static">{trigger}</div>
   return (
     <Disclosure className="composition">
-      <Button slot="trigger" className="composition-trigger">
+      <Button slot="trigger" className="composition-trigger" aria-label={label} aria-describedby={describedBy}>
         {trigger}
         <ChevronDown className="icon icon--sm composition__closed" aria-hidden="true" />
         <ChevronUp className="icon icon--sm composition__open" aria-hidden="true" />
@@ -120,8 +125,7 @@ function stageLabel(stage: Stage, pending?: string): string {
   // A origem `slot` não tem nome: o rótulo vem do `kind` da vaga (D6 da FEAT-007).
   if (stage.stage === 'modifier') return decisionTitle({ kind: stage.origin.slotKind }, (id) => id)
   if (stage.stage === 'limit') {
-    // Limite numérico como número; por referência, com o valor ("Will (10)"), como na linha de fórmula (ui-design).
-    const limit = stage.formula === formatNumber(stage.limit) ? stage.formula : `${stage.formula} (${formatNumber(stage.limit)})`
+    const limit = limitText(stage.formula, stage.limit)
     return stage.bound === 'max' ? `Capped at ${limit}` : `Raised to minimum ${limit}`
   }
   if (stage.origin.kind === 'default') return `Standard rule: ${stage.formula}`
