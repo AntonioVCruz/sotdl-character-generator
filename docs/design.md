@@ -330,6 +330,6 @@ Erros dizem: o que aconteceu, o que ficou a salvo, o que fazer. Confirmações d
 - Breakpoint intermediário (768–1279) não desenhado no wireframe; layout assumido.
 - Ficha no celular, etapas Roleplaying e Review, About, estados vazio, erro e carregamento: especificados aqui e em `ux-foundations.md`, sem desenho.
 - Ícones: conjunto ainda não escolhido (sugestão: Lucide, traço 1.5px, 16 e 20px).
-- Valores ainda sem token, a tokenizar no detailed-design da primeira feature que os usa, nunca como número solto no código: caixa de valor 72×72 do `roll-card` (FEAT-009) e corpo 9.5pt, títulos 12pt e margem 12mm do `print-sheet` (FEAT-021).
+- Valores ainda sem token, a tokenizar no detailed-design da primeira feature que os usa, nunca como número solto no código: caixa de valor 72×72 do `roll-card` e corpo 9.5pt, títulos 12pt e margem 12mm do `print-sheet`. A feature responsável por cada um está no plano de implementação.
 - Modo escuro fora do escopo; os tokens por papel permitem acrescentá-lo.
 - Componentes fora do MVP só com a especificação do wireframe.
