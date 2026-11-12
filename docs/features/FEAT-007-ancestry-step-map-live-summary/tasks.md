@@ -79,7 +79,7 @@
     - **decisão que já era órfã antes da mudança não bloqueia**: só contam as vagas vivas antes e mortas depois;
     - falha de gravação mantém o estado novo com `save: 'failed'`, e `retrySave` grava.
 
-- [ ] **T8. Integração na ui: rotas, sessão e estados do Builder** (comportamental; design §3.4; FR-FLOW-006, 007, 008, 009, 011; FR-CHAR-010, FR-HELP-005)
+- [x] **T8. Integração na ui: rotas, sessão e estados do Builder** (comportamental; design §3.4; FR-FLOW-006, 007, 008, 009, 011; FR-CHAR-010, FR-HELP-005)
   - `src/ui/router.ts`: `#/characters/:id/:step` e `?slot=`, redirecionamento para a primeira etapa e de etapa bloqueada para a primeira liberada.
   - `src/ui/useCharacterSession.ts` sobre `useSyncExternalStore`.
   - `Builder`: estados `loading`, `error` (as quatro razões de `open`), `ready`; aviso de `save: failed` com "Try again"; aviso de `has-dependents` que nomeia a escolha que impede; textos de fallback e rótulos de regime da §3.4.

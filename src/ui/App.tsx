@@ -10,6 +10,16 @@ const Builder = lazy(() => import('./screens/Builder'))
 
 export function App() {
   const route = useRoute()
+  // O construtor monta a própria moldura: header, nav, main e aside irmãos (design.md §5).
+  if (route.name === 'builder') {
+    return (
+      <ErrorBoundary key={route.id}>
+        <Suspense fallback={<p className="typography-body" aria-busy="true">Loading…</p>}>
+          <Builder route={route} />
+        </Suspense>
+      </ErrorBoundary>
+    )
+  }
   return (
     <>
       <AppHeader />
@@ -17,11 +27,6 @@ export function App() {
         <ErrorBoundary key={route.name}>
           {route.name === 'home' && <Home />}
           {route.name === 'about' && <About />}
-          {route.name === 'builder' && (
-            <Suspense fallback={<p className="typography-body" aria-busy="true">Loading…</p>}>
-              <Builder id={route.id} />
-            </Suspense>
-          )}
         </ErrorBoundary>
       </main>
     </>
