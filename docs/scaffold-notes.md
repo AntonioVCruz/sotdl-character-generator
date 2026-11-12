@@ -56,6 +56,7 @@ Stubs (substituídos pela FEAT indicada no código):
 | `packs:check`, ids removidos | compara com o commit anterior (base do PR ou `github.event.before`) | `initial-deployment`: passa a comparar com o último commit publicado (ADR-008, "versão publicada anterior") |
 | `packs/index.json` | nome, camada e data repetem os do livro, sem checagem de consistência | FEAT-003 |
 | referências de fórmula entre livros | conferidas só dentro do livro | FEAT-003 |
+| erro inesperado em `session.open` (fora das quatro razões) | a promessa é relançada, e a tela fica em Loading… | FEAT-022 (FR-HELP-005) |
 
 Fora do esqueleto, por decisão: aviso entre abas por `BroadcastChannel` (FEAT-031) e logger estruturado. A NFR-OBS-001 e a arquitetura §8 dizem "nenhuma telemetria"; fica só o error boundary.
 
