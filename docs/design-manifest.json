@@ -54,6 +54,49 @@
       "status": "designed",
       "designed_at": "2026-11-12"
     },
+    "SCR-WEB-005": {
+      "name": "Builder · 2 Attributes",
+      "surface": "WEB",
+      "feature": "FEAT-008",
+      "strategy": "code-native",
+      "source": {
+        "tool": null,
+        "locator": "features/FEAT-008-attributes-step/ui-design.md#scr-web-005--attributes-step"
+      },
+      "states": {
+        "covered": [
+          "default",
+          "selecting",
+          "applied",
+          "refused",
+          "undone",
+          "increase-pending",
+          "save-failed",
+          "loading",
+          "error"
+        ],
+        "gaps": [],
+        "supplements": []
+      },
+      "contract_bindings": [
+        "app.session.getSnapshot (FEAT-007 technical-design §3.2)",
+        "app.session.decide com AttributeShift (technical-design §3.2)",
+        "app.session.clear (technical-design §3.2)",
+        "app.session.retrySave (FEAT-007 technical-design §3.2)",
+        "engine.CharacterView: steps, slots (attribute-shift, attribute-increase), openDecisions, summary.attributes, summary.characteristics com limits e composition (technical-design §3.3)",
+        "engine.preview com DecisionValue (technical-design §3.3)",
+        "ui routes #/characters/:id/:step?slot= (FEAT-007 technical-design §3.4)"
+      ],
+      "conformance": {
+        "result": "escalation-pending",
+        "corrections": [],
+        "escalations": [
+          "E5: segmented-control de 4 segmentos em grade de 2 colunas quando não cabe numa linha (celular e reflow de 320 px); proposta ao design.md §4 pela ux-foundations"
+        ]
+      },
+      "status": "escalation-pending",
+      "designed_at": "2026-11-12"
+    },
     "SCR-WEB-016": {
       "name": "Builder · layout de celular",
       "surface": "WEB",
