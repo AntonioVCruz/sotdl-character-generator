@@ -105,11 +105,11 @@
 | FR-STEP-004 | Oferecer as tabelas Purpose e Form como subdecisões da etapa Ancestry, com rolar e… | Must | Active | P7 | UC-003 | _TBD_ | FEAT-017 | _TBD_ |
 | FR-STEP-005 | Submeter a troca à confirmação de dependentes | Must | Active | P6 | UC-003, UC-010 | _TBD_ | FEAT-011 | _TBD_ |
 | FR-STEP-006 | Oferecer busca por nome ou traço e filtro por livro | Should | Active | SCR-03 | — | _TBD_ | FEAT-026 | _TBD_ |
-| FR-STEP-007 | Exibir os quatro atributos com valor, modificador e composição | Must | Active | SCR-05, P11 | UC-004 | _TBD_ | FEAT-008 | _TBD_ |
+| FR-STEP-007 | Exibir os quatro atributos com valor, modificador e composição | Must | Active | SCR-05, P11 | UC-004 | features/FEAT-008-attributes-step/technical-design.md | FEAT-008 | _TBD_ |
 | FR-STEP-008 | Pedir ao usuário o atributo a aumentar | Must | Active | Entrevista de requisitos | UC-004 | _TBD_ | FEAT-016 | _TBD_ |
-| FR-STEP-009 | Reduzir em 1 um atributo e aumentar em 1 outro atributo | Must | Active | D24 | UC-004 | _TBD_ | FEAT-008 | _TBD_ |
-| FR-STEP-010 | Impedir e oferecer desfazer o ajuste atual | Must | Active | Entrevista de requisitos | UC-004 | _TBD_ | FEAT-008 | _TBD_ |
-| FR-STEP-011 | Restaurar os dois atributos afetados | Must | Active | Entrevista de requisitos | UC-004 | _TBD_ | FEAT-008 | _TBD_ |
+| FR-STEP-009 | Reduzir em 1 um atributo e aumentar em 1 outro atributo | Must | Active | D24 | UC-004 | features/FEAT-008-attributes-step/technical-design.md | FEAT-008 | _TBD_ |
+| FR-STEP-010 | Impedir e oferecer desfazer o ajuste atual | Must | Active | Entrevista de requisitos | UC-004 | features/FEAT-008-attributes-step/technical-design.md | FEAT-008 | _TBD_ |
+| FR-STEP-011 | Restaurar os dois atributos afetados | Must | Active | Entrevista de requisitos | UC-004 | features/FEAT-008-attributes-step/technical-design.md | FEAT-008 | _TBD_ |
 | FR-STEP-012 | Exibir um cartão para cada tabela de história da ancestralidade, com Roll, Choose e Write | Must | Active | SCR-09 | UC-006 | _TBD_ | FEAT-009 | _TBD_ |
 | FR-STEP-013 | Oferecer na etapa Story a escolha da Hated Creature em grade, com as faixas do d20 | Must | Active | SCR-09 | UC-006 | _TBD_ | FEAT-009 | _TBD_ |
 | FR-STEP-014 | Oferecer a rolagem desse efeito no próprio cartão, com Roll e "Enter result" | Must | Active | Entrevista de requisitos | UC-006, UC-008 | _TBD_ | FEAT-009 | _TBD_ |
@@ -131,14 +131,14 @@
 | FR-STEP-030 | Oferecer dois traços positivos e um negativo, pela tabela de traços ou por texto livre | Must | Active | Entrevista de requisitos | UC-011 | _TBD_ | FEAT-015 | _TBD_ |
 | FR-STEP-031 | Oferecer um campo de notas de interpretação com a referência de página das perguntas… | Must | Active | P22 | UC-011 | _TBD_ | FEAT-015 | _TBD_ |
 | FR-CALC-001 | Calcular cada valor derivado a partir das decisões, das fontes e dos ajustes do… | Must | Active | D2, P11 | UC-004 | ADR-004, features/FEAT-007-ancestry-step-map-live-summary/technical-design.md | FEAT-007 | features/FEAT-007-ancestry-step-map-live-summary/acceptance-report.md |
-| FR-CALC-002 | Mostrar a composição: base, cada parcela com a sua origem e total | Must | Active | P11, SCR-05 | UC-004 | ADR-004 | FEAT-008 | _TBD_ |
-| FR-CALC-003 | Mostrar a fórmula em linguagem legível | Must | Active | SCR-05 | UC-004 | ADR-004 | FEAT-008 | _TBD_ |
+| FR-CALC-002 | Mostrar a composição: base, cada parcela com a sua origem e total | Must | Active | P11, SCR-05 | UC-004 | ADR-004, features/FEAT-008-attributes-step/technical-design.md | FEAT-008 | _TBD_ |
+| FR-CALC-003 | Mostrar a fórmula em linguagem legível | Must | Active | SCR-05 | UC-004 | ADR-004, features/FEAT-008-attributes-step/technical-design.md | FEAT-008 | _TBD_ |
 | FR-CALC-004 | Usar a fórmula declarada pela versão vigente da fonte, inclusive quando ela substitui… | Must | Active | P11a | UC-004 | ADR-004 | FEAT-017 | _TBD_ |
-| FR-CALC-005 | Calcular cada valor na ordem: base da ancestralidade, modificadores permanentes,… | Must | Active | P11b | UC-004 | ADR-004 | FEAT-008 | _TBD_ |
-| FR-CALC-006 | Aplicar os limites declarados nos dados | Must | Active | Entrevista de requisitos | UC-004 | ADR-004 | FEAT-008 | _TBD_ |
-| FR-CALC-007 | Indicar o corte na composição | Must | Active | Entrevista de requisitos | UC-004 | ADR-004 | FEAT-008 | _TBD_ |
-| FR-CALC-008 | Arredondar cada valor conforme a fórmula declarada | Must | Active | Entrevista de requisitos | UC-004 | ADR-004 | FEAT-008 | _TBD_ |
-| FR-CALC-009 | Recalcular os valores dependentes e atualizar o resumo vivo, a etapa e a ficha | Must | Active | Entrevista de requisitos | UC-004 | ADR-004 | FEAT-008 | _TBD_ |
+| FR-CALC-005 | Calcular cada valor na ordem: base da ancestralidade, modificadores permanentes,… | Must | Active | P11b | UC-004 | ADR-004, features/FEAT-008-attributes-step/technical-design.md | FEAT-008 | _TBD_ |
+| FR-CALC-006 | Aplicar os limites declarados nos dados | Must | Active | Entrevista de requisitos | UC-004 | ADR-004, features/FEAT-008-attributes-step/technical-design.md | FEAT-008 | _TBD_ |
+| FR-CALC-007 | Indicar o corte na composição | Must | Active | Entrevista de requisitos | UC-004 | ADR-004, features/FEAT-008-attributes-step/technical-design.md | FEAT-008 | _TBD_ |
+| FR-CALC-008 | Arredondar cada valor conforme a fórmula declarada | Must | Active | Entrevista de requisitos | UC-004 | ADR-004, features/FEAT-008-attributes-step/technical-design.md | FEAT-008 | _TBD_ |
+| FR-CALC-009 | Recalcular os valores dependentes e atualizar o resumo vivo, a etapa e a ficha | Must | Active | Entrevista de requisitos | UC-004 | ADR-004, features/FEAT-008-attributes-step/technical-design.md | FEAT-008 | _TBD_ |
 | FR-CALC-010 | Incluí-lo no cálculo com a origem do resultado | Must | Active | P28 | UC-004, UC-006 | ADR-004 | FEAT-009 | _TBD_ |
 | FR-CALC-011 | Acumulá-los | Must | Active | Entrevista de requisitos | UC-006 | ADR-004 | FEAT-009 | _TBD_ |
 | FR-CALC-012 | Exibi-lo com o seu efeito e não incluí-lo no cálculo da Defense | Must | Active | Entrevista de requisitos | UC-008 | ADR-004 | FEAT-013 | _TBD_ |
