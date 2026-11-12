@@ -29,7 +29,7 @@
     - `npm run packs:check` passa (schema estrito e nenhum id removido em relação ao `HEAD`);
     - um teste carrega o pacote real e encontra `ancestry:dwarf` e `ancestry:human` com os valores da §4.
 
-- [ ] **T3. Fórmulas** (design §3.1 Fórmula, §3.3 `formatFormula`; FR-CALC-001)
+- [x] **T3. Fórmulas** (design §3.1 Fórmula, §3.3 `formatFormula`; FR-CALC-001)
   - `src/engine/formula.ts`: avaliação da árvore com `ref` (atributo, característica, `grant:`, `self`), `null` pendente que propaga, detecção de ciclo como invariante (`EngineError`) e `formatFormula`.
   - **Pronto quando:** os testes com pacote fictício passam para:
     - `add`, `div`, `round` e `min`/`max`;
