@@ -8,17 +8,28 @@ const files: Record<string, unknown> = {
   '/packs/index.json': {
     format: 1,
     books: [
-      { id: 'test.extra', name: 'Extra', layer: 'supplement', published: '2002' },
-      { id: 'test.core', name: 'Core', layer: 'core', published: '2001' },
+      { id: 'test.extra', name: 'Extra', abbr: 'EX', layer: 'supplement', published: '2002' },
+      { id: 'test.core', name: 'Core', abbr: 'CO', layer: 'core', published: '2001' },
     ],
   },
   '/packs/test.core.json': {
     format: 1,
     id: 'test.core',
     name: 'Core',
+    abbr: 'CO',
     layer: 'core',
     published: '2001',
-    steps: [{ id: 'step:one', name: 'One', page: 1 }],
+    components: [
+      {
+        id: 'base',
+        type: 'adds',
+        default: 'on',
+        items: [
+          { id: 'procedure:test', steps: ['step:one'] },
+          { id: 'step:one', name: 'One', page: 1 },
+        ],
+      },
+    ],
   },
 }
 const fetch = vi.fn(async (url: string) => ({
@@ -58,7 +69,6 @@ describe('createCharacter', () => {
     await expect(createApp({ repository, ...deps }).createCharacter()).resolves.toEqual({ ok: true, id: 'id-1' })
     expect(repository.docs.get('id-1')).toMatchObject({
       schema: 1,
-      level: 0,
       sources: { order: ['test.core'] },
       revision: 1,
     })

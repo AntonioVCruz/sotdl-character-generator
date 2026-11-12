@@ -4,7 +4,7 @@
 > Status: pending · Última atualização: 2026-11-12
 > Telas (SCR-WEB-003, SCR-WEB-016): do ui-design, pelo `docs/design-manifest.json`. As tarefas de ui aqui são só integração.
 
-- [ ] **T1. Schemas do pacote e do documento v1** (design §3.1, §4; FR-CONT-004, 006; ADR-004 §2; D1–D4)
+- [x] **T1. Schemas do pacote e do documento v1** (design §3.1, §4; FR-CONT-004, 006; ADR-004 §2; D1–D4)
   - Em `src/content/schemas.ts`: livro com `abbr` e `components`; itens escolhidos pelo prefixo do id; vagas e concessões; fórmula recursiva; índice com `abbr`; documento v1 com `text`, sem `name` no topo nem `level`.
   - Regras de formato da §3.1 como `superRefine` com caminho:
     - `requires` só para trás;

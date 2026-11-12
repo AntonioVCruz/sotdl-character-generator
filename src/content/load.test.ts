@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { loadBook, loadBookIndex, PackLoadError } from './load'
 
-const index = { format: 1, books: [{ id: 'test.book', name: 'Test Book', layer: 'core', published: '2001' }] }
+const index = { format: 1, books: [{ id: 'test.book', name: 'Test Book', abbr: 'TB', layer: 'core', published: '2001' }] }
 const respond = (body: unknown, ok = true) =>
   vi.fn(async (url: string) => {
     void url

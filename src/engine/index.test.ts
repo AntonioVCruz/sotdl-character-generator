@@ -7,10 +7,19 @@ const book: Book = {
   id: 'test.book',
   name: 'Test Book',
   layer: 'core',
+  abbr: 'TB',
   published: '2001',
-  steps: [
-    { id: 'step:one', name: 'One', page: 1 },
-    { id: 'step:two', name: 'Two' },
+  components: [
+    {
+      id: 'base',
+      type: 'adds',
+      default: 'on',
+      items: [
+        { id: 'procedure:test', steps: ['step:one', 'step:two'] },
+        { id: 'step:one', name: 'One', page: 1 },
+        { id: 'step:two', name: 'Two' },
+      ],
+    },
   ],
 }
 

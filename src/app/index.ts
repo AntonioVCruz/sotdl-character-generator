@@ -56,15 +56,14 @@ export function createApp({
       const document = characterDocumentSchema.parse({
         schema: 1,
         id: newId(),
-        level: 0,
         contentVersion: CONTENT_VERSION,
         revision: 1,
-        name: '',
-        sources: { order: [core] },
-        decisions: {},
-        log: [],
         createdAt: timestamp,
         updatedAt: timestamp,
+        sources: { order: [core] },
+        decisions: {},
+        text: {},
+        log: [],
       } satisfies CharacterDocument)
 
       try {
@@ -94,7 +93,7 @@ export type App = ReturnType<typeof createApp>
 function summarize(document: CharacterDocument): CharacterSummary {
   return {
     id: document.id,
-    name: document.name,
+    name: document.text.name ?? '',
     ancestry: null,
     status: 'creating',
     sources: document.sources.order,
