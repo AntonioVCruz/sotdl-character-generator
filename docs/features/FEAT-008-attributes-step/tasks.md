@@ -104,7 +104,7 @@
     - `npm run typecheck` e `npm run lint` passam (fronteiras da §5.2);
     - `npm run e2e` passa nos 5 projetos.
 
-- [ ] **T7. E2E de desempenho** (design §5, método da NFR-PERF-002; AC-13)
+- [x] **T7. E2E de desempenho** (design §5, método da NFR-PERF-002; AC-13)
   - `e2e/perf.spec.ts`, só nos projetos `chromium` e `mobile-chrome` (com 4× de CPU no segundo), com a medida, os elementos observados por layout, as amostras e o anexo JSON da §5.
   - **Pronto quando:** `NFR-PERF-002: after a decision the step and the live summary update within 100 ms (desktop) and 200 ms (mobile) at p95` passa contra o build local, o JSON aparece no relatório do Playwright, e `npm run typecheck` e `npm run lint` passam.
 
