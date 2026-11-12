@@ -1,9 +1,9 @@
 # UI Design: FEAT-007 — Etapa Ancestry, mapa de etapas e resumo vivo
 
 > Feature de: `docs/implementation-plan.md` · Par com: `technical-design.md`
-> Telas: SCR-WEB-003, SCR-WEB-016 · Modo: por feature, com rigor de âncora (primeira execução; não houve telas-âncora) · Status: Draft · Data: 2026-11-12
+> Telas: SCR-WEB-003, SCR-WEB-016 · Modo: por feature, com rigor de âncora (primeira execução; não houve telas-âncora) · Status: Verified (re-verificação após a emenda E1–E4 do design system, 2026-11-12) · Data: 2026-11-12
 
-Autoridade: `docs/design.md` e `docs/tokens.json`. Todo valor visual abaixo é token (`--…`) ou classe `.typography-*`; os breakpoints são `@custom-media` (`--bp-md`, `--bp-below-md`, `--bp-xl`, `--bp-below-xl`). Texto da interface em inglês (NFR-L10N-001), fechado na seção [Textos](#textos). Nenhum texto dos livros (P22).
+Autoridade: `docs/design.md` e `docs/tokens.json`. Todo valor visual abaixo é token (`--…`) ou classe `.typography-*`; os breakpoints são `@custom-media` (`--bp-md`, `--bp-below-md`, `--bp-xl`, `--bp-below-xl`). Ícones: Lucide (`design.md` §2), traço `--icon-stroke`, decorativos com `aria-hidden`. Texto da interface em inglês (NFR-L10N-001), fechado na seção [Textos](#textos). Nenhum texto dos livros (P22).
 
 ## SCR-WEB-003 — Ancestry step
 
@@ -28,7 +28,7 @@ Autoridade: `docs/design.md` e `docs/tokens.json`. Todo valor visual abaixo é t
 | Size | vaga `ancestry=<x>/size` (`choose-value`, `options`) → `session.decide(key, n)` |
 | Pendências concedidas | `ancestryDetail` (concessões) + `view.slots` (`stepId`, `decided`) |
 
-- **Conformidade:** escalação pendente (E1, E2, E3, E4). Os tratamentos provisórios estão marcados; não há valor solto nem variante local.
+- **Conformidade:** conforme ao `design.md` emendado (E1–E4, 2026-11-12). Sem valor solto nem variante local.
 
 ### default
 
@@ -38,7 +38,7 @@ Nenhuma ancestralidade escolhida (personagem novo).
    - eyebrow `STEP 1 OF 8 · CHOICE` (`.typography-eyebrow`, `--color-accent-default`), com a marca de identidade acima: linha de largura `--space-8` e espessura `--border-width-selected` em `--color-accent-default`;
    - `h1` com a pergunta (`.typography-display`);
    - linha de regra em `.typography-body` `--color-text-secondary` com `source-badge` `CORE p.9`;
-   - contadores em `pill-counter`, os dois pendentes (tracejados): `Chosen 0 of 1` e `1 open`.
+   - contadores em `pill-counter` (altura `--size-pill`), os dois pendentes (tracejados): `Chosen 0 of 1` e `1 open`.
 2. **Grade de `option-card`:**
    - `RadioGroup` do React Aria, rótulo acessível = a pergunta;
    - grade com `auto-fill` e mínimo de coluna `--size-summary`, gap `--space-3`;
@@ -47,14 +47,14 @@ Nenhuma ancestralidade escolhida (personagem novo).
    - nada selecionado, e nenhum card de detalhe.
 3. **Navegação** (rodapé da coluna da etapa, `--space-6` acima):
    - Back não aparece na primeira etapa;
-   - `button-primary` "Next: Attributes" desabilitado (estado disabled do `design.md` §4), com o motivo visível em `.typography-meta` ao lado: "Choose an ancestry first." (P31);
+   - `button-primary` "Next: Attributes" desabilitado (estado disabled do `design.md` §4: `--opacity-disabled`), com o motivo visível em `.typography-meta` ao lado: "Choose an ancestry first." (P31);
    - o botão desabilitado aponta para esse texto por `aria-describedby`.
 
 ### selected
 
 O jogador seleciona um cartão (clique ou setas), sem decidir ainda.
 
-- O cartão fica marcado (`aria-checked`, borda `--border-width-selected` `--color-border-strong`).
+- O cartão fica marcado em prévia (`aria-checked`, borda `--border-width-selected` `--color-border-strong`; `design.md` §4, `option-card`). Se já existe escolha atual em outro cartão, aquele cartão mantém só o rótulo "Your choice", sem borda de seleção: prévia e escolha atual nunca têm o mesmo tratamento.
 - Abaixo da grade aparece o **card de detalhe** (`card`, `--space-5` de padding):
   - **cabeçalho:**
     - nome em `.typography-heading`;
@@ -81,7 +81,11 @@ O jogador seleciona um cartão (clique ou setas), sem decidir ainda.
 
 Ancestralidade decidida.
 
-- Cartão escolhido: estado novo **current choice** (E2), com o rótulo "Your choice" em `.typography-caption` semibold no canto do cartão e a borda `--border-width-selected` `--color-border-strong`. A escolha atual também é a seleção do radiogroup.
+- Cartão escolhido: estado `current` (`design.md` §4, `option-card`):
+  - rótulo "Your choice" no canto superior, em `.typography-caption` semibold, fundo `--color-background-sunken`, `--radius-sm`, padding `--space-0-5` `--space-1-5`, com o ícone `check` (`--size-icon-sm`, `aria-hidden`) antes do texto;
+  - borda padrão (`--border-width-default` `--color-border-divider`), nunca a de seleção;
+  - nome acessível "Dwarf, your choice";
+  - ele também é a opção marcada do radiogroup e, nesse caso, vale só o tratamento `current`.
 - Detalhe da escolhida: sem prévia nem botão "Choose". No lugar entra o bloco **Decide now**, separado por divisor `--color-border-divider`:
   - título `Decide now` em `.typography-label`, mais `.typography-meta` "You can also leave these for later.";
   - **Size** (só Human): `subdecision` com `segmented-control` de 2 segmentos (`1/2`, `1`) e o rodapé "Or decide later: it stays in Open decisions."; ver [size-open](#size-open) e [size-decided](#size-decided);
@@ -109,7 +113,7 @@ Ancestralidade decidida.
 
 `decide` devolveu `has-dependents` (technical-design D8). Exemplo: Human com Size decidido, jogador confirma Dwarf.
 
-- `inline-alert` warning no topo do corpo da etapa, abaixo do `step-header`, com `role="status"`. Texto em [Textos](#textos), nomeando cada escolha dependente pelo rótulo da vaga e pela ancestralidade de origem.
+- `inline-alert` warning (ícone `triangle-alert`, `--size-icon-md`, `aria-hidden`; borda esquerda `--border-width-alert`) no topo do corpo da etapa, abaixo do `step-header`, com `role="status"`. Texto em [Textos](#textos), nomeando cada escolha dependente pelo rótulo da vaga e pela ancestralidade de origem.
 - Nada muda na escolha: o cartão atual continua "Your choice", e a seleção volta para ele.
 - O alerta some na próxima ação do jogador nesta etapa. É warning, não danger: nada deu errado.
 
@@ -117,8 +121,8 @@ Ancestralidade decidida.
 
 `snapshot.save === 'failed'` (FR-CHAR-010).
 
-- `inline-alert` danger fixo no topo do corpo da etapa, `role="alert"`, com o texto de [Textos](#textos) e `button-secondary` "Try again", que chama `session.retrySave()`.
-- Durante a nova tentativa, o botão fica em loading (`design.md` §4).
+- `inline-alert` danger (ícone `circle-alert`, `--size-icon-md`, `aria-hidden`; borda esquerda `--border-width-alert`) fixo no topo do corpo da etapa, `role="alert"`, com o texto de [Textos](#textos) e `button-secondary` "Try again", que chama `session.retrySave()`.
+- Durante a nova tentativa, o botão fica em loading (`design.md` §4: spinner de `--size-icon-sm`).
 - O estado novo continua na tela; o alerta some quando `save` volta a `'saved'`.
 
 ### loading
@@ -157,7 +161,7 @@ Ancestralidade decidida.
   3. corpo da etapa em tela cheia;
   4. região fixa no rodapé: Back e Next, e abaixo deles a barra de resumo recolhível (`design.md` §3).
 - **Dados:** os mesmos da moldura e do SCR-WEB-003. Barra: `view.summary.attributes`. Painel: `live-summary` e `open-decisions` completos.
-- **Conformidade:** escalação pendente (E3: ícones). O resto usa componentes e tokens existentes.
+- **Conformidade:** conforme ao `design.md` emendado (E1–E4, 2026-11-12). Sem valor solto nem variante local.
 
 ### collapsed
 
@@ -165,12 +169,12 @@ O estado padrão abaixo de `--bp-md`.
 
 - **`app-header` móvel:**
   - altura `--size-header-mobile`, fundo `--color-background-subtle`, borda inferior `--color-border-divider`;
-  - à esquerda, botão de voltar para a Home (`aria-label` "Back to My characters") + nome ("Unnamed character" em `.typography-title-sm`) e, abaixo, "Dwarf · Level 0" em `.typography-meta`;
-  - à direita, `button-secondary` "···" (`aria-label` "More"), que abre um menu com "About";
+  - à esquerda, botão só de ícone para voltar à Home: ícone `arrow-left` (`--size-icon-md`, `aria-hidden`), `aria-label` "Back to My characters"; depois, o nome ("Unnamed character" em `.typography-title-sm`) e, abaixo, "Dwarf · Level 0" em `.typography-meta`;
+  - à direita, `button-secondary` só de ícone: ícone `ellipsis` (`--size-icon-md`, `aria-hidden`), `aria-label` "More". Abre um menu com "About", que no celular mora aqui (`design.md` §3, FR-HELP-001);
   - alvos de `--size-touch-target` em ponteiro grosso.
 - **Seletor de etapas:**
   - faixa logo abaixo do cabeçalho, fundo `--color-background-surface`, borda inferior `--color-border-divider`, padding `--space-2` `--space-4`;
-  - botão de largura total com eyebrow `STEP 1 OF 8` e, abaixo, o nome da etapa atual em `.typography-title-sm`; à direita, o estado ("2 open" em `.typography-meta`) e o indicador de abrir;
+  - botão de largura total com eyebrow `STEP 1 OF 8` e, abaixo, o nome da etapa atual em `.typography-title-sm`; à direita, o estado ("2 open" em `.typography-meta`) e o indicador de abrir, ícone `chevron-down` (`--size-icon-sm`, `aria-hidden`), que vira `chevron-up` com o popover aberto;
   - `aria-expanded`, `aria-haspopup="dialog"`.
 - **Corpo:**
   - padding lateral `--space-4`;
@@ -179,18 +183,18 @@ O estado padrão abaixo de `--bp-md`.
 - **Região fixa:**
   - fundo `--color-background-surface`, borda superior `--color-border-divider`, padding `--space-3` `--space-4`;
   - linha 1: `button-secondary` "Back" e `button-primary` "Next: {step}", lado a lado, com o primário ocupando o resto;
-  - linha 2: a barra de resumo, com os quatro atributos (nome em `.typography-caption`, valor em `.typography-title-sm` tabular) e o gatilho "Summary" com `aria-expanded="false"`;
+  - linha 2: a barra de resumo, com os quatro atributos (nome em `.typography-caption`, valor em `.typography-title-sm` tabular) e o gatilho "Summary" com o ícone `chevron-up` (`--size-icon-sm`, `aria-hidden`) e `aria-expanded="false"`;
   - o corpo reserva no fim o espaço da altura medida da região, para nada ficar escondido atrás dela.
 
 ### selector-open
 
 - Popover ancorado no seletor, largura total, sombra `--shadow-overlay`, `--radius-lg`, com o `step-map` completo (estados iguais aos da moldura).
 - Foco no item atual; Esc ou toque fora fecha, e o foco volta ao gatilho.
-- Etapa bloqueada não é selecionável e mostra o motivo (ver E1).
+- Etapa bloqueada não é selecionável, mostra "Locked", e o motivo aparece uma vez abaixo da lista, como na moldura.
 
 ### summary-open
 
-- O gatilho mostra `aria-expanded="true"`.
+- O gatilho mostra `aria-expanded="true"`, e o ícone vira `chevron-down`.
 - O painel se abre para cima, entre o cabeçalho e a região fixa, com rolagem própria e fundo `--color-background-page`.
 - O painel traz o `live-summary` completo (com composição, ver [Builder frame](#builder-frame)) e o `open-decisions`.
 - Abre e fecha em `--duration-normal`, sem deslocamento com `prefers-reduced-motion: reduce`.
@@ -204,12 +208,14 @@ O estado padrão abaixo de `--bp-md`.
 
 Moldura comum às etapas do construtor. A FEAT-007 a cria; as features das outras etapas reaproveitam.
 
-**Regiões e landmarks** (`design.md` §5): `header` (`app-header`), `nav` (mapa, rótulo "Creation steps"), `main` (etapa) e `aside` (resumo, rótulo "Summary"), irmãos entre si. O `aside` nunca fica dentro do `main`. Ordem de foco: cabeçalho → mapa → etapa → resumo. Desktop (≥ `--bp-xl`): mapa `--size-step-map` | etapa flexível (texto até `--size-prose-max`) | resumo `--size-summary`, fixo ao rolar; gutter `--space-6`; conteúdo até `--size-content-max`.
+**Regiões e landmarks** (`design.md` §5): `header` (`app-header`), `nav` (mapa, rótulo "Creation steps"), `main` (etapa), `aside` (resumo, rótulo "Summary") e `footer` (rodapé da página), irmãos entre si. O `aside` nunca fica dentro do `main`. Ordem de foco: cabeçalho → mapa → etapa → resumo. Desktop (≥ `--bp-xl`): mapa `--size-step-map` | etapa flexível (texto até `--size-prose-max`) | resumo `--size-summary`, fixo ao rolar; gutter `--space-6`; conteúdo até `--size-content-max`.
 
 **`app-header`** (desktop):
 - à esquerda, a marca "SotDL Generator" (link para a Home) e o contexto "Unnamed character · Dwarf · Level 0" em `.typography-meta`, sem ancestralidade enquanto não houver escolha;
-- à direita, "About" (link).
-- As ações Sources, Log e Preview sheet entram com as features delas (FEAT-004, 020, 018).
+- à direita, nesta feature, nada: as ações Sources, Log e Preview sheet entram com as features delas (FEAT-004, 020, 018);
+- About não fica no cabeçalho (`design.md` §3).
+
+**Rodapé da página** (desktop e intermediário, ≥ `--bp-md`): `footer` abaixo do conteúdo, borda superior `--color-border-divider`, padding `--space-4` `--space-6`, com o `link` "About" em `.typography-meta` (FR-HELP-001). Abaixo de `--bp-md`, o About fica no menu "···" do SCR-WEB-016, e o rodapé não aparece.
 
 **`step-map`:**
 - eyebrow `LEVEL 0 · CREATION`; lista ordenada de links "1. Ancestry", com o estado à direita em `.typography-meta`:
@@ -220,22 +226,22 @@ Moldura comum às etapas do construtor. A FEAT-007 a cria; as features das outra
 | `open` | "{n} open" | padrão |
 | `not-started` | "Not started" | padrão |
 | `optional` | "Optional" | padrão |
-| `locked` | "Locked" (E1) | texto `--color-text-muted`, sem link; nome acessível "{n}. {Step}, locked. {motivo}" |
+| `locked` | "Locked" | texto `--color-text-muted`, sem link e sem foco; nome acessível "{n}. {Step}, locked. {motivo}"; sem tooltip (`design.md` §4, `step-map`) |
 | atual | o estado da etapa | fundo `--color-action-selected`, texto `--color-text-inverse`, barra à esquerda de `--border-width-indicator` em `--color-accent-default`, `aria-current="step"` |
 
-- Abaixo da lista, quando houver etapa bloqueada, o motivo uma vez em `.typography-caption` `--color-text-secondary` (E1): "Choose an ancestry first to open the other steps."
+- Abaixo da lista, quando houver etapa bloqueada, o motivo uma vez em `.typography-caption` `--color-text-secondary`: "Choose an ancestry first to open the other steps."
 
 **`live-summary`** (card, `aria-live="polite"` só no texto anunciado, não no card inteiro):
 - **eyebrow** `LIVE SUMMARY`;
 - **quatro mini-cartões de atributo** em grade de 4 (gap `--space-2`; borda `--color-border-divider`, `--radius-md`):
   - rótulo em `.typography-caption`;
-  - valor em Inter `--font-size-2xl` semibold tabular (E4-e, provisório);
+  - valor em `.typography-stat-sm`, com `font-variant-numeric: tabular-nums` (`design.md` §2);
   - modificador em `.typography-caption` ("+0", "−1"; sinal de menos tipográfico);
 - **características** em duas colunas: nome em `.typography-meta`, valor semibold tabular à direita;
-- **pendente:** o valor mostra "—" e, abaixo do nome, "Open" em `.typography-caption` com borda tracejada `--color-border-control` (forma do `pill-counter` pendente);
+- **pendente:** o valor mostra "—" e, abaixo do nome, um `pill-counter` pendente (altura `--size-pill`, borda tracejada `--color-border-control`) com "Open";
 - **sem ancestralidade:** os atributos com "—" e a frase "Choose an ancestry to see your scores." em `.typography-meta`;
 - **composição** (FR-FLOW-012; P11, `design.md` §7):
-  - cada linha de atributo e de característica é um gatilho de Disclosure (React Aria), com `aria-expanded`;
+  - cada linha de atributo e de característica é um gatilho de Disclosure (React Aria), com `aria-expanded` e o ícone `chevron-down` (`--size-icon-sm`, `aria-hidden`), que vira `chevron-up` quando aberto;
   - aberto, mostra o `value-composition` com eyebrow `HOW THIS IS CALCULATED`;
   - uma linha por estágio, origem à esquerda (`.typography-meta`) e valor à direita (`.typography-badge` tabular): "Dwarf: Strength + 4" → 14, ou "Standard rule: Health / 4, rounded down" → 3;
   - linha de total com divisor acima: "Health" → 14;
@@ -250,7 +256,7 @@ Moldura comum às etapas do construtor. A FEAT-007 a cria; as features das outra
 - vazio: "Nothing open right now." em `.typography-meta`.
 
 **Etapa sem tela própria ainda** (Attributes a Review, até as features delas):
-- `step-header` com os textos de fallback e corpo com as pendências concedidas desta etapa, cada uma em caixa tracejada (forma do `subdecision`): rótulo em `.typography-label` + "You can't make this choice here yet. It stays in Open decisions." em `.typography-meta`;
+- `step-header` com os textos de fallback e corpo com as pendências concedidas desta etapa, cada uma em caixa tracejada (forma do `subdecision`): rótulo em `.typography-label` + "You can't make this choice here yet. It stays in Open decisions." em `.typography-meta`. **Texto provisório:** a feature de cada etapa (FEAT-008, 009, 012 a 016) o retira quando a etapa ganhar tela própria;
 - sem pendências: "There's nothing to decide in this step yet."
 
 **Back e Next:**
@@ -273,6 +279,7 @@ Fechados para a FEAT-007, revisados contra a NFR-USE-001, a lição 5 e o `desig
 | Linha de regra | "Choose one ancestry. It sets your starting attributes, characteristics, languages and talents." + `CORE p.9` |
 | Contadores | "Chosen {d} of {t}" · "{n} open" |
 | Detalhe | "Description: " + selo · "IF YOU CHOOSE {NAME}" · "Choose {Name}" · "Your choice" |
+| Nome acessível do cartão | "{Name}" · escolha atual: "{Name}, your choice" |
 | Decide now | "Decide now" · "You can also leave these for later." · "Or decide later: it stays in Open decisions." · "Decided." |
 | Pendência em outra etapa | "Chosen in {Step}." · "Go to {Step}" |
 | Next bloqueado | "Choose an ancestry first." |
@@ -329,6 +336,8 @@ Regra do `{escolhas}`: "your {título} choice"; com duas, "your {a} and {b} choi
 
 **Celular:** "Back to My characters" (`aria-label`) · "More" (`aria-label`) · "STEP {i} OF {n}" · "Summary".
 
+**Provisório:** "You can't make this choice here yet. It stays in Open decisions." (etapa sem tela própria) sai com a feature de cada etapa.
+
 **Abertos:** nenhum texto desta feature. As perguntas próprias das etapas 2 a 8 ficam com as features delas; até lá vale o fallback.
 
 ## Decisões entre telas
@@ -340,37 +349,20 @@ Regra do `{escolhas}`: "your {título} choice"; com duas, "your {a} and {b} choi
 
 ## Escalações e pendências
 
-Propostas de emenda para a ux-foundations (`design.md`, `tokens.json`). Nada foi editado; as duas telas ficam `escalation-pending` com os tratamentos provisórios abaixo.
+Nenhuma escalação aberta. As quatro propostas do primeiro passe (E1 a E4) foram aprovadas e entraram no design system em 2026-11-12 (`docs/tokens.json` em `af0a2e5`, `docs/design.md` em `cb587a5`). As duas telas foram re-verificadas contra o `design.md` emendado:
 
-- **E1. `step-map`, estado bloqueado** (SCR-WEB-003, SCR-WEB-016)
-  - O `design.md` põe o motivo num tooltip, mas não existe componente de tooltip, e o item bloqueado não recebe foco. Por teclado ou toque, o motivo não aparece (WCAG 2.1.1, 1.3.1; P31).
-  - Proposta:
-    - estado visível "Locked" no lugar do tooltip;
-    - nome acessível com o motivo;
-    - o motivo uma vez, em `caption`, abaixo da lista.
-  - Provisório: a proposta, como especificada acima.
-- **E2. `option-card`, estado "escolha atual"** (SCR-WEB-003)
-  - O componente só tem "selecionado". A tela precisa distinguir a escolha decidida da seleção em prévia quando o jogador compara antes de trocar (D7 do technical-design).
-  - Proposta: estado `current` com o rótulo "Your choice" em `caption` semibold e a borda `--border-width-selected` `--color-border-strong`. A seleção em prévia continua como hoje. O estado nunca é só cor.
-  - Provisório: a proposta.
-- **E3. Conjunto de ícones** (SCR-WEB-003, SCR-WEB-016)
-  - Lacuna já listada no `design.md` §9. Precisam de ícone:
-    - o `inline-alert`;
-    - os indicadores de abrir do seletor, do Disclosure e do "Summary";
-    - o voltar do cabeçalho móvel;
-    - o "···".
-  - Proposta: adotar o conjunto sugerido no próprio `design.md` (Lucide, traço 1.5, 16 e 20px) como tokens de tamanho de ícone.
-  - Provisório: só texto, sem ícone. Os indicadores usam o estado `aria-expanded` e o rótulo; o voltar e o "···" têm texto acessível. O alerta funciona pelo texto e pela borda, então nada depende só do ícone.
-- **E4. Valores sem token** citados pelo `design.md` §4 e usados por estas telas:
-  - (a) altura do `pill-counter`, 24px → proposta `size.pill`;
-  - (b) opacidade de disabled, 0.45 → `opacity.disabled`;
-  - (c) borda esquerda do `inline-alert`, 4px → `border-width.alert`;
-  - (d) padding horizontal do `button-primary`, 18px, fora da escala de espaço → corrigir o `design.md` para `--space-4`, que o esqueleto já usa;
-  - (e) valor dos mini-cartões do resumo, "22px semibold", sem estilo tipográfico → `typography.stat-sm` (Inter, `font.size.2xl`, semibold, `line-height.tight`, tabular).
-  - Provisório:
-    - (a) altura pelo conteúdo, com padding vertical `--space-0-5`, sem altura fixa;
-    - (b) usar `--color-text-muted` mais o motivo em texto, até o token existir;
-    - (c) `--border-width-indicator` (3px);
-    - (d) `--space-4`;
-    - (e) composição dos tokens `--font-family-body`, `--font-size-2xl`, `--font-weight-semibold`, `--font-line-height-tight`.
-- **Fora desta feature:** ações de cabeçalho (Sources, Log, Preview sheet), estado "Creating" e nome editável, que pertencem a outras features (FEAT-004, 020, 018, 001, 015).
+- **E1. `step-map`, estado bloqueado:** "Locked" visível, motivo no nome acessível e uma vez em `caption` abaixo da lista, sem tooltip. Aplicada na moldura e no popover do celular.
+- **E2. `option-card`, estado `current`:** rótulo "Your choice" com fundo `sunken` e ícone `check`, borda padrão, nome acessível "{Nome}, your choice". A borda de seleção fica só na prévia. Aplicada em `selected` e `chosen`.
+- **E3. Ícones Lucide:**
+  - `circle-alert` e `triangle-alert` nos alertas;
+  - `chevron-down`/`chevron-up` no seletor, no Disclosure e no "Summary";
+  - `arrow-left` e `ellipsis` no cabeçalho móvel;
+  - `check` no rótulo "Your choice".
+
+  A dependência `lucide-react` entra na implementação (T9).
+- **E4. Tokens:** `--size-pill`, `--opacity-disabled`, `--border-width-alert`, `.typography-stat-sm`, `--size-icon-sm`/`--size-icon-md`, `--icon-stroke`, e o `button-primary` com padding `--space-4`.
+
+Pendências:
+- **About no rodapé:** o esqueleto põe o About no cabeçalho. A implementação o leva ao rodapé (desktop) e ao menu "···" (celular), conforme este documento.
+- **Texto provisório:** "You can't make this choice here yet…" sai quando cada etapa ganhar tela própria.
+- **Fora desta feature:** ações de cabeçalho (Sources, Log, Preview sheet), estado "Creating" e nome editável (FEAT-004, 020, 018, 001, 015).
