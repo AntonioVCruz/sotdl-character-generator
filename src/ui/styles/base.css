@@ -53,6 +53,35 @@ a {
   }
 }
 
+/* Texto só para leitor de tela. */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Ícones Lucide (design.md §2): traço e tamanhos por token; decorativos levam aria-hidden. */
+.icon {
+  flex: none;
+  stroke-width: var(--icon-stroke);
+}
+
+.icon--sm {
+  width: var(--size-icon-sm);
+  height: var(--size-icon-sm);
+}
+
+.icon--md {
+  width: var(--size-icon-md);
+  height: var(--size-icon-md);
+}
+
 /* app-header (design.md §3) */
 .app-header {
   display: flex;
@@ -72,17 +101,118 @@ a {
   }
 }
 
-.app-header__brand,
-.app-header__link {
+.app-header__start {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.app-header__brand {
   display: inline-flex;
   align-items: center;
   min-height: var(--size-control);
   text-decoration: none;
 }
 
+.app-header__context {
+  color: var(--color-text-secondary);
+}
+
+.app-header__character {
+  display: grid;
+  min-width: 0;
+}
+
+.app-header__character .typography-meta {
+  color: var(--color-text-secondary);
+}
+
+/* Celular: no construtor, voltar + nome no lugar da marca; o About fica no menu "···". */
+@media (--bp-below-md) {
+  .app-header__context,
+  .app-header__start--character .app-header__brand {
+    display: none;
+  }
+}
+
+@media (--bp-md) {
+  .app-header__back,
+  .app-header__character,
+  .app-header__more {
+    display: none;
+  }
+}
+
+/* Botão só de ícone: o rótulo é o nome acessível (design.md §2). */
+.button-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--size-control);
+  min-height: var(--size-control);
+  padding: 0;
+  color: var(--color-text-default);
+  border-radius: var(--radius-md);
+}
+
 @media (pointer: coarse) {
-  .app-header__link {
+  .button-icon {
+    min-width: var(--size-touch-target);
     min-height: var(--size-touch-target);
+  }
+}
+
+.menu-popover {
+  min-width: var(--size-step-map);
+  background: var(--color-background-surface);
+  border: var(--border-width-default) solid var(--color-border-divider);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-overlay);
+}
+
+.menu {
+  padding: var(--space-1);
+  outline: none;
+}
+
+.menu__item {
+  display: flex;
+  align-items: center;
+  min-height: var(--size-control);
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-md);
+  color: var(--color-text-default);
+  text-decoration: none;
+  cursor: pointer;
+  outline: none;
+}
+
+.menu__item[data-focused],
+.menu__item[data-hovered] {
+  background: var(--color-background-subtle);
+}
+
+.menu__item[data-focus-visible] {
+  outline: var(--border-width-focus) solid var(--color-focus);
+  outline-offset: calc(-1 * var(--border-width-focus));
+}
+
+@media (pointer: coarse) {
+  .menu__item {
+    min-height: var(--size-touch-target);
+  }
+}
+
+/* Rodapé da página (≥ --bp-md): About (FR-HELP-001). Abaixo disso, ele mora no menu "···". */
+.page-footer {
+  padding: var(--space-4) var(--space-6);
+  border-top: var(--border-width-default) solid var(--color-border-divider);
+}
+
+@media (--bp-below-md) {
+  .page-footer {
+    display: none;
   }
 }
 
@@ -108,9 +238,23 @@ a {
   max-width: var(--size-prose-max);
 }
 
+/* link (design.md §4): sublinhado; hover sem sublinhado. */
+.link {
+  color: var(--color-text-default);
+  text-decoration: underline;
+}
+
+.link:hover {
+  text-decoration: none;
+}
+
 /* button-primary (design.md §4) */
 .button-primary {
   min-height: var(--size-control);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
   padding: 0 var(--space-4);
   border: 0;
   border-radius: var(--radius-md);
@@ -159,33 +303,49 @@ a {
   border-radius: var(--radius-lg);
 }
 
-/* Construtor (design.md §3): empilhado no celular; etapa + resumo no intermediário; três zonas no desktop. */
-.builder {
-  display: grid;
-  gap: var(--space-6);
+/* button-secondary (design.md §4) */
+.button-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: var(--size-control);
+  padding: 0 var(--space-4);
+  border: var(--border-width-default) solid var(--color-border-control);
+  border-radius: var(--radius-md);
+  background: var(--color-background-surface);
+  color: var(--color-text-default);
+  cursor: pointer;
+  transition: background-color var(--duration-fast) ease-out;
 }
 
-@media (--bp-md) {
-  .builder {
-    grid-template-columns: 1fr var(--size-summary);
-  }
+.button-secondary[data-hovered] {
+  background: var(--color-background-subtle);
+}
 
-  .builder__map {
-    grid-column: 1 / -1;
+.button-secondary[data-pending] {
+  cursor: progress;
+}
+
+.button-secondary.button-icon {
+  padding: 0;
+}
+
+@media (pointer: coarse) {
+  .button-secondary {
+    min-height: var(--size-touch-target);
   }
 }
 
-@media (--bp-xl) {
-  .builder {
-    grid-template-columns: var(--size-step-map) 1fr var(--size-summary);
-  }
-
-  .builder__map {
-    grid-column: auto;
-  }
+/* disabled (design.md §4): opacidade, cursor e o motivo em texto ao lado. */
+.button-primary[data-disabled],
+.button-secondary[data-disabled] {
+  opacity: var(--opacity-disabled);
+  cursor: not-allowed;
 }
 
-.zone {
+/* card (design.md §4) */
+.card {
   display: grid;
   align-content: start;
   gap: var(--space-3);
@@ -196,23 +356,34 @@ a {
 }
 
 @media (--bp-md) {
-  .zone {
+  .card {
     padding: var(--space-5);
   }
 }
 
-.step-list {
-  display: grid;
-  gap: var(--space-2);
-  padding: 0;
-  list-style: none;
+/* inline-alert (design.md §4): ícone, borda esquerda do estado, fundo tint. */
+.inline-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-left: var(--border-width-alert) solid currentColor;
+  border-radius: var(--radius-md);
 }
 
-.step-list__item {
+.inline-alert__body {
   display: grid;
-  gap: var(--space-0-5);
+  gap: var(--space-3);
+  justify-items: start;
+  color: var(--color-text-default);
 }
 
-.step-list__item .typography-caption {
-  color: var(--color-text-muted);
+.inline-alert--danger {
+  background: var(--color-state-danger-tint);
+  color: var(--color-state-danger);
+}
+
+.inline-alert--warning {
+  background: var(--color-state-warning-tint);
+  color: var(--color-state-warning);
 }

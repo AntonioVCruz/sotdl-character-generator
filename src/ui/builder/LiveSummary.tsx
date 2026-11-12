@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { ChevronDown, ChevronUp } from 'lucide-react'
 import { Button, Disclosure, DisclosurePanel } from 'react-aria-components'
 import type { CharacterView, OpenDecision, Stage, StepView } from '../../engine'
 import { href } from '../router'
@@ -92,6 +93,8 @@ function Composition({ trigger, stages, total, name, pending }: {
     <Disclosure className="composition">
       <Button slot="trigger" className="composition-trigger">
         {trigger}
+        <ChevronDown className="icon icon--sm composition__closed" aria-hidden="true" />
+        <ChevronUp className="icon icon--sm composition__open" aria-hidden="true" />
       </Button>
       <DisclosurePanel className="value-composition">
         <p className="typography-eyebrow eyebrow--secondary">How this is calculated</p>

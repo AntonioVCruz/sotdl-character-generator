@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react'
-import { AppHeader } from './AppHeader'
+import { AppHeader, PageFooter } from './AppHeader'
 import { ErrorBoundary } from './ErrorBoundary'
 import { useRoute } from './router'
 import { About } from './screens/About'
@@ -29,6 +29,7 @@ export function App() {
           {route.name === 'about' && <About />}
         </ErrorBoundary>
       </main>
+      <PageFooter />
     </>
   )
 }

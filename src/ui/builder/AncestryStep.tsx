@@ -1,10 +1,11 @@
 import { useMemo, useRef, useState, type ReactNode, type RefObject } from 'react'
+import { Check } from 'lucide-react'
 import { Button, Label, Radio, RadioGroup } from 'react-aria-components'
 import type { CharacterSession, Snapshot } from '../../app'
 import { ancestryDetail, formatNumber, preview, type CharacterView, type SlotView } from '../../engine'
 import { href } from '../router'
 import { decisionTitle, formatValue, hasDependentsMessage, lockReason, slotElementId, statusLabel } from './copy'
-import { Eyebrow, SourceBadge, TypeBadge } from './parts'
+import { Eyebrow, InlineAlert, SourceBadge, TypeBadge } from './parts'
 
 type Ready = Extract<Snapshot, { status: 'ready' }>
 type EntitySlot = Extract<SlotView, { kind: 'choose-entity' }>
@@ -48,9 +49,9 @@ export function AncestryStep({ session, snapshot, slot, nameOf }: {
   return (
     <>
       {notice && (
-        <div role="status" className="inline-alert inline-alert--warning typography-body">
+        <InlineAlert tone="warning">
           <p>{notice}</p>
-        </div>
+        </InlineAlert>
       )}
       <RadioGroup
         id={slotElementId(slot.key)}
@@ -68,7 +69,12 @@ export function AncestryStep({ session, snapshot, slot, nameOf }: {
               aria-label={isCurrent ? `${option.name}, your choice` : option.name}
               className={`option-card${isCurrent ? ' option-card--current' : ''}`}
             >
-              {isCurrent && <span className="option-card__current typography-caption">Your choice</span>}
+              {isCurrent && (
+                <span className="option-card__current typography-caption">
+                  <Check className="icon icon--sm" aria-hidden="true" />
+                  Your choice
+                </span>
+              )}
               <span className="typography-title-sm">{option.name}</span>
               <span className="typography-meta option-card__mechanics">{option.mechanics.join(' · ')}</span>
               <span className="option-card__badges">

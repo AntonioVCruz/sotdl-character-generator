@@ -93,6 +93,7 @@
 - [ ] **T9. Telas do SCR-WEB-003 e do SCR-WEB-016** (realização; design §3.4; FR-STEP-001, 002, 003, FR-FLOW-001, 009, 010, 012, 014, 018)
   - Componentes e layout pelo manifesto do ui-design (`docs/design-manifest.json`), consumindo o snapshot do T8 e o `preview`/`ancestryDetail` do engine.
   - **Pronto quando:** as duas telas renderizam e seguem a spec do ui-design, no desktop e abaixo de 768px.
+  - **WIP (2026-11-12):** componentes, CSS por tokens (`src/ui/styles/builder.css`), ícones Lucide (`lucide-react@1.63.0`), About no rodapé (≥ md) e no menu "···" (< md), seletor de etapas e barra de resumo escritos; typecheck, lint e Vitest (72) verdes; build ok. **Falta:** o ciclo de screenshots contra o ui-design (script em scratchpad, não rodado) e o ajuste do que ele mostrar. Observação: o menu "···" leva Menu/Popover do React Aria ao bundle inicial (+~120 kB min, ~38 kB gzip); conferir no Lighthouse (T11).
 
 - [ ] **T10. E2E do caminho de criação até a ancestralidade** (UC-001 → UC-003 do fluxo crítico 1, ADR-008)
   - Atualizar o `e2e/skeleton.spec.ts` (mapa novo) e acrescentar um `e2e/ancestry.spec.ts`:

@@ -1,15 +1,18 @@
-import { useEffect, useState } from 'react'
-import { Button } from 'react-aria-components'
+import { ChevronDown, ChevronUp } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { Button, Dialog, DialogTrigger, Popover } from 'react-aria-components'
 import type { CharacterSession, Snapshot } from '../../app'
-import type { StepView } from '../../engine'
-import { AppHeader } from '../AppHeader'
+import type { CharacterView, StepView } from '../../engine'
+import { AppHeader, PageFooter } from '../AppHeader'
 import { AncestryStep } from '../builder/AncestryStep'
-import { lockReason, OPEN_MESSAGE, SAVE_FAILED, slotElementId } from '../builder/copy'
+import { formatValue, lockReason, OPEN_MESSAGE, SAVE_FAILED, slotElementId, statusLabel } from '../builder/copy'
 import { FallbackStep } from '../builder/FallbackStep'
 import { LiveSummary, OpenDecisions } from '../builder/LiveSummary'
+import { InlineAlert } from '../builder/parts'
 import { StepHeader } from '../builder/StepHeader'
 import { StepMap } from '../builder/StepMap'
 import { builderRedirect, href, navigate, replace } from '../router'
+import '../styles/builder.css'
 import { useCharacterSession } from '../useCharacterSession'
 
 // Construtor (SCR-WEB-003, SCR-WEB-016; technical-design §3.4, ui-design): estados da sessão e moldura das etapas.
@@ -29,20 +32,22 @@ export default function Builder({ route }: { route: { id: string; step?: string;
             <h1 id="builder-error-title" className="typography-display">
               Can&apos;t open this character
             </h1>
-            <div role="alert" className="inline-alert inline-alert--danger typography-body">
+            <InlineAlert tone="danger">
               <p>{OPEN_MESSAGE[snapshot.reason]}</p>
-            </div>
+            </InlineAlert>
             <a className="link typography-body" href={href.home}>
               Back to My characters
             </a>
           </section>
         </main>
+        <PageFooter />
       </>
     )
   }
   return <BuilderReady session={session} snapshot={snapshot} route={route} />
 }
 
+/** Esqueletos com fundo `sunken`, sem spinner (design.md §4, loading). */
 function BuilderLoading() {
   return (
     <>
@@ -79,6 +84,9 @@ function BuilderReady({ session, snapshot, route }: {
   const { view, rules, id } = snapshot
   const redirect = builderRedirect(route, view.steps)
   const current = view.steps.find((step) => step.slug === route.step)
+  const [summaryOpen, setSummaryOpen] = useState(false)
+  const root = useRef<HTMLDivElement>(null)
+  const dock = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (redirect) replace(redirect)
@@ -92,39 +100,112 @@ function BuilderReady({ session, snapshot, route }: {
     target?.focus()
   }, [route.slot, route.step, redirect])
 
+  // SCR-WEB-016: o corpo reserva no fim a altura medida da região fixa, para nada ficar escondido atrás dela.
+  useEffect(() => {
+    const region = dock.current
+    if (!region || typeof ResizeObserver === 'undefined') return
+    const observer = new ResizeObserver(() => root.current?.style.setProperty('--dock-height', `${region.offsetHeight}px`))
+    observer.observe(region)
+    return () => observer.disconnect()
+  }, [redirect, current])
+
   if (redirect || !current) return <BuilderLoading />
 
   const nameOf = (itemId: string) => {
     const item = rules.items.get(itemId)
     return item && 'name' in item ? item.name : itemId
   }
-  const root = view.slots.find((slot) => slot.stepId === current.id && slot.source === null)
-  const ancestryName = view.ancestry ? nameOf(view.ancestry) : null
-  const context = ['Unnamed character', ancestryName, 'Level 0'].filter(Boolean).join(' · ')
+  const stepRoot = view.slots.find((slot) => slot.stepId === current.id && slot.source === null)
+  const detail = [view.ancestry && nameOf(view.ancestry), 'Level 0'].filter(Boolean).join(' · ')
 
   return (
     <>
-      <AppHeader context={context} />
-      <div className="builder">
+      <AppHeader character={{ name: 'Unnamed character', detail }} />
+      <div className="builder" ref={root}>
         <nav className="builder__map" aria-label="Creation steps">
-          <StepMap id={id} steps={view.steps} current={current} />
+          <div className="builder__map-list">
+            <StepMap id={id} steps={view.steps} current={current} />
+          </div>
+          <StepSelector id={id} steps={view.steps} current={current} />
         </nav>
         <main className="builder__step">
           <SaveAlert session={session} snapshot={snapshot} />
           <StepHeader step={current} steps={view.steps} slots={view.slots} rules={rules} />
-          {root?.kind === 'choose-entity' && root.of === 'ancestry' ? (
-            <AncestryStep session={session} snapshot={snapshot} slot={root} nameOf={nameOf} />
+          {stepRoot?.kind === 'choose-entity' && stepRoot.of === 'ancestry' ? (
+            <AncestryStep session={session} snapshot={snapshot} slot={stepRoot} nameOf={nameOf} />
           ) : (
             <FallbackStep step={current} slots={view.slots} nameOf={nameOf} />
           )}
-          <StepNav id={id} steps={view.steps} current={current} />
+          <div className="builder__dock" ref={dock}>
+            <StepNav id={id} steps={view.steps} current={current} />
+            <SummaryBar view={view} expanded={summaryOpen} onToggle={() => setSummaryOpen((open) => !open)} />
+          </div>
         </main>
-        <aside className="builder__summary" aria-label="Summary">
+        <aside
+          id="builder-summary"
+          className={`builder__summary${summaryOpen ? ' builder__summary--open' : ''}`}
+          aria-label="Summary"
+        >
           <LiveSummary view={view} nameOf={nameOf} />
-          <OpenDecisions id={id} view={view} nameOf={nameOf} />
+          <OpenDecisions id={id} view={view} nameOf={nameOf} onNavigate={() => setSummaryOpen(false)} />
         </aside>
       </div>
+      <PageFooter />
     </>
+  )
+}
+
+/** Seletor de etapas (SCR-WEB-016, e no intermediário): gatilho no topo e o `step-map` num popover. */
+function StepSelector({ id, steps, current }: { id: string; steps: StepView[]; current: StepView }) {
+  const [open, setOpen] = useState(false)
+  return (
+    <div className="step-selector">
+      <DialogTrigger isOpen={open} onOpenChange={setOpen}>
+        <Button className="step-selector__trigger" aria-haspopup="dialog">
+          <span className="step-selector__current">
+            <span className="typography-eyebrow eyebrow--secondary">{`Step ${current.index + 1} of ${steps.length}`}</span>
+            <span className="typography-title-sm">{current.name}</span>
+          </span>
+          <span className="step-selector__state typography-meta">
+            {statusLabel(current)}
+            {open ? (
+              <ChevronUp className="icon icon--sm" aria-hidden="true" />
+            ) : (
+              <ChevronDown className="icon icon--sm" aria-hidden="true" />
+            )}
+          </span>
+        </Button>
+        <Popover className="step-selector__popover" placement="bottom">
+          <Dialog className="step-selector__dialog" aria-label="Creation steps">
+            <StepMap id={id} steps={steps} current={current} focusCurrent onNavigate={() => setOpen(false)} />
+          </Dialog>
+        </Popover>
+      </DialogTrigger>
+    </div>
+  )
+}
+
+/** Barra de resumo recolhível do celular: os quatro atributos e o gatilho "Summary" (FR-FLOW-018). */
+function SummaryBar({ view, expanded, onToggle }: { view: CharacterView; expanded: boolean; onToggle: () => void }) {
+  return (
+    <div className="summary-bar">
+      <ul className="summary-bar__attributes" aria-hidden={expanded}>
+        {view.summary.attributes.map((attribute) => (
+          <li key={attribute.id}>
+            <span className="typography-caption">{attribute.name}</span>
+            <span className="typography-title-sm summary-bar__value">{formatValue(attribute.score)}</span>
+          </li>
+        ))}
+      </ul>
+      <Button className="button-secondary typography-label summary-bar__toggle" aria-expanded={expanded} aria-controls="builder-summary" onPress={onToggle}>
+        Summary
+        {expanded ? (
+          <ChevronDown className="icon icon--sm" aria-hidden="true" />
+        ) : (
+          <ChevronUp className="icon icon--sm" aria-hidden="true" />
+        )}
+      </Button>
+    </div>
   )
 }
 
@@ -133,7 +214,7 @@ function SaveAlert({ session, snapshot }: { session: CharacterSession; snapshot:
   const [retrying, setRetrying] = useState(false)
   if (snapshot.save !== 'failed' && !retrying) return null
   return (
-    <div role="alert" className="inline-alert inline-alert--danger typography-body">
+    <InlineAlert tone="danger">
       <p>{SAVE_FAILED}</p>
       <Button
         className="button-secondary typography-label"
@@ -146,7 +227,7 @@ function SaveAlert({ session, snapshot }: { session: CharacterSession; snapshot:
       >
         Try again
       </Button>
-    </div>
+    </InlineAlert>
   )
 }
 
@@ -165,9 +246,9 @@ function StepNav({ id, steps, current }: { id: string; steps: StepView[]; curren
       {next && (
         <span className="step-nav__next">
           {blocked && (
-            <p id="next-reason" className="typography-meta">
+            <span id="next-reason" className="typography-meta step-nav__reason">
               {lockReason(steps, next)}
-            </p>
+            </span>
           )}
           <Button
             className="button-primary typography-label"

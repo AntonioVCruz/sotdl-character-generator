@@ -1,14 +1,21 @@
+import { useEffect, useRef } from 'react'
 import type { StepView } from '../../engine'
 import { href } from '../router'
 import { lockReason, mapLockNote, statusLabel } from './copy'
 
 /** `step-map` (design.md §4; ui-design, Builder frame): lista de links; etapa bloqueada sem link, sem foco e sem tooltip. */
-export function StepMap({ id, steps, current, onNavigate }: {
+export function StepMap({ id, steps, current, focusCurrent = false, onNavigate }: {
   id: string
   steps: StepView[]
   current: StepView
+  /** No popover do celular, o foco abre no item atual. */
+  focusCurrent?: boolean
   onNavigate?: () => void
 }) {
+  const currentLink = useRef<HTMLAnchorElement>(null)
+  useEffect(() => {
+    if (focusCurrent) currentLink.current?.focus()
+  }, [focusCurrent])
   const locked = steps.find((step) => step.status === 'locked')
   return (
     <>
@@ -37,6 +44,7 @@ export function StepMap({ id, steps, current, onNavigate }: {
               <a
                 className={`step-map__item${isCurrent ? ' step-map__item--current' : ''}`}
                 href={href.builder(id, step.slug)}
+                ref={isCurrent ? currentLink : undefined}
                 aria-current={isCurrent ? 'step' : undefined}
                 onClick={onNavigate}
               >
