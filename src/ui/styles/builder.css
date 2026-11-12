@@ -117,6 +117,7 @@ a.step-map__item:hover {
 
 .step-map__item .typography-meta {
   color: var(--color-text-secondary);
+  white-space: nowrap;
 }
 
 .step-map__item--current,
@@ -614,7 +615,7 @@ a.step-map__item--current:hover {
   flex-direction: column;
   align-items: center;
   gap: var(--space-0-5);
-  padding: var(--space-2) var(--space-1);
+  padding: var(--space-2) 0;
 }
 
 .mini-card .typography-stat-sm {
@@ -622,7 +623,6 @@ a.step-map__item--current:hover {
 }
 
 .mini-card .typography-caption {
-  overflow-wrap: anywhere;
   text-align: center;
 }
 
@@ -665,6 +665,12 @@ a.step-map__item--current:hover {
   display: block;
 }
 
+/* Aberta, a composição ocupa a linha inteira da grade. */
+.mini-card:has(.composition[data-expanded]),
+.characteristic-line:has(.composition[data-expanded]) {
+  grid-column: 1 / -1;
+}
+
 .characteristic-line__name {
   display: grid;
   justify-items: start;
@@ -675,6 +681,10 @@ a.step-map__item--current:hover {
   margin-left: auto;
   font-weight: var(--font-weight-semibold);
   font-variant-numeric: tabular-nums;
+}
+
+.value-composition[hidden] {
+  display: none;
 }
 
 .value-composition {

@@ -137,9 +137,9 @@ a {
 }
 
 @media (--bp-md) {
-  .app-header__back,
-  .app-header__character,
-  .app-header__more {
+  .app-header .app-header__back,
+  .app-header .app-header__character,
+  .app-header .app-header__more {
     display: none;
   }
 }
