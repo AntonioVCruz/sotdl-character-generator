@@ -64,7 +64,7 @@
     - a linha do Dwarf contém "Health = Strength + 4";
     - renomear a entidade num pacote fictício mantém a decisão (FR-CONT-006).
 
-- [ ] **T7. Sessão do personagem e comando `decide`** (design §3.2; FR-CHAR-010, FR-HELP-004, 005, NFR-REL-001; D8, D11)
+- [x] **T7. Sessão do personagem e comando `decide`** (design §3.2; FR-CHAR-010, FR-HELP-004, 005, NFR-REL-001; D8, D11)
   - `src/app/session.ts`: `createCharacterSession` com `open`, `subscribe`, `getSnapshot`, `decide` e `retrySave`; `createCharacter` grava o documento v1; `summarize` com nome da ancestralidade; gravações em série; `resolve` memoizado.
   - Remover o `openCharacter` do esqueleto.
   - **Pronto quando:** os testes do `app` (repositório em memória, fetch fictício) passam para:

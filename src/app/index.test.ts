@@ -99,12 +99,3 @@ describe('createCharacter', () => {
     expect(repository.docs.size).toBe(0)
   })
 })
-
-describe('openCharacter', () => {
-  it('FR-FLOW-001: opens the builder view with the steps of the linked books', async () => {
-    const app = createApp({ repository: memoryRepository(), ...deps })
-    await app.createCharacter()
-    const opened = await app.openCharacter('id-1')
-    expect(opened.ok && opened.view.steps.map((step) => step.status)).toEqual(['not-started'])
-  })
-})

@@ -1,33 +1,15 @@
-import {
-  CONTENT_VERSION,
-  characterDocumentSchema,
-  loadBook,
-  loadBookIndex,
-  type CharacterDocument,
-  type PackSource,
-} from '../content'
-import { evaluate, resolve, type CharacterView } from '../engine'
-import { createIndexedDbRepository, openCharacterDatabase, type CharacterRepository } from '../storage'
+import { CONTENT_VERSION, characterDocumentSchema, loadBookIndex, type CharacterDocument, type PackSource } from '../content'
+import { createIndexedDbRepository, openCharacterDatabase } from '../storage'
+import { createCharacterSession, createRulesLoader, summarize, type Repository } from './session'
+
+export * from './session'
 
 // Camada de aplicação: único módulo que escreve (architecture.md §5.2, ADR-004 §5).
 
-/** Registro de metadados da lista inicial (ADR-002). O cartão completo da Home é da FEAT-001. */
-export interface CharacterSummary {
-  id: string
-  name: string
-  ancestry: string | null
-  status: 'creating'
-  sources: string[]
-  updatedAt: string
-}
-
 export type CreateResult = { ok: true; id: string } | { ok: false; reason: 'pack-load-failed' | 'save-failed' }
-export type OpenResult =
-  | { ok: true; document: CharacterDocument; view: CharacterView }
-  | { ok: false; reason: 'not-found' | 'pack-load-failed' }
 
 export interface AppDeps {
-  repository: CharacterRepository<CharacterDocument, CharacterSummary>
+  repository: Repository
   packs?: PackSource
   now?: () => Date
   newId?: () => string
@@ -39,6 +21,7 @@ export function createApp({
   now = () => new Date(),
   newId = () => globalThis.crypto.randomUUID(),
 }: AppDeps) {
+  const loadRules = createRulesLoader(packs)
   return {
     listCharacters: () => repository.list(),
 
@@ -74,32 +57,12 @@ export function createApp({
       return { ok: true, id: document.id }
     },
 
-    /** Abre o personagem: carrega os livros ligados nele e avalia (architecture.md §6.3). */
-    async openCharacter(id: string): Promise<OpenResult> {
-      const document = await repository.get(id)
-      if (!document) return { ok: false, reason: 'not-found' }
-      try {
-        const books = await Promise.all(document.sources.order.map((book) => loadBook(book, packs)))
-        return { ok: true, document, view: evaluate(resolve(books, document.sources.order), document) }
-      } catch {
-        return { ok: false, reason: 'pack-load-failed' }
-      }
-    },
+    /** Uma sessão por construtor aberto (technical-design §3.2). */
+    createSession: () => createCharacterSession({ repository, loadRules, now }),
   }
 }
 
 export type App = ReturnType<typeof createApp>
-
-function summarize(document: CharacterDocument): CharacterSummary {
-  return {
-    id: document.id,
-    name: document.text.name ?? '',
-    ancestry: null,
-    status: 'creating',
-    sources: document.sources.order,
-    updatedAt: document.updatedAt,
-  }
-}
 
 /** Instância do navegador: IndexedDB e pacotes do próprio site. */
 export const app = createApp({ repository: createIndexedDbRepository(() => openCharacterDatabase()) })

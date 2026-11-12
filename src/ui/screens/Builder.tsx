@@ -1,9 +1,9 @@
-import { useEffect, useState } from 'react'
-import { app, type OpenResult } from '../../app'
+import { useEffect, useState, useSyncExternalStore } from 'react'
+import { app } from '../../app'
 import type { StepStatus } from '../../engine'
 
-// Casca do construtor (SCR-WEB-003): três zonas vazias e o mapa de etapas do `evaluate` (stub).
-// Etapas reais, resumo vivo e decisões abertas entram a partir da FEAT-007.
+// Casca do construtor (SCR-WEB-003): três zonas vazias e o mapa de etapas da sessão.
+// Transição da FEAT-007 até o T8 e o T9, que trazem os estados e as telas do ui-design.
 
 const STATUS_LABEL: Record<StepStatus, string> = {
   locked: 'Locked',
@@ -14,24 +14,21 @@ const STATUS_LABEL: Record<StepStatus, string> = {
 }
 
 export default function Builder({ id }: { id: string }) {
-  const [result, setResult] = useState<OpenResult | null>(null)
+  const [session] = useState(() => app.createSession())
+  const result = useSyncExternalStore(session.subscribe, session.getSnapshot)
 
   useEffect(() => {
-    let current = true
-    app.openCharacter(id).then((opened) => current && setResult(opened))
-    return () => {
-      current = false
-    }
-  }, [id])
+    void session.open(id)
+  }, [session, id])
 
-  if (!result) {
+  if (result.status === 'loading') {
     return (
       <p className="page typography-body" aria-busy="true">
         Loading…
       </p>
     )
   }
-  if (!result.ok) {
+  if (result.status === 'error') {
     return (
       <p role="alert" className="page notice notice--danger typography-body">
         {result.reason === 'not-found'
