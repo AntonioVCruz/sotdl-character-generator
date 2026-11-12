@@ -90,8 +90,10 @@ function evaluateTree(formula: Formula, valueOf: (ref: string) => Evaluated): Ev
 
 /** O que `formatFormula` lê das regras: o nome de cada id e as concessões da entidade dona da fórmula. */
 export interface FormulaNames {
-  items: ReadonlyMap<string, { name?: string; grants?: Record<string, { kind: string; options?: number[] }> }>
+  items: ReadonlyMap<string, object>
 }
+
+type Named = { name?: string; grants?: Record<string, { options?: number[] }> }
 
 /** Número como o livro escreve: 0.5 → "1/2". */
 export function formatNumber(value: number): string {
@@ -108,7 +110,8 @@ export function formatNumber(value: number): string {
  * `add` com negativo vira subtração, `grant:<id>` vira as opções da vaga ("1/2 or 1").
  */
 export function formatFormula(rules: FormulaNames, formula: Formula, ownerId?: string): string {
-  const owner = ownerId ? rules.items.get(ownerId) : undefined
+  const item = (id: string) => rules.items.get(id) as Named | undefined
+  const owner = ownerId ? item(ownerId) : undefined
   const list = (terms: Formula[]) => {
     const texts = terms.map(format)
     return texts.length > 1 ? `${texts.slice(0, -1).join(', ')} and ${texts[texts.length - 1]}` : texts[0]
@@ -123,7 +126,7 @@ export function formatFormula(rules: FormulaNames, formula: Formula, ownerId?: s
         const options = owner?.grants?.[node.ref.slice('grant:'.length)]?.options
         return options ? options.map(formatNumber).join(' or ') : 'a choice'
       }
-      return rules.items.get(node.ref)?.name ?? node.ref
+      return item(node.ref)?.name ?? node.ref
     }
     if ('add' in node) {
       return node.add

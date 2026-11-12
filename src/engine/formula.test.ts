@@ -4,7 +4,7 @@ import { EngineError, evaluateFormula, evaluateFormulas, formatFormula, type For
 
 // Pacote fictício: nomes e concessões de entidades inventadas.
 const names: FormulaNames = {
-  items: new Map<string, { name: string; grants?: Record<string, { kind: string; options?: number[] }> }>([
+  items: new Map<string, object>([
     ['attribute:might', { name: 'Might' }],
     ['attribute:wits', { name: 'Wits' }],
     ['characteristic:vigor', { name: 'Vigor' }],
@@ -52,7 +52,7 @@ describe('formulas', () => {
       ['characteristic:vigor', { ref: 'characteristic:recovery' }],
       ['characteristic:recovery', { add: [{ ref: 'characteristic:vigor' }, 1] }],
     ])
-    const nameOf = (id: string) => names.items.get(id)?.name ?? id
+    const nameOf = (id: string) => (names.items.get(id) as { name?: string } | undefined)?.name ?? id
     expect(() => evaluateFormulas(formulas, leaf, nameOf)).toThrow(EngineError)
     expect(() => evaluateFormulas(formulas, leaf, nameOf)).toThrow('cycle: Vigor → Recovery → Vigor')
   })

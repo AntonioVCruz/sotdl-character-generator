@@ -54,7 +54,7 @@
     - contagem de pendências;
     - ordem das etapas igual à do procedimento.
 
-- [ ] **T6. `evaluate`: resumo vivo, `preview`, `ancestryDetail` e linha de mecânica** (design §3.3; FR-FLOW-012, 013, 014, FR-STEP-001, 002, FR-CONT-009, FR-CALC-001)
+- [x] **T6. `evaluate`: resumo vivo, `preview`, `ancestryDetail` e linha de mecânica** (design §3.3; FR-FLOW-012, 013, 014, FR-STEP-001, 002, FR-CONT-009, FR-CALC-001)
   - `summary` com atributos, modificadores, características, `pendingOn`, ganhos e `composition` com o termo base e a origem; `preview` com `changes`; `ancestryDetail`; `mechanics` só com o que difere do padrão.
   - **Pronto quando:**
     - com o pacote real: Dwarf dá Health 14, Perception 11, Healing Rate 3, Speed 8, Size 1/2 e modificadores 0/−1/0/0;
