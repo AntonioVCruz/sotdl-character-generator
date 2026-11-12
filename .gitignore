@@ -27,3 +27,6 @@ agent/
 skills-lock.json
 # Arquivo de trabalho da skill requirements-engineering (registro de andamento).
 docs/.requirements-progress.md
+
+# Relatórios da skill pipeline-verify
+docs/pipeline-verify-report.md

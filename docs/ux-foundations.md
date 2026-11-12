@@ -190,7 +190,7 @@ IDs estáveis. `SCR-WEB-001` a `016` correspondem a `SCR-01` a `SCR-16` do wiref
 | SCR-WEB-011 | SCR-11 | 5 Wealth & equipment | Riqueza 3d6 com Enter result, pacote do estilo de vida, escolhas internas, moedas. MVP: magia do pergaminho por Write ou aberta (aparece como "GM's choice" na ficha); sem Buy equipment nem GM grant. | a rolar, rolado, escolha interna aberta | Must |
 | SCR-WEB-017 | — | 7 Roleplaying | Nome em texto livre, dois traços positivos e um negativo (tabela ou texto, nomes conforme D36), notas com a página das perguntas do livro. Opcional, sem pendências (FR-FLOW-017). | vazio, preenchido | Must |
 | SCR-WEB-018 | — | 8 Review | Listar decisões abertas com atalho para cada uma e abrir a ficha (FR-FLOW-015, 016). | sem pendências, com pendências | Must |
-| SCR-WEB-016 | SCR-16 | Builder · layout de celular | Variante de layout de todas as etapas abaixo de 768px: seletor de etapa no topo, barra de resumo recolhível, Back e Next fixos. | resumo recolhido, resumo aberto, seletor aberto | Must |
+| SCR-WEB-016 | SCR-16 | Builder · layout de celular | Variante de layout de todas as etapas abaixo do breakpoint `md` (`design.md` §3): seletor de etapa no topo, barra de resumo recolhível, Back e Next fixos. | resumo recolhido, resumo aberto, seletor aberto | Must |
 
 **Ficha e log**
 
@@ -216,7 +216,7 @@ Uma superfície só, então todos os componentes estão no núcleo (`design.md` 
 
 #### Sobrescritas de tokens
 
-Nenhuma paleta própria. Variantes por contexto (`design.md` §4, "Variantes por superfície"): ponteiro grosso (controles de 44px), celular (`display` 24px, padding 16px) e impressão (vermelho vira preto).
+Nenhuma paleta própria. Variantes por contexto (`design.md` §4, "Variantes por superfície"): ponteiro grosso (controles em `--size-touch-target`), celular (`display` com `--font-size-display-mobile`, padding `--space-4`) e impressão (vermelho vira preto).
 
 ---
 

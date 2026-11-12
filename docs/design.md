@@ -86,7 +86,7 @@ Números de atributo, característica e dado usam `font-variant-numeric: tabular
 
 - **Espaço:** 2, 4, 6, 8, 12, 16, 20, 24, 32, 48 px (`--space-0-5` … `--space-12`). Entre seções: 24. Entre cartões numa pilha: 12. Padding de cartão: 16 (celular) e 20 (desktop). Dentro de um componente: 8 a 12.
 - **Raio:** 4 (selos, chips), 6 (botões, inputs, segmentos), 8 (cartões, diálogos), 999 (pílulas de contador).
-- **Borda:** 1px padrão; 2px para selecionado e anel de foco.
+- **Borda:** 1px padrão; 2px para selecionado e anel de foco; 3px na barra da etapa atual.
 - **Elevação:** cartões são planos (só borda). Sombra `overlay` (0 8px 24px #1A1A182E) só em diálogo, popover e menu.
 - **Movimento:** 120ms para hover e foco, 200ms para abrir painel ou diálogo, `ease-out`. Com `prefers-reduced-motion: reduce`, sem transições de deslocamento.
 
@@ -129,13 +129,14 @@ Números de atributo, característica e dado usam `font-variant-numeric: tabular
   --font-size-2xl: 22px;
   --font-size-3xl: 28px;
   --font-size-4xl: 40px;
+  --font-size-display-mobile: 24px;
   --font-weight-regular: 400;
   --font-weight-medium: 500;
   --font-weight-semibold: 600;
   --font-weight-bold: 700;
-  --line-height-tight: 1.2;
-  --line-height-normal: 1.45;
-  --letter-spacing-eyebrow: 0.06em;
+  --font-line-height-tight: 1.2;
+  --font-line-height-normal: 1.45;
+  --font-letter-spacing-eyebrow: 0.06em;
 
   --space-0-5: 2px;
   --space-1: 4px;
@@ -155,6 +156,7 @@ Números de atributo, característica e dado usam `font-variant-numeric: tabular
   --border-width-default: 1px;
   --border-width-selected: 2px;
   --border-width-focus: 2px;
+  --border-width-indicator: 3px;
   --shadow-overlay: 0 8px 24px #1A1A182E;
   --duration-fast: 120ms;
   --duration-normal: 200ms;
@@ -167,17 +169,20 @@ Números de atributo, característica e dado usam `font-variant-numeric: tabular
   --size-content-max: 1440px;
   --size-prose-max: 72ch;
   --size-dialog-max: 760px;
+  --size-header: 64px;
+  --size-header-mobile: 56px;
+  --size-sheet-aside: 320px;
 }
 ```
 
 ## 3. Layout e grade
 
 - **Breakpoints:** `< 768px` celular; `768–1279px` intermediário; `≥ 1280px` desktop. Largura mínima suportada: 360px (NFR-COMP-002), sem rolagem horizontal.
-- **Cabeçalho do app:** altura 64px desktop, 56px celular; fundo `subtle`, borda inferior `divider`. Esquerda: marca "SotDL Generator" (volta à Home) + contexto do personagem (nome · ancestralidade · nível · estado). Direita: ações da tela (`Sources: …`, `Log`, `Preview sheet` no construtor; `Edit sheet`, `Log`, `Export` na ficha). Link "About" sempre acessível: no rodapé da página no desktop, no menu "···" no celular (FR-HELP-001).
+- **Cabeçalho do app:** altura `--size-header` desktop, `--size-header-mobile` celular; fundo `subtle`, borda inferior `divider`. Esquerda: marca "SotDL Generator" (volta à Home) + contexto do personagem (nome · ancestralidade · nível · estado). Direita: ações da tela (`Sources: …`, `Log`, `Preview sheet` no construtor; `Edit sheet`, `Log`, `Export` na ficha). Link "About" sempre acessível: no rodapé da página no desktop, no menu "···" no celular (FR-HELP-001).
 - **Construtor, desktop (≥ 1280):** três zonas (P32). Mapa de etapas 232px à esquerda; etapa ao centro, flexível, texto corrido limitado a 72ch; resumo vivo 280px à direita, fixo ao rolar. Gutter 24px. Conteúdo centralizado até 1440px.
 - **Construtor, intermediário (768–1279):** mapa vira seletor no topo (como no celular); etapa e resumo em duas colunas (resumo 280px).
 - **Construtor, celular (< 768):** etapa em tela cheia; seletor de etapa no topo ("Step 3 of 8 · Story · 2 open ▾"); resumo como barra recolhível no rodapé (quatro atributos + "Summary ▴"); Back e Next fixos no rodapé, acima da barra (SCR-WEB-016). Padding lateral 16px.
-- **Ficha:** desktop em duas colunas (principal + coluna direita 320px); celular em coluna única, na ordem: cabeçalho, decisões abertas, atributos, características, talentos, equipamento e dinheiro, campos fixos (FR-SHEET-014).
+- **Ficha:** desktop em duas colunas (principal + coluna direita `--size-sheet-aside`); celular em coluna única, na ordem: cabeçalho, decisões abertas, atributos, características, talentos, equipamento e dinheiro, campos fixos (FR-SHEET-014).
 - **Impressão:** ver componente `print-sheet` (§4).
 - **Alvos:** 40px de altura em ponteiro fino (mínimo absoluto 24px, WCAG 2.5.8); 44px em ponteiro grosso (`@media (pointer: coarse)`).
 
@@ -222,7 +227,7 @@ Base: React Aria Components (ADR-006) para todo controle interativo. Os estilos 
 ### Componentes do domínio
 
 - **`app-header`:** ver §3. As ações de cabeçalho são `button-secondary`; a principal do contexto (ex.: "Level up to N", fora do MVP) é `button-primary`.
-- **`step-map`:** lista numerada ("1. Ancestry"), cada item com o nome à esquerda e o estado à direita em `meta` ("Done", "2 open", "Not started", "Optional"). Atual: fundo `action-selected`, texto `inverse`, mais uma barra de 3px `--color-accent-default` à esquerda. Bloqueado: texto `muted`, sem ação, com o motivo no tooltip e no nome acessível ("Choose an ancestry first"). Nota de etapas substituídas em `caption` (Should). Navegável por teclado como lista de links.
+- **`step-map`:** lista numerada ("1. Ancestry"), cada item com o nome à esquerda e o estado à direita em `meta` ("Done", "2 open", "Not started", "Optional"). Atual: fundo `action-selected`, texto `inverse`, mais uma barra de `--border-width-indicator` `--color-accent-default` à esquerda. Bloqueado: texto `muted`, sem ação, com o motivo no tooltip e no nome acessível ("Choose an ancestry first"). Nota de etapas substituídas em `caption` (Should). Navegável por teclado como lista de links.
 - **`step-header`:** card. Sobretítulo `eyebrow` em `--color-accent-default` ("STEP 3 OF 8 · ROLL, CHOOSE OR WRITE YOUR OWN") com linha de 2px vermelha de 32px acima; pergunta em `display`; linha de regra em `body` `secondary` com `source-badge`; contadores em `pill-counter`.
 - **`source-badge`:** `badge` (mono 12px), borda 1px `control`, raio `sm`, padding 2px 6px. Texto: livro abreviado + página ("CORE p.17", "DLC p.N"). Página não conferida: "ch. N".
 - **`type-badge`:** `caption` semibold, fundo `sunken`, raio `sm`: "Core", "Adds", "Replaces core" (outros tipos são Should).
@@ -256,7 +261,7 @@ Base: React Aria Components (ADR-006) para todo controle interativo. Os estilos 
 ### Variantes por superfície
 Uma superfície (`WEB`). Variantes por contexto, sempre sobre os tokens acima:
 - **Ponteiro grosso:** `--size-control` passa a 44px; `range-grid` com no máximo 3 colunas.
-- **Celular (< 768):** `display` 24px; padding de card 16px; cabeçalho 56px.
+- **Celular (< 768):** `display` com `--font-size-display-mobile`; padding de card `--space-4`; cabeçalho `--size-header-mobile`.
 - **Impressão:** ver `print-sheet`.
 
 ## 5. Acessibilidade (NFR-ACC-001: WCAG 2.2 AA, inegociável)
@@ -325,5 +330,6 @@ Erros dizem: o que aconteceu, o que ficou a salvo, o que fazer. Confirmações d
 - Breakpoint intermediário (768–1279) não desenhado no wireframe; layout assumido.
 - Ficha no celular, etapas Roleplaying e Review, About, estados vazio, erro e carregamento: especificados aqui e em `ux-foundations.md`, sem desenho.
 - Ícones: conjunto ainda não escolhido (sugestão: Lucide, traço 1.5px, 16 e 20px).
+- Valores ainda sem token, a tokenizar no detailed-design da primeira feature que os usa, nunca como número solto no código: caixa de valor 72×72 do `roll-card` (FEAT-009) e corpo 9.5pt, títulos 12pt e margem 12mm do `print-sheet` (FEAT-021).
 - Modo escuro fora do escopo; os tokens por papel permitem acrescentá-lo.
 - Componentes fora do MVP só com a especificação do wireframe.
