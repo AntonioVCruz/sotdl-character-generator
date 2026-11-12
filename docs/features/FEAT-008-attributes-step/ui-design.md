@@ -50,7 +50,8 @@ Etapa aberta, ajuste não usado. Exemplo: Dwarf.
      - ícone `chevron-down` (`--size-icon-sm`, `aria-hidden`), que vira `chevron-up` aberto;
    - divisor `--color-border-divider` entre linhas, padding vertical `--space-3`;
    - aberta, a linha mostra o `value-composition` (ver [Composição](#composição));
-   - **nome acessível do gatilho:** "{Attribute} {score}, modifier {mod}", ex.: "Intellect 11, modifier +1". O `e2e/perf.spec.ts` acha a linha por `main` + papel `button` + nome começando por "{Attribute} " e lê o score dele (technical-design §5).
+   - **ordem do DOM e nome acessível do gatilho:** no DOM, nome, score e "Modifier {mod}", e o visual continua nome | modificador | score por `grid-template-areas` (no celular, como nas notas responsivas). O nome acessível vem do conteúdo do botão, sem `aria-label`, como no gatilho de composição do resumo vivo: "{Attribute} {score} Modifier {mod}", ex.: "Intellect 11 Modifier +1". O `e2e/perf.spec.ts` acha a linha por `main` + papel `button` + nome começando por "{Attribute} " e lê o score dele (technical-design §5).
+   - **Emenda feita na implementação (T8), aprovada pelo usuário em 2026-11-12:** o nome antes definido ("{Attribute} {score}, modifier {mod}") deixava o texto visível do botão fora de ordem no nome, e o axe acusava `label-content-name-mismatch` (WCAG 2.5.3, rótulo no nome) como violação grave.
 3. **Card Score adjustment** (`card`):
    - `h2` "Score adjustment" em `.typography-title` (`tabindex="-1"`, alvo de foco depois de desfazer) e, abaixo, "Optional. You can make it once." em `.typography-meta`;
    - duas `subdecision`, empilhadas com `--space-3` entre elas, cada uma com pergunta em `.typography-label` e um `segmented-control` dos quatro atributos (semântica de radiogroup, rótulo = a pergunta):
@@ -65,7 +66,7 @@ Etapa aberta, ajuste não usado. Exemplo: Dwarf.
      - limite numérico aparece como número ("maximum 25"); limite por referência aparece com o valor entre parênteses ("maximum Will (10)"), ou sem ele quando pendente;
      - fórmula que é só um número aparece como "Fixed" ("Fixed, maximum Will (10)");
      - exemplos do core: "Health / 4, rounded down, minimum 1" · "Agility, maximum 25" · "Intellect + 1, maximum 25" · "Strength + 4" · "Fixed" · "1/2 or 1";
-   - **nome acessível do gatilho:** "{Characteristic} {value}" ("Healing Rate 3"); pendente: "{Characteristic}, open". A linha de fórmula é a descrição (`aria-describedby`);
+   - **ordem do DOM e nome acessível do gatilho:** no DOM, nome, valor e linha de fórmula, e o visual continua nome | fórmula | valor por `grid-template-areas`. O nome acessível vem do conteúdo do botão, sem `aria-label` e sem `aria-describedby` (a linha de fórmula já está no nome): "{Characteristic} {value} {linha de fórmula}", ex.: "Healing Rate 3 Health / 4, rounded down, minimum 1"; pendente: "{Characteristic} Open {linha de fórmula}", ex.: "Size Open 1/2 or 1", com o "—" fora do nome (`aria-hidden`). Emenda feita na implementação (T8), aprovada pelo usuário em 2026-11-12, pela mesma regra do axe (`label-content-name-mismatch`, WCAG 2.5.3): antes, o nome era "{Characteristic} {value}", com a fórmula como descrição;
    - **pendente** (Human com Size aberto): valor "—" e `pill-counter` pendente "Open" abaixo do nome, como no resumo vivo.
 5. **Back e Next:** `button-secondary` "Back" e `button-primary` "Next: Story", como na moldura.
 
@@ -191,7 +192,7 @@ Fechados para a FEAT-008, revisados contra a NFR-USE-001 e o `design.md` §6. Ne
 | Linha de regra | "Your ancestry sets your starting scores. Once, you may raise one score by 1 and lower another by 1." + `CORE p.10` |
 | Contadores | "Chosen {d} of {t}" · "{n} open" · "Nothing required" · "Adjustment used" |
 | Card de atributos | "Attributes" · "Modifier {mod}" |
-| Nome acessível da linha de atributo | "{Attribute} {score}, modifier {mod}" |
+| Nome acessível da linha de atributo | do conteúdo: "{Attribute} {score} Modifier {mod}" |
 | Card do ajuste | "Score adjustment" · "Optional. You can make it once." |
 | Subdecisões | "Raise one attribute by 1" · "Lower another attribute by 1" |
 | Motivos (P31) | "Choose the attribute to raise first." · "You can't lower the attribute you're raising." · "Choose both attributes first." |
@@ -203,7 +204,7 @@ Fechados para a FEAT-008, revisados contra a NFR-USE-001 e o `design.md` §6. Ne
 | +1 pendente | "+1 to one attribute" · "From {Ancestry}. Choosing it here isn't available yet. It stays in Open decisions, and your scores don't include it until then." |
 | Card de características | "Characteristics" · "Some come from your attributes and update when your scores change." |
 | Linha de fórmula | "{fórmula}" · ", minimum {limite}" · ", maximum {limite}" · "{referência} ({valor})" · "Fixed" |
-| Nome acessível da característica | "{Characteristic} {value}" · pendente: "{Characteristic}, open" |
+| Nome acessível da característica | do conteúdo: "{Characteristic} {value} {linha de fórmula}" · pendente: "{Characteristic} Open {linha de fórmula}" |
 | Next | "Next: Story" |
 
 **Composição:** "Score adjustment" · "Capped at {limite}" · "Raised to minimum {limite}" (limite: "25" ou "{referência} ({valor})", ex.: "Capped at Will (10)"), mais os da FEAT-007 ("{Ancestry} starting score", "{Ancestry}: {fórmula}", "Standard rule: {fórmula}", "HOW THIS IS CALCULATED").
