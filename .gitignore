@@ -8,8 +8,21 @@
 # Dependências e artefatos de build.
 node_modules/
 dist/
+dist-ssr/
 build/
 coverage/
+*.local
+
+# Tokens gerados de docs/tokens.json (npm run tokens).
+src/ui/styles/*.generated.css
+src/ui/styles/*.generated.ts
+
+# Playwright e Lighthouse CI.
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
+.lighthouseci/
 
 # Sistema e editores.
 .DS_Store
@@ -17,16 +30,19 @@ Thumbs.db
 .vscode/
 .idea/
 *.log
+logs/
 .env
 .env.*
+!.env.example
 
 # Skills instaladas localmente (Agentic SDLC Kit)
 .agents/
 .claude/skills/
 agent/
 skills-lock.json
-# Arquivo de trabalho da skill requirements-engineering (registro de andamento).
+# Arquivos de trabalho das skills do kit (registro de andamento).
 docs/.requirements-progress.md
+docs/.scaffold-progress.md
 
 # Relatórios da skill pipeline-verify
 docs/pipeline-verify-report.md
