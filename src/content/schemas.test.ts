@@ -116,6 +116,46 @@ describe('pack schema', () => {
   })
 })
 
+describe('pack schema: score adjustment slot and characteristic limits', () => {
+  it('FR-CALC-006: accepts limits given as a number or as a reference to an attribute', () => {
+    const book = testBook()
+    items(book)[5].limits = { max: 25 }
+    items(book)[6].limits = { min: 1, max: { ref: 'characteristic:vigor' } }
+    items(book)[7].limits = { max: { ref: 'attribute:might' } }
+    expect(issues(book)).toEqual([])
+  })
+
+  it('FR-CALC-006: rejects a limit with an unknown id, "self" or "grant:", and a limits object without max or min, with the path', () => {
+    const book = testBook()
+    items(book)[5].limits = { max: { ref: 'attribute:luck' } }
+    items(book)[6].limits = { min: { add: [{ ref: 'self' }, 1] } }
+    items(book)[7].limits = { max: { ref: 'grant:stature' } }
+    expect(issues(book)).toEqual([
+      { path: 'components.0.items.5.limits.max', message: 'unknown reference attribute:luck' },
+      { path: 'components.0.items.6.limits.min', message: expect.stringMatching(/"self"/) },
+      { path: 'components.0.items.7.limits.max', message: expect.stringMatching(/grant:stature/) },
+    ])
+    const empty = testBook()
+    items(empty)[5].limits = {}
+    expect(issues(empty)).toEqual([{ path: 'components.0.items.5.limits', message: expect.stringMatching(/max, min/) }])
+  })
+
+  it('FR-CALC-006: rejects a cycle that goes through a limit, pointing at the limit', () => {
+    const book = testBook()
+    // Recovery lê Vigor; o máximo de Vigor lê Recovery.
+    items(book)[5].limits = { max: { ref: 'characteristic:recovery' } }
+    expect(issues(book)).toEqual([{ path: 'components.0.items.5.limits.max', message: 'cycle: Vigor → Recovery → Vigor' }])
+  })
+
+  it('FR-STEP-009: accepts an attribute-shift root slot with amount 1 and rejects amount 0, with the path', () => {
+    const book = testBook()
+    items(book)[2].slots = { adjust: { kind: 'attribute-shift', amount: 1, optional: true } }
+    expect(issues(book)).toEqual([])
+    ;(items(book)[2].slots as { adjust: { amount: number } }).adjust.amount = 0
+    expect(issues(book)).toEqual([{ path: 'components.0.items.2.slots.adjust.amount', message: expect.any(String) }])
+  })
+})
+
 describe('character document v1', () => {
   const document = {
     schema: 1,
@@ -133,6 +173,14 @@ describe('character document v1', () => {
   it('FR-CALC-001: accepts the v1 layers (sources, decisions, text, log) and nothing derived', () => {
     expect(characterDocumentSchema.parse(document)).toEqual(document)
     expect(characterDocumentSchema.safeParse({ ...document, health: 10 }).success).toBe(false)
+  })
+
+  it('FR-STEP-009: accepts a decision with { decrease, increase } and rejects one with an extra field', () => {
+    const shift = { decrease: 'attribute:might', increase: 'attribute:wits' }
+    const adjusted = { ...document, decisions: { ...document.decisions, adjust: { mode: 'chosen', value: shift } } }
+    expect(characterDocumentSchema.parse(adjusted)).toEqual(adjusted)
+    const extra = { ...document, decisions: { adjust: { mode: 'chosen', value: { ...shift, amount: 2 } } } }
+    expect(characterDocumentSchema.safeParse(extra).success).toBe(false)
   })
 
   it('ADR-004: rejects a document saved by the technical skeleton (name on top, level, no text)', () => {

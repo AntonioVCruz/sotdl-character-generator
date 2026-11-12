@@ -46,7 +46,7 @@ interface SlotBase {
 }
 
 export type SlotView = SlotBase &
-  (({ kind: 'choose-entity'; options: EntityOption[] } & Omit<SlotDef, 'kind'>) | ({ grant: string } & GrantedSlot))
+  (({ kind: 'choose-entity'; options: EntityOption[] } & Omit<Extract<SlotDef, { kind: 'choose-entity' }>, 'kind'>) | ({ grant: string } & GrantedSlot))
 
 export type SlotKind = SlotView['kind']
 
@@ -173,6 +173,8 @@ function slotTree(rules: Rules, character: CharacterDocument): SlotView[] {
   const slots: SlotView[] = []
   for (const step of rules.steps) {
     for (const [key, def] of Object.entries(step.slots ?? {})) {
+      // A vaga `attribute-shift` entra na árvore na T2 da FEAT-008.
+      if (def.kind !== 'choose-entity') continue
       const options = rules.ancestries.map((ancestry) => ({
         id: ancestry.id,
         name: ancestry.name,

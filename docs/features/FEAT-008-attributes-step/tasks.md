@@ -4,7 +4,7 @@
 > Status: pending · Última atualização: 2026-11-12
 > Tela (SCR-WEB-005): do ui-design, pelo `docs/design-manifest.json`. As tarefas de ui aqui são só integração.
 
-- [ ] **T1. Schemas: vaga `attribute-shift`, limites e decisão em par** (design §3.1, §4; FR-STEP-009, FR-CALC-006; ADR-004 §2; D8)
+- [x] **T1. Schemas: vaga `attribute-shift`, limites e decisão em par** (design §3.1, §4; FR-STEP-009, FR-CALC-006; ADR-004 §2; D8)
   - Em `src/content/schemas.ts`:
     - `SlotDef` como união discriminada (`choose-entity`, `attribute-shift`), com `optional?: true`;
     - `limits` em `characteristic`, com pelo menos um limite;

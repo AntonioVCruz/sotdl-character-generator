@@ -54,8 +54,21 @@ export const formulaSchema: z.ZodType<Formula> = z.lazy(() =>
   ]),
 )
 
-/** Vaga raiz de uma etapa; a chave é o nome da vaga (ADR-004 §3). */
-const slotDefSchema = z.strictObject({ kind: z.literal('choose-entity'), of: z.literal('ancestry') })
+/**
+ * Vaga raiz de uma etapa; a chave é o nome da vaga (ADR-004 §3). `optional` nunca bloqueia etapa, nunca é decisão
+ * aberta e não entra nos contadores (FEAT-008 D2).
+ */
+const optionalSlot = z.literal(true).optional()
+const slotDefSchema = z.discriminatedUnion('kind', [
+  z.strictObject({ kind: z.literal('choose-entity'), of: z.literal('ancestry'), optional: optionalSlot }),
+  // Ajuste de scores (FEAT-008 §3.1): diminui um atributo em `amount` e aumenta outro em `amount`.
+  z.strictObject({ kind: z.literal('attribute-shift'), amount: z.number().int().min(1), optional: optionalSlot }),
+])
+
+/** Limites de uma característica (FR-CALC-006), como fórmula: "Insanity ≤ Will" é `{ max: { ref: 'attribute:will' } }`. */
+const limitsSchema = z
+  .strictObject({ max: formulaSchema.optional(), min: formulaSchema.optional() })
+  .refine((limits) => limits.max !== undefined || limits.min !== undefined, 'a limit needs max, min or both')
 
 /** Vaga concedida por uma entidade; abre como filha da vaga em que a entidade foi escolhida. */
 const grantedSlotSchema = z.discriminatedUnion('kind', [
@@ -84,7 +97,7 @@ const itemSchemas = {
   }),
   attribute: z.strictObject({ id: attributeId, name, page, modifier: formulaSchema }),
   // D5: a fórmula padrão fica no item; a ancestralidade pode substituí-la.
-  characteristic: z.strictObject({ id: characteristicId, name, page, formula: formulaSchema.optional() }),
+  characteristic: z.strictObject({ id: characteristicId, name, page, formula: formulaSchema.optional(), limits: limitsSchema.optional() }),
   ancestry: z.strictObject({
     id: prefixedId('ancestry'),
     name,
@@ -118,6 +131,7 @@ export type AncestryItem = ItemOf<'ancestry'>
 export type TalentItem = ItemOf<'talent'>
 export type LanguageItem = ItemOf<'language'>
 export type SlotDef = z.infer<typeof slotDefSchema>
+export type Limits = z.infer<typeof limitsSchema>
 export type GrantedSlot = z.infer<typeof grantedSlotSchema>
 export type Regime = NonNullable<StepItem['regime']>
 
@@ -179,6 +193,10 @@ export const slotKey = z
   .string()
   .regex(/^[a-z0-9-]+(=[a-z0-9.-]+\/[a-z0-9-]+)*$/, 'slot key like "ancestry" or "ancestry=human/size"')
 
+/** Decisão do ajuste de scores (FEAT-008 §3.2): o atributo que desce e o que sobe. */
+const attributeShiftSchema = z.strictObject({ decrease: attributeId, increase: attributeId })
+export type AttributeShift = z.infer<typeof attributeShiftSchema>
+
 /** Documento do personagem v1 (ADR-004 §1; technical-design §4): só entradas, nada derivado (FR-CALC-001). */
 export const characterDocumentSchema = z.strictObject({
   schema: z.literal(1),
@@ -188,7 +206,7 @@ export const characterDocumentSchema = z.strictObject({
   createdAt: z.iso.datetime(),
   updatedAt: z.iso.datetime(),
   sources: z.strictObject({ order: z.array(bookId).min(1) }),
-  decisions: z.record(slotKey, z.strictObject({ mode: z.literal('chosen'), value: z.union([entityId, z.number()]) })),
+  decisions: z.record(slotKey, z.strictObject({ mode: z.literal('chosen'), value: z.union([entityId, z.number(), attributeShiftSchema]) })),
   // Fora do log (FR-LOG-008).
   text: z.strictObject({ name: z.string().optional() }),
   // Forma na FEAT-009 e na FEAT-020.
@@ -197,6 +215,7 @@ export const characterDocumentSchema = z.strictObject({
 
 export type CharacterDocument = z.infer<typeof characterDocumentSchema>
 export type Decision = CharacterDocument['decisions'][string]
+export type DecisionValue = Decision['value']
 
 // Versão do conteúdo gravada no personagem (ADR-004). O versionamento dos pacotes é do design detalhado.
 export const CONTENT_VERSION = '0.0.0'
@@ -267,8 +286,13 @@ function checkFormatRules(book: { components: Component[] }, ctx: z.RefinementCt
   }
 
   for (const { item, path } of ofKind('attribute')) checkFormula(item.modifier, [...path, 'modifier'], { self: true })
+  // Limites: referências como as da fórmula, sem `self` nem `grant:` (FR-CALC-006).
+  const limits = new Map<string, Located<Formula>[]>()
   for (const { item, path } of characteristics) {
     if (item.formula !== undefined) checkFormula(item.formula, [...path, 'formula'], {})
+    const own = Object.entries(item.limits ?? {}).map(([bound, formula]) => ({ item: formula, path: [...path, 'limits', bound] }))
+    for (const limit of own) checkFormula(limit.item, limit.path, {})
+    if (own.length) limits.set(item.id, own)
   }
 
   const ancestries = ofKind('ancestry')
@@ -301,7 +325,8 @@ function checkFormatRules(book: { components: Component[] }, ctx: z.RefinementCt
   }
 
   // ADR-004 §2: nenhum ciclo entre fórmulas. Um grafo por ancestralidade (o padrão com as fórmulas que ela
-  // substitui), para que duas ancestralidades com fórmulas cruzadas não acusem ciclo falso.
+  // substitui), para que duas ancestralidades com fórmulas cruzadas não acusem ciclo falso. Os limites são
+  // arestas da característica para o que eles referenciam (FEAT-008 §3.1).
   const defaults = new Map<string, Located<Formula>>()
   for (const { item, path } of characteristics) {
     if (item.formula !== undefined) defaults.set(item.id, { item: item.formula, path: [...path, 'formula'] })
@@ -320,12 +345,15 @@ function checkFormatRules(book: { components: Component[] }, ctx: z.RefinementCt
   }
   const reported = new Set<string>()
   for (const graph of graphs) {
-    const cycle = findCycle(graph)
+    const edges = (id: string) => [graph.get(id), ...(limits.get(id) ?? [])].filter((edge) => edge !== undefined)
+    const cycle = findCycle(new Set([...graph.keys(), ...limits.keys()]), edges)
     if (!cycle) continue
     // A fórmula que fecha o ciclo é a que a ancestralidade substitui: sem ela, o padrão não tem ciclo.
     const start = Math.max(0, cycle.findIndex((id) => graph.get(id) !== defaults.get(id)))
     const ids = [...cycle.slice(start), ...cycle.slice(0, start)]
-    const closing = graph.get(ids[0])!.path
+    // A aresta que fecha: a fórmula ou o limite do primeiro nó que referencia o seguinte.
+    const next = ids[1 % ids.length]
+    const closing = edges(ids[0]).find((edge) => formulaRefs(edge.item).includes(next))!.path
     const message = `cycle: ${[...ids, ids[0]].map(nameOf).join(' → ')}`
     const key = `${closing.join('.')} ${message}`
     if (!reported.has(key)) issue(closing, message)
@@ -334,17 +362,16 @@ function checkFormatRules(book: { components: Component[] }, ctx: z.RefinementCt
 }
 
 /** Primeiro ciclo entre características, como a lista dos nós do ciclo. */
-function findCycle(graph: Map<string, Located<Formula>>): string[] | null {
+function findCycle(nodes: Set<string>, edges: (id: string) => Located<Formula>[]): string[] | null {
   const done = new Set<string>()
   const stack: string[] = []
   const visit = (id: string): string[] | null => {
     if (done.has(id)) return null
     const at = stack.indexOf(id)
     if (at >= 0) return stack.slice(at)
-    const node = graph.get(id)
-    if (!node) return null
+    if (!nodes.has(id)) return null
     stack.push(id)
-    for (const ref of formulaRefs(node.item)) {
+    for (const ref of edges(id).flatMap((edge) => formulaRefs(edge.item))) {
       if (!ref.startsWith('characteristic:')) continue
       const found = visit(ref)
       if (found) return found
@@ -353,7 +380,7 @@ function findCycle(graph: Map<string, Located<Formula>>): string[] | null {
     done.add(id)
     return null
   }
-  for (const id of graph.keys()) {
+  for (const id of nodes) {
     const found = visit(id)
     if (found) return found
   }
