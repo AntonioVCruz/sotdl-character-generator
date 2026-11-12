@@ -134,11 +134,11 @@
 | FR-CALC-002 | Mostrar a composição: base, cada parcela com a sua origem e total | Must | Active | P11, SCR-05 | UC-004 | ADR-004, features/FEAT-008-attributes-step/technical-design.md, features/FEAT-008-attributes-step/ui-design.md | FEAT-008 | _TBD_ |
 | FR-CALC-003 | Mostrar a fórmula em linguagem legível | Must | Active | SCR-05 | UC-004 | ADR-004, features/FEAT-008-attributes-step/technical-design.md, features/FEAT-008-attributes-step/ui-design.md | FEAT-008 | _TBD_ |
 | FR-CALC-004 | Usar a fórmula declarada pela versão vigente da fonte, inclusive quando ela substitui… | Must | Active | P11a | UC-004 | ADR-004 | FEAT-017 | _TBD_ |
-| FR-CALC-005 | Calcular cada valor na ordem: base da ancestralidade, modificadores permanentes,… | Must | Active | P11b | UC-004 | ADR-004, features/FEAT-008-attributes-step/technical-design.md | FEAT-008 | _TBD_ |
+| FR-CALC-005 | Calcular cada valor na ordem: base da ancestralidade, modificadores permanentes,… | Must | Active | P11b | UC-004 | ADR-004, features/FEAT-008-attributes-step/technical-design.md | FEAT-008, FEAT-009, FEAT-019 | _TBD_ |
 | FR-CALC-006 | Aplicar os limites declarados nos dados | Must | Active | Entrevista de requisitos | UC-004 | ADR-004, features/FEAT-008-attributes-step/technical-design.md | FEAT-008 | _TBD_ |
 | FR-CALC-007 | Indicar o corte na composição | Must | Active | Entrevista de requisitos | UC-004 | ADR-004, features/FEAT-008-attributes-step/technical-design.md, features/FEAT-008-attributes-step/ui-design.md | FEAT-008 | _TBD_ |
 | FR-CALC-008 | Arredondar cada valor conforme a fórmula declarada | Must | Active | Entrevista de requisitos | UC-004 | ADR-004, features/FEAT-008-attributes-step/technical-design.md | FEAT-008 | _TBD_ |
-| FR-CALC-009 | Recalcular os valores dependentes e atualizar o resumo vivo, a etapa e a ficha | Must | Active | Entrevista de requisitos | UC-004 | ADR-004, features/FEAT-008-attributes-step/technical-design.md, features/FEAT-008-attributes-step/ui-design.md | FEAT-008 | _TBD_ |
+| FR-CALC-009 | Recalcular os valores dependentes e atualizar o resumo vivo, a etapa e a ficha | Must | Active | Entrevista de requisitos | UC-004 | ADR-004, features/FEAT-008-attributes-step/technical-design.md, features/FEAT-008-attributes-step/ui-design.md | FEAT-008, FEAT-018 | _TBD_ |
 | FR-CALC-010 | Incluí-lo no cálculo com a origem do resultado | Must | Active | P28 | UC-004, UC-006 | ADR-004 | FEAT-009 | _TBD_ |
 | FR-CALC-011 | Acumulá-los | Must | Active | Entrevista de requisitos | UC-006 | ADR-004 | FEAT-009 | _TBD_ |
 | FR-CALC-012 | Exibi-lo com o seu efeito e não incluí-lo no cálculo da Defense | Must | Active | Entrevista de requisitos | UC-008 | ADR-004 | FEAT-013 | _TBD_ |

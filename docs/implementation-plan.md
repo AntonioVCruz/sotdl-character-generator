@@ -1,6 +1,6 @@
 # Plano de implementação: Gerador de personagens SotDL
 
-> Status: Aprovado · Última atualização: 2026-11-11
+> Status: Aprovado · Última atualização: 2026-11-12
 > Entradas: `docs/srs.md` v1.1 · `docs/use-cases.md` · `docs/architecture.md` (ADR-001 a 010) · `docs/ux-foundations.md` (com `docs/design.md`). Todas presentes.
 
 ## 1. Visão geral
@@ -46,7 +46,7 @@ O caminho mínimo de ponta a ponta, publicado.
 | :- | :-- | :-- | :-- | :-- | :-- | :-- |
 | FEAT-007 | **Etapa Ancestry, mapa de etapas e resumo vivo** (Dwarf e Human do core) | FR-STEP-001, 002, 003; FR-FLOW-001 a 014, 018; FR-CALC-001; FR-DEC-011; FR-SRC-010; FR-CONT-006, 009; FR-CONT-003 (parcial) | UC-003 | SCR-WEB-003, SCR-WEB-016 | `engine.resolve`, `engine.evaluate`, `app`, `ui` | Ancestralidade, procedimento, fórmulas, `decisions` |
 | FEAT-008 | Etapa Attributes: ajuste ±1, características com fórmula e composição | FR-STEP-007, 009, 010, 011; FR-CALC-002, 003, 005, 006, 007, 008, 009 | UC-004 | SCR-WEB-005 | `engine.evaluate` | Fórmulas, limites |
-| FEAT-009 | Decidir uma tabela: Roll, Choose, Enter result (tabelas de história do Dwarf, Hated Creature). O detailed-design cria os tokens da caixa 72×72 do `roll-card` (`design.md` §9). | FR-DEC-001, 002, 004, 005, 007, 008, 012, 016, 019, 020, 024; FR-STEP-012, 013, 014; FR-CALC-010, 011; FR-CONT-008; FR-LOG-001, 002, 004, 010 | UC-005, UC-006 | SCR-WEB-009 | `dice`, `engine.evaluate`, `app` | Tabelas, decisões, log |
+| FEAT-009 | Decidir uma tabela: Roll, Choose, Enter result (tabelas de história do Dwarf, Hated Creature). O detailed-design cria os tokens da caixa 72×72 do `roll-card` (`design.md` §9). | FR-DEC-001, 002, 004, 005, 007, 008, 012, 016, 019, 020, 024; FR-STEP-012, 013, 014; FR-CALC-010, 011; FR-CALC-005 (parcial); FR-CONT-008; FR-LOG-001, 002, 004, 010 | UC-005, UC-006 | SCR-WEB-009 | `dice`, `engine.evaluate`, `app` | Tabelas, decisões, log |
 | FEAT-010 | Write, subdecisões, tabelas aguardando e "Roll all undecided" | FR-DEC-003, 010, 014, 021, 023; FR-STEP-015; FR-LOG-003 | UC-005, UC-006 | SCR-WEB-009 | `engine.evaluate`, `app` | Decisões, concessões |
 | FEAT-011 | Mudança a montante: diálogo de impacto, rerrolagem, troca de modo, troca de ancestralidade, versão nova do pacote | FR-CHG-001 a 006, 008 a 014; FR-DEC-015, 017, 018; FR-STEP-005; FR-LOG-007; FR-CONT-015, 016 | UC-010 | SCR-WEB-007 | `engine.impact`, `app` | Decisões, ajustes ligados, log |
 | FEAT-012 | Profissões e idiomas, com nome digitado (D36) e troca por idioma | FR-STEP-016, 017, 019, 020, 021; FR-DEC-006, 009, 013 | UC-007 | SCR-WEB-010 | `dice` (encadeada), `engine.evaluate` | Tabelas de profissão, idiomas |
@@ -60,8 +60,8 @@ O caminho mínimo de ponta a ponta, publicado.
 
 | ID | Fatia | FRs | UCs | Telas | Blocos | Dados |
 | :- | :-- | :-- | :-- | :-- | :-- | :-- |
-| FEAT-018 | Ficha final em leitura, também no celular | FR-SHEET-001 a 008, 010, 011, 012, 014; FR-CHAR-008 | UC-012 | SCR-WEB-014, SCR-WEB-021 | `engine.evaluate`, `ui` | Visão do personagem |
-| FEAT-019 | Ajuste manual (modificador, substituição, campos fixos, itens) | FR-ADJ-001 a 016; FR-SHEET-009; FR-DEC-022; FR-LOG-005; FR-CONT-014 | UC-013 | SCR-WEB-014, SCR-WEB-009 | `engine.evaluate`, `app` | `adjustments`, log |
+| FEAT-018 | Ficha final em leitura, também no celular | FR-SHEET-001 a 008, 010, 011, 012, 014; FR-CHAR-008; FR-CALC-009 (parcial) | UC-012 | SCR-WEB-014, SCR-WEB-021 | `engine.evaluate`, `ui` | Visão do personagem |
+| FEAT-019 | Ajuste manual (modificador, substituição, campos fixos, itens) | FR-ADJ-001 a 016; FR-SHEET-009; FR-DEC-022; FR-LOG-005; FR-CONT-014; FR-CALC-005 (parcial) | UC-013 | SCR-WEB-014, SCR-WEB-009 | `engine.evaluate`, `app` | `adjustments`, log |
 | FEAT-020 | Log com filtros e entradas desfeitas | FR-LOG-009, 011, 012, 013, 014, 015 | UC-014 | SCR-WEB-015 | `app`, `ui` | Log |
 | FEAT-021 | Impressão da ficha. O detailed-design cria os tokens do corpo 9.5pt, dos títulos 12pt e da margem 12mm do `print-sheet` (`design.md` §9). | FR-SHEET-013 | UC-012 | SCR-WEB-020 | `ui` (`@media print`) | Visão do personagem |
 
