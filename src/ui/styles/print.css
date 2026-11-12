@@ -1,0 +1,21 @@
+/* Folha de impressão base (FR-SHEET-013). Tamanhos e margem do print-sheet são da FEAT-021. */
+@media print {
+  body {
+    background: var(--color-background-surface);
+  }
+
+  .app-header,
+  [data-print='hide'] {
+    display: none;
+  }
+
+  .app-main {
+    max-width: none;
+    padding: 0;
+  }
+
+  .zone {
+    border: 0;
+    padding: 0;
+  }
+}

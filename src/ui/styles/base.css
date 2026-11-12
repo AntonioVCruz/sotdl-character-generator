@@ -1,0 +1,218 @@
+/* Casca do app. Só tokens (tokens.generated.css) e breakpoints (@custom-media de media.generated.css). */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--color-background-page);
+  color: var(--color-text-default);
+  font-family: var(--font-family-body);
+  font-size: var(--font-size-md);
+  line-height: var(--font-line-height-normal);
+}
+
+h1,
+h2,
+p,
+ol,
+ul {
+  margin: 0;
+}
+
+a {
+  color: inherit;
+}
+
+/* Anel de foco (design.md §4): 2px, cor de foco, deslocamento de 2px. */
+:focus-visible {
+  outline: var(--border-width-focus) solid var(--color-focus);
+  outline-offset: var(--space-0-5);
+}
+
+.typography-eyebrow {
+  text-transform: uppercase;
+  color: var(--color-accent-default);
+}
+
+@media (--bp-below-md) {
+  .typography-display {
+    font-size: var(--font-size-display-mobile);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0s !important;
+    animation-duration: 0s !important;
+  }
+}
+
+/* app-header (design.md §3) */
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  height: var(--size-header-mobile);
+  padding: 0 var(--space-4);
+  background: var(--color-background-subtle);
+  border-bottom: var(--border-width-default) solid var(--color-border-divider);
+}
+
+@media (--bp-md) {
+  .app-header {
+    height: var(--size-header);
+    padding: 0 var(--space-6);
+  }
+}
+
+.app-header__brand,
+.app-header__link {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--size-control);
+  text-decoration: none;
+}
+
+@media (pointer: coarse) {
+  .app-header__link {
+    min-height: var(--size-touch-target);
+  }
+}
+
+.app-main {
+  max-width: var(--size-content-max);
+  margin: 0 auto;
+  padding: var(--space-6) var(--space-4);
+}
+
+@media (--bp-md) {
+  .app-main {
+    padding: var(--space-6);
+  }
+}
+
+.page {
+  display: grid;
+  gap: var(--space-6);
+  justify-items: start;
+}
+
+.prose {
+  max-width: var(--size-prose-max);
+}
+
+/* button-primary (design.md §4) */
+.button-primary {
+  min-height: var(--size-control);
+  padding: 0 var(--space-4);
+  border: 0;
+  border-radius: var(--radius-md);
+  background: var(--color-action-primary);
+  color: var(--color-text-inverse);
+  cursor: pointer;
+  transition: background-color var(--duration-fast) ease-out;
+}
+
+.button-primary[data-hovered] {
+  background: var(--color-action-primary-hover);
+}
+
+.button-primary[data-pending] {
+  cursor: progress;
+}
+
+@media (pointer: coarse) {
+  .button-primary {
+    min-height: var(--size-touch-target);
+  }
+}
+
+.notice {
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+}
+
+.notice--danger {
+  background: var(--color-state-danger-tint);
+  color: var(--color-state-danger);
+  border: var(--border-width-default) solid var(--color-state-danger);
+}
+
+.character-list {
+  display: grid;
+  gap: var(--space-3);
+  padding: 0;
+  list-style: none;
+}
+
+.character-list__item {
+  padding: var(--space-4);
+  background: var(--color-background-surface);
+  border: var(--border-width-default) solid var(--color-border-divider);
+  border-radius: var(--radius-lg);
+}
+
+/* Construtor (design.md §3): empilhado no celular; etapa + resumo no intermediário; três zonas no desktop. */
+.builder {
+  display: grid;
+  gap: var(--space-6);
+}
+
+@media (--bp-md) {
+  .builder {
+    grid-template-columns: 1fr var(--size-summary);
+  }
+
+  .builder__map {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (--bp-xl) {
+  .builder {
+    grid-template-columns: var(--size-step-map) 1fr var(--size-summary);
+  }
+
+  .builder__map {
+    grid-column: auto;
+  }
+}
+
+.zone {
+  display: grid;
+  align-content: start;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  background: var(--color-background-surface);
+  border: var(--border-width-default) solid var(--color-border-divider);
+  border-radius: var(--radius-lg);
+}
+
+@media (--bp-md) {
+  .zone {
+    padding: var(--space-5);
+  }
+}
+
+.step-list {
+  display: grid;
+  gap: var(--space-2);
+  padding: 0;
+  list-style: none;
+}
+
+.step-list__item {
+  display: grid;
+  gap: var(--space-0-5);
+}
+
+.step-list__item .typography-caption {
+  color: var(--color-text-muted);
+}
