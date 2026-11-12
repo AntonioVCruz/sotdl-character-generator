@@ -1,7 +1,7 @@
 # Technical Design: FEAT-008 — Etapa Attributes: ajuste ±1, características com fórmula e composição
 
 > Feature de: `docs/implementation-plan.md` §3 (E3) · Épico: E3 Construtor de nível 0
-> Implementa: FR-STEP-007, 009, 010, 011; FR-CALC-002, 003, 005, 006, 007, 008, 009
+> Implementa: FR-STEP-007, 009, 010, 011; FR-CALC-002, 003, 006, 007, 008; FR-CALC-005 (parcial: base, modifier e limit); FR-CALC-009 (parcial: resumo vivo e etapa, sem a ficha)
 > Realiza: UC-004 (fluxo principal 1, 3 e 4; 3a; 3b) · Telas: SCR-WEB-005 (desenhada pelo ui-design)
 > Status: Draft · Data: 2026-11-12
 
@@ -83,7 +83,7 @@ Nas demais vagas, `decide` não muda: decidir de novo substitui (Size).
 
 Desfazer o ajuste é `clear('adjustment')`. Os dois atributos voltam ao valor anterior porque nada derivado foi gravado: o valor sai de novo do `evaluate` sem a decisão (FR-CALC-001).
 
-O `clear` vale para qualquer vaga, inclusive o Size do Human: `clear('ancestry=human/size')` não tem dependentes, e depois dele trocar Human por Dwarf deixa de devolver `has-dependents`. Isso resolve no comando o beco da D8 da FEAT-007. Se e como a tela da Ancestry oferece isso fica para decisão do usuário (§8).
+O `clear` vale para qualquer vaga, inclusive o Size do Human: `clear('ancestry=human/size')` não tem dependentes, e depois dele trocar Human por Dwarf deixa de devolver `has-dependents`. Isso resolve no comando o beco da D8 da FEAT-007. A tela da Ancestry não ganha o controle: fica como está até a FEAT-011 (§7).
 
 Nenhuma entrada de log nesta feature (FEAT-009; FEAT-007 §8).
 
@@ -127,7 +127,7 @@ Stage =
 CharacteristicSummary = { …FEAT-007, limits: { bound: 'max' | 'min', formula: string, limit: Value }[] }
 ```
 
-`formula` continua vindo de `formatFormula`, sem mudança: "Health / 4, rounded down", frações como "1/2". O limite vem à parte ("min 1", "max Will (10)"), e o ui-design decide como juntar os dois na linha. A diferença em relação ao exemplo do SRS está no §8.
+`formula` continua vindo de `formatFormula`, sem mudança: "Health / 4, rounded down", frações como "1/2". O limite vem à parte ("min 1", "max Will (10)"), e o ui-design junta fórmula e limite na linha (§7).
 
 **Vaga `attribute-shift` no `CharacterView`:**
 
@@ -141,6 +141,13 @@ SlotView (acréscimo) = SlotBase & { kind: 'attribute-shift', amount, optional?:
   - fica fora de `decided`, `open` e `total` da etapa e de `openDecisions`;
   - não entra no cálculo de `locked` (D2);
   - continua em `slots`, com `decided` e `value`.
+
+**Estado da etapa** (muda a regra da FEAT-007 §3.3; D2). `locked` e `optional` não mudam. Para a etapa liberada:
+- `done`: tem ao menos uma vaga, contando as opcionais, e nenhuma obrigatória aberta;
+- `open`: alguma obrigatória aberta, e alguma vaga da etapa decidida ou concedida (aberta por decisão de outra etapa);
+- `not-started`: o resto: sem vaga nenhuma, ou só vagas raiz obrigatórias, todas abertas.
+
+No core: com Dwarf, Attributes fica `done` logo ao escolher a ancestralidade; com Human, `open` pelo +1; Story a Review, sem vagas, continuam `not-started`. Ancestry não muda (`not-started` antes da escolha, `open` com o Size do Human aberto).
 
 ### 3.4 `ui`: pontos de integração
 
@@ -163,7 +170,7 @@ SlotView (acréscimo) = SlotBase & { kind: 'attribute-shift', amount, optional?:
   - pendência e origem do `attribute-shift`: "Score adjustment";
   - parcela `modifier`: "Score adjustment" → "−1";
   - parcela `limit`: "Standard rule: maximum 25" → "−2" (ou "minimum 1").
-- Telas, estados (ajuste livre, em seleção, aplicado, segunda tentativa, +1 pendente) e celular são do ui-design.
+- Telas, estados (ajuste livre, em seleção, aplicado, segunda tentativa, +1 pendente) e celular são do ui-design. Também é dele o contador do cabeçalho numa etapa `done` só com a vaga opcional (Dwarf: `decided` 0, `total` 0).
 
 ## 4. Mudanças de esquema
 
@@ -209,12 +216,12 @@ sequenceDiagram
 | Onde | Arquivo | Muda |
 | :-- | :-- | :-- |
 | `content` | `schemas.ts` | `SlotDef` com `attribute-shift` e `optional`; `limits` em `characteristic`; `AttributeShift` no documento; regras de formato dos limites e grafo de ciclos com os limites |
-| `engine` | `evaluate.ts` | vaga `attribute-shift` na árvore; vaga opcional fora de contadores, pendências e bloqueio; coleta de efeitos; estágios e composição; `limits` no resumo; `preview` com `DecisionValue` |
+| `engine` | `evaluate.ts` | vaga `attribute-shift` na árvore; vaga opcional fora de contadores, pendências e bloqueio; regra de estado da etapa; coleta de efeitos; estágios e composição; `limits` no resumo; `preview` com `DecisionValue` |
 | `engine` | `formula.ts` | passo de acabamento por id em `evaluateFormulas` (referência lê o total); `formatFormula` sem mudança |
 | `app` | `session.ts` | `decide` com par e `already-decided`; `clear`; dependentes num ajudante comum aos dois |
 | `ui` | `builder/AttributesStep.tsx` (novo), `screens/Builder.tsx`, `builder/LiveSummary.tsx`, `builder/copy.ts` | despacho por `kind`; integração da §3.4; rótulos das parcelas novas. A tela é do ui-design |
 | `packs/` | `sotdl.core.json` | §4 |
-| `e2e/` | `ancestry.spec.ts`, `attributes.spec.ts` (novo), `perf.spec.ts` (novo) | §6 e T8, T9 |
+| `e2e/` | `ancestry.spec.ts`, `attributes.spec.ts` (novo), `perf.spec.ts` (novo) | §6 e T7, T8 |
 
 **NFR-PERF-002, método de medição** (ADR-008, "teste de tempo"):
 - **Ambiente:** o build servido pelo `vite preview` do `playwright.config.ts`, com a CSP ativa, como no E2E.
@@ -224,10 +231,24 @@ sequenceDiagram
 - **Medida:**
   - início: `event.timeStamp` do clique que confirma a decisão, lido por um ouvinte em captura no `document`;
   - fim: o primeiro `requestAnimationFrame` depois que a etapa **e** o resumo vivo mostram o valor novo (`MutationObserver`).
+  - Elementos observados, pelo score do atributo que sobe:
+    - na etapa, a linha do atributo, pelo nome acessível que o ui-design definir;
+    - no `chromium` (≥ 768 px), o item do atributo em `.live-summary__attributes`, no painel `#builder-summary`;
+    - no `mobile-chrome` (< 768 px), o resumo fica recolhido (SCR-WEB-016), e o teste observa o item do atributo em `.summary-bar__attributes`, sem abrir o painel.
   - Tudo é instalado pelo teste com `page.evaluate`; o app não ganha código de medição (NFR-OBS-001).
 - **Amostras:** por perfil, 5 de aquecimento descartadas e 40 medidas, alternando aplicar e desfazer o ajuste. p95 pelo posto mais próximo (38ª de 40).
 - **Resultado:** cada execução anexa um JSON ao relatório do Playwright (amostras, p95, perfil) e uma anotação "NFR-PERF-002". O relatório de aceite da FEAT-008 registra os números e a máquina medida. No CI, o teste roda no job `e2e` e falha acima do limite.
-- **Guarda unitária** (ADR-008): `evaluate` do pacote real com o personagem mais completo de hoje (Human, Size e ajuste decididos), 200 execuções, p95 ≤ 20 ms, um quinto do limite do notebook.
+- **Guarda unitária** (ADR-008; "personagem de nível 0 completo" da architecture.md §10): `evaluate`, 200 execuções, p95 ≤ 20 ms (um quinto do limite do notebook), em dois casos:
+  - o pacote real com o personagem mais completo de hoje (Human, Size e ajuste decididos);
+  - um pacote fictício do porte de um nível 0 completo, com folga de 2× sobre a contagem do core (páginas impressas):
+
+| Medida | Human de nível 0 completo no core | Fictício |
+| :-- | :-- | :-- |
+| Vagas decididas | 18: ancestralidade, Size e +1 (p.12) e ajuste (p.10); 6 tabelas da ancestralidade (pp.12–13; o Dwarf também tem 6, pp.18–19); idioma ou profissão (p.12); 2 profissões, com tipo e entrada quando roladas (4, p.23); riqueza (p.25); coisa interessante, tabela e entrada (2, p.26) | 36 |
+| Efeitos sobre valores | 5 contados: o ajuste (2), o +1, o Size e a Corruption de uma entrada do Background (p.12). O equipamento que a riqueza dá (p.25) não foi contado efeito a efeito; a folga o cobre | 20 |
+| Fórmulas | 4 modificadores de atributo; 10 características, 4 com referência (Perception, Defense, Health, Healing Rate) e 4 limites (pp.34–35) | 4 modificadores; 10 características, todas com fórmula, numa cadeia de referências de profundidade 3; 4 limites |
+
+  O motor desta feature só tem `choose-entity`, `choose-value` e `attribute-shift`, então o fictício monta o porte assim: 1 ancestralidade; 25 vagas `choose-value` concedidas por ela, no lugar das tabelas, profissões, riqueza e coisa interessante, lidas pelas fórmulas por `grant:`; e 10 vagas `attribute-shift` em 3 etapas, que dão os 20 efeitos.
 
 ## 6. Critérios de aceitação
 
@@ -237,8 +258,8 @@ sequenceDiagram
 | AC-2 | Aplicar o ajuste Strength −1 / Intellect +1 deixa Strength 9 (−1) e Intellect 11 (+1). A composição de cada um lista a base e a parcela "Score adjustment", e o total é a soma. O documento gravado tem só `decisions.adjustment` com o par; nenhum valor derivado. | FR-STEP-009, FR-CALC-002, FR-CALC-001; UC-004 3 |
 | AC-3 | Com o ajuste aplicado, uma segunda tentativa devolve `already-decided`. Nada muda nem é gravado, e a tela oferece desfazer. O mesmo atributo nos dois lados, ou um id que não é atributo, devolve `invalid-value`. | FR-STEP-010; UC-004 3b |
 | AC-4 | Desfazer (`clear`) restaura os dois atributos e as características que dependem deles, e o documento gravado fica sem a chave. Depois disso, um ajuste novo pode ser aplicado. | FR-STEP-011; UC-004 3a |
-| AC-5 | Mudar um atributo recalcula os dependentes sem botão de recalcular, na etapa e no resumo. Dwarf com Intellect +1: Perception 12. Com Strength −1: Health 13 e Healing Rate 3. Human com Strength −1: Health 9 e Healing Rate 2. Os valores sobrevivem a recarregar. | FR-CALC-009, NFR-REL-001; UC-004 4 |
-| AC-6 | Com pacote fictício, a composição sai na ordem base → modifier → limit. O limite se aplica depois do ajuste, e uma fórmula que referencia uma característica limitada lê o valor já limitado. | FR-CALC-005 |
+| AC-5 | Mudar um atributo recalcula os dependentes sem botão de recalcular, na etapa e no resumo. Dwarf com Intellect +1: Perception 12. Com Strength −1: Health 13 e Healing Rate 3. Human com Strength −1: Health 9 e Healing Rate 2. Os valores sobrevivem a recarregar. Parcial: a atualização da ficha chega com a FEAT-018, e o aceite registra a FR-CALC-009 como "(partial)" no RTM. | FR-CALC-009 (parcial), NFR-REL-001; UC-004 4 |
+| AC-6 | Com pacote fictício, a composição sai na ordem base → modifier → limit. O limite se aplica depois do ajuste, e uma fórmula que referencia uma característica limitada lê o valor já limitado. Parcial: os estágios `define` e `sum` chegam com a FEAT-009 e o `manual` com a FEAT-019, e o aceite registra a FR-CALC-005 como "(partial)" no RTM. | FR-CALC-005 (parcial) |
 | AC-7 | O pacote do core declara os quatro limites da §4. Com pacote fictício: um valor acima do máximo vira o máximo, e a composição traz a parcela de limite com a diferença negativa; um valor abaixo do mínimo sobe; um máximo dado por um atributo (Insanity ≤ Will) corta pelo atributo. Quando o limite não corta, não há parcela. | FR-CALC-006, FR-CALC-007 |
 | AC-8 | Com pacote fictício, o arredondamento segue cada fórmula (`down`, `up`, `nearest` dão valores diferentes para o mesmo número), e uma fórmula sem `round` mantém o valor fracionário. | FR-CALC-008 |
 | AC-9 | Com Human escolhido, a etapa Attributes mostra o +1 como pendência sem controle e sem o texto provisório da FEAT-007; ele continua em Open decisions, e o atalho foca a pendência nesta etapa. Story a Review continuam com o `FallbackStep`. | FR-STEP-008 (só a exibição; resolução na FEAT-016), FR-FLOW-011; lição 4 |
@@ -246,7 +267,8 @@ sequenceDiagram
 | AC-11 | `clear` de uma vaga com filhas decididas devolve `has-dependents` e nada muda. `clear` do Size do Human o devolve a aberto, e em seguida trocar Human por Dwarf aplica direto. | FR-STEP-011, D8 da FEAT-007 |
 | AC-12 | A carga recusa, com o caminho no erro: limite que referencia id inexistente, `self` ou `grant:` em limite, ciclo que passa por um limite e `attribute-shift` com `amount` 0. O pacote do core passa no `packs:check`. | FR-CALC-006; ADR-004 §2 |
 | AC-13 | p95 do intervalo entre a confirmação de uma decisão e a atualização da etapa e do resumo: ≤ 100 ms no perfil de notebook e ≤ 200 ms no perfil de celular, pelo método da §5. | NFR-PERF-002 |
-| AC-14 | O E2E do fluxo crítico 1 percorre o UC-004 com Dwarf (ver, ajustar, tentar de novo, desfazer, recarregar) e com Human (+1 pendente), nos 5 projetos. | UC-004; ADR-008 fluxo 1 |
+| AC-14 | O E2E do fluxo crítico 1 percorre o UC-004 a partir de "New character", pela interface: Dwarf (ver, ajustar, tentar de novo, desfazer, recarregar) e Human (+1 pendente), nos 5 projetos. | UC-004; ADR-008 fluxo 1 |
+| AC-15 | Com Dwarf, a etapa Attributes fica "Done" logo ao escolher a ancestralidade, com ou sem o ajuste; com Human, "1 open" pelo +1. Story a Review, sem vagas, continuam "Not started". No preview de Dwarf → Human, Attributes passa de `done` a `open`. | FR-FLOW-001, FR-FLOW-014; D2 |
 
 **NFRs:** NFR-PERF-002 (AC-13); NFR-ACC-001 (axe sem violação grave na etapa Attributes com ajuste aplicado); NFR-L10N-001 (tudo em inglês); NFR-MAINT-002 (cada FR desta feature com teste que o cita).
 
@@ -259,7 +281,7 @@ sequenceDiagram
 - **D2. Vaga `optional` fora de contadores, pendências e bloqueio.**
   - Motivo: um ajuste opcional não é decisão aberta (P4) e não pode ficar pendente para sempre.
   - Alternativa rejeitada: contá-la como as outras.
-  - Consequência: com Dwarf, a etapa Attributes não tem vaga obrigatória e fica "Not started" mesmo com o ajuste feito (regra de estado da FEAT-007 mantida). Precisa de revisão (§8).
+  - Consequência: a etapa sem vaga obrigatória precisa de regra de estado própria; fica `done` se tiver ao menos uma vaga (§3.3, "Estado da etapa").
 - **D3. "Uma única vez" vem do modelo.**
   - Motivo: FR-STEP-010. O procedimento declara uma vaga, e `decisions` guarda no máximo uma decisão por chave, então não existe segundo ajuste. No `attribute-shift`, `decide` sobre vaga decidida é recusado (`already-decided`) em vez de substituir; trocar o ajuste é desfazer e aplicar de novo.
   - Alternativa rejeitada: substituir em silêncio, como no Size, o que a FR-STEP-010 proíbe.
@@ -271,7 +293,7 @@ sequenceDiagram
 - **D5. Toda parcela é aditiva; o total é a soma.**
   - Motivo: FR-CALC-002 e 007 ("capped at 25" como parcela).
   - Alternativa rejeitada: um `total` acumulado em cada parcela, que mudaria o `Stage` da FEAT-007.
-  - Consequência: `Stage` só ganha variantes; a parcela `base` não muda. Os estágios futuros (`define`, `manual` com substituição) também entram como diferença, com o valor substituído como campo próprio (FR-ADJ-008, FEAT-019).
+  - Consequência: `Stage` só ganha variantes; a parcela `base` não muda. Toda parcela, inclusive a dos estágios futuros, é diferença, e o total é a soma.
 - **D6. O ajuste é vaga raiz da etapa, não filha da ancestralidade.**
   - Motivo: a regra vale para qualquer ancestralidade (p.10) e continua depois de rolar (D24).
   - Consequência: trocar de ancestralidade mantém o ajuste, que é recalculado sobre a base nova. Não é dependente para a D8 nem será para a FEAT-011.
@@ -283,21 +305,29 @@ sequenceDiagram
   - Motivo: FR-CALC-006 ("declarados nos dados"); Insanity ≤ Will precisa de referência.
   - Alternativa rejeitada: constantes, o que deixaria a Insanity como caso especial.
   - Consequência: entram no grafo de ciclos. Atributos não ganham `limits` nesta feature (§8).
-- **Mudanças em contratos da FEAT-007:** só acréscimos (`SlotDef`, `DecisionValue`, `Stage`, `limits`, `clear`, razões novas do `DecideResult`). Os testes da FEAT-007 continuam válidos. Uma única expectativa muda de propósito: no E2E `ancestry.spec.ts`, a etapa Attributes deixa de ter o título de fallback "Attributes" e passa a ter a pergunta do ui-design.
+- **Decididas pelo usuário na revisão de 2026-11-12:**
+  - D1, D6 e D7 confirmadas.
+  - Limpar o Size na tela da Ancestry: fica como está até a FEAT-011; o `clear` existe no comando, sem controle na tela.
+  - Estado da etapa sem vaga obrigatória: `done` quando nenhuma obrigatória está aberta e a etapa tem ao menos uma vaga, contando as opcionais (§3.3).
+  - Fórmula legível: fica a forma da FEAT-007; o ui-design junta fórmula e limite na linha. O exemplo do SRS fica como ilustração, sem emenda agora.
+  - Faixa de 1 a 20 dos scores: fora desta feature (§8).
+  - NFR-PERF-002: a emulação 4× no `mobile-chrome` substitui a medição manual no celular (§5), e a guarda unitária usa também um pacote fictício do porte de um nível 0 completo (§5).
+- **Mudanças em contratos da FEAT-007:**
+  - Acréscimos: `SlotDef`, `DecisionValue`, `Stage`, `limits`, `clear` e as razões novas do `DecideResult`.
+  - A regra de `status` da FEAT-007 §3.3 muda (§3.3, "Estado da etapa"). Mudam duas expectativas em `core-view.test.ts`, ambas na T2:
+    - `FR-FLOW-014: preview of Dwarf → Human…` passa a listar também Attributes `done → open`;
+    - `FR-FLOW-014: preview from no ancestry…` passa a listar Attributes `locked → done`.
+  - No E2E `ancestry.spec.ts`, a etapa Attributes deixa de ter o título de fallback "Attributes" e passa a ter a pergunta do ui-design.
+  - Os demais testes da FEAT-007 continuam válidos sem mudança.
 
 ## 8. Escalações e pendências
 
 - **Escalações de arquitetura:** nenhuma. Vaga, efeito com origem, ordem do P11b, limites e composição estão na ADR-004 §2. O `kind` novo de vaga é a consequência prevista na ADR-003 ("um tipo de vaga novo exige código no motor e na interface").
-- **Para decisão do usuário:**
-  - **Botão de limpar o Size na tela da Ancestry.** O `clear` resolve o beco da D8 no comando, mas a tela não oferece o controle. Opções: (a) um "Clear" no `subdecision` do Size, que mexe no ui-design fechado da FEAT-007; (b) manter como está até a FEAT-011, que troca a recusa pelo diálogo de impacto.
-  - **Estado da etapa Attributes sem vaga obrigatória** (D2). Hoje, com Dwarf, ela fica "Not started" para sempre. Opções:
-    - (a) manter, e a FEAT-016 e a FEAT-017 não mudam isso;
-    - (b) etapa liberada sem vaga obrigatória fica "Done", o que também marca Story a Review como "Done" até as features delas;
-    - (c) a vaga opcional decidida conta para "Done", e o Dwarf só fica "Done" se ajustar.
-- **Divergências apontadas, não resolvidas:**
-  - **Forma da fórmula legível (FR-CALC-003).** O SRS (exemplo da FR-CALC-003), o wireframe (SCR-05) e a `ux-foundations` §4 escrevem "¼ Health, round down, minimum 1". A FEAT-007 fechou "Health / 4, rounded down" e frações como "1/2". São três diferenças: "¼ Health" × "Health / 4"; "round down" × "rounded down"; o limite dentro da linha × fora dela. Este design mantém o `formatFormula` da FEAT-007 e expõe os limites à parte, então o ui-design pode juntar. Mudar para a forma do SRS se resolve no `formatFormula` e nos testes dele.
+- **Divergências apontadas:**
+  - **Forma da fórmula legível (FR-CALC-003).** O SRS (exemplo da FR-CALC-003), o `wireframe-spec-sotdl.md` (linha de característica, SCR-05) e o wireframe `Attributes.dc.html` escrevem "¼ Health, round down, minimum 1". A FEAT-007 fechou "Health / 4, rounded down" e frações como "1/2". São três diferenças: "¼ Health" × "Health / 4"; "round down" × "rounded down"; o limite dentro da linha × fora dela. Decidido (§7): fica a forma da FEAT-007, e o ui-design junta fórmula e limite na linha.
+  - **NFR-PERF-002 × architecture.md §10.** A arquitetura verifica o celular por "medição manual no celular"; este design usa a emulação 4× no `mobile-chrome` (§5). A emenda de uma linha é do usuário, pela software-architecture; este design não edita a arquitetura.
   - **Faixa de 1 a 20 dos scores.** A p.10 do core diz que um score vai de 1 a 20. O SRS (FR-CALC-006) lista só os quatro limites de característica. Não entra nesta feature; se valer, precisa de emenda do SRS e de `limits` nos atributos.
   - **Insanity ao chegar à Will.** O livro (impressa 35) trata isso como o momento de enlouquecer, o gatilho do P34 (fora do MVP). Aqui fica só o máximo do FR-CALC-006; o gatilho não é modelado.
-- **Log:** `clear` e o ajuste não escrevem no log até a FEAT-009. A FEAT-020 precisa de uma entrada "desfeito" para o `clear` (FR-LOG-007).
+- **Log:** o registro do ajuste e do `clear` entra com a FEAT-009 (FR-LOG-001); a marca de desfeito é da FR-LOG-007, que o RTM dá à FEAT-011.
 - **`CONTENT_VERSION`:** continua `0.0.0`.
 - **Texto do app:** a pergunta e a linha de regra da etapa Attributes, os rótulos das parcelas novas e o texto do +1 pendente são rascunho; o ui-design fecha (NFR-USE-001).
