@@ -63,6 +63,14 @@ test('FR-FLOW-004, FR-FLOW-005: a new character has only Ancestry open; the othe
   page,
 }, testInfo) => {
   const builder = await createCharacter(page)
+
+  // FR-FLOW-009 (AC-6): regime, pergunta, linha de regra com página e contadores.
+  const main = page.getByRole('main')
+  await expect(main.getByText('Step 1 of 8 · Choice')).toBeVisible()
+  await expect(main.locator('.step-header')).toContainText('CORE p.9')
+  await expect(main.getByText('Chosen 0 of 1')).toBeVisible()
+  await expect(main.getByText('1 open', { exact: true })).toBeVisible()
+
   const map = await stepMap(page, testInfo)
   const steps = map.getByRole('listitem')
   await expect(steps).toHaveCount(8)
@@ -116,15 +124,34 @@ test('FR-STEP-001, FR-FLOW-012, FR-FLOW-003, FR-DEC-011, FR-FLOW-011, NFR-REL-00
   await expect(map.getByRole('listitem').nth(6)).toContainText('Optional')
   await closeMap(page, testInfo)
 
-  // Troca sem dependentes aplica direto; Size do Human fica em aberto (FR-STEP-003, FR-DEC-011).
+  // Troca sem dependentes aplica direto e recalcula; Size do Human fica em aberto (FR-STEP-003, FR-DEC-011).
   await choose(page, 'Human')
   await expect(page.getByRole('radiogroup', { name: 'Size' })).toBeVisible()
   await expect(page.getByText('Or decide later: it stays in Open decisions.')).toBeVisible()
+  aside = await summary(page, testInfo)
+  await expect(aside.getByRole('button', { name: /Health\s*10/ })).toBeVisible()
+  await closeSummary(page, testInfo)
+
+  // FR-FLOW-018 (AC-9): no celular, Back e Next ficam na região fixa do rodapé.
+  if (isMobile(testInfo)) await expect(page.locator('.builder__dock')).toHaveCSS('position', 'fixed')
 
   // FR-FLOW-007: Next abre a seguinte mesmo com a pendência na atual.
   await page.getByRole('button', { name: 'Next: Attributes' }).click()
   await expect(page).toHaveURL(/\/attributes$/)
   await expect(page.getByRole('heading', { level: 1, name: 'Attributes' })).toBeVisible()
+  // FR-DEC-011 (AC-4): o +1 do Human aparece como pendência na etapa dele.
+  await expect(page.getByRole('main').getByText('+1 to one attribute')).toBeVisible()
+
+  // FR-FLOW-001, 006, 008 (AC-5): etapa atual destacada no mapa, abrir pelo mapa e voltar com Back.
+  let steps = await stepMap(page, testInfo)
+  await expect(steps.locator('[aria-current="step"]')).toContainText('2. Attributes')
+  await steps.getByRole('link', { name: /3\. Story/ }).click()
+  await expect(page).toHaveURL(/\/story$/)
+  await page.getByRole('button', { name: 'Back' }).click()
+  await expect(page).toHaveURL(/\/attributes$/)
+  steps = await stepMap(page, testInfo)
+  await expect(steps.getByRole('listitem').first()).toContainText('1 open')
+  await closeMap(page, testInfo)
 
   // FR-FLOW-010, FR-FLOW-011: as três pendências do Human e o atalho que abre a Ancestry na vaga do Size.
   aside = await summary(page, testInfo)

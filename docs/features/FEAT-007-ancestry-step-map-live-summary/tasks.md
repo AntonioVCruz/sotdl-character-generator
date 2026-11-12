@@ -1,7 +1,7 @@
 # Tasks: FEAT-007 — Etapa Ancestry, mapa de etapas e resumo vivo
 
 > Executa: `docs/features/FEAT-007-ancestry-step-map-live-summary/technical-design.md`
-> Status: pending · Última atualização: 2026-11-12
+> Status: developer-done · Última atualização: 2026-11-12
 > Telas (SCR-WEB-003, SCR-WEB-016): do ui-design, pelo `docs/design-manifest.json`. As tarefas de ui aqui são só integração.
 
 - [x] **T1. Schemas do pacote e do documento v1** (design §3.1, §4; FR-CONT-004, 006; ADR-004 §2; D1–D4)
@@ -107,7 +107,7 @@
     - viewport de celular.
   - **Pronto quando:** `npm run e2e` passa nos 5 projetos contra o build local.
 
-- [ ] **T11. Verificação** (design §6)
+- [x] **T11. Verificação** (design §6)
   - AC-1 a AC-13 demonstrados por testes ou pelo E2E.
   - `npm run typecheck`, `lint` (fronteiras), `test`, `packs:check`, `e2e` e `lighthouse` verdes.
   - Nenhum texto do livro em `packs/` nem em `src/`.
