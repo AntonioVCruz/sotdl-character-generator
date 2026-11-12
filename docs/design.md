@@ -2,7 +2,7 @@
 
 > Fonte da verdade para toda implementação de interface, junto com `docs/tokens.json`.
 > Gerado por ux-foundations · Modo: design file (wireframe v1 ingerido) + identidade A escolhida pelo usuário
-> Última atualização: 2026-11-12 (emenda E1–E4 do ui-design da FEAT-007)
+> Última atualização: 2026-11-12 (emenda E5 do ui-design da FEAT-008)
 
 ## 1. Tema visual e atmosfera
 
@@ -219,7 +219,8 @@ Base: React Aria Components (ADR-006) para todo controle interativo. Os estilos 
 - **`text-input` / `textarea`:** altura 40px (input), fundo `surface`, borda 1px `control`, raio `md`, texto `body-lg` (16px). Rótulo `label` acima, ajuda `meta` abaixo. Erro: borda `danger` + mensagem `meta` em `danger` com ícone, ligada por `aria-describedby`.
 - **`select`:** mesmo visual do input, com seta.
 - **`checkbox`:** caixa 18px, borda `control`, marcado com fundo `action-primary` e visto branco. Rótulo à direita, área clicável inteira.
-- **`segmented-control`:** grupo de 2 a 4 botões unidos, altura 40px, borda `control`; segmento selecionado com fundo `action-selected` e texto `inverse`. Usos: Roll / Choose / Write; Roll / Choose / Trade for a language. Semântica de radiogroup.
+- **`segmented-control`:** grupo de 2 a 4 botões unidos, altura 40px, borda `control`; segmento selecionado com fundo `action-selected` e texto `inverse`. Usos: Roll / Choose / Write; Roll / Choose / Trade for a language; o atributo que sobe e o que desce no ajuste. Semântica de radiogroup.
+  - **Quebra:** quando os segmentos não cabem numa linha (ex.: 4 segmentos no celular e no reflow de 320 px), o grupo vira uma grade de 2 colunas de largura igual, com os mesmos divisores internos (`--border-width-default` `--color-border-control`), a mesma ordem de leitura (linha a linha) e as mesmas setas. Os alvos de `--size-touch-target` em ponteiro grosso continuam valendo.
 - **Validação:** ao confirmar, nunca ao digitar. Mensagem diz o que fazer ("Enter a value from 3 to 18").
 
 ### Retorno ao usuário
@@ -325,7 +326,7 @@ Erros dizem: o que aconteceu, o que ficou a salvo, o que fazer. Confirmações d
 
 ## 9. Proveniência e lacunas
 
-**Proveniência.** Estrutura, componentes, medidas (raios 4/6/8/999, espaços 2–24, Inter e IBM Plex Mono, cinzas quentes) ingeridos do wireframe v1 (`docs/reference/wireframe/`, código `.dc.html` e telas). Identidade visual (pergaminho, vermelho-sangue, Spectral) escolhida pelo usuário entre duas propostas (direção A), dentro do P33 e da D28. Ajustes exigidos pela NFR-ACC-001: o cinza `#A8A8A2` do wireframe (2,4:1 sobre branco) foi substituído por `#85847E` em bordas de controle e por `#65645E` em texto apagado; corpo subiu de 13 para 14px; campos de formulário em 16px; alvos de 44px em ponteiro grosso; anel de foco definido (o wireframe não tinha). Emenda de 2026-11-12, do ui-design da FEAT-007 (E1–E4): estado bloqueado do `step-map` sem tooltip; estado `current` do `option-card`; ícones Lucide; tokens `size.pill`, `size.icon-sm`, `size.icon-md`, `icon.stroke`, `opacity.disabled`, `border-width.alert` e `typography.stat-sm`; padding do `button-primary` em `--space-4`.
+**Proveniência.** Estrutura, componentes, medidas (raios 4/6/8/999, espaços 2–24, Inter e IBM Plex Mono, cinzas quentes) ingeridos do wireframe v1 (`docs/reference/wireframe/`, código `.dc.html` e telas). Identidade visual (pergaminho, vermelho-sangue, Spectral) escolhida pelo usuário entre duas propostas (direção A), dentro do P33 e da D28. Ajustes exigidos pela NFR-ACC-001: o cinza `#A8A8A2` do wireframe (2,4:1 sobre branco) foi substituído por `#85847E` em bordas de controle e por `#65645E` em texto apagado; corpo subiu de 13 para 14px; campos de formulário em 16px; alvos de 44px em ponteiro grosso; anel de foco definido (o wireframe não tinha). Emenda de 2026-11-12, do ui-design da FEAT-007 (E1–E4): estado bloqueado do `step-map` sem tooltip; estado `current` do `option-card`; ícones Lucide; tokens `size.pill`, `size.icon-sm`, `size.icon-md`, `icon.stroke`, `opacity.disabled`, `border-width.alert` e `typography.stat-sm`; padding do `button-primary` em `--space-4`. Emenda de 2026-11-12, do ui-design da FEAT-008 (E5): regra de quebra do `segmented-control` em grade de 2 colunas, sem token novo.
 
 ```json
 { "design_provenance": {
