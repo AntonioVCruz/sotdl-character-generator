@@ -44,7 +44,7 @@
     - componente `off` ignorado;
     - id definido em dois livros sem `revises`/`replaces` lança `EngineError` com o id e os dois livros.
 
-- [ ] **T5. `evaluate`: árvore de vagas, estados de etapa e decisões abertas** (design §3.3 `CharacterView`; FR-FLOW-001 a 005, 009 (regime e contadores), 010, FR-DEC-011)
+- [x] **T5. `evaluate`: árvore de vagas, estados de etapa e decisões abertas** (design §3.3 `CharacterView`; FR-FLOW-001 a 005, 009 (regime e contadores), 010, FR-DEC-011)
   - Vagas raiz e filhas com a gramática de chave; `status` por etapa (`locked`, `optional`, `not-started`, `open`, `done`) com `lockedBy` e contadores; `openDecisions` com etapa, origem e `kind`; decisão sem vaga viva ignorada.
   - **Pronto quando:** os testes com pacote fictício passam para:
     - personagem sem decisões: só a primeira etapa liberada;

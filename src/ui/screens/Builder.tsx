@@ -1,10 +1,17 @@
 import { useEffect, useState } from 'react'
 import { app, type OpenResult } from '../../app'
+import type { StepStatus } from '../../engine'
 
 // Casca do construtor (SCR-WEB-003): três zonas vazias e o mapa de etapas do `evaluate` (stub).
 // Etapas reais, resumo vivo e decisões abertas entram a partir da FEAT-007.
 
-const STATUS_LABEL = { 'not-started': 'Not started' } as const
+const STATUS_LABEL: Record<StepStatus, string> = {
+  locked: 'Locked',
+  optional: 'Optional',
+  'not-started': 'Not started',
+  open: 'Open',
+  done: 'Done',
+}
 
 export default function Builder({ id }: { id: string }) {
   const [result, setResult] = useState<OpenResult | null>(null)
