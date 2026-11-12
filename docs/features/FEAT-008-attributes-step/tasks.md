@@ -77,7 +77,7 @@
     - `FR-STEP-011`: falha de gravação no `clear` mantém o estado, e o `retrySave` grava.
   - `npm run typecheck` e `npm run lint` passam.
 
-- [ ] **T5. Guarda de tempo do `evaluate`** (design §5, "Guarda unitária"; NFR-PERF-002; ADR-008)
+- [x] **T5. Guarda de tempo do `evaluate`** (design §5, "Guarda unitária"; NFR-PERF-002; ADR-008)
   - `src/engine/evaluate.perf.test.ts`, 200 execuções por caso:
     - o pacote real, com Human, Size e ajuste decididos;
     - o pacote fictício do porte da §5: 36 vagas decididas, 20 efeitos, 4 modificadores e 10 características com fórmula numa cadeia de profundidade 3, e 4 limites.
