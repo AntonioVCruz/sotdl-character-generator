@@ -24,3 +24,9 @@ Candidatas a emenda da arquitetura (as ADRs não decidiam):
 3. **Script próprio de tokens** (`scripts/build-tokens.mjs`) em vez do Style Dictionary: classes de tipografia e breakpoints pedem formato próprio.
 
 Delegada ao scaffolding pela ADR-002 (não é emenda): **`idb`** como wrapper do IndexedDB.
+
+## Estrutura e fronteiras
+
+- Módulos em `src/<módulo>/` (§5.2). O ponto de entrada do template foi movido para `src/ui/main.tsx`, porque só renderiza React; não existe arquivo fora de um módulo (`boundaries/no-unknown-files`).
+- `eslint-plugin-boundaries` 7.4 com `eslint-import-resolver-typescript`, `default: disallow` e `checkAllOrigins`. A dependência `engine → content` só vale com `dependency.kind: "type"`. React só no `ui`; `idb` só no `storage`. `engine`, `content` e `dice` ainda têm `no-restricted-globals` para `window`, `document`, `navigator`, `indexedDB`, `localStorage`, `sessionStorage` e o `crypto` sem `globalThis`.
+- Prova de que as regras falham: violações temporárias (React e import de valor no `engine`, `ui → content` e `ui → storage`, `window.crypto` no `dice`, arquivo fora de módulo) foram todas rejeitadas, e o `import type` do `engine` passou.
