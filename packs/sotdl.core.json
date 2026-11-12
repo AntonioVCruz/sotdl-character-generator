@@ -1,0 +1,17 @@
+{
+  "format": 1,
+  "id": "sotdl.core",
+  "name": "Shadow of the Demon Lord",
+  "layer": "core",
+  "published": "2015",
+  "steps": [
+    { "id": "step:ancestry", "name": "Ancestry", "page": 9 },
+    { "id": "step:attributes", "name": "Attributes", "page": 10 },
+    { "id": "step:story", "name": "Story", "page": 11 },
+    { "id": "step:professions-languages", "name": "Professions & languages", "page": 23 },
+    { "id": "step:wealth-equipment", "name": "Wealth & equipment", "page": 25 },
+    { "id": "step:interesting-thing", "name": "Interesting thing", "page": 26 },
+    { "id": "step:roleplaying", "name": "Roleplaying", "page": 27 },
+    { "id": "step:review", "name": "Review" }
+  ]
+}
