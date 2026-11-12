@@ -2,7 +2,7 @@
 
 > Fonte da verdade para toda implementação de interface, junto com `docs/tokens.json`.
 > Gerado por ux-foundations · Modo: design file (wireframe v1 ingerido) + identidade A escolhida pelo usuário
-> Última atualização: 2026-11-11
+> Última atualização: 2026-11-12 (emenda E1–E4 do ui-design da FEAT-007)
 
 ## 1. Tema visual e atmosfera
 
@@ -78,6 +78,7 @@ Famílias, todas servidas pelo próprio site (NFR-PRIV-001), licença OFL:
 | `eyebrow` | Inter | 12 / 1.2, maiúsculas, +0.06em | 600 | "STEP 3 OF 8 · …", "LIVE SUMMARY", "OPEN DECISIONS · 3" |
 | `stat` | Inter, algarismos tabulares | 28 / 1.2 | 600 | Atributos e características |
 | `stat-lg` | Inter, algarismos tabulares | 40 / 1.2 | 600 | Valor do cartão de rolagem |
+| `stat-sm` | Inter, algarismos tabulares | 22 / 1.2 | 600 | Valor dos mini-cartões de atributo do resumo vivo |
 | `badge` | IBM Plex Mono | 12 / 1.2 | 500 | Selo de fonte, notação de dado |
 
 Números de atributo, característica e dado usam `font-variant-numeric: tabular-nums`.
@@ -86,7 +87,9 @@ Números de atributo, característica e dado usam `font-variant-numeric: tabular
 
 - **Espaço:** 2, 4, 6, 8, 12, 16, 20, 24, 32, 48 px (`--space-0-5` … `--space-12`). Entre seções: 24. Entre cartões numa pilha: 12. Padding de cartão: 16 (celular) e 20 (desktop). Dentro de um componente: 8 a 12.
 - **Raio:** 4 (selos, chips), 6 (botões, inputs, segmentos), 8 (cartões, diálogos), 999 (pílulas de contador).
-- **Borda:** 1px padrão; 2px para selecionado e anel de foco; 3px na barra da etapa atual.
+- **Borda:** 1px padrão; 2px para selecionado e anel de foco; 3px na barra da etapa atual; 4px na borda esquerda do `inline-alert`.
+- **Opacidade:** 0.45 em controle desabilitado (`--opacity-disabled`), sempre com o motivo em texto quando ele existir.
+- **Ícones:** Lucide, traço 1.5 (`--icon-stroke`), em 16px (`--size-icon-sm`: controles, selos, texto corrido, spinner de botão) e 20px (`--size-icon-md`: cabeçalhos e alertas). Ícone decorativo leva `aria-hidden`, e todo controle tem rótulo: em texto visível ou, nos botões só de ícone (voltar e "···" do cabeçalho móvel), como nome acessível (`aria-label`). Informação nunca depende só do ícone.
 - **Elevação:** cartões são planos (só borda). Sombra `overlay` (0 8px 24px #1A1A182E) só em diálogo, popover e menu.
 - **Movimento:** 120ms para hover e foco, 200ms para abrir painel ou diálogo, `ease-out`. Com `prefers-reduced-motion: reduce`, sem transições de deslocamento.
 
@@ -157,6 +160,7 @@ Números de atributo, característica e dado usam `font-variant-numeric: tabular
   --border-width-selected: 2px;
   --border-width-focus: 2px;
   --border-width-indicator: 3px;
+  --border-width-alert: 4px;
   --shadow-overlay: 0 8px 24px #1A1A182E;
   --duration-fast: 120ms;
   --duration-normal: 200ms;
@@ -172,6 +176,12 @@ Números de atributo, característica e dado usam `font-variant-numeric: tabular
   --size-header: 64px;
   --size-header-mobile: 56px;
   --size-sheet-aside: 320px;
+  --size-pill: 24px;
+  --size-icon-sm: 16px;
+  --size-icon-md: 20px;
+
+  --opacity-disabled: 0.45;
+  --icon-stroke: 1.5;
 }
 ```
 
@@ -194,12 +204,12 @@ Base: React Aria Components (ADR-006) para todo controle interativo. Os estilos 
 - **hover:** muda o fundo ou a borda em 120ms.
 - **focus-visible:** anel de 2px `--color-focus` com deslocamento de 2px. Nunca remover sem substituto.
 - **active:** igual ao hover, mais escuro.
-- **disabled:** opacidade 0.45, cursor `not-allowed`, com o motivo em texto quando ele existir (P31).
-- **loading:** spinner de 16px no lugar do ícone, com o rótulo mantido e `aria-busy`.
+- **disabled:** opacidade `--opacity-disabled`, cursor `not-allowed`, com o motivo em texto quando ele existir (P31).
+- **loading:** spinner de `--size-icon-sm` no lugar do ícone, com o rótulo mantido e `aria-busy`.
 - **error:** borda `--color-state-danger` mais mensagem abaixo com ícone.
 
 ### Ações
-- **`button-primary`:** fundo `--color-action-primary`, texto `inverse`, `label`, altura `--size-control`, padding 0 18px, raio `md`. Hover: `--color-action-primary-hover`. Uma por área de decisão (Next, Apply and continue, Roll 3d6).
+- **`button-primary`:** fundo `--color-action-primary`, texto `inverse`, `label`, altura `--size-control`, padding 0 `--space-4`, raio `md`. Hover: `--color-action-primary-hover`. Uma por área de decisão (Next, Apply and continue, Roll 3d6).
 - **`button-secondary`:** fundo `surface`, borda 1px `--color-border-control`, texto `default`. Hover: fundo `subtle`. Back, Log, Enter result, Reroll.
 - **`button-danger`:** fundo `--color-state-danger`, texto `inverse`. Hover: `--color-accent-hover`. Só dentro de diálogo de confirmação destrutiva.
 - **`button-dashed-add`:** largura total, borda 1px tracejada `control`, texto `secondary`, "+ Add …". Abre o formulário no lugar (D34).
@@ -214,24 +224,24 @@ Base: React Aria Components (ADR-006) para todo controle interativo. Os estilos 
 
 ### Retorno ao usuário
 - **`dialog`:** largura até 760px, fundo `surface`, raio `lg`, sombra `overlay`, backdrop `overlay`. Título `heading`. Ações no rodapé: conservadora à esquerda (`button-secondary`), aplicar à direita (`button-primary` ou `button-danger`). Foco preso, Esc fecha como a ação conservadora.
-- **`inline-alert`:** faixa com ícone, borda esquerda 4px da cor do estado, fundo tint do estado (danger, success, warning). Texto `body`. Não some sozinha.
+- **`inline-alert`:** faixa com ícone (`--size-icon-md`), borda esquerda `--border-width-alert` da cor do estado, fundo tint do estado (danger, success, warning). Texto `body`. Não some sozinha.
 - **`toast`:** canto inferior, 4s, só para confirmação sem ação ("Character file saved"). Anunciado por `aria-live="polite"`.
 - **`loading`:** esqueleto com fundo `sunken` para listas e cartões; spinner só em botão.
 - **Estados de vista de dados:** vazio = frase do que é aquilo + a ação que preenche; carregando = esqueleto; erro = `inline-alert` danger com o que aconteceu, o que fica preservado e o que tentar.
 
 ### Estrutura
 - **`card`:** fundo `surface`, borda 1px `divider`, raio `lg`, padding 20px (16px no celular). Plano.
-- **`pill-counter`:** raio `pill`, `caption` semibold, altura 24px. Concluído: fundo `action-selected`, texto `inverse` ("5 of 6 decided"). Pendente: borda 1px tracejada `control`, texto `default` ("1 follow-up choice").
+- **`pill-counter`:** raio `pill`, `caption` semibold, altura `--size-pill`. Concluído: fundo `action-selected`, texto `inverse` ("5 of 6 decided"). Pendente: borda 1px tracejada `control`, texto `default` ("1 follow-up choice").
 - **`eyebrow`:** estilo `eyebrow` em `text-secondary`.
 
 ### Componentes do domínio
 
 - **`app-header`:** ver §3. As ações de cabeçalho são `button-secondary`; a principal do contexto (ex.: "Level up to N", fora do MVP) é `button-primary`.
-- **`step-map`:** lista numerada ("1. Ancestry"), cada item com o nome à esquerda e o estado à direita em `meta` ("Done", "2 open", "Not started", "Optional"). Atual: fundo `action-selected`, texto `inverse`, mais uma barra de `--border-width-indicator` `--color-accent-default` à esquerda. Bloqueado: texto `muted`, sem ação, com o motivo no tooltip e no nome acessível ("Choose an ancestry first"). Nota de etapas substituídas em `caption` (Should). Navegável por teclado como lista de links.
+- **`step-map`:** lista numerada ("1. Ancestry"), cada item com o nome à esquerda e o estado à direita em `meta` ("Done", "2 open", "Not started", "Optional"). Atual: fundo `action-selected`, texto `inverse`, mais uma barra de `--border-width-indicator` `--color-accent-default` à esquerda. Bloqueado: texto `muted`, sem ação, estado visível "Locked" no lugar do estado; o motivo vai no nome acessível do item ("2. Attributes, locked. Choose an ancestry first.") e aparece uma vez em `caption` abaixo da lista ("Choose an ancestry first to open the other steps."). Sem tooltip: o item bloqueado não recebe foco, e o motivo precisa ser visível por teclado e toque (P31). Nota de etapas substituídas em `caption` (Should). Navegável por teclado como lista de links.
 - **`step-header`:** card. Sobretítulo `eyebrow` em `--color-accent-default` ("STEP 3 OF 8 · ROLL, CHOOSE OR WRITE YOUR OWN") com linha de 2px vermelha de 32px acima; pergunta em `display`; linha de regra em `body` `secondary` com `source-badge`; contadores em `pill-counter`.
 - **`source-badge`:** `badge` (mono 12px), borda 1px `control`, raio `sm`, padding 2px 6px. Texto: livro abreviado + página ("CORE p.17", "DLC p.N"). Página não conferida: "ch. N".
 - **`type-badge`:** `caption` semibold, fundo `sunken`, raio `sm`: "Core", "Adds", "Replaces core" (outros tipos são Should).
-- **`option-card`:** card clicável (role radio). Nome `title-sm`, linha de mecânica em `meta` (P9), selos. Selecionado: borda 2px `strong`. Inelegível (Should): opacidade 0.6, borda tracejada, "Not available: motivo".
+- **`option-card`:** card clicável (role radio). Nome `title-sm`, linha de mecânica em `meta` (P9), selos. Selecionado (prévia: a opção marcada no radiogroup que ainda não é a escolha): borda 2px `strong`. Escolha atual (`current`): rótulo "Your choice" em `caption` semibold com fundo `sunken`, raio `sm`, padding `--space-0-5` `--space-1-5`, no canto superior do cartão; borda padrão, nunca a de seleção; nome acessível "{Nome}, your choice". Quando a escolha atual é também a opção marcada, vale só o tratamento `current`; ao comparar, o cartão em prévia tem a borda e o atual tem o rótulo, nunca o mesmo tratamento. Estado nunca só por cor. Inelegível (Should): opacidade 0.6, borda tracejada, "Not available: motivo".
 - **`roll-card`:** card de uma tabela. Cabeçalho: nome `title` + dado em `badge` + `segmented-control` de modos. Corpo por estado:
   - **a decidir:** `button-primary` "Roll 3d6" + `button-secondary` "Enter result" (prescrita) e frase do que espera ("Not decided yet. Nothing else waits for it.");
   - **rolado:** caixa de valor 72×72 (fundo `subtle`, borda `control`, valor `stat`, rótulo "rolled" em `caption`) + resultado + `effect-chip`s + "Reroll";
@@ -243,7 +253,7 @@ Base: React Aria Components (ADR-006) para todo controle interativo. Os estilos 
 - **`effect-chip`:** `caption`, fundo `sunken`, raio `sm`, padding 2px 6px: "Corruption +1", "Language +1 (choose)".
 - **`range-grid`:** grade de botões (2 a 5 colunas conforme a largura), cada um com a faixa em `badge` e o nome quando o pacote o traz ("3–4 Troglodytes"). Sem nome no pacote (D36): só faixa e página, e ao selecionar abre um `text-input` "Name" logo abaixo da grade. Já possuído: desabilitado com "already yours".
 - **`subdecision`:** caixa com borda 1px tracejada `control`, raio `md`, padding 12px 16px: pergunta em `label`, controle pequeno e "or decide later: it stays in Open decisions" em `meta`.
-- **`live-summary`:** card com `eyebrow` "LIVE SUMMARY"; quatro mini-cartões de atributo (rótulo `caption`, valor 22px semibold, modificador `caption`) e a lista de características em duas colunas (nome `meta`, valor semibold tabular).
+- **`live-summary`:** card com `eyebrow` "LIVE SUMMARY"; quatro mini-cartões de atributo (rótulo `caption`, valor `stat-sm`, modificador `caption`) e a lista de características em duas colunas (nome `meta`, valor semibold tabular).
 - **`open-decisions`:** card com `eyebrow` "OPEN DECISIONS · N"; cada pendência é um link em caixa tracejada: título `label` + onde se resolve em `meta`. Ação leva ao ponto exato (FR-FLOW-011).
 - **`value-composition`:** caixa `sunken`, raio `md`, padding 12px: `eyebrow` "HOW THIS IS CALCULATED"; linhas origem/valor (valor em mono tabular, alinhado à direita); corte por limite como linha "Capped at 25"; substituição como "Calculated 10 · overridden to 12"; total em semibold com divisor acima.
 - **`characteristic-row`:** nome `label` · fórmula legível `meta` `secondary` · valor `stat` à direita. Expande para `value-composition`.
@@ -315,7 +325,7 @@ Erros dizem: o que aconteceu, o que ficou a salvo, o que fazer. Confirmações d
 
 ## 9. Proveniência e lacunas
 
-**Proveniência.** Estrutura, componentes, medidas (raios 4/6/8/999, espaços 2–24, Inter e IBM Plex Mono, cinzas quentes) ingeridos do wireframe v1 (`docs/reference/wireframe/`, código `.dc.html` e telas). Identidade visual (pergaminho, vermelho-sangue, Spectral) escolhida pelo usuário entre duas propostas (direção A), dentro do P33 e da D28. Ajustes exigidos pela NFR-ACC-001: o cinza `#A8A8A2` do wireframe (2,4:1 sobre branco) foi substituído por `#85847E` em bordas de controle e por `#65645E` em texto apagado; corpo subiu de 13 para 14px; campos de formulário em 16px; alvos de 44px em ponteiro grosso; anel de foco definido (o wireframe não tinha).
+**Proveniência.** Estrutura, componentes, medidas (raios 4/6/8/999, espaços 2–24, Inter e IBM Plex Mono, cinzas quentes) ingeridos do wireframe v1 (`docs/reference/wireframe/`, código `.dc.html` e telas). Identidade visual (pergaminho, vermelho-sangue, Spectral) escolhida pelo usuário entre duas propostas (direção A), dentro do P33 e da D28. Ajustes exigidos pela NFR-ACC-001: o cinza `#A8A8A2` do wireframe (2,4:1 sobre branco) foi substituído por `#85847E` em bordas de controle e por `#65645E` em texto apagado; corpo subiu de 13 para 14px; campos de formulário em 16px; alvos de 44px em ponteiro grosso; anel de foco definido (o wireframe não tinha). Emenda de 2026-11-12, do ui-design da FEAT-007 (E1–E4): estado bloqueado do `step-map` sem tooltip; estado `current` do `option-card`; ícones Lucide; tokens `size.pill`, `size.icon-sm`, `size.icon-md`, `icon.stroke`, `opacity.disabled`, `border-width.alert` e `typography.stat-sm`; padding do `button-primary` em `--space-4`.
 
 ```json
 { "design_provenance": {
@@ -329,7 +339,6 @@ Erros dizem: o que aconteceu, o que ficou a salvo, o que fazer. Confirmações d
 **Lacunas conhecidas.**
 - Breakpoint intermediário (768–1279) não desenhado no wireframe; layout assumido.
 - Ficha no celular, etapas Roleplaying e Review, About, estados vazio, erro e carregamento: especificados aqui e em `ux-foundations.md`, sem desenho.
-- Ícones: conjunto ainda não escolhido (sugestão: Lucide, traço 1.5px, 16 e 20px).
 - Valores ainda sem token, a tokenizar no detailed-design da primeira feature que os usa, nunca como número solto no código: caixa de valor 72×72 do `roll-card` e corpo 9.5pt, títulos 12pt e margem 12mm do `print-sheet`. A feature responsável por cada um está no plano de implementação.
 - Modo escuro fora do escopo; os tokens por papel permitem acrescentá-lo.
 - Componentes fora do MVP só com a especificação do wireframe.
