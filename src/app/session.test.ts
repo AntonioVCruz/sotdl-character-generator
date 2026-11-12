@@ -145,6 +145,47 @@ describe('character session: decide', () => {
     expect(metas.get('id-1')).toMatchObject({ ancestry: 'Troll', name: '', updatedAt: '2026-01-02T00:00:00.000Z' })
   })
 
+  it('FR-CALC-001: the saved document holds only inputs, never a derived value', async () => {
+    const { session, docs } = await opened(stored({ ancestry: 'ancestry:gnome' }))
+    await session.decide('ancestry=gnome/stature', 0.5)
+    expect(docs.get('id-1')).toEqual({
+      ...stored(),
+      revision: 2,
+      updatedAt: '2026-01-02T00:00:00.000Z',
+      decisions: {
+        ancestry: { mode: 'chosen', value: 'ancestry:gnome' },
+        'ancestry=gnome/stature': { mode: 'chosen', value: 0.5 },
+      },
+    })
+  })
+
+  it('FR-CONT-006: renaming the entity in the pack, keeping its id, keeps the saved decision after reopening', async () => {
+    const { session, docs, repository } = await opened()
+    await session.decide('ancestry', 'ancestry:gnome')
+    await session.decide('ancestry=gnome/stature', 1)
+
+    // O mesmo personagem, reaberto com um pacote em que a entidade mudou de nome e manteve o id.
+    const renamed = book('test.core', items.map((item) => (item.id === 'ancestry:gnome' ? { ...item, name: 'Hill Gnome' } : item)))
+    const renamedFetch = vi.fn(async (url: string) => {
+      const body = url === '/packs/test.core.json' ? renamed : files[url]
+      return { ok: body !== undefined, status: body === undefined ? 404 : 200, json: async () => body }
+    })
+    const reopened = createApp({ ...deps, repository, packs: { baseUrl: '/', fetch: renamedFetch } }).createSession()
+    await reopened.open('id-1')
+
+    const view = ready(reopened).view
+    expect(view.ancestry).toBe('ancestry:gnome')
+    expect(view.slots.map((slot) => [slot.key, slot.decided])).toEqual([
+      ['ancestry', true],
+      ['ancestry=gnome/stature', true],
+      ['ancestry=gnome/boost', false],
+    ])
+    expect(view.summary.attributes[0].composition[0].origin).toMatchObject({ id: 'ancestry:gnome', name: 'Hill Gnome' })
+    expect(view.summary.characteristics[0].value).toBe(1)
+    expect(view.steps.map((step) => step.status)).toEqual(['done', 'not-started'])
+    expect(docs.get('id-1')).toMatchObject({ decisions: { ancestry: { value: 'ancestry:gnome' } } })
+  })
+
   it('FR-STEP-003: Size is decided through the same command', async () => {
     const { session } = await opened(stored({ ancestry: 'ancestry:gnome' }))
     await expect(session.decide('ancestry=gnome/stature', 0.5)).resolves.toEqual({ ok: true })
