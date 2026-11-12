@@ -102,7 +102,8 @@ function Composition({ trigger, stages, total, name, pending }: {
           {stages.map((stage, index) => (
             <li key={index} className="value-composition__line">
               <span className="typography-meta">{stageLabel(stage, pending)}</span>
-              <span className="typography-badge">{formatValue(stage.value)}</span>
+              {/* A parcela base é um valor; as demais são diferenças, com sinal (ui-design FEAT-008, Composição). */}
+              <span className="typography-badge">{stage.stage === 'base' ? formatValue(stage.value) : formatModifier(stage.value)}</span>
             </li>
           ))}
           <li className="value-composition__line value-composition__total">
@@ -116,6 +117,8 @@ function Composition({ trigger, stages, total, name, pending }: {
 }
 
 function stageLabel(stage: Stage, pending?: string): string {
+  // A origem `slot` não tem nome: o rótulo vem do `kind` da vaga (D6 da FEAT-007).
+  if (stage.stage === 'modifier') return decisionTitle({ kind: stage.origin.slotKind }, (id) => id)
   if (stage.origin.kind === 'default') return `Standard rule: ${stage.formula}`
   if (pending) return `${stage.origin.name}: ${pending}, open`
   if (stage.formula === undefined) return `${stage.origin.name} starting score`

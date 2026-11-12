@@ -77,8 +77,13 @@ describe('evaluate: live summary with the core pack', () => {
       ['Size', 0.5, null],
       ['Speed', 8, 10],
     ])
-    // Size do Human fica em aberto na própria etapa; as outras etapas continuam liberadas.
-    expect(changes.steps.map((s) => [s.name, s.from, s.to])).toEqual([['Ancestry', 'done', 'open']])
+    // Size do Human fica em aberto na própria etapa; as outras etapas continuam liberadas. O +1 abre Attributes, e a
+    // concessão de idioma ou profissão abre Professions & languages (FEAT-008 §3.3 e §7).
+    expect(changes.steps.map((s) => [s.name, s.from, s.to])).toEqual([
+      ['Ancestry', 'done', 'open'],
+      ['Attributes', 'done', 'open'],
+      ['Professions & languages', 'not-started', 'open'],
+    ])
     expect(JSON.stringify(document)).toBe(before)
   })
 
@@ -86,7 +91,8 @@ describe('evaluate: live summary with the core pack', () => {
     const { changes } = preview(rules, character(), 'ancestry', 'ancestry:dwarf')
     expect(changes.steps.map((s) => [s.name, s.from, s.to])).toEqual([
       ['Ancestry', 'not-started', 'done'],
-      ['Attributes', 'locked', 'not-started'],
+      // Só com a vaga opcional do ajuste, a etapa fica `done` (FEAT-008 §3.3 e §7).
+      ['Attributes', 'locked', 'done'],
       ['Story', 'locked', 'not-started'],
       ['Professions & languages', 'locked', 'not-started'],
       ['Wealth & equipment', 'locked', 'not-started'],
@@ -95,6 +101,69 @@ describe('evaluate: live summary with the core pack', () => {
       ['Review', 'locked', 'not-started'],
     ])
     expect(changes.characteristics.find((c) => c.name === 'Health')).toMatchObject({ from: null, to: 14 })
+  })
+})
+
+describe('Attributes step with the core pack', () => {
+  const dwarf = { kind: 'ancestry', id: 'ancestry:dwarf', name: 'Dwarf' }
+  const adjustment = { kind: 'slot', key: 'adjustment', stepId: 'step:attributes', slotKind: 'attribute-shift' }
+  const adjusted = (ancestry: string) => {
+    const document = character({ ancestry })
+    document.decisions.adjustment = { mode: 'chosen', value: { decrease: 'attribute:strength', increase: 'attribute:intellect' } }
+    return document
+  }
+
+  it('FR-STEP-007: the four attributes of the Dwarf, with modifier and composition, before and after the adjustment', () => {
+    const view = evaluate(rules, character({ ancestry: 'ancestry:dwarf' }))
+    expect(view.summary.attributes.map((a) => [a.name, a.score, a.modifier, a.composition])).toEqual([
+      ['Strength', 10, 0, [{ stage: 'base', value: 10, origin: dwarf }]],
+      ['Agility', 9, -1, [{ stage: 'base', value: 9, origin: dwarf }]],
+      ['Intellect', 10, 0, [{ stage: 'base', value: 10, origin: dwarf }]],
+      ['Will', 10, 0, [{ stage: 'base', value: 10, origin: dwarf }]],
+    ])
+
+    const after = evaluate(rules, adjusted('ancestry:dwarf'))
+    expect(after.summary.attributes.map((a) => [a.name, a.score, a.modifier])).toEqual([
+      ['Strength', 9, -1],
+      ['Agility', 9, -1],
+      ['Intellect', 11, 1],
+      ['Will', 10, 0],
+    ])
+    expect(after.summary.attributes[0].composition).toEqual([
+      { stage: 'base', value: 10, origin: dwarf },
+      { stage: 'modifier', value: -1, origin: adjustment },
+    ])
+    expect(after.summary.attributes[2].composition).toEqual([
+      { stage: 'base', value: 10, origin: dwarf },
+      { stage: 'modifier', value: 1, origin: adjustment },
+    ])
+  })
+
+  it('FR-FLOW-001: Attributes is done with Dwarf; with Human, Attributes and Professions & languages are open', () => {
+    const states = (view: ReturnType<typeof evaluate>) => view.steps.map((s) => [s.name, s.status])
+    const others = [
+      ['Story', 'not-started'],
+      ['Wealth & equipment', 'not-started'],
+      ['Interesting thing', 'not-started'],
+      ['Roleplaying', 'optional'],
+      ['Review', 'not-started'],
+    ]
+    for (const document of [character({ ancestry: 'ancestry:dwarf' }), adjusted('ancestry:dwarf')]) {
+      const view = evaluate(rules, document)
+      expect(states(view)).toEqual(expect.arrayContaining([['Attributes', 'done'], ['Professions & languages', 'not-started'], ...others]))
+      expect(view.steps[1]).toMatchObject({ decided: 0, open: 0, total: 0 })
+    }
+    const human = evaluate(rules, character({ ancestry: 'ancestry:human' }))
+    expect(states(human)).toEqual([
+      ['Ancestry', 'open'],
+      ['Attributes', 'open'],
+      ['Story', 'not-started'],
+      ['Professions & languages', 'open'],
+      ...others.slice(1),
+    ])
+    expect(human.steps[1]).toMatchObject({ decided: 0, open: 1, total: 1 })
+    expect(human.steps[3]).toMatchObject({ decided: 0, open: 1, total: 1 })
+    expect(human.openDecisions.map((decision) => decision.key)).not.toContain('adjustment')
   })
 })
 

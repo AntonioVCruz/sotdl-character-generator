@@ -25,7 +25,13 @@
           ]
         },
         { "id": "step:ancestry", "name": "Ancestry", "page": 9, "regime": "choice", "slots": { "ancestry": { "kind": "choose-entity", "of": "ancestry" } } },
-        { "id": "step:attributes", "name": "Attributes", "page": 10, "requires": ["step:ancestry"] },
+        {
+          "id": "step:attributes",
+          "name": "Attributes",
+          "page": 10,
+          "requires": ["step:ancestry"],
+          "slots": { "adjustment": { "kind": "attribute-shift", "amount": 1, "optional": true } }
+        },
         { "id": "step:story", "name": "Story", "page": 11, "requires": ["step:ancestry"] },
         { "id": "step:professions-languages", "name": "Professions & languages", "page": 23, "requires": ["step:ancestry"] },
         { "id": "step:wealth-equipment", "name": "Wealth & equipment", "page": 25, "requires": ["step:ancestry"] },

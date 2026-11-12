@@ -45,6 +45,20 @@ files['/packs/test.clash.json'] = {
   id: 'test.clash',
   components: [{ id: 'base', type: 'adds', default: 'on', items: [{ id: 'ancestry:troll', name: 'Troll', page: 1, attributes: {} }] }],
 }
+// O mesmo core com a vaga opcional do ajuste em Traits (FEAT-008).
+const core = files['/packs/test.core.json'] as { components: { items: Record<string, unknown>[] }[] }
+files['/packs/test.adjust.json'] = {
+  ...core,
+  id: 'test.adjust',
+  components: [
+    {
+      ...core.components[0],
+      items: core.components[0].items.map((item) =>
+        item.id === 'step:traits' ? { ...item, slots: { adjust: { kind: 'attribute-shift', amount: 1, optional: true } } } : item,
+      ),
+    },
+  ],
+}
 const fetch = async (url: string) => ({ ok: url in files, status: url in files ? 200 : 404, json: async () => files[url] })
 
 function stored(decisions: Record<string, string | number> = {}, order = ['test.core']) {
@@ -161,5 +175,13 @@ describe('Builder states', () => {
     expect((screen.getByRole('radio', { name: '1' }) as HTMLInputElement).checked).toBe(true)
     expect(screen.getByText('Decided.')).toBeTruthy()
     expect(repository.save).not.toHaveBeenCalled()
+  })
+
+  it('FR-STEP-009: the optional adjustment slot is not shown as pending in the step', async () => {
+    setup({ document: stored({ ancestry: 'ancestry:troll' }, ['test.adjust']) })
+    renderBuilder('traits')
+    expect(await screen.findByText("There's nothing to decide in this step yet.")).toBeTruthy()
+    expect(screen.queryByText(/It stays in Open decisions/)).toBeNull()
+    expect(screen.getByRole('heading', { name: 'Open decisions · 0' })).toBeTruthy()
   })
 })

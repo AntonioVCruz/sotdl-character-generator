@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import type { Book, CharacterDocument } from '../content'
-import { evaluate, resolve } from '.'
+import type { Book, CharacterDocument, DecisionValue } from '../content'
+import { evaluate, preview, resolve } from '.'
 
 // Pacote fictício: três etapas, uma ancestralidade com concessões (como o Human) e uma sem (como o Dwarf).
 const book: Book = {
@@ -130,5 +130,166 @@ describe('evaluate: slot tree, step states and open decisions', () => {
     const unknown = evaluate(rules, character({ ancestry: 'ancestry:ghost' }))
     expect(unknown.ancestry).toBeNull()
     expect(unknown.steps[1].status).toBe('locked')
+  })
+})
+
+// Pacote fictício com o ajuste de scores: uma etapa com a vaga opcional `attribute-shift` e uma ancestralidade que
+// concede uma vaga obrigatória nela (como o +1 do Human).
+const shiftBook = (slotStep = 'step:scores', slotName = 'adjust'): Book => ({
+  ...book,
+  components: [
+    {
+      id: 'base',
+      type: 'adds',
+      default: 'on',
+      items: [
+        { id: 'procedure:test', steps: ['step:origin', 'step:scores', 'step:extras'] },
+        { id: 'step:origin', name: 'Origin', page: 1, slots: { ancestry: { kind: 'choose-entity', of: 'ancestry' } } },
+        {
+          id: 'step:scores',
+          name: 'Scores',
+          page: 2,
+          requires: ['step:origin'],
+          ...(slotStep === 'step:scores' && { slots: { [slotName]: { kind: 'attribute-shift', amount: 1, optional: true } } }),
+        },
+        {
+          id: 'step:extras',
+          name: 'Extras',
+          requires: ['step:origin', 'step:scores'],
+          ...(slotStep === 'step:extras' && { slots: { [slotName]: { kind: 'attribute-shift', amount: 1, optional: true } } }),
+        },
+        { id: 'attribute:might', name: 'Might', page: 3, modifier: { add: [{ ref: 'self' }, -10] } },
+        { id: 'attribute:wits', name: 'Wits', page: 3, modifier: { add: [{ ref: 'self' }, -10] } },
+        { id: 'characteristic:vigor', name: 'Vigor', page: 3, formula: { add: [{ ref: 'attribute:might' }, 2] } },
+        { id: 'characteristic:insight', name: 'Insight', page: 3, formula: { ref: 'attribute:wits' } },
+        {
+          id: 'ancestry:gnome',
+          name: 'Gnome',
+          page: 5,
+          attributes: { 'attribute:might': 8, 'attribute:wits': 12 },
+          grants: { boost: { kind: 'attribute-increase', step: 'step:scores', amount: 1 } },
+        },
+        { id: 'ancestry:troll', name: 'Troll', page: 6, attributes: { 'attribute:might': 12, 'attribute:wits': 9 } },
+      ],
+    },
+  ],
+})
+const shiftRules = resolve([shiftBook()], ['test.book'])
+const shift = { decrease: 'attribute:might', increase: 'attribute:wits' }
+function shifted(decisions: Record<string, DecisionValue> = {}): CharacterDocument {
+  const entries = Object.entries(decisions).map(([key, value]) => [key, { mode: 'chosen' as const, value }])
+  return { ...character(), decisions: Object.fromEntries(entries) }
+}
+const scores = (view: ReturnType<typeof evaluate>) => view.summary.attributes.map((a) => [a.name, a.score, a.modifier])
+
+describe('evaluate: score adjustment slot (attribute-shift)', () => {
+  it('FR-STEP-009: the pair applies −1 and +1 with the origin of the slot, and an invalid decision is ignored', () => {
+    const view = evaluate(shiftRules, shifted({ ancestry: 'ancestry:troll', adjust: shift }))
+    const origin = { kind: 'slot', key: 'adjust', stepId: 'step:scores', slotKind: 'attribute-shift' }
+    expect(scores(view)).toEqual([
+      ['Might', 11, 1],
+      ['Wits', 10, 0],
+    ])
+    expect(view.summary.attributes[0].composition).toEqual([
+      { stage: 'base', value: 12, origin: { kind: 'ancestry', id: 'ancestry:troll', name: 'Troll' } },
+      { stage: 'modifier', value: -1, origin },
+    ])
+    expect(view.summary.attributes[1].composition[1]).toEqual({ stage: 'modifier', value: 1, origin })
+    expect(view.slots.find((slot) => slot.key === 'adjust')).toMatchObject({
+      kind: 'attribute-shift',
+      decided: true,
+      value: shift,
+      options: [
+        { id: 'attribute:might', name: 'Might' },
+        { id: 'attribute:wits', name: 'Wits' },
+      ],
+    })
+
+    for (const invalid of [
+      { decrease: 'attribute:might', increase: 'attribute:might' },
+      { decrease: 'attribute:luck', increase: 'attribute:wits' },
+    ]) {
+      const ignored = evaluate(shiftRules, shifted({ ancestry: 'ancestry:troll', adjust: invalid }))
+      expect(scores(ignored)).toEqual([
+        ['Might', 12, 2],
+        ['Wits', 9, -1],
+      ])
+      const slot = ignored.slots.find((candidate) => candidate.key === 'adjust')
+      expect(slot).toMatchObject({ decided: false })
+      expect(slot).not.toHaveProperty('value')
+    }
+  })
+
+  it('FR-STEP-009: the optional slot does not lock any step, is not an open decision and is not counted', () => {
+    const view = evaluate(shiftRules, shifted({ ancestry: 'ancestry:troll' }))
+    expect(view.slots.find((slot) => slot.key === 'adjust')).toMatchObject({ decided: false, optional: true })
+    expect(view.openDecisions).toEqual([])
+    expect(view.steps[1]).toMatchObject({ status: 'done', decided: 0, open: 0, total: 0 })
+    // Extras exige Scores, e a vaga raiz de Scores, opcional e sem decisão, não a bloqueia.
+    expect(view.steps[2]).toMatchObject({ status: 'not-started', lockedBy: [] })
+    const decided = evaluate(shiftRules, shifted({ ancestry: 'ancestry:troll', adjust: shift }))
+    expect(decided.steps[1]).toMatchObject({ status: 'done', decided: 0, open: 0, total: 0 })
+  })
+
+  it('FR-STEP-009: another step and another slot name work the same (the engine does not know the step)', () => {
+    const rules = resolve([shiftBook('step:extras', 'tweak')], ['test.book'])
+    const view = evaluate(rules, shifted({ ancestry: 'ancestry:troll', tweak: shift }))
+    expect(scores(view)).toEqual([
+      ['Might', 11, 1],
+      ['Wits', 10, 0],
+    ])
+    expect(view.summary.attributes[0].composition[1]).toEqual({
+      stage: 'modifier',
+      value: -1,
+      origin: { kind: 'slot', key: 'tweak', stepId: 'step:extras', slotKind: 'attribute-shift' },
+    })
+    expect(view.openDecisions).toEqual([])
+    expect(view.steps.map((step) => step.status)).toEqual(['done', 'not-started', 'done'])
+  })
+
+  it('FR-FLOW-014: preview with a pair lists the attributes and characteristics that change, and saves nothing', () => {
+    const document = shifted({ ancestry: 'ancestry:troll' })
+    const before = JSON.stringify(document)
+    const { changes } = preview(shiftRules, document, 'adjust', shift)
+    expect(changes.attributes).toEqual([
+      { id: 'attribute:might', name: 'Might', from: 12, to: 11 },
+      { id: 'attribute:wits', name: 'Wits', from: 9, to: 10 },
+    ])
+    expect(changes.characteristics).toEqual([
+      { id: 'characteristic:vigor', name: 'Vigor', from: 14, to: 13 },
+      { id: 'characteristic:insight', name: 'Insight', from: 9, to: 10 },
+    ])
+    expect(changes.steps).toEqual([])
+    expect(JSON.stringify(document)).toBe(before)
+  })
+
+  it('FR-CALC-002: the total of each attribute is the sum of its base and modifier parts', () => {
+    const cases = [
+      { ancestry: 'ancestry:troll', adjust: shift },
+      { ancestry: 'ancestry:gnome', adjust: { decrease: 'attribute:wits', increase: 'attribute:might' } },
+    ]
+    for (const decisions of cases) {
+      const view = evaluate(shiftRules, shifted(decisions))
+      for (const attribute of view.summary.attributes) {
+        expect(attribute.composition.map((stage) => stage.stage)).toEqual(['base', 'modifier'])
+        expect(attribute.score).toBe(attribute.composition.reduce((total, stage) => total + stage.value!, 0))
+      }
+    }
+  })
+
+  it('FR-FLOW-001: a step with only the optional slot is done; with a granted required slot open, open; with no slots, not started', () => {
+    expect(statuses(evaluate(shiftRules, shifted({ ancestry: 'ancestry:troll' })))).toEqual([
+      ['origin', 'done'],
+      ['scores', 'done'],
+      ['extras', 'not-started'],
+    ])
+    const gnome = evaluate(shiftRules, shifted({ ancestry: 'ancestry:gnome' }))
+    expect(statuses(gnome)).toEqual([
+      ['origin', 'done'],
+      ['scores', 'open'],
+      ['extras', 'not-started'],
+    ])
+    expect(gnome.steps[1]).toMatchObject({ decided: 0, open: 1, total: 1 })
+    expect(gnome.openDecisions.map((decision) => decision.key)).toEqual(['ancestry=gnome/boost'])
   })
 })

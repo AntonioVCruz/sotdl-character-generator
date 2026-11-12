@@ -18,7 +18,7 @@
     - `FR-STEP-009`: `attribute-shift` com `amount` 1 aceito e com `amount` 0 recusado; documento com `{ decrease, increase }` aceito e com campo a mais recusado.
   - Os testes existentes continuam verdes, e `npm run typecheck` e `npm run lint` passam.
 
-- [ ] **T2. Motor: vaga `attribute-shift`, vaga opcional, estado da etapa e estágio `modifier`; vaga do ajuste no pacote** (design §3.3 "Vaga `attribute-shift`", "Estado da etapa" e "Composição", §4; FR-STEP-007, 009, FR-CALC-002; D1, D2, D5, D6)
+- [x] **T2. Motor: vaga `attribute-shift`, vaga opcional, estado da etapa e estágio `modifier`; vaga do ajuste no pacote** (design §3.3 "Vaga `attribute-shift`", "Estado da etapa" e "Composição", §4; FR-STEP-007, 009, FR-CALC-002; D1, D2, D5, D6)
   - Em `src/engine/evaluate.ts`:
     - a vaga na árvore, com opções e decisão válida;
     - vaga `optional` fora de `decided`, `open`, `total`, `openDecisions` e `locked`;

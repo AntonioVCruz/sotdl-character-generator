@@ -42,6 +42,11 @@ describe('official core pack', () => {
     })
   })
 
+  it('FR-STEP-009: the Attributes step declares the optional score adjustment slot (amount 1)', () => {
+    const step = book.components.flatMap((c) => c.items).find((item) => item.id === 'step:attributes')
+    expect(step && isItemOf(step, 'step') && step.slots).toEqual({ adjustment: { kind: 'attribute-shift', amount: 1, optional: true } })
+  })
+
   it('FR-FLOW-002: keeps the 8 steps of the level 0 procedure, every step after Ancestry requiring it', () => {
     const items = book.components.flatMap((c) => c.items)
     const procedure = items.find((item) => isItemOf(item, 'procedure'))

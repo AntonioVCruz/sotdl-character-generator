@@ -1,4 +1,4 @@
-import type { AncestryItem, CharacterDocument, Formula, GrantedSlot, Regime, SlotDef } from '../content'
+import type { AncestryItem, AttributeShift, CharacterDocument, DecisionValue, Formula, GrantedSlot, Regime, SlotDef } from '../content'
 import { evaluateFormula, evaluateFormulas, formatFormula, type Value } from './formula'
 import { differsFromDefault, mechanics } from './mechanics'
 import { isKind, type Provenance, type Rules } from './resolve'
@@ -18,6 +18,7 @@ export interface StepView {
   status: StepStatus
   /** Etapas de `requires` com vaga raiz em aberto (FR-FLOW-005). */
   lockedBy: string[]
+  /** Contadores só das vagas obrigatórias: a vaga `optional` fica fora (FEAT-008 D2). */
   decided: number
   open: number
   total: number
@@ -45,8 +46,12 @@ interface SlotBase {
   source: SlotSource | null
 }
 
-export type SlotView = SlotBase &
-  (({ kind: 'choose-entity'; options: EntityOption[] } & Omit<Extract<SlotDef, { kind: 'choose-entity' }>, 'kind'>) | ({ grant: string } & GrantedSlot))
+export type SlotView =
+  | (SlotBase & { kind: 'choose-entity'; options: EntityOption[] } & Omit<Extract<SlotDef, { kind: 'choose-entity' }>, 'kind'>)
+  | (SlotBase & { grant: string } & GrantedSlot)
+  // Ajuste de scores (FEAT-008 §3.3): as opções são os atributos vigentes.
+  | (Omit<SlotBase, 'value'> &
+      Extract<SlotDef, { kind: 'attribute-shift' }> & { options: { id: string; name: string }[]; value?: AttributeShift })
 
 export type SlotKind = SlotView['kind']
 
@@ -58,13 +63,20 @@ export interface OpenDecision {
   target?: string
 }
 
-/** Primeiro estágio do P11b, o termo base; os demais estágios entram na FEAT-008. */
-export interface Stage {
-  stage: 'base'
-  value: Value
-  formula?: string
-  origin: { kind: 'ancestry'; id: string; name: string } | { kind: 'default'; id: string }
-}
+/**
+ * Parcela de um valor, na ordem dos estágios do P11b (FR-CALC-005). Toda parcela é aditiva: o total é a soma dos
+ * `value` (FEAT-008 D5). `define`, `sum` e `manual` são pontos de extensão (FEAT-009, FEAT-019).
+ */
+export type Stage =
+  | {
+      stage: 'base'
+      value: Value
+      formula?: string
+      origin: { kind: 'ancestry'; id: string; name: string } | { kind: 'default'; id: string }
+    }
+  | { stage: 'modifier'; value: number; origin: { kind: 'slot'; key: string; stepId: string; slotKind: SlotKind } }
+
+type ModifierStage = Extract<Stage, { stage: 'modifier' }>
 
 export interface AttributeSummary {
   id: string
@@ -116,22 +128,27 @@ export function evaluate(rules: Rules, character: CharacterDocument): CharacterV
   const root = slots.find((slot) => slot.kind === 'choose-entity' && slot.of === 'ancestry' && slot.decided)
   const ancestry = root ? (rules.items.get(root.value as string) as AncestryItem) : null
 
-  const rootOpen = (stepId: string) => slots.some((slot) => slot.stepId === stepId && isRootKey(slot.key) && !slot.decided)
+  const required = slots.filter((slot) => !isOptional(slot))
+  const rootOpen = (stepId: string) => required.some((slot) => slot.stepId === stepId && isRootKey(slot.key) && !slot.decided)
   const steps = rules.steps.map((step, index): StepView => {
-    const own = slots.filter((slot) => slot.stepId === step.id)
+    const all = slots.filter((slot) => slot.stepId === step.id)
+    const own = required.filter((slot) => slot.stepId === step.id)
     const decided = own.filter((slot) => slot.decided).length
     const open = own.length - decided
-    // Só vaga raiz de etapa em `requires` bloqueia; vaga concedida nunca bloqueia etapa (P4, FR-FLOW-007).
+    // Só vaga raiz obrigatória de etapa em `requires` bloqueia; vaga concedida nunca bloqueia etapa (P4, FR-FLOW-007).
     const lockedBy = (step.requires ?? []).filter(rootOpen)
+    // FEAT-008 §3.3: `done` com ao menos uma vaga (contando as opcionais) e nenhuma obrigatória aberta; `open` com
+    // obrigatória aberta e alguma vaga decidida ou concedida por outra etapa; o resto, `not-started`.
+    const started = all.some((slot) => slot.decided || slot.source !== null)
     const status: StepStatus = lockedBy.length
       ? 'locked'
       : step.optional
         ? 'optional'
-        : decided === 0
-          ? 'not-started'
-          : open > 0
+        : all.length > 0 && open === 0
+          ? 'done'
+          : open > 0 && started
             ? 'open'
-            : 'done'
+            : 'not-started'
     return {
       id: step.id,
       slug: step.id.slice(step.id.indexOf(':') + 1),
@@ -148,7 +165,7 @@ export function evaluate(rules: Rules, character: CharacterDocument): CharacterV
   })
 
   const stepIndex = new Map(steps.map((step) => [step.id, step.index]))
-  const openDecisions = slots
+  const openDecisions = required
     .filter((slot) => !slot.decided)
     .map(
       (slot): OpenDecision => ({
@@ -161,11 +178,31 @@ export function evaluate(rules: Rules, character: CharacterDocument): CharacterV
     )
     .sort((a, b) => stepIndex.get(a.stepId)! - stepIndex.get(b.stepId)!)
 
-  const summary = summarize(rules, ancestry, (grant) => {
-    const slot = root && ancestry && slots.find((candidate) => candidate.key === childKey(root.key, ancestry.id, grant))
-    return { key: slot?.key, value: slot?.decided ? (slot.value as number) : null }
-  })
+  const summary = summarize(
+    rules,
+    ancestry,
+    (grant) => {
+      const slot = root && ancestry && slots.find((candidate) => candidate.key === childKey(root.key, ancestry.id, grant))
+      return { key: slot?.key, value: slot?.decided ? (slot.value as number) : null }
+    },
+    modifiers(slots),
+  )
   return { level: 0, ancestry: ancestry?.id ?? null, steps, slots, openDecisions, summary }
+}
+
+const isOptional = (slot: SlotView) => 'optional' in slot && slot.optional === true
+
+/** Efeitos do estágio `modifier`, com a origem, coletados das vagas vivas decididas (ADR-004 §2; FEAT-008 D1). */
+function modifiers(slots: SlotView[]): Map<string, ModifierStage[]> {
+  const byAttribute = new Map<string, ModifierStage[]>()
+  const add = (id: string, stage: ModifierStage) => byAttribute.set(id, [...(byAttribute.get(id) ?? []), stage])
+  for (const slot of slots) {
+    if (slot.kind !== 'attribute-shift' || !slot.value) continue
+    const origin = { kind: 'slot' as const, key: slot.key, stepId: slot.stepId, slotKind: slot.kind }
+    add(slot.value.decrease, { stage: 'modifier', value: -slot.amount, origin })
+    add(slot.value.increase, { stage: 'modifier', value: slot.amount, origin })
+  }
+  return byAttribute
 }
 
 /** Raízes: as vagas de cada etapa. Uma escolha em `choose-entity` abre as concessões da entidade como filhas. */
@@ -173,8 +210,10 @@ function slotTree(rules: Rules, character: CharacterDocument): SlotView[] {
   const slots: SlotView[] = []
   for (const step of rules.steps) {
     for (const [key, def] of Object.entries(step.slots ?? {})) {
-      // A vaga `attribute-shift` entra na árvore na T2 da FEAT-008.
-      if (def.kind !== 'choose-entity') continue
+      if (def.kind === 'attribute-shift') {
+        slots.push(shiftSlot(rules, key, step.id, def, character.decisions[key]?.value))
+        continue
+      }
       const options = rules.ancestries.map((ancestry) => ({
         id: ancestry.id,
         name: ancestry.name,
@@ -195,6 +234,21 @@ function slotTree(rules: Rules, character: CharacterDocument): SlotView[] {
   return slots
 }
 
+/** Decisão válida: dois atributos vigentes e diferentes. Inválida é ignorada, e a vaga fica sem decisão. */
+function shiftSlot(
+  rules: Rules,
+  key: string,
+  stepId: string,
+  def: Extract<SlotDef, { kind: 'attribute-shift' }>,
+  value: DecisionValue | undefined,
+): SlotView {
+  const options = rules.attributes.map((attribute) => ({ id: attribute.id, name: attribute.name }))
+  const isAttribute = (id: string) => options.some((option) => option.id === id)
+  const decided =
+    typeof value === 'object' && value.decrease !== value.increase && isAttribute(value.decrease) && isAttribute(value.increase)
+  return { key, stepId, source: null, decided, ...(decided && { value }), ...def, options }
+}
+
 function grantedSlots(parent: string, entity: AncestryItem, character: CharacterDocument): SlotView[] {
   return Object.entries(entity.grants ?? {}).map(([grant, def]): SlotView => {
     const key = childKey(parent, entity.id, grant)
@@ -212,16 +266,28 @@ const nameIn = (rules: Rules) => (id: string) => {
   return item && 'name' in item ? item.name : id
 }
 
-/** Atributos, características e ganhos de uma ancestralidade (ou de nenhuma), com as concessões decididas. */
-function summarize(rules: Rules, ancestry: AncestryItem | null, grantValue: GrantValue): Summary {
+/**
+ * Atributos, características e ganhos de uma ancestralidade (ou de nenhuma), com as concessões decididas e os efeitos
+ * do estágio `modifier`. Os atributos vêm primeiro, e toda referência lê o total (FR-CALC-009).
+ */
+function summarize(
+  rules: Rules,
+  ancestry: AncestryItem | null,
+  grantValue: GrantValue,
+  attributeModifiers: ReadonlyMap<string, ModifierStage[]> = new Map(),
+): Summary {
   const nameOf = nameIn(rules)
   const origin = ancestry && { kind: 'ancestry' as const, id: ancestry.id, name: ancestry.name }
 
   const attributes = rules.attributes.map((attribute): AttributeSummary => {
-    const score = ancestry?.attributes[attribute.id] ?? null
+    const base = ancestry?.attributes[attribute.id] ?? null
+    // Pendente propaga: sem base, nada se soma.
+    const composition: Stage[] =
+      origin && base !== null ? [{ stage: 'base', value: base, origin }, ...(attributeModifiers.get(attribute.id) ?? [])] : []
+    const score = base === null ? null : composition.reduce((total, stage) => total + stage.value!, 0)
+    // O modificador lê o score total, depois do ajuste (FEAT-008 §3.3, AC-2).
     const modifier =
       score === null ? null : evaluateFormula(attribute.modifier, (ref) => (ref === 'self' ? score : null)).value
-    const composition: Stage[] = origin && score !== null ? [{ stage: 'base', value: score, origin }] : []
     return { id: attribute.id, name: attribute.name, score, modifier, composition }
   })
   const scores = new Map(attributes.map((attribute) => [attribute.id, attribute.score]))
@@ -288,7 +354,7 @@ export function preview(
   rules: Rules,
   character: CharacterDocument,
   key: string,
-  value: string | number,
+  value: DecisionValue,
 ): { view: CharacterView; changes: Changes } {
   const before = evaluate(rules, character)
   const view = evaluate(rules, { ...character, decisions: { ...character.decisions, [key]: { mode: 'chosen', value } } })

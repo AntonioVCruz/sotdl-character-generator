@@ -76,6 +76,8 @@ export function decisionTitle(decision: Pick<OpenDecision, 'kind' | 'target'>, n
       return '+1 to one attribute'
     case 'language-or-profession':
       return 'Extra language or profession'
+    case 'attribute-shift':
+      return 'Score adjustment'
   }
 }
 

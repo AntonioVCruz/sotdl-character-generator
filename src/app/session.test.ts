@@ -182,7 +182,8 @@ describe('character session: decide', () => {
     ])
     expect(view.summary.attributes[0].composition[0].origin).toMatchObject({ id: 'ancestry:gnome', name: 'Hill Gnome' })
     expect(view.summary.characteristics[0].value).toBe(1)
-    expect(view.steps.map((step) => step.status)).toEqual(['done', 'not-started'])
+    // O boost do Gnome, concedido em Traits, abre a etapa (FEAT-008 technical-design §3.3 e §7).
+    expect(view.steps.map((step) => step.status)).toEqual(['done', 'open'])
     expect(docs.get('id-1')).toMatchObject({ decisions: { ancestry: { value: 'ancestry:gnome' } } })
   })
 
