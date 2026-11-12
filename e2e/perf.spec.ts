@@ -33,8 +33,12 @@ function arm(page: Page, attribute: string, expected: string, summary: string) {
       }
       document.addEventListener('click', onClick, true)
 
+      // A linha na etapa: `main` + botão com nome (do conteúdo) começando por "{Attribute} ".
       const stepValue = () =>
-        document.querySelector(`main button[aria-label^="${attribute} "] .characteristic-row__value`)?.textContent?.trim()
+        [...document.querySelectorAll('main button')]
+          .find((button) => button.textContent?.trim().startsWith(`${attribute} `))
+          ?.querySelector('.characteristic-row__value')
+          ?.textContent?.trim()
       const summaryValue = () =>
         [...document.querySelectorAll(summary)]
           .find((item) => item.querySelector('.typography-caption')?.textContent?.trim() === attribute)

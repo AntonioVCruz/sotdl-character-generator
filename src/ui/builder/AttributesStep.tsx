@@ -40,12 +40,13 @@ export function AttributesStep({ session, snapshot, slot, nameOf }: {
                 total={attribute.score}
                 name={attribute.name}
                 stages={attribute.composition}
-                label={`${attribute.name} ${formatValue(attribute.score)}, modifier ${formatModifier(attribute.modifier)}`}
                 trigger={
+                  // DOM: nome, score, modificador; o nome acessível vem do conteúdo, e a grade põe o modificador no meio
+                  // (WCAG 2.5.3; ui-design, emenda da T8).
                   <>
-                    <span className="characteristic-row__name typography-label">{attribute.name}</span>
+                    <span className="characteristic-row__name typography-label">{attribute.name}</span>{' '}
+                    <span className="characteristic-row__value typography-stat">{formatValue(attribute.score)}</span>{' '}
                     <span className="characteristic-row__rule typography-meta">{`Modifier ${formatModifier(attribute.modifier)}`}</span>
-                    <span className="characteristic-row__value typography-stat">{formatValue(attribute.score)}</span>
                   </>
                 }
               />
@@ -74,7 +75,6 @@ export function AttributesStep({ session, snapshot, slot, nameOf }: {
         </div>
         <ul className="characteristic-list" aria-label="Characteristics">
           {view.summary.characteristics.map((characteristic) => {
-            const lineId = `formula-${characteristic.id.replace(/[^a-z0-9-]/g, '_')}`
             const pending = characteristic.pendingOn !== undefined
             return (
               <li key={characteristic.id} className="characteristic-row">
@@ -83,18 +83,17 @@ export function AttributesStep({ session, snapshot, slot, nameOf }: {
                   name={characteristic.name}
                   stages={characteristic.composition}
                   pending={characteristic.pendingOn && pendingTitle(characteristic.pendingOn)}
-                  label={pending ? `${characteristic.name}, open` : `${characteristic.name} ${formatValue(characteristic.value)}`}
-                  describedBy={lineId}
                   trigger={
+                    // DOM: nome, valor, linha de fórmula; o nome acessível vem do conteúdo ("Size Open 1/2 or 1").
                     <>
                       <span className="characteristic-row__name">
                         <span className="typography-label">{characteristic.name}</span>
-                        {pending && <PillCounter>Open</PillCounter>}
-                      </span>
-                      <span id={lineId} className="characteristic-row__rule typography-meta">
-                        {formulaLine(characteristic)}
-                      </span>
-                      <span className="characteristic-row__value typography-stat">{formatValue(characteristic.value)}</span>
+                        {pending && <> <PillCounter>Open</PillCounter></>}
+                      </span>{' '}
+                      <span className="characteristic-row__value typography-stat" aria-hidden={pending || undefined}>
+                        {formatValue(characteristic.value)}
+                      </span>{' '}
+                      <span className="characteristic-row__rule typography-meta">{formulaLine(characteristic)}</span>
                     </>
                   }
                 />

@@ -1,32 +1,12 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test, type Page, type TestInfo } from '@playwright/test'
+import { createCharacter, watchCsp } from './flow.ts'
 
 // FEAT-007 (fluxo crítico 1, UC-001 → UC-003; ADR-008): criar, ver as etapas bloqueadas, escolher Dwarf, conferir o
 // resumo, trocar para Human com Size adiado, usar o atalho de Open decisions e recarregar. Roda nos 5 projetos,
 // inclusive os de celular (SCR-WEB-016), contra o build com a CSP ativa.
 
 const isMobile = (testInfo: TestInfo) => testInfo.project.name.startsWith('mobile')
-
-async function watchCsp(page: Page) {
-  const violations: string[] = []
-  await page.addInitScript(() => {
-    document.addEventListener('securitypolicyviolation', (event) => {
-      console.error(`CSP violation: ${event.violatedDirective} ${event.blockedURI}`)
-    })
-  })
-  page.on('console', (message) => {
-    if (/content.security.policy|CSP violation/i.test(message.text())) violations.push(message.text())
-  })
-  return violations
-}
-
-async function createCharacter(page: Page) {
-  await page.goto('')
-  await page.getByRole('button', { name: 'New character' }).click()
-  await expect(page).toHaveURL(/#\/characters\/[\w-]+\/ancestry$/)
-  await expect(page.getByRole('heading', { level: 1, name: "What is your character's ancestry?" })).toBeVisible()
-  return page.url().replace(/\/ancestry$/, '')
-}
 
 /** O mapa de etapas: lista no desktop; no celular, no popover do seletor (fechar com Escape). */
 async function stepMap(page: Page, testInfo: TestInfo) {

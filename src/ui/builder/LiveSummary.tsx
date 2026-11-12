@@ -82,21 +82,19 @@ export function LiveSummary({ view, nameOf }: { view: CharacterView; nameOf: (id
 
 /**
  * Linha que abre o `value-composition` (P11): as parcelas com a origem e o total. Também usada pela etapa Attributes,
- * com os mesmos rótulos (ui-design da FEAT-008); `label` e `describedBy` dão o nome acessível e a descrição do gatilho.
+ * com os mesmos rótulos (ui-design da FEAT-008). O nome acessível do gatilho vem do conteúdo dele.
  */
-export function Composition({ trigger, stages, total, name, pending, label, describedBy }: {
+export function Composition({ trigger, stages, total, name, pending }: {
   trigger: ReactNode
   stages: Stage[]
   total: number | null
   name: string
   pending?: string
-  label?: string
-  describedBy?: string
 }) {
   if (stages.length === 0) return <div className="composition-trigger composition-trigger--static">{trigger}</div>
   return (
     <Disclosure className="composition">
-      <Button slot="trigger" className="composition-trigger" aria-label={label} aria-describedby={describedBy}>
+      <Button slot="trigger" className="composition-trigger">
         {trigger}
         <ChevronDown className="icon icon--sm composition__closed" aria-hidden="true" />
         <ChevronUp className="icon icon--sm composition__open" aria-hidden="true" />

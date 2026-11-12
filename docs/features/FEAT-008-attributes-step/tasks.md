@@ -108,7 +108,7 @@
   - `e2e/perf.spec.ts`, só nos projetos `chromium` e `mobile-chrome` (com 4× de CPU no segundo), com a medida, os elementos observados por layout, as amostras e o anexo JSON da §5.
   - **Pronto quando:** `NFR-PERF-002: after a decision the step and the live summary update within 100 ms (desktop) and 200 ms (mobile) at p95` passa contra o build local, o JSON aparece no relatório do Playwright, e `npm run typecheck` e `npm run lint` passam.
 
-- [ ] **T8. E2E do fluxo crítico 1 até o UC-004** (ADR-008 fluxo 1; UC-004; AC-14)
+- [x] **T8. E2E do fluxo crítico 1 até o UC-004** (ADR-008 fluxo 1; UC-004; AC-14)
   - `e2e/attributes.spec.ts`, nos 5 projetos, contra o build. Cada teste começa em "New character" pela interface e escolhe a ancestralidade como o `ancestry.spec.ts`, sem semear o IndexedDB. Os ajudantes `createCharacter` e `watchCsp` passam para um módulo comum de `e2e/`, usado pelos dois specs.
   - Testes:
     - `FR-STEP-007, FR-CALC-003: from New character, a Dwarf sees the four attributes and the ten characteristics with formula, limits and value`;

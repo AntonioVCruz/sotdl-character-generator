@@ -249,13 +249,12 @@ describe('Attributes step', () => {
         .getAllByRole('listitem')
         .map((item) => item.textContent)
 
-    const might = within(main).getByRole('button', { name: 'Might 13, modifier +3' })
+    const might = within(main).getByRole('button', { name: 'Might 13 Modifier +3' })
     await userEvent.click(might)
     expect(lines(might)).toEqual(['Troll starting score12', 'Score adjustment+1', 'Might13'])
 
-    const power = within(main).getByRole('button', { name: 'Power 25' })
-    expect(power.getAttribute('aria-describedby')).toBeTruthy()
-    expect(document.getElementById(power.getAttribute('aria-describedby')!)!.textContent).toBe('Might + Might, maximum 25')
+    // O nome vem do conteúdo: nome, valor e linha de fórmula com o limite (WCAG 2.5.3; ui-design, emenda da T8).
+    const power = within(main).getByRole('button', { name: 'Power 25 Might + Might, maximum 25' })
     await userEvent.click(power)
     expect(lines(power)).toEqual([
       'Standard rule: Might + Might26',
