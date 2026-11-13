@@ -184,7 +184,9 @@ O estado padrão abaixo de `--bp-md`.
   - fundo `--color-background-surface`, borda superior `--color-border-divider`, padding `--space-3` `--space-4`;
   - linha 1: `button-secondary` "Back" e `button-primary` "Next: {step}", lado a lado, com o primário ocupando o resto;
   - linha 2: a barra de resumo, com os quatro atributos (nome em `.typography-caption`, valor em `.typography-title-sm` tabular) e o gatilho "Summary" com o ícone `chevron-up` (`--size-icon-sm`, `aria-hidden`) e `aria-expanded="false"`;
-  - o corpo reserva no fim o espaço da altura medida da região, para nada ficar escondido atrás dela.
+  - quando os atributos e o gatilho "Summary" não cabem numa linha (a 320 CSS px), o "Summary" vai para uma linha própria, de largura total, abaixo dos atributos. Mesmos textos, mesma ordem, nada escondido; sem breakpoint nem token novo: a quebra vem do conteúdo (`flex-wrap`). Quando cabem (de 360 px em diante), a linha fica como acima. *Emenda de 2026-11-13 (DEF-001).*
+  - o corpo reserva no fim o espaço da altura medida da região, para nada ficar escondido atrás dela;
+  - **foco não escondido** (WCAG 2.4.11; NFR-ACC-001): o elemento com foco nunca fica coberto pela região fixa. A rolagem reserva a altura dela (`--dock-height`), inclusive quando o foco chega por Tab. *Emenda de 2026-11-13.*
 
 ### selector-open
 
@@ -203,6 +205,10 @@ O estado padrão abaixo de `--bp-md`.
 - **Notas responsivas:** de `--bp-md` para cima, nada desta tela; vale a moldura. Reflow a 320 CSS px sem rolagem horizontal (`design.md` §5).
 - **Decisões:**
   - **Back e Next acima da barra de resumo.** Motivo: o `design.md` §3 manda assim, e a imagem do wireframe mostra o contrário. O `design.md` prevalece sobre o wireframe (CLAUDE.md, Fonte da verdade).
+  - **"Summary" em linha própria quando a barra não cabe** (DEF-001, 2026-11-13). Motivo: a 320 px a barra precisa de 319 px (149 dos nomes dos atributos, 122 do "Summary" e 48 de gaps), e há 288; mesmo sem gaps seriam 271. A quebra pelo conteúdo resolve sem esconder nada e sem token novo, e acompanha o zoom de texto. Custo: a 320 px a região fixa cresce cerca de 50 px (de 125 para 174 px). Alternativas rejeitadas:
+    - **"Summary" só com ícone em telas estreitas:** o chevron sozinho é menos claro, e exigiria um token de breakpoint novo;
+    - **atributos abreviados:** nomes diferentes dos livros (ver "Atributos com o nome inteiro", em Decisões entre telas), e também um token novo;
+    - **gaps de 4 px:** a sobra fica abaixo de 1 px e quebra com qualquer diferença de fonte ou de zoom.
 
 ## Builder frame
 
@@ -365,4 +371,5 @@ Nenhuma escalação aberta. As quatro propostas do primeiro passe (E1 a E4) fora
 Pendências:
 - **About no rodapé:** o esqueleto põe o About no cabeçalho. A implementação o leva ao rodapé (desktop) e ao menu "···" (celular), conforme este documento.
 - **Texto provisório:** "You can't make this choice here yet…" sai quando cada etapa ganhar tela própria.
+- **Janelas baixas (risco registrado, sem tratamento agora; DEF-001):** em janelas de pouca altura (320 × 568, ou zoom de 400% num desktop, que dá 320 × 256), a região fixa ocupa boa parte da altura. Medido a 320 × 568 (mobile-chrome, etapa Attributes): com a barra em uma linha, a região tem 125 px e sobram 443 px; em duas linhas, 174 px e sobram 394 px. No topo da página, o cabeçalho móvel (56 px, rola com a página) tira mais 56 px: 387 e 338 px. A 320 × 256, em duas linhas, sobrariam 82 px (calculado).
 - **Fora desta feature:** ações de cabeçalho (Sources, Log, Preview sheet), estado "Creating" e nome editável (FEAT-004, 020, 018, 001, 015).

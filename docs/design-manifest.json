@@ -179,7 +179,8 @@
       "conformance": {
         "result": "pass",
         "corrections": [
-          "Re-verificado em 2026-11-12 contra o design.md emendado (E1–E4): ícones arrow-left, ellipsis e chevrons; About no menu ···; step-map bloqueado no popover"
+          "Re-verificado em 2026-11-12 contra o design.md emendado (E1–E4): ícones arrow-left, ellipsis e chevrons; About no menu ···; step-map bloqueado no popover",
+          "Emenda de 2026-11-13 (DEF-001): na região fixa, \"Summary\" em linha própria quando a barra não cabe, e foco não escondido (WCAG 2.4.11); sem token nem componente novo"
         ],
         "escalations": []
       },
