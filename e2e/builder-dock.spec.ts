@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test'
+import { expect, test, type Locator, type Page } from '@playwright/test'
 import { createCharacter } from './flow.ts'
 
 // FEAT-007, moldura do construtor no celular (SCR-WEB-016; ui-design "Builder frame"). DEF-001: a região fixa do
@@ -137,5 +137,89 @@ for (const width of [320, 412]) {
     await expect(page).toHaveURL(/\/attributes$/)
     await expect(page.locator('#slot-ancestry_human_attribute-increase')).toContainText('+1 to one attribute')
     await expectFocusNotObscured(page, 'Attributes, Human')
+  })
+}
+
+// DEF-002, pior caso: antes do Tab, a página fica rolada de modo que o topo do contêiner que desenha o anel (o
+// `option-card`, ou o segmento de um `segmented-control`) apareça e a base fique sob a região fixa, com o input oculto
+// já visível. Sem tratamento, o navegador não rola, e a base do contêiner focado fica coberta.
+
+async function settle(page: Page) {
+  await page.evaluate(async () => {
+    const frame = () => new Promise((resolve) => requestAnimationFrame(resolve))
+    for (let last = -1; last !== window.scrollY; ) {
+      last = window.scrollY
+      await frame()
+      await frame()
+    }
+  })
+}
+
+/** Tab até o `target`, com a página rolada no pior caso logo antes do último Tab; devolve a base do contêiner e o topo da região. */
+async function tabIntoPartlyCovered(page: Page, target: Locator) {
+  const element = await target.elementHandle()
+  const trigger = page.getByRole('button', { name: /^Step \d of 8/ })
+  const isFocused = () => page.evaluate((el) => document.activeElement === el, element)
+
+  // Tab até o alvo e Shift+Tab de volta ao controle anterior: o próximo Tab volta ao alvo (num grupo de rádio, ao
+  // marcado ou ao primeiro), sem depender de contar Tabs enquanto a etapa ainda se acomoda.
+  await trigger.focus()
+  for (let presses = 0; !(await isFocused()); presses++) {
+    expect(presses, 'o alvo está na ordem de Tab da etapa').toBeLessThan(80)
+    await page.keyboard.press('Tab')
+  }
+  await page.keyboard.press('Shift+Tab')
+  expect(await isFocused(), 'foco no controle anterior ao alvo').toBe(false)
+  // A base do input fica 16 px acima do topo da região: visível mesmo com a folga de rolagem do 432636b. Repete até a
+  // posição ficar estável, porque o WebKit ainda pode rolar até o controle anterior depois do Shift+Tab.
+  for (let attempt = 0, delta = Infinity; Math.abs(delta) >= 1 && attempt < 5; attempt++) {
+    await settle(page)
+    delta = await page.evaluate((el) => {
+      const container = el!.closest('label') ?? el!
+      const dockTop = document.querySelector<HTMLElement>('.builder__dock')!.getBoundingClientRect().top
+      const inputToContainerTop = el!.getBoundingClientRect().bottom - container.getBoundingClientRect().top
+      const delta = container.getBoundingClientRect().top - (dockTop - 16 - inputToContainerTop)
+      window.scrollBy(0, delta)
+      return delta
+    }, element)
+  }
+  await settle(page)
+  const before = await page.evaluate((el) => {
+    const box = (el!.closest('label') ?? el!).getBoundingClientRect()
+    return { top: box.top, bottom: box.bottom, dockTop: document.querySelector<HTMLElement>('.builder__dock')!.getBoundingClientRect().top }
+  }, element)
+  expect(before.top, 'pior caso: o topo do contêiner aparece').toBeLessThan(before.dockTop)
+  expect(before.bottom, 'pior caso: a base do contêiner fica sob a região fixa').toBeGreaterThan(before.dockTop)
+
+  await page.keyboard.press('Tab')
+  expect(await isFocused()).toBe(true)
+  await settle(page)
+  return page.evaluate((el) => ({
+    bottom: (el!.closest('label') ?? el!).getBoundingClientRect().bottom,
+    dockTop: document.querySelector<HTMLElement>('.builder__dock')!.getBoundingClientRect().top,
+  }), element)
+}
+
+for (const width of [320, 412]) {
+  test(`NFR-ACC-001 (DEF-002): at ${width} px, tabbing into an option card or segment partly under the fixed builder dock brings it entirely above the dock`, async ({
+    page,
+  }, testInfo) => {
+    test.skip(!testInfo.project.name.startsWith('mobile'), 'A região fixa só existe abaixo de --bp-md (projetos de celular).')
+    // Altura de 568 px (a do risco de janelas baixas no ui-design): nela o cartão do topo da etapa pode ficar sob a região.
+    await page.setViewportSize({ width, height: 568 })
+
+    await createCharacter(page)
+    await page.locator('label.option-card').filter({ hasText: 'Human' }).click()
+    await page.getByRole('button', { name: 'Choose Human' }).click()
+    const human = page.getByRole('radio', { name: 'Human, your choice' })
+    await expect(human).toBeChecked()
+    const card = await tabIntoPartlyCovered(page, human)
+    expect.soft(card.bottom, 'Ancestry: "Human, your choice" acima da região fixa').toBeLessThanOrEqual(card.dockTop)
+
+    await page.getByRole('button', { name: 'Next: Attributes' }).click()
+    await expect(page).toHaveURL(/\/attributes$/)
+    const strength = page.getByRole('radiogroup', { name: 'Raise one attribute by 1' }).getByRole('radio', { name: 'Strength' })
+    const segment = await tabIntoPartlyCovered(page, strength)
+    expect.soft(segment.bottom, 'Attributes: segmento "Strength" acima da região fixa').toBeLessThanOrEqual(segment.dockTop)
   })
 }
