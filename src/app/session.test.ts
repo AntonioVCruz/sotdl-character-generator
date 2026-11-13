@@ -80,10 +80,20 @@ function stored(decisions: Record<string, string | number> = {}, order = ['test.
   }
 }
 
-async function opened(document: unknown = stored(), options?: { failGet?: boolean }) {
+function memoryLastStep(initial: Record<string, string> = {}) {
+  const steps = new Map(Object.entries(initial))
+  return {
+    steps,
+    get: (id: string) => steps.get(id),
+    set: vi.fn((id: string, slug: string) => void steps.set(id, slug)),
+    forget: (id: string) => void steps.delete(id),
+  }
+}
+
+async function opened(document: unknown = stored(), options?: { failGet?: boolean; lastStep?: ReturnType<typeof memoryLastStep> }) {
   const memory = memoryRepository(options)
   if (document) memory.docs.set('id-1', document)
-  const session = createApp({ repository: memory.repository, ...deps }).createSession()
+  const session = createApp({ repository: memory.repository, ...deps, lastStep: options?.lastStep ?? memoryLastStep() }).createSession()
   await session.open('id-1')
   vi.mocked(memory.repository.save).mockClear()
   return { ...memory, session }
@@ -127,6 +137,30 @@ describe('character session: open', () => {
     const { session, repository } = await opened(stored({}, ['test.core', 'test.clash']))
     expect(session.getSnapshot()).toEqual({ status: 'error', id: 'id-1', reason: 'pack-load-failed' })
     expect(repository.save).not.toHaveBeenCalled()
+  })
+})
+
+describe('character session: last step', () => {
+  it('FR-CHAR-007: open brings the last visited step of the character', async () => {
+    const { session } = await opened(stored(), { lastStep: memoryLastStep({ 'id-1': 'traits', 'id-2': 'origin' }) })
+    expect(ready(session).lastStep).toBe('traits')
+    const fresh = await opened(stored(), { lastStep: memoryLastStep() })
+    expect(ready(fresh.session).lastStep).toBeUndefined()
+  })
+
+  it('FR-CHAR-007: visit writes the step to the store without saving, changing updatedAt, revision or the snapshot', async () => {
+    const lastStep = memoryLastStep()
+    const { session, repository, docs } = await opened(stored(), { lastStep })
+    const before = ready(session)
+    const listener = vi.fn()
+    session.subscribe(listener)
+    session.visit('traits')
+    expect(lastStep.set).toHaveBeenCalledWith('id-1', 'traits')
+    expect(lastStep.steps.get('id-1')).toBe('traits')
+    expect(repository.save).not.toHaveBeenCalled()
+    expect(session.getSnapshot()).toBe(before)
+    expect(listener).not.toHaveBeenCalled()
+    expect(docs.get('id-1')).toMatchObject({ revision: 1, updatedAt: '2026-01-01T00:00:00.000Z' })
   })
 })
 

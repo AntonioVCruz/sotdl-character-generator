@@ -8,7 +8,7 @@ import {
   type PackSource,
 } from '../content'
 import { EngineError, evaluate, resolve, type CharacterView, type Rules, type SlotView } from '../engine'
-import type { CharacterRepository } from '../storage'
+import type { CharacterRepository, LastStepStore } from '../storage'
 
 // Sessão do personagem (technical-design §3.2): store externo lido pelo React com `useSyncExternalStore`
 // (ADR-006). Os comandos são os únicos que escrevem (ADR-004 §5); o log de decisões entra na FEAT-009.
@@ -45,6 +45,8 @@ export type Snapshot =
       rules: Rules
       view: CharacterView
       save: 'saved' | 'saving' | 'failed'
+      /** Slug da última etapa visitada, lido em `open` (FR-CHAR-007; FEAT-001 §3.4). */
+      lastStep?: string
     }
 
 export type DecideResult =
@@ -62,7 +64,11 @@ export interface SessionDeps {
   repository: Repository
   loadRules: LoadRules
   now?: () => Date
+  /** Padrão: um store que não guarda nada (FEAT-001 §3.4). */
+  lastStep?: LastStepStore
 }
+
+const NO_LAST_STEP: LastStepStore = { get: () => undefined, set: () => undefined, forget: () => undefined }
 
 export function summarize(document: CharacterDocument, rules: Rules): CharacterSummary {
   const view = evaluate(rules, document)
@@ -160,7 +166,7 @@ function isValid(slot: SlotView, value: DecisionValue): boolean {
   }
 }
 
-export function createCharacterSession({ repository, loadRules, now = () => new Date() }: SessionDeps) {
+export function createCharacterSession({ repository, loadRules, now = () => new Date(), lastStep = NO_LAST_STEP }: SessionDeps) {
   let snapshot: Snapshot = { status: 'loading', id: '' }
   const listeners = new Set<() => void>()
   const set = (next: Snapshot) => {
@@ -250,7 +256,8 @@ export function createCharacterSession({ repository, loadRules, now = () => new 
         if (error instanceof PackLoadError || error instanceof EngineError) return fail('pack-load-failed')
         throw error
       }
-      if (current()) set({ status: 'ready', id, document: parsed.data, rules, view, save: 'saved' })
+      // Uma falha de leitura da etapa não é falha de abertura: o store devolve `undefined`.
+      if (current()) set({ status: 'ready', id, document: parsed.data, rules, view, save: 'saved', lastStep: lastStep.get(id) })
     },
 
     /**
@@ -272,6 +279,14 @@ export function createCharacterSession({ repository, loadRules, now = () => new 
       if (!slot.decided) return { ok: false, reason: 'not-decided' }
       const decisions = Object.fromEntries(Object.entries(snapshot.document.decisions).filter(([candidate]) => candidate !== key))
       return commit(snapshot, decisions)
+    },
+
+    /**
+     * FR-CHAR-007: registra a etapa mostrada. Navegar não grava o documento nem muda o snapshot (ADR-004 §5;
+     * FEAT-001 D3).
+     */
+    visit(slug: string): void {
+      if (snapshot.status === 'ready') lastStep.set(snapshot.id, slug)
     },
 
     /** FR-CHAR-010: grava de novo o documento atual. */

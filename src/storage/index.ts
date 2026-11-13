@@ -75,3 +75,5 @@ export function createIndexedDbRepository<Doc extends Keyed, Meta extends Keyed>
     },
   }
 }
+
+export * from './last-step'

@@ -1,6 +1,6 @@
 import { CONTENT_VERSION, characterDocumentSchema, loadBookIndex, PackLoadError, type CharacterDocument, type PackSource } from '../content'
 import { EngineError, type Rules } from '../engine'
-import { createIndexedDbRepository, openCharacterDatabase } from '../storage'
+import { createIndexedDbRepository, createLastStepStore, openCharacterDatabase, type LastStepStore } from '../storage'
 import { byRecentEdit, createCharacterSession, createRulesLoader, readSummary, summarize, type CharacterSummary, type Repository } from './session'
 
 export * from './session'
@@ -9,6 +9,8 @@ export * from './session'
 
 export type ListResult = { ok: true; characters: CharacterSummary[] } | { ok: false; reason: 'storage-unavailable' }
 
+export type DeleteResult = { ok: true } | { ok: false; reason: 'delete-failed' }
+
 export type CreateResult = { ok: true; id: string } | { ok: false; reason: 'pack-load-failed' | 'save-failed' }
 
 export interface AppDeps {
@@ -16,6 +18,8 @@ export interface AppDeps {
   packs?: PackSource
   now?: () => Date
   newId?: () => string
+  /** Padrão: o `localStorage` do navegador (FEAT-001 §3.3). Os testes injetam um store em memória. */
+  lastStep?: LastStepStore
 }
 
 export function createApp({
@@ -23,6 +27,7 @@ export function createApp({
   packs = {},
   now = () => new Date(),
   newId = () => globalThis.crypto.randomUUID(),
+  lastStep = createLastStepStore(),
 }: AppDeps) {
   const loadRules = createRulesLoader(packs)
   return {
@@ -80,8 +85,26 @@ export function createApp({
       return { ok: true, id: document.id }
     },
 
+    /**
+     * FR-CHAR-014: documento e metadados numa transação (o log mora no documento), depois a chave da última
+     * etapa; uma falha nesse passo é ignorada (FEAT-001 §3.1).
+     */
+    async deleteCharacter(id: string): Promise<DeleteResult> {
+      try {
+        await repository.delete(id)
+      } catch {
+        return { ok: false, reason: 'delete-failed' }
+      }
+      try {
+        lastStep.forget(id)
+      } catch {
+        // uma chave que sobra para um id inexistente é inerte
+      }
+      return { ok: true }
+    },
+
     /** Uma sessão por construtor aberto (technical-design §3.2). */
-    createSession: () => createCharacterSession({ repository, loadRules, now }),
+    createSession: () => createCharacterSession({ repository, loadRules, now, lastStep }),
   }
 }
 

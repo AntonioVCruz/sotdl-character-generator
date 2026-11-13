@@ -182,3 +182,53 @@ describe('listCharacters', () => {
     await expect(createApp({ repository, ...deps }).listCharacters()).resolves.toEqual({ ok: false, reason: 'storage-unavailable' })
   })
 })
+
+describe('deleteCharacter', () => {
+  function lastStepStore(fail = false) {
+    const steps = new Map([['id-1', 'attributes']])
+    return {
+      steps,
+      get: (id: string) => steps.get(id),
+      set: (id: string, slug: string) => void steps.set(id, slug),
+      forget: vi.fn((id: string) => {
+        if (fail) throw new DOMException('denied', 'SecurityError')
+        steps.delete(id)
+      }),
+    }
+  }
+
+  async function created(lastStep: ReturnType<typeof lastStepStore>, repository = memoryRepository()) {
+    const app = createApp({ repository, ...deps, lastStep })
+    await app.createCharacter()
+    return { app, repository }
+  }
+
+  it('FR-CHAR-014: deleting removes the document and its metadata, then forgets the last step', async () => {
+    const lastStep = lastStepStore()
+    const { app, repository } = await created(lastStep)
+    await expect(app.deleteCharacter('id-1')).resolves.toEqual({ ok: true })
+    await expect(repository.get('id-1')).resolves.toBeUndefined()
+    await expect(repository.list()).resolves.toEqual([])
+    expect(lastStep.forget).toHaveBeenCalledWith('id-1')
+    expect(lastStep.steps.has('id-1')).toBe(false)
+  })
+
+  it('FR-CHAR-014: a delete that rejects gives delete-failed, leaving the document, the metadata and the key in place', async () => {
+    const lastStep = lastStepStore()
+    const { app, repository } = await created(lastStep)
+    repository.delete = () => Promise.reject(new DOMException('aborted', 'AbortError'))
+    await expect(app.deleteCharacter('id-1')).resolves.toEqual({ ok: false, reason: 'delete-failed' })
+    await expect(repository.get('id-1')).resolves.toMatchObject({ id: 'id-1' })
+    await expect(repository.list()).resolves.toHaveLength(1)
+    expect(lastStep.forget).not.toHaveBeenCalled()
+    expect(lastStep.steps.get('id-1')).toBe('attributes')
+  })
+
+  it('FR-CHAR-014: a forget that throws still gives ok', async () => {
+    const lastStep = lastStepStore(true)
+    const { app, repository } = await created(lastStep)
+    await expect(app.deleteCharacter('id-1')).resolves.toEqual({ ok: true })
+    expect(lastStep.forget).toHaveBeenCalledWith('id-1')
+    await expect(repository.get('id-1')).resolves.toBeUndefined()
+  })
+})

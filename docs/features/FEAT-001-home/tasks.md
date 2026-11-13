@@ -39,7 +39,7 @@ Em toda tarefa, o pronto-quando inclui `npm run typecheck` e `npm run lint` pass
       - `FEAT-007 §8`: `list` que rejeita → `storage-unavailable`;
     - `Home.test.tsx`: lista que falha mostra o alerta e não o estado vazio.
 
-- [ ] **T3. Última etapa: store, sessão e exclusão** (design §3.1 `deleteCharacter`, §3.3, §3.4; FR-CHAR-007, 014; D3, D6)
+- [x] **T3. Última etapa: store, sessão e exclusão** (design §3.1 `deleteCharacter`, §3.3, §3.4; FR-CHAR-007, 014; D3, D6)
   - Em `src/storage/`: `createLastStepStore`, com a chave da §3.3, exportado pelo `index.ts`.
   - Em `src/app/session.ts`:
     - `lastStep` opcional em `SessionDeps`;
