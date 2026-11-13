@@ -1,3 +1,4 @@
+import { appendFileSync } from 'node:fs'
 import { expect, test, type Page } from '@playwright/test'
 
 // NFR-PERF-002 (FEAT-008 technical-design §5; ADR-008, teste de tempo): do clique que confirma uma decisão até a etapa
@@ -102,5 +103,9 @@ test('NFR-PERF-002: after a decision the step and the live summary update within
   const result = { profile: testInfo.project.name, cpuThrottling: profile.throttle ?? 1, limitMs: profile.limit, p95Ms: p95, samplesMs: samples }
   await testInfo.attach('NFR-PERF-002', { body: JSON.stringify(result, null, 2), contentType: 'application/json' })
   testInfo.annotations.push({ type: 'NFR-PERF-002', description: `p95 ${p95.toFixed(1)} ms (limit ${profile.limit} ms)` })
+  // O p95 de cada perfil no log e, no CI, no resumo do job (o relatório HTML só sobe quando o job falha).
+  const line = `NFR-PERF-002 ${result.profile} (CPU ${result.cpuThrottling}×): p95 ${p95.toFixed(1)} ms, limit ${profile.limit} ms, ${SAMPLES} samples`
+  console.log(line)
+  if (process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY, `- ${line} (attempt ${testInfo.retry + 1})\n`)
   expect(p95).toBeLessThanOrEqual(profile.limit)
 })
