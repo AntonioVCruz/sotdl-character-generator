@@ -223,3 +223,60 @@ for (const width of [320, 412]) {
     expect.soft(segment.bottom, 'Attributes: segmento "Strength" acima da região fixa').toBeLessThanOrEqual(segment.dockTop)
   })
 }
+
+// DEF-002, condição de ponteiro: só o foco por teclado (:focus-visible) leva o contêiner à vista. Um toque ou um clique
+// na parte visível de um cartão parcialmente sob a região fixa não rola a página.
+
+/** Rola até o topo do contêiner do `target` ficar 60 px acima da região fixa, com a base sob ela. */
+async function placePartlyUnderDock(page: Page, target: Locator) {
+  const element = await target.elementHandle()
+  for (let attempt = 0, delta = Infinity; Math.abs(delta) >= 1 && attempt < 5; attempt++) {
+    await settle(page)
+    delta = await page.evaluate((el) => {
+      const dockTop = document.querySelector<HTMLElement>('.builder__dock')!.getBoundingClientRect().top
+      const delta = (el!.closest('label') ?? el!).getBoundingClientRect().top - (dockTop - 60)
+      window.scrollBy(0, delta)
+      return delta
+    }, element)
+  }
+  await settle(page)
+  const box = await page.evaluate((el) => {
+    const rect = (el!.closest('label') ?? el!).getBoundingClientRect()
+    return {
+      x: rect.left + rect.width / 2,
+      y: rect.top + 30,
+      bottom: rect.bottom,
+      dockTop: document.querySelector<HTMLElement>('.builder__dock')!.getBoundingClientRect().top,
+      scrollY: window.scrollY,
+    }
+  }, element)
+  expect(box.y, 'o ponto tocado fica acima da região fixa').toBeLessThan(box.dockTop)
+  expect(box.bottom, 'a base do cartão fica sob a região fixa').toBeGreaterThan(box.dockTop)
+  return box
+}
+
+for (const width of [320, 412]) {
+  test(`NFR-ACC-001 (DEF-002): at ${width} px, a tap or a click on an option card partly under the fixed builder dock does not scroll the page`, async ({
+    page,
+  }, testInfo) => {
+    test.skip(!testInfo.project.name.startsWith('mobile'), 'A região fixa só existe abaixo de --bp-md (projetos de celular).')
+    await page.setViewportSize({ width, height: 568 })
+
+    await createCharacter(page)
+    await page.locator('label.option-card').filter({ hasText: 'Human' }).click()
+    await page.getByRole('button', { name: 'Choose Human' }).click()
+    const human = page.getByRole('radio', { name: 'Human, your choice' })
+    await expect(human).toBeChecked()
+
+    const tap = await placePartlyUnderDock(page, human)
+    await page.touchscreen.tap(tap.x, tap.y)
+    await settle(page)
+    expect(await page.evaluate(() => window.scrollY), 'toque: a rolagem não muda').toBe(tap.scrollY)
+
+    const click = await placePartlyUnderDock(page, human)
+    await page.mouse.click(click.x, click.y)
+    await settle(page)
+    expect(await page.evaluate(() => window.scrollY), 'clique: a rolagem não muda').toBe(click.scrollY)
+    await expect(human).toBeChecked()
+  })
+}
