@@ -240,7 +240,7 @@ graph LR
 | NFR | Cenário | Como se verifica |
 |---|---|---|
 | NFR-MAINT-001 | O Halfling e o Human revisado entram só com arquivos em `packs/`, sem mudança em `engine`. | Revisão do diff no plano; teste com pacote sintético de cada padrão. |
-| NFR-PERF-002 | Personagem de nível 0 completo: decisão → visão nova em até 100 ms (p95) no notebook e 200 ms no celular. | Teste de tempo do `evaluate`; medição manual no celular. |
+| NFR-PERF-002 | Personagem de nível 0 completo: decisão → visão nova em até 100 ms (p95) no notebook e 200 ms no celular. | Teste de tempo do `evaluate` com o pacote real e com um pacote fictício do porte de um nível 0 completo (guarda unitária); E2E da decisão até a atualização da etapa e do resumo, no perfil `chromium` para o notebook e no `mobile-chrome` com a CPU emulada a 4× para o celular (FEAT-008 technical-design §5 e §8). |
 | NFR-PERF-003 | Trocar a ancestralidade de um personagem completo abre o diálogo em até 300 ms. | Teste de tempo do `impact`. |
 | NFR-REL-001 | Decidir e fechar a aba logo em seguida: a decisão está lá ao reabrir. | E2E: decidir, fechar o contexto, reabrir. |
 | NFR-CAP-001 | 100 personagens salvos: a lista inicial abre dentro do LCP. | E2E com 100 personagens semeados + Lighthouse. |
