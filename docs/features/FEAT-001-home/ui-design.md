@@ -289,7 +289,7 @@ Nenhum teste depende do foco que fica no botão Next nem do primeiro Tab depois 
   - `src/ui/copy.ts` (novo): `displayName` (T4) e `STORAGE_UNAVAILABLE`, a mensagem da falha de leitura. O `OPEN_MESSAGE['storage-unavailable']` de `src/ui/builder/copy.ts` passa a apontar para essa constante; o texto não muda.
   - `src/ui/parts.tsx` (novo): `InlineAlert` e `PillCounter`, movidos de `src/ui/builder/parts.tsx`. O construtor passa a importá-los dali. O `InlineAlert` ganha a opção de não ter região viva (`live={false}`, sem `role`), para o aviso estático; o padrão continua o de hoje (`alert` no danger, `status` no warning).
   - `src/ui/home/`: `CharacterCard`, `DeleteDialog` e `copy.ts` (textos da Home e `formatEdited`).
-  - CSS: `pill-counter` e `skeleton*` saem do `builder.css` (carregado com o construtor) para o `base.css`; `button-danger` e `dialog` entram no `base.css`; o resto da Home vai a `src/ui/styles/home.css`, importado pelo `Home.tsx`. A `.notice` e a `.character-list` saem do `base.css`.
+  - CSS: `pill-counter` e `skeleton*` saem do `builder.css` (carregado com o construtor) para o `base.css`; `button-danger` e `dialog` entram no `base.css`; o resto da Home vai a `src/ui/styles/home.css`, importado pelo `Home.tsx`. A `.character-list` sai do `base.css`. A `.notice` deixa de ser usada pela Home e fica só para o `ErrorBoundary` até a FEAT-022.
 - **Foco ao trocar de tela, pela mesma regra:** a etapa do construtor e a Home recebem o foco no `h1` quando se chega a elas por navegação dentro do app. Num carregamento completo da página (recarregar ou link direto), nenhuma das duas move o foco. Uma regra, duas telas.
 
 ## Textos
@@ -341,6 +341,8 @@ Fechados para a FEAT-001, revisados contra a NFR-USE-001 e o `design.md` §6 (o 
   - E2E móvel: escolher uma etapa no seletor deixa o foco no `h1`, não no gatilho.
 - **T5 (Home):** a reorganização de [Decisões entre telas](#decisões-entre-telas) (`src/ui/copy.ts`, `src/ui/parts.tsx`, CSS compartilhado), que toca arquivos do construtor. Testes de foco: depois de cancelar, no "···"; depois de excluir, no título vizinho; depois do último, em "No characters yet".
 - **T7 (capacidade):** no `capacity.spec.ts`, a 320 px com 100 cartões, sem rolagem horizontal (`scrollWidth`), e as bordas do diálogo aberto e dos botões dele dentro da viewport (`getBoundingClientRect`), como em [Medidas de capacidade](#medidas-de-capacidade-nfr-cap-001-nfr-comp-002).
+
+**Pendência para a FEAT-022:** migrar o `ErrorBoundary` (`src/ui/ErrorBoundary.tsx`) para o `InlineAlert` danger de `src/ui/parts.tsx` e tirar a `.notice` do `base.css`.
 
 **Fora desta feature:** "Import character file" e os estados de importação do inventário (FEAT-002); Export character file e Preview sheet no menu (FEAT-002, FEAT-018); "Open sheet" como ação principal do personagem Complete (FEAT-018); erro inesperado na Home (FEAT-022).
 
