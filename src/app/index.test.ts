@@ -77,8 +77,11 @@ describe('createCharacter', () => {
         id: 'id-1',
         name: '',
         ancestry: null,
-        status: 'creating',
-        sources: ['test.core'],
+        // Na fixture, `step:one` não tem vagas: nenhuma decisão aberta (technical-design §7).
+        status: 'complete',
+        openDecisions: 0,
+        sources: [{ id: 'test.core', name: 'Core', abbr: 'CO' }],
+        contentVersion: '0.0.0',
         updatedAt: '2026-01-01T00:00:00.000Z',
       },
     ])
@@ -96,6 +99,22 @@ describe('createCharacter', () => {
       ok: false,
       reason: 'pack-load-failed',
     })
+    expect(repository.docs.size).toBe(0)
+  })
+
+  it('FR-HELP-004: a core book that does not load, with the index loading, gives pack-load-failed and saves nothing', async () => {
+    const repository = memoryRepository()
+    const save = vi.spyOn(repository, 'save')
+    const noCore = vi.fn(async (url: string) => {
+      const body = url === '/packs/test.core.json' ? undefined : files[url]
+      return { ok: body !== undefined, status: body === undefined ? 404 : 200, json: async () => body }
+    })
+    await expect(createApp({ repository, ...deps, packs: { baseUrl: '/', fetch: noCore } }).createCharacter()).resolves.toEqual({
+      ok: false,
+      reason: 'pack-load-failed',
+    })
+    expect(noCore).toHaveBeenCalledWith('/packs/test.core.json')
+    expect(save).not.toHaveBeenCalled()
     expect(repository.docs.size).toBe(0)
   })
 })

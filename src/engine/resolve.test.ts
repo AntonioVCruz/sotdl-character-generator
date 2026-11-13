@@ -51,6 +51,14 @@ describe('resolve', () => {
     expect(rules.characteristics.map((c) => c.id)).toEqual(['characteristic:vigor'])
   })
 
+  it('FR-CHAR-003: lists the active books with name and abbreviation in priority order, whatever the load order', () => {
+    expect(resolve([extra, core], ['test.core', 'test.extra']).books).toEqual([
+      { id: 'test.core', name: 'Test Core', abbr: 'TC' },
+      { id: 'test.extra', name: 'Test Extra', abbr: 'TX' },
+    ])
+    expect(resolve([core, extra], ['test.extra', 'test.core']).books.map((book) => book.id)).toEqual(['test.extra', 'test.core'])
+  })
+
   it('FR-SRC-010: ignores a component that is off by default', () => {
     const rules = resolve([core, extra], ['test.core', 'test.extra'])
     expect(rules.items.has('ancestry:ghost')).toBe(false)

@@ -1,13 +1,13 @@
 # Tasks: FEAT-001 — Home: listar, continuar e excluir personagens
 
 > Executa: `docs/features/FEAT-001-home/technical-design.md`
-> Status: pending · Última atualização: 2026-11-13 (emenda pelas pendências do ui-design: foco, T4a e medidas a 320 px)
+> Status: in-progress · Última atualização: 2026-11-13 (emenda pelas pendências do ui-design: foco, T4a e medidas a 320 px)
 > Tela (SCR-WEB-001): do ui-design, pelo `docs/design-manifest.json`. As tarefas de ui aqui são só integração.
 > Pré-requisito: o technical-design (com o §7 "Contratos alterados") está no `main` antes da T1.
 
 Em toda tarefa, o pronto-quando inclui `npm run typecheck` e `npm run lint` passando, e todos os testes existentes verdes, salvo as expectativas listadas no §7 do design, trocadas na tarefa indicada.
 
-- [ ] **T1. `Rules.books`, `CharacterSummary` e `summarize` com estado e contagem** (design §3.1 `summarize`, §3.2, §4; FR-CHAR-003, 005, 006; D1, D2, D7)
+- [x] **T1. `Rules.books`, `CharacterSummary` e `summarize` com estado e contagem** (design §3.1 `summarize`, §3.2, §4; FR-CHAR-003, 005, 006; D1, D2, D7)
   - Em `src/engine/resolve.ts`: `books` em `Rules`, na ordem de `order`, a partir dos `Book`.
   - Em `src/app/session.ts`:
     - `CharacterSummary` da §3.1;

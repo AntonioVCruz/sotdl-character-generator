@@ -1,4 +1,5 @@
-import { CONTENT_VERSION, characterDocumentSchema, loadBookIndex, type CharacterDocument, type PackSource } from '../content'
+import { CONTENT_VERSION, characterDocumentSchema, loadBookIndex, PackLoadError, type CharacterDocument, type PackSource } from '../content'
+import { EngineError, type Rules } from '../engine'
 import { createIndexedDbRepository, openCharacterDatabase } from '../storage'
 import { createCharacterSession, createRulesLoader, summarize, type Repository } from './session'
 
@@ -35,6 +36,16 @@ export function createApp({
       }
       if (!core) return { ok: false, reason: 'pack-load-failed' }
 
+      // FEAT-001 §3.1: as regras do core antes de gravar, pelo mesmo carregador da sessão, para o metadado
+      // levar estado, contagem e fontes, e o construtor reaproveitar o livro sem novo pedido.
+      let rules: Rules
+      try {
+        rules = await loadRules([core])
+      } catch (error) {
+        if (error instanceof PackLoadError || error instanceof EngineError) return { ok: false, reason: 'pack-load-failed' }
+        throw error
+      }
+
       const timestamp = now().toISOString()
       const document = characterDocumentSchema.parse({
         schema: 1,
@@ -50,7 +61,7 @@ export function createApp({
       } satisfies CharacterDocument)
 
       try {
-        await repository.save(document, summarize(document))
+        await repository.save(document, summarize(document, rules))
       } catch {
         return { ok: false, reason: 'save-failed' }
       }

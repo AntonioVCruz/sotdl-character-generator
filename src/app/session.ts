@@ -13,14 +13,23 @@ import type { CharacterRepository } from '../storage'
 // Sessão do personagem (technical-design §3.2): store externo lido pelo React com `useSyncExternalStore`
 // (ADR-006). Os comandos são os únicos que escrevem (ADR-004 §5); o log de decisões entra na FEAT-009.
 
-/** Registro de metadados da lista inicial (ADR-002). O cartão completo da Home é da FEAT-001. */
+/**
+ * Projeção do documento para a lista inicial (ADR-002; FEAT-001 §3.1). Derivada a cada gravação, nunca entrada
+ * de cálculo (FEAT-001 D1): a Home a exibe sem carregar pacotes (NFR-PERF-001).
+ */
 export interface CharacterSummary {
   id: string
   name: string
-  /** Nome da ancestralidade escolhida, para a Home exibi-lo sem carregar pacotes (NFR-PERF-001). */
+  /** Nome da ancestralidade escolhida. */
   ancestry: string | null
-  status: 'creating'
-  sources: string[]
+  /** FR-CHAR-005, 006: `complete` quando nenhuma vaga obrigatória está aberta (FEAT-001 D2). */
+  status: 'creating' | 'complete'
+  /** `view.openDecisions.length`; `null` só em metadado gravado antes da FEAT-001. */
+  openDecisions: number | null
+  /** Na ordem de prioridade (FR-CHAR-003; FEAT-001 D7). */
+  sources: { id: string; name: string; abbr: string }[]
+  /** Do documento, para a FEAT-011 detectar o metadado desatualizado (D1). */
+  contentVersion: string
   updatedAt: string
 }
 
@@ -55,15 +64,18 @@ export interface SessionDeps {
   now?: () => Date
 }
 
-export function summarize(document: CharacterDocument, rules?: Rules): CharacterSummary {
-  const ancestry = rules ? evaluate(rules, document).ancestry : null
-  const name = ancestry ? rules?.items.get(ancestry) : undefined
+export function summarize(document: CharacterDocument, rules: Rules): CharacterSummary {
+  const view = evaluate(rules, document)
+  const ancestry = view.ancestry ? rules.items.get(view.ancestry) : undefined
+  const openDecisions = view.openDecisions.length
   return {
     id: document.id,
     name: document.text.name ?? '',
-    ancestry: name && 'name' in name ? name.name : null,
-    status: 'creating',
-    sources: document.sources.order,
+    ancestry: ancestry && 'name' in ancestry ? ancestry.name : null,
+    status: openDecisions === 0 ? 'complete' : 'creating',
+    openDecisions,
+    sources: rules.books.map(({ id, name, abbr }) => ({ id, name, abbr })),
+    contentVersion: document.contentVersion,
     updatedAt: document.updatedAt,
   }
 }

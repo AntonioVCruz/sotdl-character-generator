@@ -26,6 +26,8 @@ export type Resolved<T extends Item = Item> = T & { provenance: Provenance }
 
 export interface Rules {
   order: string[]
+  /** Livros na ordem de `order`, para o resumo das fontes (FR-CHAR-003; FEAT-001 D7). */
+  books: { id: string; name: string; abbr: string }[]
   items: ReadonlyMap<string, Resolved>
   procedure: Resolved<ProcedureItem>
   /** Na ordem do procedimento (FR-FLOW-002). */
@@ -47,9 +49,11 @@ export function isKind<K extends ItemKind>(item: Item, kind: K): item is ItemOf<
 
 export function resolve(books: Book[], order: string[]): Rules {
   const items = new Map<string, Resolved>()
+  const active: Rules['books'] = []
   for (const bookId of order) {
     const book = books.find((candidate) => candidate.id === bookId)
     if (!book) throw new EngineError(`${bookId} is in the source order but was not loaded`)
+    active.push({ id: book.id, name: book.name, abbr: book.abbr })
     for (const component of book.components) {
       if (component.default !== 'on') continue
       for (const item of component.items) {
@@ -76,6 +80,7 @@ export function resolve(books: Book[], order: string[]): Rules {
 
   return {
     order,
+    books: active,
     items,
     procedure,
     steps,

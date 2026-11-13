@@ -130,6 +130,45 @@ describe('character session: open', () => {
   })
 })
 
+describe('character session: list metadata', () => {
+  it('FR-CHAR-005: a required slot left open saves creating with the number of open decisions', async () => {
+    const { session, metas } = await opened()
+    await session.decide('ancestry', 'ancestry:gnome')
+    // Size (stature) e o boost em Traits: as duas vagas obrigatórias do Gnome.
+    expect(metas.get('id-1')).toMatchObject({ status: 'creating', openDecisions: 2 })
+    await session.decide('ancestry=gnome/stature', 1)
+    expect(metas.get('id-1')).toMatchObject({ status: 'creating', openDecisions: 1 })
+  })
+
+  it('FR-CHAR-005: the optional score adjustment does not count as an open decision', async () => {
+    const { session, metas } = await opened(adjustable({}))
+    await session.decide('ancestry', 'ancestry:troll')
+    expect(ready(session).view.slots.find((slot) => slot.key === 'adjust')).toMatchObject({ decided: false })
+    expect(metas.get('id-1')).toMatchObject({ status: 'complete', openDecisions: 0 })
+  })
+
+  it('FR-CHAR-006: no required slot open saves complete', async () => {
+    const { session, metas } = await opened()
+    await session.decide('ancestry', 'ancestry:troll')
+    expect(metas.get('id-1')).toMatchObject({ status: 'complete', openDecisions: 0 })
+  })
+
+  it('FR-CHAR-003: the metadata saved by decide carries the ancestry name, the named sources and the content version', async () => {
+    const { session, metas } = await opened()
+    await session.decide('ancestry', 'ancestry:troll')
+    expect(metas.get('id-1')).toEqual({
+      id: 'id-1',
+      name: '',
+      ancestry: 'Troll',
+      status: 'complete',
+      openDecisions: 0,
+      sources: [{ id: 'test.core', name: 'test.core', abbr: 'TB' }],
+      contentVersion: '0.0.0',
+      updatedAt: '2026-01-02T00:00:00.000Z',
+    })
+  })
+})
+
 describe('character session: decide', () => {
   it('FR-FLOW-013, NFR-REL-001: a valid decision updates the view first, then saves the document and its metadata', async () => {
     const { session, docs, metas } = await opened()
