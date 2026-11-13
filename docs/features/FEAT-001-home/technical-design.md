@@ -249,7 +249,7 @@ sequenceDiagram
 | AC-10 | Sem personagens, a Home diz o que o app faz, que o texto das regras está nos livros, e oferece "New character". | FR-CHAR-015; UC-001 1a |
 | AC-11 | O aviso de que os personagens ficam só neste navegador aparece com e sem personagens. | FR-CHAR-016 |
 | AC-12 | Se a leitura da lista falhar, a Home mostra o aviso de falha, e não o estado vazio. "New character" continua disponível. | FEAT-007 §8; FR-HELP-005 |
-| AC-13 | "New character" grava o metadado com as regras do core ("Creating · 1 open", fontes com o nome do livro), sem pedido de pacote além dos que o construtor já faria. Com pacote que não carrega, nada é gravado (`pack-load-failed`). | FR-CHAR-001, FR-CHAR-003, FR-HELP-004 |
+| AC-13 | "New character" grava o metadado com as regras do core: de volta à Home, o cartão mostra "Creating · 1 open" e a fonte do core. Entre a criação e a etapa Ancestry, `sotdl.core.json` é pedido uma vez só. Com pacote que não carrega, nada é gravado (`pack-load-failed`). | FR-CHAR-001, FR-CHAR-003, FR-HELP-004 |
 | AC-14 | Um metadado sem os campos novos aparece com nome e "Creating", sem número. Um registro sem `id` é ignorado. | FR-CHAR-003 (D1) |
 | AC-15 | Com 100 personagens salvos, a Home lista os 100 na ordem da AC-2, sem pedir `/packs/` nem o chunk do construtor, e o LCP mediano do Lighthouse fica em até 2,5 s no perfil desktop e até 4 s no móvel. A Home vazia continua medida. | NFR-CAP-001, NFR-PERF-001 |
 | AC-16 | O axe não acusa violação grave na Home com personagens nem com o diálogo de exclusão aberto. Excluir e cancelar funcionam só com teclado. | NFR-ACC-001 |
@@ -301,6 +301,9 @@ sequenceDiagram
   - O `disableStorageReset: true` também pularia a limpeza do cache, e a 2ª e a 3ª execuções mediriam com cache quente, um LCP otimista. Por isso ele **não** é usado.
   - No LHCI, o `puppeteerScript` roda uma vez por URL, antes das execuções, no navegador lançado pelo `PuppeteerManager`. As execuções conectam pela porta dele (`@lhci/cli/src/collect/collect.js`, `runCommand`, e `puppeteer-manager.js`).
   - Sem o pacote `puppeteer`, o LHCI usa o `puppeteer-core` do `node_modules` da raiz, que exige `collect.chromePath`. O `chrome-launcher` 0.13.4 exporta `Launcher.getInstallations()`. Com `puppeteerScript`, o `chromeFlags` é ignorado (aviso do próprio LHCI); valem as `puppeteerLaunchOptions`.
+  - Uma exceção no `puppeteerScript` não é capturada: o `invokePuppeteerScriptForUrl` roda fora de `try` no `runCommand` (`collect.js`), e o `collect` falha antes das execuções.
+
+  **Guarda da semente, sem conferência manual.** O `puppeteerScript`, depois de semear e recarregar a Home, confere que há 100 cartões e lança um erro se não houver. Assim o Lighthouse nunca mede a Home vazia (ou com menos cartões) e dá verde.
 
   As duas opções comparadas:
   - **Playwright e a API do Lighthouse:** o semeador fica junto do E2E, mas exige contexto persistente com `--remote-debugging-port`, o `puppeteer-core` 25 falando com o Chromium do Playwright e mediana e asserção reescritas à mão.
@@ -345,6 +348,7 @@ Conferidos, sem mudança:
 
 **Emendas a rodar depois desta sessão** (este design não edita esses documentos):
 - **software-architecture:**
+  - **ADR-002**, no registro de metadados da lista inicial: "(nome, ancestralidade, estado com a contagem de decisões abertas, fontes, data e a versão do conteúdo da última gravação, para a FEAT-011 detectar a desatualização)".
   - **ADR-004 §1**, depois de "Nada derivado é gravado": "O registro de metadados da ADR-002 é uma projeção derivada, gravada fora do documento a cada gravação, só para a lista inicial. Nunca é entrada de cálculo, e pode ficar desatualizada até a próxima gravação."
   - **architecture.md §5.2**, linha do `storage`: "Repositório de personagens sobre IndexedDB; estado de interface por personagem (última etapa visitada) no `localStorage`; revisão e aviso entre abas."
   - **architecture.md §8 "Dados"**: "A última etapa visitada fica no `localStorage`, fora do documento e do arquivo exportado, e é apagada na exclusão."
@@ -367,4 +371,4 @@ Conferidos, sem mudança:
 - Erros inesperados na Home e ao abrir (FEAT-022).
 - **FEAT-031 (FR-CHAR-017):** um personagem aberto noutra aba e excluído aqui é recriado pela próxima gravação daquela aba, porque o `save` faz `put`. O aviso entre abas deve tratar a exclusão.
 
-**Escalações de arquitetura:** nenhuma entidade nova. Metadado e documento são os da ADR-002 e da ADR-004; a última etapa é estado de interface (emendas acima).
+**Escalações de arquitetura:** nenhuma entidade nova. O metadado acrescenta `openDecisions` (a contagem do estado) e `contentVersion` ao registro da ADR-002 (emenda acima). O documento é o da ADR-004, e a última etapa é estado de interface (emendas acima).

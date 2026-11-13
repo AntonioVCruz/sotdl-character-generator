@@ -1,7 +1,7 @@
 # Tasks: FEAT-001 — Home: listar, continuar e excluir personagens
 
 > Executa: `docs/features/FEAT-001-home/technical-design.md`
-> Status: pending · Última atualização: 2026-11-12
+> Status: pending · Última atualização: 2026-11-13
 > Tela (SCR-WEB-001): do ui-design, pelo `docs/design-manifest.json`. As tarefas de ui aqui são só integração.
 > Pré-requisito: o technical-design (com o §7 "Contratos alterados") está no `main` antes da T1.
 
@@ -106,11 +106,12 @@ Em toda tarefa, o pronto-quando inclui `npm run typecheck` e `npm run lint` pass
     - o `skeleton.spec.ts` passa nos 5 projetos;
     - a tela confere com o manifesto.
 
-- [ ] **T6. E2E do fluxo da Home** (fluxo crítico 1, UC-001 parcial; design §6; FR-CHAR-004, 005, 006, 007, 013, 014, 015; NFR-ACC-001)
+- [ ] **T6. E2E do fluxo da Home** (fluxo crítico 1, UC-001 parcial; design §6; FR-CHAR-001, 003, 004, 005, 006, 007, 013, 014, 015; AC-13; NFR-ACC-001)
   - `e2e/home.spec.ts` (novo), nos 5 projetos, contra o build com a CSP ativa, pela interface:
     - Home vazia (FR-CHAR-015, 016);
     - Dwarf → "Complete";
     - Human com Size adiado → "Creating · 3 open", no topo (FR-CHAR-004);
+    - criar pelo "New character" com o pacote do core, voltar à Home e conferir o cartão com "Creating · 1 open" e a fonte do core, na forma do ui-design; entre a criação e a etapa Ancestry, `sotdl.core.json` é pedido uma vez só (AC-13; FR-CHAR-001, 003);
     - abrir a etapa Attributes, voltar à Home, "Continue" → Attributes; recarregar e "Continue" de novo → Attributes (FR-CHAR-007);
     - só navegar não muda a ordem;
     - excluir com "Cancel" (fica) e com "Delete permanently" (sai, e continua fora depois do `reload`);
@@ -126,7 +127,7 @@ Em toda tarefa, o pronto-quando inclui `npm run typecheck` e `npm run lint` pass
     - confere 100 cartões na ordem da FR-CHAR-004;
     - **expectativa nova:** nenhum pedido a `/packs/` nem ao `Builder-*.js` depois do `reload`.
   - Lighthouse com 100:
-    - `lighthouserc.capacity.desktop.cjs` e `lighthouserc.capacity.mobile.cjs` pelo `lighthouserc.shared.cjs`, com `puppeteerScript` (`lighthouse/seed.cjs` ou equivalente, que cria o personagem, semeia com a mesma função e volta à Home);
+    - `lighthouserc.capacity.desktop.cjs` e `lighthouserc.capacity.mobile.cjs` pelo `lighthouserc.shared.cjs`, com `puppeteerScript` (`lighthouse/seed.cjs` ou equivalente, que cria o personagem, semeia com a mesma função, recarrega a Home, confere que há 100 cartões e lança um erro se não houver, D8);
     - `puppeteerLaunchOptions` com os flags de headless;
     - `chromePath` de `require('chrome-launcher').Launcher.getInstallations()[0]`;
     - sem `disableStorageReset`, e com o `clearStorageTypes` padrão (D8);
@@ -136,7 +137,8 @@ Em toda tarefa, o pronto-quando inclui `npm run typecheck` e `npm run lint` pass
     - `npm run lighthouse` roda as quatro configs (o job `lighthouse` do CI não muda).
   - **Pronto quando:**
     - `npm run e2e` passa com o `capacity.spec.ts`;
-    - `npm run lighthouse` passa as quatro asserções (2500 ms desktop, 4000 ms móvel), e o relatório com 100 mostra os 100 cartões (conferir no LHR que o LCP não é do estado vazio);
+    - `npm run lighthouse` passa as quatro asserções (2500 ms desktop, 4000 ms móvel);
+    - mutação: com a semente gravando 0 personagens, o `npm run lighthouse` falha pela guarda do `puppeteerScript`; restaurar a semente depois;
     - o tempo do job anotado no aceite.
 
 - [ ] **T8. Verificação** (design §6; NFR-MAINT-002)

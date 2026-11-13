@@ -233,7 +233,7 @@
 | FR-HELP-001 | Oferecer acesso à página "About" em todas as telas | Must | Active | Entrevista de requisitos | — | _TBD_ | FEAT-022 | _TBD_ |
 | FR-HELP-002 | Informar que o projeto não é oficial nem afiliado à Schwalb Entertainment e que os… | Must | Active | Entrevista de requisitos | — | _TBD_ | FEAT-022 | _TBD_ |
 | FR-HELP-003 | Explicar que o texto das regras está nos livros e indicar onde comprá-los | Must | Active | D35 | — | _TBD_ | FEAT-022 | _TBD_ |
-| FR-HELP-004 | Exibir uma mensagem compreensível e manter intactos os personagens salvos | Must | Active | Entrevista de requisitos | — | ADR-006 | FEAT-003 | _TBD_ |
+| FR-HELP-004 | Exibir uma mensagem compreensível e manter intactos os personagens salvos | Must | Active | Entrevista de requisitos | — | ADR-006, features/FEAT-001-home/technical-design.md | FEAT-003 | _TBD_ |
 | FR-HELP-005 | Exibir uma mensagem compreensível, sem termos internos do sistema, e preservar os… | Must | Active | Entrevista de requisitos | — | ADR-006, features/FEAT-001-home/technical-design.md | FEAT-022 | _TBD_ |
 | FR-HELP-006 | Abrir o canal de feedback do projeto | Could | Active | Entrevista de requisitos | — | _TBD_ | _TBD_ | _TBD_ |
 | NFR-PERF-001 | O maior elemento visível da primeira carga (LCP) aparece em até 2,5 s no desktop com… | Must | Active | Entrevista de requisitos (NFR) | — | ADR-001, ADR-006, ADR-008, features/FEAT-001-home/technical-design.md | Foundations | _TBD_ |
