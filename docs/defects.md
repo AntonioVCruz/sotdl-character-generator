@@ -1,0 +1,7 @@
+# Registro de defeitos
+
+> Dono: `sdlc-orchestrator` (rota de manutenção). Só acrescentar linhas; IDs DEF-NNN sequenciais, nunca reusados.
+
+| DEF | Reported | FR / Feature | Symptom | Fixed by | Re-verified |
+| :-- | :------- | :----------- | :------ | :------- | :---------- |
+| DEF-001 | 2026-11-13 | NFR-ACC-001 / FEAT-007 | A 320 px, os controles da barra fixa do construtor (`.builder__dock`: Next e Summary) passam 15 px da borda direita da tela (achado menor 1 do relatório da FEAT-008). | _open_ | _open_ |
