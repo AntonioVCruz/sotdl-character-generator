@@ -14,6 +14,7 @@ import { StepHeader } from '../builder/StepHeader'
 import { StepMap } from '../builder/StepMap'
 import { builderRedirect, href, navigate, replace } from '../router'
 import '../styles/builder.css'
+import { mediaQuery } from '../styles/breakpoints.generated'
 import { useCharacterSession } from '../useCharacterSession'
 
 // Construtor (SCR-WEB-003, SCR-WEB-016; technical-design §3.4, ui-design): estados da sessão e moldura das etapas.
@@ -88,6 +89,7 @@ function BuilderReady({ session, snapshot, route }: {
   const [summaryOpen, setSummaryOpen] = useState(false)
   const root = useRef<HTMLDivElement>(null)
   const dock = useRef<HTMLDivElement>(null)
+  const step = useRef<HTMLElement>(null)
 
   useEffect(() => {
     if (redirect) replace(redirect)
@@ -110,6 +112,23 @@ function BuilderReady({ session, snapshot, route }: {
     return () => observer.disconnect()
   }, [redirect, current])
 
+  // Foco não escondido (WCAG 2.4.11; DEF-002): com a região fixa (abaixo de --bp-md), o foco por teclado na etapa leva
+  // à vista o contêiner que desenha o anel (`data-focus-ring`), não só o input oculto dentro dele. Foco por toque ou
+  // clique não rola. A folga da região é o scroll-margin-bottom da etapa (builder.css); sem `smooth`, nada se anima.
+  useEffect(() => {
+    const main = step.current
+    if (!main || typeof window.matchMedia !== 'function') return
+    const docked = window.matchMedia(mediaQuery['below-md'])
+    const reveal = (event: FocusEvent) => {
+      const element = event.target
+      if (!docked.matches || !(element instanceof Element) || dock.current?.contains(element)) return
+      if (!element.matches(':focus-visible')) return
+      ;(element.closest('[data-focus-ring]') ?? element).scrollIntoView({ block: 'nearest' })
+    }
+    main.addEventListener('focusin', reveal)
+    return () => main.removeEventListener('focusin', reveal)
+  }, [redirect, current])
+
   if (redirect || !current) return <BuilderLoading />
 
   const nameOf = (itemId: string) => {
@@ -129,7 +148,7 @@ function BuilderReady({ session, snapshot, route }: {
           </div>
           <StepSelector id={id} steps={view.steps} current={current} />
         </nav>
-        <main className="builder__step">
+        <main className="builder__step" ref={step}>
           <SaveAlert session={session} snapshot={snapshot} />
           <StepHeader step={current} steps={view.steps} slots={view.slots} rules={rules} />
           {/* O corpo sai do `kind` da vaga raiz da etapa, nunca do nome dela (ADR-003 §6). */}

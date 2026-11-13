@@ -68,6 +68,7 @@ export function AncestryStep({ session, snapshot, slot, nameOf }: {
               value={option.id}
               aria-label={isCurrent ? `${option.name}, your choice` : option.name}
               className={`option-card${isCurrent ? ' option-card--current' : ''}`}
+              data-focus-ring
             >
               {isCurrent && (
                 <span className="option-card__current typography-caption">
@@ -260,7 +261,7 @@ function DecideNow({ snapshot, session, ancestryId, nameOf }: {
                 <Label className="typography-label">{nameOf(slot.target)}</Label>
                 <span className="segmented-control">
                   {slot.options.map((option) => (
-                    <Radio key={option} value={String(option)} className="segmented-control__segment typography-label">
+                    <Radio key={option} value={String(option)} className="segmented-control__segment typography-label" data-focus-ring>
                       {formatNumber(option)}
                     </Radio>
                   ))}

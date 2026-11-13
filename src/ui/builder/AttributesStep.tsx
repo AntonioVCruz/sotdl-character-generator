@@ -152,7 +152,7 @@ function AdjustmentCard({ session, snapshot, slot, nameOf }: {
   const raised = current?.increase ?? raise
   const lowered = current?.decrease ?? lower
   const options = slot.options.map((option) => (
-    <Radio key={option.id} value={option.id} className="segmented-control__segment typography-label">
+    <Radio key={option.id} value={option.id} className="segmented-control__segment typography-label" data-focus-ring>
       {option.name}
     </Radio>
   ))
@@ -206,6 +206,7 @@ function AdjustmentCard({ session, snapshot, slot, nameOf }: {
                       value={option.id}
                       isDisabled={option.id === raise}
                       className="segmented-control__segment typography-label"
+                      data-focus-ring
                     >
                       {option.name}
                     </Radio>
