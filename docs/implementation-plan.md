@@ -45,7 +45,7 @@ O caminho mínimo de ponta a ponta, publicado.
 | ID | Fatia | FRs | UCs | Telas | Blocos | Dados |
 | :- | :-- | :-- | :-- | :-- | :-- | :-- |
 | FEAT-007 | **Etapa Ancestry, mapa de etapas e resumo vivo** (Dwarf e Human do core) | FR-STEP-001, 002, 003; FR-FLOW-001 a 014, 018; FR-CALC-001; FR-DEC-011; FR-SRC-010; FR-CONT-006, 009; FR-CONT-003 (parcial) | UC-003 | SCR-WEB-003, SCR-WEB-016 | `engine.resolve`, `engine.evaluate`, `app`, `ui` | Ancestralidade, procedimento, fórmulas, `decisions` |
-| FEAT-008 | Etapa Attributes: ajuste ±1, características com fórmula e composição | FR-STEP-007, 009, 010, 011; FR-CALC-002, 003, 005, 006, 007, 008, 009 | UC-004 | SCR-WEB-005 | `engine.evaluate` | Fórmulas, limites |
+| FEAT-008 | Etapa Attributes: ajuste ±1, características com fórmula e composição | FR-STEP-007, 009, 010, 011; FR-CALC-002, 003, 006, 007, 008; FR-CALC-005 (parcial); FR-CALC-009 (parcial) | UC-004 | SCR-WEB-005 | `engine.evaluate` | Fórmulas, limites |
 | FEAT-009 | Decidir uma tabela: Roll, Choose, Enter result (tabelas de história do Dwarf, Hated Creature). O detailed-design cria os tokens da caixa 72×72 do `roll-card` (`design.md` §9). | FR-DEC-001, 002, 004, 005, 007, 008, 012, 016, 019, 020, 024; FR-STEP-012, 013, 014; FR-CALC-010, 011; FR-CALC-005 (parcial); FR-CONT-008; FR-LOG-001, 002, 004, 010 | UC-005, UC-006 | SCR-WEB-009 | `dice`, `engine.evaluate`, `app` | Tabelas, decisões, log |
 | FEAT-010 | Write, subdecisões, tabelas aguardando e "Roll all undecided" | FR-DEC-003, 010, 014, 021, 023; FR-STEP-015; FR-LOG-003 | UC-005, UC-006 | SCR-WEB-009 | `engine.evaluate`, `app` | Decisões, concessões |
 | FEAT-011 | Mudança a montante: diálogo de impacto, rerrolagem, troca de modo, troca de ancestralidade, versão nova do pacote | FR-CHG-001 a 006, 008 a 014; FR-DEC-015, 017, 018; FR-STEP-005; FR-LOG-007; FR-CONT-015, 016 | UC-010 | SCR-WEB-007 | `engine.impact`, `app` | Decisões, ajustes ligados, log |
@@ -226,7 +226,7 @@ Montadas junto com o esqueleto e mantidas por todas as fatias.
 
 **Requisitos absorvidos pelo esqueleto e pelas fundações:** FR-CHAR-001, 009, 010; FR-CONT-001, 002, 004, 005.
 
-**NFRs:** NFR-PERF-001, NFR-REL-001, NFR-REL-002, NFR-SEC-001, NFR-PRIV-001, NFR-ACC-001, NFR-USE-001, NFR-USE-002, NFR-COMP-001, NFR-COMP-002, NFR-MAINT-002, NFR-COST-001, NFR-L10N-001 e NFR-OBS-001 ficam nas fundações. As demais são verificadas em fatias: NFR-PERF-002 (FEAT-008), NFR-PERF-003 (FEAT-011), NFR-CAP-001 (FEAT-001), NFR-CAP-002 (FEAT-003), NFR-SEC-002 (FEAT-002 para o arquivo do personagem, FEAT-003 para o pacote), NFR-COMP-003 (FEAT-021), NFR-MAINT-001 (FEAT-005, FEAT-006).
+**NFRs:** NFR-PERF-001, NFR-REL-001, NFR-REL-002, NFR-SEC-001, NFR-PRIV-001, NFR-ACC-001, NFR-USE-001, NFR-USE-002, NFR-COMP-001, NFR-COMP-002, NFR-MAINT-002, NFR-COST-001, NFR-L10N-001 e NFR-OBS-001 ficam nas fundações. Elas são verificadas em cada fatia, com "(partial)" no Test ref do RTM, e fecham no aceite da FEAT-006 (última do MVP), que as verifica no produto inteiro. As demais são verificadas em fatias: NFR-PERF-002 (FEAT-008), NFR-PERF-003 (FEAT-011), NFR-CAP-001 (FEAT-001), NFR-CAP-002 (FEAT-003), NFR-SEC-002 (FEAT-002 para o arquivo do personagem, FEAT-003 para o pacote), NFR-COMP-003 (FEAT-021), NFR-MAINT-001 (FEAT-005, FEAT-006).
 
 ## 7. Riscos e premissas
 
