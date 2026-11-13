@@ -2,7 +2,7 @@
 
 > Fonte da verdade para toda implementação de interface, junto com `docs/tokens.json`.
 > Gerado por ux-foundations · Modo: design file (wireframe v1 ingerido) + identidade A escolhida pelo usuário
-> Última atualização: 2026-11-12 (emenda E5 do ui-design da FEAT-008)
+> Última atualização: 2026-11-13 (emenda E6 do ui-design da FEAT-001)
 
 ## 1. Tema visual e atmosfera
 
@@ -296,7 +296,9 @@ Inglês simples, termos do jogo como nos livros (Strength, Health, novice path).
 | "Choose an ancestry first." | "Step locked: dependency unresolved." |
 | "This file isn't a character from this generator. Your saved characters weren't changed." | "Import failed: schema validation error." |
 | "Not decided yet. Nothing else waits for it." | "Pending slot (optional)." |
-| "Characters are saved in this browser only. Export a character file to keep a copy." | "Data persisted in IndexedDB." |
+| "Characters are saved in this browser only. Clearing your browser's data for this site deletes them." | "Data persisted in IndexedDB." |
+
+Aviso "só neste navegador": com a exportação do arquivo do personagem (FEAT-002), acrescenta-se ao fim a frase "Export a character file to keep a copy."
 
 Erros dizem: o que aconteceu, o que ficou a salvo, o que fazer. Confirmações destrutivas nomeiam a consequência no botão ("Delete permanently").
 
@@ -326,7 +328,7 @@ Erros dizem: o que aconteceu, o que ficou a salvo, o que fazer. Confirmações d
 
 ## 9. Proveniência e lacunas
 
-**Proveniência.** Estrutura, componentes, medidas (raios 4/6/8/999, espaços 2–24, Inter e IBM Plex Mono, cinzas quentes) ingeridos do wireframe v1 (`docs/reference/wireframe/`, código `.dc.html` e telas). Identidade visual (pergaminho, vermelho-sangue, Spectral) escolhida pelo usuário entre duas propostas (direção A), dentro do P33 e da D28. Ajustes exigidos pela NFR-ACC-001: o cinza `#A8A8A2` do wireframe (2,4:1 sobre branco) foi substituído por `#85847E` em bordas de controle e por `#65645E` em texto apagado; corpo subiu de 13 para 14px; campos de formulário em 16px; alvos de 44px em ponteiro grosso; anel de foco definido (o wireframe não tinha). Emenda de 2026-11-12, do ui-design da FEAT-007 (E1–E4): estado bloqueado do `step-map` sem tooltip; estado `current` do `option-card`; ícones Lucide; tokens `size.pill`, `size.icon-sm`, `size.icon-md`, `icon.stroke`, `opacity.disabled`, `border-width.alert` e `typography.stat-sm`; padding do `button-primary` em `--space-4`. Emenda de 2026-11-12, do ui-design da FEAT-008 (E5): regra de quebra do `segmented-control` em grade de 2 colunas, sem token novo.
+**Proveniência.** Estrutura, componentes, medidas (raios 4/6/8/999, espaços 2–24, Inter e IBM Plex Mono, cinzas quentes) ingeridos do wireframe v1 (`docs/reference/wireframe/`, código `.dc.html` e telas). Identidade visual (pergaminho, vermelho-sangue, Spectral) escolhida pelo usuário entre duas propostas (direção A), dentro do P33 e da D28. Ajustes exigidos pela NFR-ACC-001: o cinza `#A8A8A2` do wireframe (2,4:1 sobre branco) foi substituído por `#85847E` em bordas de controle e por `#65645E` em texto apagado; corpo subiu de 13 para 14px; campos de formulário em 16px; alvos de 44px em ponteiro grosso; anel de foco definido (o wireframe não tinha). Emenda de 2026-11-12, do ui-design da FEAT-007 (E1–E4): estado bloqueado do `step-map` sem tooltip; estado `current` do `option-card`; ícones Lucide; tokens `size.pill`, `size.icon-sm`, `size.icon-md`, `icon.stroke`, `opacity.disabled`, `border-width.alert` e `typography.stat-sm`; padding do `button-primary` em `--space-4`. Emenda de 2026-11-12, do ui-design da FEAT-008 (E5): regra de quebra do `segmented-control` em grade de 2 colunas, sem token novo. Emenda de 2026-11-13, do ui-design da FEAT-001 (E6): texto do aviso "só neste navegador" no §6.
 
 ```json
 { "design_provenance": {
