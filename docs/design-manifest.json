@@ -5,6 +5,52 @@
     "note": "Decidido pelo usuário em 2026-11-12 (FEAT-007): spec em código (estratégia C) para todas as telas; sobrescrevível por tela a pedido."
   },
   "screens": {
+    "SCR-WEB-001": {
+      "name": "Home · My characters",
+      "surface": "WEB",
+      "feature": "FEAT-001",
+      "strategy": "code-native",
+      "source": {
+        "tool": null,
+        "locator": "features/FEAT-001-home/ui-design.md#scr-web-001--home"
+      },
+      "states": {
+        "covered": [
+          "loading",
+          "error",
+          "empty",
+          "populated",
+          "delete-confirm",
+          "delete-failed",
+          "create-failed"
+        ],
+        "gaps": [
+          "import-refused (FR-CHAR-023, FEAT-002)",
+          "import-reopened (FEAT-002)"
+        ],
+        "supplements": []
+      },
+      "contract_bindings": [
+        "app.listCharacters → ListResult (technical-design §3.1)",
+        "app.CharacterSummary: name, ancestry, status, openDecisions, sources, updatedAt (technical-design §3.1)",
+        "app.deleteCharacter → DeleteResult (technical-design §3.1)",
+        "app.createCharacter → CreateResult (technical-design §3.1)",
+        "ui href.builder(id) sem etapa; builderRedirect com lastStep (technical-design §3.5)",
+        "ui displayName, formatEdited (technical-design §3.5)"
+      ],
+      "conformance": {
+        "result": "escalation-pending",
+        "corrections": [
+          "falha ao criar: .notice (borda inteira) → inline-alert danger",
+          "lista de links .character-list → character-card"
+        ],
+        "escalations": [
+          "E6: texto do aviso \"só neste navegador\" no design.md §6 (sem promessa de exportar antes da FEAT-002; limpar os dados do site apaga os personagens, ADR-002), proposto à ux-foundations"
+        ]
+      },
+      "status": "escalation-pending",
+      "designed_at": "2026-11-13"
+    },
     "SCR-WEB-003": {
       "name": "Builder · 1 Ancestry",
       "surface": "WEB",
@@ -32,6 +78,11 @@
             "state": "builder-frame",
             "strategy": "code-native",
             "source": "features/FEAT-007-ancestry-step-map-live-summary/ui-design.md#builder-frame"
+          },
+          {
+            "state": "builder-frame-focus",
+            "strategy": "code-native",
+            "source": "features/FEAT-001-home/ui-design.md#builder-frame-focus"
           }
         ]
       },
@@ -112,7 +163,13 @@
           "summary-open"
         ],
         "gaps": [],
-        "supplements": []
+        "supplements": [
+          {
+            "state": "builder-frame-focus",
+            "strategy": "code-native",
+            "source": "features/FEAT-001-home/ui-design.md#builder-frame-focus"
+          }
+        ]
       },
       "contract_bindings": [
         "app.session.getSnapshot (technical-design §3.2)",
