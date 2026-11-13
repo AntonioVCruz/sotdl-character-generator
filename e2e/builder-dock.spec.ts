@@ -176,6 +176,9 @@ async function tabIntoPartlyCovered(page: Page, target: Locator, { unscrolledHid
   await page.keyboard.press('Shift+Tab')
   expect(await isFocused(), 'foco no controle anterior ao alvo').toBe(false)
   if (unscrolledHiddenInput) await page.evaluate((el) => void (el!.parentElement!.scrollTop = 0), element)
+  // DEF-003: o pior caso é montado com o input rolado para dentro do invólucro, como o navegador o deixa ao focá-lo
+  // (o Chromium sempre, o WebKit quase sempre). A posição dele no contêiner fica a mesma em todo navegador.
+  await page.evaluate((el) => void (el!.parentElement!.scrollTop = el!.parentElement!.scrollHeight), element)
   // A base do input fica 16 px acima do topo da região: visível mesmo com a folga de rolagem do 432636b. Repete até a
   // posição ficar estável, porque o WebKit ainda pode rolar até o controle anterior depois do Shift+Tab.
   for (let attempt = 0, delta = Infinity; Math.abs(delta) >= 1 && attempt < 5; attempt++) {
@@ -219,6 +222,8 @@ for (const width of [320, 412]) {
     await page.getByRole('button', { name: 'Choose Human' }).click()
     const human = page.getByRole('radio', { name: 'Human, your choice' })
     await expect(human).toBeChecked()
+    // DEF-003: ao confirmar, o foco vai ao título do detalhe (ui-design da FEAT-007); só depois o teclado é do teste.
+    await expect(page.getByRole('heading', { level: 2, name: 'Human' })).toBeFocused()
     const card = await tabIntoPartlyCovered(page, human)
     expect.soft(card.bottom, 'Ancestry: "Human, your choice" acima da região fixa').toBeLessThanOrEqual(card.dockTop)
 

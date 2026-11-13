@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, type ReactNode, type RefObject } from 'react'
+import { useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react'
 import { Check } from 'lucide-react'
 import { Button, Label, Radio, RadioGroup } from 'react-aria-components'
 import type { CharacterSession, Snapshot } from '../../app'
@@ -24,6 +24,15 @@ export function AncestryStep({ session, snapshot, slot, nameOf }: {
   const [selected, setSelected] = useState<string | null>(null)
   const shown = selected ?? current
   const detailTitle = useRef<HTMLHeadingElement>(null)
+  // Ao confirmar, o foco vai ao título do detalhe assim que a escolha aparece na tela, sem esperar a gravação
+  // (ui-design, "Ao confirmar"; technical-design D11; DEF-003). O `decide` muda o snapshot antes de gravar.
+  const focusOnChoice = useRef<string | null>(null)
+  useEffect(() => {
+    if (current === null || current !== focusOnChoice.current) return
+    focusOnChoice.current = null
+    const frame = requestAnimationFrame(() => detailTitle.current?.focus())
+    return () => cancelAnimationFrame(frame)
+  }, [current])
 
   function select(id: string) {
     onNotice(null)
@@ -32,7 +41,10 @@ export function AncestryStep({ session, snapshot, slot, nameOf }: {
 
   async function choose(id: string) {
     onNotice(null)
+    focusOnChoice.current = id
     const result = await session.decide(slot.key, id)
+    // Recusada, a escolha não chega à tela e o foco fica onde está. Falha ao gravar mantém a escolha na tela (D11).
+    if (!result.ok && result.reason !== 'save-failed') focusOnChoice.current = null
     if (!result.ok && result.reason === 'has-dependents') {
       const titles = result.dependents.map((key) => {
         const dependent = snapshot.view.slots.find((candidate) => candidate.key === key)
@@ -43,8 +55,6 @@ export function AncestryStep({ session, snapshot, slot, nameOf }: {
       return
     }
     setSelected(null)
-    // O foco vai para o título do detalhe da escolha (ui-design, selected).
-    requestAnimationFrame(() => detailTitle.current?.focus())
   }
 
   return (
