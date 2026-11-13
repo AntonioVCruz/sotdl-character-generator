@@ -104,11 +104,16 @@ function BuilderReady({ session, snapshot, route }: {
   }, [session, shown])
 
   // Foco no `h1` da etapa ao chegar a ela por navegação dentro do app (ui-design da FEAT-001, Builder frame focus):
-  // "Continue", "New character", Next, Back, mapa e seletor. No quadro seguinte, para vencer a devolução do foco ao
-  // gatilho quando o popover do seletor fecha. Com `?slot=`, o foco é da vaga (FR-FLOW-011); num carregamento
-  // completo da página, nada é movido.
+  // "Continue", "New character", Next, Back, mapa e seletor. Com `?slot=`, o foco é da vaga (FR-FLOW-011); num
+  // carregamento completo da página, nada é movido. Pelo seletor, o popover fecha e devolve o foco ao gatilho: o `h1`
+  // vence essa devolução no quadro seguinte. Só nesse caso o foco é adiado, para nunca chegar depois de outro foco.
+  const fromSelector = useRef(false)
   useEffect(() => {
+    const deferred = fromSelector.current
+    fromSelector.current = false
     if (!shown || route.slot || !hasNavigatedInApp()) return
+    title.current?.focus()
+    if (!deferred) return
     const frame = requestAnimationFrame(() => title.current?.focus())
     return () => cancelAnimationFrame(frame)
   }, [shown, route.slot])
@@ -164,7 +169,7 @@ function BuilderReady({ session, snapshot, route }: {
           <div className="builder__map-list">
             <StepMap id={id} steps={view.steps} current={current} />
           </div>
-          <StepSelector id={id} steps={view.steps} current={current} />
+          <StepSelector id={id} steps={view.steps} current={current} onNavigate={() => (fromSelector.current = true)} />
         </nav>
         <main className="builder__step" ref={step}>
           <SaveAlert session={session} snapshot={snapshot} />
@@ -197,7 +202,13 @@ function BuilderReady({ session, snapshot, route }: {
 }
 
 /** Seletor de etapas (SCR-WEB-016, e no intermediário): gatilho no topo e o `step-map` num popover. */
-function StepSelector({ id, steps, current }: { id: string; steps: StepView[]; current: StepView }) {
+function StepSelector({ id, steps, current, onNavigate }: {
+  id: string
+  steps: StepView[]
+  current: StepView
+  /** Um item do popover foi escolhido: a troca de etapa que vem adia o foco no `h1` (Builder frame focus). */
+  onNavigate: () => void
+}) {
   const [open, setOpen] = useState(false)
   return (
     <div className="step-selector">
@@ -218,7 +229,16 @@ function StepSelector({ id, steps, current }: { id: string; steps: StepView[]; c
         </Button>
         <Popover className="step-selector__popover" placement="bottom">
           <Dialog className="step-selector__dialog" aria-label="Creation steps">
-            <StepMap id={id} steps={steps} current={current} focusCurrent onNavigate={() => setOpen(false)} />
+            <StepMap
+              id={id}
+              steps={steps}
+              current={current}
+              focusCurrent
+              onNavigate={() => {
+                onNavigate()
+                setOpen(false)
+              }}
+            />
           </Dialog>
         </Popover>
       </DialogTrigger>
