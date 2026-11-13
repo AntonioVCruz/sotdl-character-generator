@@ -556,8 +556,12 @@ a.step-map__item--current:hover {
     flex: 1;
   }
 
+  /* Quando os atributos e o "Summary" não cabem numa linha (320 px), o "Summary" desce para uma linha própria, de
+     largura total (ui-design da FEAT-007, emenda de 2026-11-13; DEF-001). A lista absorve a sobra da linha, e o
+     gatilho só cresce quando fica sozinho na dele: dividindo a linha, ganha menos que uma unidade de layout. */
   .summary-bar {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
     gap: var(--space-3);
@@ -565,8 +569,13 @@ a.step-map__item--current:hover {
 
   .summary-bar__attributes {
     display: flex;
+    flex: 1000000 1 auto;
     gap: var(--space-3);
     min-width: 0;
+  }
+
+  .summary-bar__toggle {
+    flex: 1 0 auto;
   }
 
   .summary-bar__attributes li {
