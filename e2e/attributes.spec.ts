@@ -233,6 +233,14 @@ test('FR-STEP-008: a Human sees the +1 as pending in Attributes, and the Open de
   await expect(page).toHaveURL(/\/attributes\?slot=ancestry%3Dhuman%2Fattribute-increase$/)
   await expect(pending).toBeFocused()
 
+  // AC-9: as demais etapas, até Review, também continuam com o FallbackStep (nenhuma tem vaga com Human).
+  const character = page.url().replace(/\/attributes\?.*$/, '')
+  for (const step of ['wealth-equipment', 'interesting-thing', 'roleplaying', 'review']) {
+    await page.goto(`${character}/${step}`)
+    await expect(main.getByText("There's nothing to decide in this step yet.")).toBeVisible()
+    await expect(main.getByRole('heading', { name: 'Score adjustment' })).toHaveCount(0)
+  }
+
   expect(csp).toEqual([])
 })
 

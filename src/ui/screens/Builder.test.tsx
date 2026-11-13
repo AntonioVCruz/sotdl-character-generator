@@ -208,6 +208,9 @@ describe('Builder states', () => {
     // A etapa tem tela própria (T6): o ajuste aparece como opcional, não como pendência.
     const card = (await screen.findByRole('heading', { name: 'Score adjustment' })).closest('section')!
     expect(within(card).getByText('Optional. You can make it once.')).toBeTruthy()
+    // Nem o contador do cabeçalho a trata como pendência (ui-design, Contadores).
+    expect(screen.getByText('Nothing required')).toBeTruthy()
+    expect(screen.queryByText(/^\d+ open$/)).toBeNull()
     expect(screen.queryByText(/It stays in Open decisions/)).toBeNull()
     expect(screen.getByRole('heading', { name: 'Open decisions · 0' })).toBeTruthy()
   })
