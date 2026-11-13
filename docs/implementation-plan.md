@@ -233,6 +233,7 @@ Montadas junto com o esqueleto e mantidas por todas as fatias.
 - **Núcleo da ADR-004:** se as chaves de vaga ou o `impact` não se sustentarem, o FEAT-007 ou o FEAT-011 mostram isso cedo; uma mudança aí reabre a ADR-004 antes de existirem as outras etapas.
 - **Autoria do pacote:** cada fatia de etapa inclui escrever e conferir no PDF os dados que usa. É o trabalho mais longo; as páginas do SRS são aproximadas.
 - **Safari antes do FEAT-002:** até o marco 2, um personagem pode sumir no Safari. Aceitável enquanto o site não é divulgado; o aviso da FR-CHAR-016 existe desde o FEAT-001.
+- **"Complete" antes das etapas:** até a FEAT-015, a Home mostra "Complete" para um personagem sem decisões obrigatórias abertas, mesmo com etapas ainda sem vagas (FEAT-001 D2). Aceitável enquanto o site não é divulgado.
 - **Nomes digitados (D36)** e **impressão em 2 páginas**: validados no FEAT-012 e no FEAT-021; se falharem, viram ajuste de UX, não de arquitetura.
 - **Ordem viva:** o marco 2 e os Should serão reordenados com o que se aprender no marco 1.
 - **Cobertura:** todo Must está numa fatia ou nas fundações; toda tela do inventário é tocada por alguma fatia. Nenhuma lacuna aberta.
