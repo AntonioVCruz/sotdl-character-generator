@@ -119,7 +119,7 @@ graph LR
 | `engine` | Funções puras: `resolve` (regras vigentes, ADR-003), `evaluate` (visão do personagem, ADR-004), `impact` (diferença antes × depois), fórmulas e linha de mecânica (FR-CONT-009). | Só dos tipos de `content`. Sem React, DOM ou armazenamento (regra de lint). |
 | `content` | Schemas Zod do pacote e do personagem, geração do JSON Schema, validação em camadas, carga do índice e dos livros, migrações de formato. | — |
 | `app` | Comandos (decidir, rolar, trocar modo, mudar fontes, ajustar, renomear, excluir, exportar, importar), log, store do personagem aberto, tratamento de erros. Único módulo que escreve. | `engine`, `content`, `storage`, `dice` |
-| `storage` | Repositório de personagens sobre IndexedDB; revisão e aviso entre abas. | — |
+| `storage` | Repositório de personagens sobre IndexedDB; estado de interface por personagem (última etapa visitada) no `localStorage`; revisão e aviso entre abas. | — |
 | `dice` | Sorteio de faces com `crypto.getRandomValues`; injetável nos testes (ADR-009). | — |
 | `ui` | Telas (SCR-*), componentes acessíveis, impressão. Lê a visão do personagem; chama comandos. | `app`, `engine` (só leitura da visão) |
 | `packs/` (dados) | Pacote oficial: um arquivo por livro e um índice. Só mecânica. | — |
@@ -204,7 +204,7 @@ graph LR
 
 **Segurança.** Sem login, sem segredos, sem API. HTTPS do Pages (NFR-SEC-001). CSP por `<meta>` só com recursos do próprio site. Nada importado é executado: arquivos são JSON validado e fórmulas são árvores, nunca `eval` (NFR-SEC-002).
 
-**Dados.** Um documento por personagem no IndexedDB, com camadas e log (ADR-002, ADR-004). Versão de schema com migração na leitura. A cópia de segurança é o arquivo do personagem, exportado e importado pelo usuário (FR-CHAR-018, 019, 023; UC-015).
+**Dados.** Um documento por personagem no IndexedDB, com camadas e log (ADR-002, ADR-004). Versão de schema com migração na leitura. A cópia de segurança é o arquivo do personagem, exportado e importado pelo usuário (FR-CHAR-018, 019, 023; UC-015). A última etapa visitada fica no `localStorage`, fora do documento e do arquivo exportado, e é apagada na exclusão.
 
 **Conteúdo e propriedade intelectual.** O pacote oficial mora em `packs/`, escrito à mão a partir do PDF, com página em toda entidade, tabela e entrada. O CI valida schema, integridade, ausência de texto descritivo (M3) e ids removidos entre versões. Dados vindos de memória ou de `content/extracted/` entram marcados como não verificados e não são publicados até a conferência.
 

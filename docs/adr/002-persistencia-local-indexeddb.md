@@ -10,7 +10,7 @@ O personagem salva sozinho a cada mudança (FR-CHAR-009), e nenhuma decisão con
 
 ## Decisão
 
-- **IndexedDB**, com um registro por personagem (documento inteiro: camadas e log) e um registro de metadados para a lista inicial (nome, ancestralidade, estado, fontes, data). Acesso por um wrapper fino sobre a API nativa (biblioteca `idb` ou equivalente, escolhida no scaffolding).
+- **IndexedDB**, com um registro por personagem (documento inteiro: camadas e log) e um registro de metadados para a lista inicial (nome, ancestralidade, estado com a contagem de decisões abertas, fontes, data e a versão do conteúdo da última gravação, para a FEAT-011 detectar a desatualização). Acesso por um wrapper fino sobre a API nativa (biblioteca `idb` ou equivalente, escolhida no scaffolding).
 - **Gravação imediata a cada comando**, sem debounce, numa transação que grava o documento e as entradas novas do log juntos. Falha de gravação mantém o estado na tela e avisa (FR-CHAR-010).
 - **Interface de repositório** (`list`, `get`, `save`, `delete`) entre a aplicação e o IndexedDB, para que um adaptador de servidor possa entrar depois (ADR-001).
 - **Versão do documento** (`schema`) com migrações puras e testadas, aplicadas na leitura.

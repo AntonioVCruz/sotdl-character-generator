@@ -12,7 +12,7 @@ A pergunta é o que o personagem guarda e como se sabe o que depende de quê.
 
 ## Decisão
 
-**1. O personagem guarda só entradas, em camadas nomeadas.** Nada derivado é gravado.
+**1. O personagem guarda só entradas, em camadas nomeadas.** Nada derivado é gravado. O registro de metadados da ADR-002 é uma projeção derivada, gravada fora do documento a cada gravação, só para a lista inicial. Nunca é entrada de cálculo, e pode ficar desatualizada até a próxima gravação.
 
 | Camada | Conteúdo | No log? |
 |---|---|---|
