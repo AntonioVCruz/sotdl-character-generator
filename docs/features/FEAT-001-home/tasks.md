@@ -139,7 +139,7 @@ Em toda tarefa, o pronto-quando inclui `npm run typecheck` e `npm run lint` pass
     - o `skeleton.spec.ts` passa nos 5 projetos;
     - a tela confere com o manifesto.
 
-- [ ] **T6. E2E do fluxo da Home** (fluxo crítico 1, UC-001 parcial; design §6; FR-CHAR-001, 003, 004, 005, 006, 007, 013, 014, 015; AC-13; NFR-ACC-001)
+- [x] **T6. E2E do fluxo da Home** (fluxo crítico 1, UC-001 parcial; design §6; FR-CHAR-001, 003, 004, 005, 006, 007, 013, 014, 015; AC-13; NFR-ACC-001)
   - `e2e/home.spec.ts` (novo), nos 5 projetos, contra o build com a CSP ativa, pela interface:
     - Home vazia (FR-CHAR-015, 016);
     - Dwarf → "Complete";
