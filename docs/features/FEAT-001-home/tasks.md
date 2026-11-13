@@ -153,7 +153,7 @@ Em toda tarefa, o pronto-quando inclui `npm run typecheck` e `npm run lint` pass
   - axe sem violação grave na Home com personagens e com o diálogo aberto, uma análise por teste (scaffold-notes, Firefox).
   - **Pronto quando:** `npm run e2e` passa nos 5 projetos, sem violação de CSP.
 
-- [ ] **T7. NFR-CAP-001: 100 personagens, E2E e Lighthouse** (design D8, D9; AC-15; ui-design, Medidas de capacidade; NFR-CAP-001, NFR-PERF-001, NFR-COMP-002)
+- [x] **T7. NFR-CAP-001: 100 personagens, E2E e Lighthouse** (design D8, D9; AC-15; ui-design, Medidas de capacidade; NFR-CAP-001, NFR-PERF-001, NFR-COMP-002)
   - `e2e/seed-characters.js`: a função de navegador da D9, sem dependência e sem nada no bundle.
   - `e2e/capacity.spec.ts` (novo), nos 5 projetos:
     - cria um personagem pela interface, volta à Home, semeia até 100 pelo `page.evaluate` e recarrega;
