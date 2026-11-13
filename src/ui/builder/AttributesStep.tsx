@@ -5,7 +5,7 @@ import { preview, type SlotView } from '../../engine'
 import { PreviewBox } from './AncestryStep'
 import { decisionTitle, formatModifier, formatValue, formulaLine, slotElementId } from './copy'
 import { Composition } from './LiveSummary'
-import { PillCounter } from './parts'
+import { PillCounter } from '../parts'
 
 type Ready = Extract<Snapshot, { status: 'ready' }>
 type ShiftSlot = Extract<SlotView, { kind: 'attribute-shift' }>

@@ -5,7 +5,8 @@ import type { CharacterSession, Snapshot } from '../../app'
 import { ancestryDetail, formatNumber, preview, type CharacterView, type SlotView } from '../../engine'
 import { href } from '../router'
 import { decisionTitle, formatValue, hasDependentsMessage, lockReason, slotElementId, statusLabel } from './copy'
-import { Eyebrow, InlineAlert, SourceBadge, TypeBadge } from './parts'
+import { InlineAlert } from '../parts'
+import { Eyebrow, SourceBadge, TypeBadge } from './parts'
 
 type Ready = Extract<Snapshot, { status: 'ready' }>
 type EntitySlot = Extract<SlotView, { kind: 'choose-entity' }>

@@ -92,7 +92,7 @@ Em toda tarefa, o pronto-quando inclui `npm run typecheck` e `npm run lint` pass
     - E2E, `NFR-ACC-001`: num carregamento completo da URL do construtor (`page.goto` direto ou `reload`), o foco não é movido (`document.activeElement` é o `body`);
     - o `e2e/builder-dock.spec.ts` continua verde, sem mudança: o foco no `h1` não o quebra.
 
-- [ ] **T4a. Peças compartilhadas da Home e do construtor** (ui-design, Decisões entre telas; nenhum FR novo)
+- [x] **T4a. Peças compartilhadas da Home e do construtor** (ui-design, Decisões entre telas; nenhum FR novo)
   - Só reorganização: nenhum texto nem aparência do construtor muda.
   - Em `src/ui/copy.ts`: `STORAGE_UNAVAILABLE`, a mensagem da falha de leitura. O `OPEN_MESSAGE['storage-unavailable']` de `src/ui/builder/copy.ts` passa a apontar para ela, com o mesmo texto.
   - `src/ui/parts.tsx` (novo): `InlineAlert` e `PillCounter`, movidos de `src/ui/builder/parts.tsx`; o construtor passa a importá-los dali. O `InlineAlert` ganha a opção `live={false}` (sem `role`); o padrão continua o de hoje (`alert` no danger, `status` no warning).

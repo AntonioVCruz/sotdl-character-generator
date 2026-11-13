@@ -6,6 +6,7 @@ import {
   type StepStatus,
   type StepView,
 } from '../../engine'
+import { STORAGE_UNAVAILABLE } from '../copy'
 
 // Texto do construtor (ui-design §Textos, NFR-L10N-001). Nenhum id, enum ou nome de vaga aparece na tela (lição 5);
 // pergunta da etapa e rótulos das pendências são do app, por id de etapa e por `kind` de vaga (D6).
@@ -118,8 +119,7 @@ export function decisionWhere(decision: OpenDecision, steps: StepView[]): string
 }
 
 export const OPEN_MESSAGE = {
-  'storage-unavailable':
-    "This browser didn't let the generator read your saved characters. Nothing was changed. Reload the page to try again. If it keeps happening, check that this site is allowed to store data.",
+  'storage-unavailable': STORAGE_UNAVAILABLE,
   'not-found': "This character isn't saved in this browser. It may have been deleted, or created in another browser.",
   unreadable:
     "This character was saved by an earlier version of the generator and can't be opened. Your other characters aren't affected.",

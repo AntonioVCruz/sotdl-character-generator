@@ -1,7 +1,8 @@
 import type { Ref } from 'react'
 import type { Rules, SlotView, StepView } from '../../engine'
 import { REGIME_LABEL, stepQuestion, stepRule } from './copy'
-import { PillCounter, SourceBadge } from './parts'
+import { PillCounter } from '../parts'
+import { SourceBadge } from './parts'
 
 /** `step-header` (FR-FLOW-009): regime, pergunta, linha de regra com página e contadores. */
 export function StepHeader({ step, steps, slots, rules, titleRef }: {

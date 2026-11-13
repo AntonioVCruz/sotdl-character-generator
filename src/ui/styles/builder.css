@@ -239,7 +239,7 @@ a.step-map__item--current:hover {
   color: var(--color-text-secondary);
 }
 
-/* source-badge, type-badge, pill-counter (design.md §4) */
+/* source-badge, type-badge (design.md §4); o pill-counter está no base.css, compartilhado com a Home. */
 .source-badge {
   display: inline-block;
   padding: var(--space-0-5) var(--space-1-5);
@@ -255,26 +255,6 @@ a.step-map__item--current:hover {
   background: var(--color-background-sunken);
   border-radius: var(--radius-sm);
   font-weight: var(--font-weight-semibold);
-}
-
-.pill-counter {
-  display: inline-flex;
-  align-items: center;
-  height: var(--size-pill);
-  padding: 0 var(--space-2);
-  border: var(--border-width-default) dashed var(--color-border-control);
-  border-radius: var(--radius-pill);
-  color: var(--color-text-default);
-  font-weight: var(--font-weight-semibold);
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-}
-
-.pill-counter--done {
-  background: var(--color-action-selected);
-  border-color: var(--color-action-selected);
-  border-style: solid;
-  color: var(--color-text-inverse);
 }
 
 /* option-card (design.md §4): prévia com borda 2px forte; escolha atual com "Your choice", nunca a borda. */
@@ -591,6 +571,12 @@ a.step-map__item--current:hover {
     display: none;
   }
 
+  /* loading: o esqueleto do resumo continua visível (ui-design da FEAT-007, loading). Antes da FEAT-001 T4a, a regra
+     .skeleton-grid vinha depois desta no builder.css; no base.css, ela vem antes e perderia. */
+  .builder__summary.skeleton-grid {
+    display: grid;
+  }
+
   .builder__summary--open {
     position: fixed;
     top: var(--size-header-mobile);
@@ -756,45 +742,6 @@ a.step-map__item--current:hover {
   max-width: var(--size-prose-max);
   margin: 0 auto;
   gap: var(--space-4);
-}
-
-/* loading (design.md §4): esqueletos com fundo sunken, sem spinner. */
-.skeleton {
-  display: block;
-  background: var(--color-background-sunken);
-  border-radius: var(--radius-md);
-}
-
-.skeleton-list,
-.skeleton-grid {
-  display: grid;
-  gap: var(--space-2);
-}
-
-.skeleton-grid {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--space-3);
-}
-
-.skeleton-grid--four {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  align-content: start;
-}
-
-.skeleton--row {
-  height: var(--size-control);
-}
-
-.skeleton--header {
-  height: var(--size-header);
-}
-
-.skeleton--card {
-  height: var(--size-header);
-}
-
-.skeleton--mini {
-  height: var(--size-control);
 }
 
 /* Etapa Attributes (ui-design da FEAT-008, SCR-WEB-005): os cards ocupam a coluna; só o texto corrido tem a medida. */

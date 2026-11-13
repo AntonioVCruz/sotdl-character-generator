@@ -278,6 +278,7 @@ a {
   }
 }
 
+/* Só o ErrorBoundary usa a .notice, até a FEAT-022 migrá-lo para o inline-alert (ui-design da FEAT-001). */
 .notice {
   padding: var(--space-3) var(--space-4);
   border-radius: var(--radius-md);
@@ -287,20 +288,6 @@ a {
   background: var(--color-state-danger-tint);
   color: var(--color-state-danger);
   border: var(--border-width-default) solid var(--color-state-danger);
-}
-
-.character-list {
-  display: grid;
-  gap: var(--space-3);
-  padding: 0;
-  list-style: none;
-}
-
-.character-list__item {
-  padding: var(--space-4);
-  background: var(--color-background-surface);
-  border: var(--border-width-default) solid var(--color-border-divider);
-  border-radius: var(--radius-lg);
 }
 
 /* button-secondary (design.md §4) */
@@ -337,9 +324,40 @@ a {
   }
 }
 
+/* button-danger (design.md §4): só dentro de diálogo de confirmação destrutiva. */
+.button-danger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: var(--size-control);
+  padding: 0 var(--space-4);
+  border: 0;
+  border-radius: var(--radius-md);
+  background: var(--color-state-danger);
+  color: var(--color-text-inverse);
+  cursor: pointer;
+  transition: background-color var(--duration-fast) ease-out;
+}
+
+.button-danger[data-hovered] {
+  background: var(--color-accent-hover);
+}
+
+.button-danger[data-pending] {
+  cursor: progress;
+}
+
+@media (pointer: coarse) {
+  .button-danger {
+    min-height: var(--size-touch-target);
+  }
+}
+
 /* disabled (design.md §4): opacidade, cursor e o motivo em texto ao lado. */
 .button-primary[data-disabled],
-.button-secondary[data-disabled] {
+.button-secondary[data-disabled],
+.button-danger[data-disabled] {
   opacity: var(--opacity-disabled);
   cursor: not-allowed;
 }
@@ -386,4 +404,134 @@ a {
 .inline-alert--warning {
   background: var(--color-state-warning-tint);
   color: var(--color-state-warning);
+}
+
+/* pill-counter (design.md §4), compartilhado pela Home e pelo construtor. */
+.pill-counter {
+  display: inline-flex;
+  align-items: center;
+  height: var(--size-pill);
+  padding: 0 var(--space-2);
+  border: var(--border-width-default) dashed var(--color-border-control);
+  border-radius: var(--radius-pill);
+  color: var(--color-text-default);
+  font-weight: var(--font-weight-semibold);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.pill-counter--done {
+  background: var(--color-action-selected);
+  border-color: var(--color-action-selected);
+  border-style: solid;
+  color: var(--color-text-inverse);
+}
+
+/* loading (design.md §4): esqueletos com fundo sunken, sem spinner. */
+.skeleton {
+  display: block;
+  background: var(--color-background-sunken);
+  border-radius: var(--radius-md);
+}
+
+.skeleton-list,
+.skeleton-grid {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.skeleton-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+.skeleton-grid--four {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  align-content: start;
+}
+
+.skeleton--row {
+  height: var(--size-control);
+}
+
+.skeleton--header {
+  height: var(--size-header);
+}
+
+.skeleton--card {
+  height: var(--size-header);
+}
+
+.skeleton--mini {
+  height: var(--size-control);
+}
+
+/* dialog (design.md §4): até --size-dialog-max, fundo surface, raio lg, sombra e backdrop overlay. */
+.dialog-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4);
+  background: var(--color-overlay);
+}
+
+.dialog-overlay[data-entering] {
+  animation: dialog-fade var(--duration-normal) ease-out;
+}
+
+.dialog {
+  width: min(var(--size-dialog-max), 100%);
+  max-height: 100%;
+  overflow: auto;
+  background: var(--color-background-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-overlay);
+}
+
+.dialog[data-entering] {
+  animation: dialog-open var(--duration-normal) ease-out;
+}
+
+.dialog__content {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  outline: none;
+}
+
+@media (--bp-md) {
+  .dialog__content {
+    padding: var(--space-5);
+  }
+}
+
+/* Ações no rodapé: a conservadora à esquerda, a que aplica à direita. */
+.dialog__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+@keyframes dialog-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes dialog-open {
+  from {
+    opacity: 0;
+    transform: translateY(var(--space-2));
+  }
+}
+
+/* Sem deslocamento com movimento reduzido: o diálogo só aparece. */
+@media (prefers-reduced-motion: reduce) {
+  .dialog[data-entering] {
+    animation-name: dialog-fade;
+  }
 }

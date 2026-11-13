@@ -4,7 +4,8 @@ import { Button, Disclosure, DisclosurePanel } from 'react-aria-components'
 import type { CharacterView, OpenDecision, Stage, StepView } from '../../engine'
 import { href } from '../router'
 import { decisionTitle, decisionWhere, formatModifier, formatValue, limitText } from './copy'
-import { Eyebrow, PillCounter } from './parts'
+import { PillCounter } from '../parts'
+import { Eyebrow } from './parts'
 
 /** `live-summary` (FR-FLOW-012, 013): atributos, características com composição e ganhos. */
 export function LiveSummary({ view, nameOf }: { view: CharacterView; nameOf: (id: string) => string }) {
