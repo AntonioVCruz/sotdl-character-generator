@@ -51,10 +51,16 @@ export function AncestryStep({ session, snapshot, slot, nameOf }: {
         return dependent ? decisionTitle({ kind: dependent.kind, target: 'target' in dependent ? dependent.target : undefined }, nameOf) : ''
       })
       onNotice(hasDependentsMessage(nameOf(id), current ? nameOf(current) : '', titles))
-      setSelected(null)
+      clearPreviewOf(id)
       return
     }
-    setSelected(null)
+    clearPreviewOf(id)
+  }
+
+  // A continuação de um "Choose" só limpa a prévia se ela ainda for a do item escolhido: a pessoa pode ter aberto a de
+  // outro cartão enquanto a gravação corria (DEF-005).
+  function clearPreviewOf(id: string) {
+    setSelected((previewed) => (previewed === id ? null : previewed))
   }
 
   return (
