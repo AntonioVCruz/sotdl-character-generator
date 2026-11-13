@@ -80,6 +80,45 @@ export function summarize(document: CharacterDocument, rules: Rules): CharacterS
   }
 }
 
+const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null
+const text = (value: unknown) => (typeof value === 'string' ? value : '')
+
+/**
+ * Leitura tolerante de um registro de metadados (FEAT-001 §3.1): os gravados antes da FEAT-001 não têm os campos
+ * novos. Sem `id` string, o registro é ignorado; o `status` sai sempre da contagem, nunca do valor gravado.
+ */
+export function readSummary(raw: unknown): CharacterSummary | null {
+  if (!isRecord(raw) || typeof raw.id !== 'string') return null
+  const open = raw.openDecisions
+  const openDecisions = typeof open === 'number' && Number.isInteger(open) && open >= 0 ? open : null
+  const sources = Array.isArray(raw.sources)
+    ? raw.sources.filter(
+        (source): source is CharacterSummary['sources'][number] =>
+          isRecord(source) && typeof source.id === 'string' && typeof source.name === 'string' && typeof source.abbr === 'string',
+      )
+    : []
+  return {
+    id: raw.id,
+    name: text(raw.name),
+    ancestry: typeof raw.ancestry === 'string' ? raw.ancestry : null,
+    status: openDecisions === 0 ? 'complete' : 'creating',
+    openDecisions,
+    sources: sources.map(({ id, name, abbr }) => ({ id, name, abbr })),
+    contentVersion: text(raw.contentVersion),
+    updatedAt: text(raw.updatedAt),
+  }
+}
+
+/** FR-CHAR-004: edição mais recente primeiro (o ISO do `toISOString` compara como texto), empate pelo `id`; sem data, no fim. */
+export function byRecentEdit(a: CharacterSummary, b: CharacterSummary): number {
+  if (a.updatedAt !== b.updatedAt) {
+    if (!a.updatedAt) return 1
+    if (!b.updatedAt) return -1
+    return a.updatedAt < b.updatedAt ? 1 : -1
+  }
+  return a.id < b.id ? -1 : a.id > b.id ? 1 : 0
+}
+
 /** Livros carregados uma vez e regras memoizadas pela ordem de fontes (architecture.md §8, Desempenho). */
 export function createRulesLoader(packs: PackSource = {}): LoadRules {
   const books = new Map<string, Promise<Book>>()

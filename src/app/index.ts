@@ -1,11 +1,13 @@
 import { CONTENT_VERSION, characterDocumentSchema, loadBookIndex, PackLoadError, type CharacterDocument, type PackSource } from '../content'
 import { EngineError, type Rules } from '../engine'
 import { createIndexedDbRepository, openCharacterDatabase } from '../storage'
-import { createCharacterSession, createRulesLoader, summarize, type Repository } from './session'
+import { byRecentEdit, createCharacterSession, createRulesLoader, readSummary, summarize, type CharacterSummary, type Repository } from './session'
 
 export * from './session'
 
 // Camada de aplicação: único módulo que escreve (architecture.md §5.2, ADR-004 §5).
+
+export type ListResult = { ok: true; characters: CharacterSummary[] } | { ok: false; reason: 'storage-unavailable' }
 
 export type CreateResult = { ok: true; id: string } | { ok: false; reason: 'pack-load-failed' | 'save-failed' }
 
@@ -24,7 +26,17 @@ export function createApp({
 }: AppDeps) {
   const loadRules = createRulesLoader(packs)
   return {
-    listCharacters: () => repository.list(),
+    /** FR-CHAR-003, 004: os metadados, lidos com tolerância e ordenados; a falha de leitura é um resultado (FEAT-001 D4, D5). */
+    async listCharacters(): Promise<ListResult> {
+      let records: unknown[]
+      try {
+        records = await repository.list()
+      } catch {
+        return { ok: false, reason: 'storage-unavailable' }
+      }
+      const characters = records.map(readSummary).filter((summary) => summary !== null)
+      return { ok: true, characters: characters.sort(byRecentEdit) }
+    },
 
     /** FR-CHAR-001: personagem de nível 0 com o core como única fonte; FR-CHAR-009/010: grava ou falha sem perder nada. */
     async createCharacter(): Promise<CreateResult> {

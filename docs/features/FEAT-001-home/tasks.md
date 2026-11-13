@@ -25,7 +25,7 @@ Em toda tarefa, o pronto-quando inclui `npm run typecheck` e `npm run lint` pass
       - `FR-CHAR-001` com o metadado novo;
       - `FR-HELP-004`: livro do core que não carrega (índice ok) → `pack-load-failed`, nada gravado.
 
-- [ ] **T2. `listCharacters`, leitura tolerante e ordem** (design §3.1 `listCharacters`; FR-CHAR-003, 004; D4, D5; AC-12, AC-14)
+- [x] **T2. `listCharacters`, leitura tolerante e ordem** (design §3.1 `listCharacters`; FR-CHAR-003, 004; D4, D5; AC-12, AC-14)
   - Em `src/app/session.ts` (ou num arquivo novo no `app`): `readSummary(raw)`, pela tabela da §3.1.
   - Em `src/app/index.ts`: `listCharacters(): Promise<ListResult>`, ordenado.
   - Em `src/ui/screens/Home.tsx`, só para continuar verde até a T5:

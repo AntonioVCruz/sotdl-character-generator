@@ -6,6 +6,10 @@ import { href, navigate } from '../router'
 // SCR-WEB-001, casca do esqueleto técnico: criar e listar pelos metadados.
 // Cartões, estados, ordenação, exclusão e aviso "só neste navegador" são da FEAT-001.
 
+// Rascunho do technical-design §3.5 (texto final da T5, ui-design Textos), até a tela da T5.
+const LIST_FAILURE =
+  "This browser didn't let the generator read your saved characters. Nothing was changed. Reload the page to try again. If it keeps happening, check that this site is allowed to store data."
+
 const FAILURE: Record<'pack-load-failed' | 'save-failed', string> = {
   'pack-load-failed': 'The rules could not be loaded, so no character was created. Check your connection and try again.',
   'save-failed': 'Your browser did not save the new character, so it was not created. Try again.',
@@ -13,11 +17,15 @@ const FAILURE: Record<'pack-load-failed' | 'save-failed', string> = {
 
 export function Home() {
   const [characters, setCharacters] = useState<CharacterSummary[] | null>(null)
+  const [listFailed, setListFailed] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [creating, setCreating] = useState(false)
 
   useEffect(() => {
-    app.listCharacters().then(setCharacters, () => setCharacters([]))
+    void app.listCharacters().then((result) => {
+      if (result.ok) setCharacters(result.characters)
+      else setListFailed(true)
+    })
   }, [])
 
   async function create() {
@@ -41,6 +49,12 @@ export function Home() {
       {error && (
         <p role="alert" className="notice notice--danger typography-body">
           {error}
+        </p>
+      )}
+      {/* FEAT-007 §8: a falha da lista é um aviso, nunca a lista vazia. */}
+      {listFailed && (
+        <p role="alert" className="notice notice--danger typography-body">
+          {LIST_FAILURE}
         </p>
       )}
       {characters && characters.length > 0 && (

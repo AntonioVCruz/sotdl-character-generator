@@ -118,3 +118,67 @@ describe('createCharacter', () => {
     expect(repository.docs.size).toBe(0)
   })
 })
+
+describe('listCharacters', () => {
+  const summary = (id: string, updatedAt: string): CharacterSummary => ({
+    id,
+    name: id,
+    ancestry: null,
+    status: 'creating',
+    openDecisions: 1,
+    sources: [{ id: 'test.core', name: 'Core', abbr: 'CO' }],
+    contentVersion: '0.0.0',
+    updatedAt,
+  })
+  const listing = (records: unknown[]) => ({ ...memoryRepository(), list: async () => records as CharacterSummary[] })
+
+  it('FR-CHAR-004: lists the most recent edit first, with ties by id and an empty date last', async () => {
+    const records = [
+      summary('b', '2026-01-01T00:00:00.000Z'),
+      summary('none', ''),
+      summary('c', '2026-03-01T00:00:00.000Z'),
+      summary('a', '2026-01-01T00:00:00.000Z'),
+    ]
+    const result = await createApp({ repository: listing(records), ...deps }).listCharacters()
+    expect(result.ok && result.characters.map((character) => character.id)).toEqual(['c', 'a', 'b', 'none'])
+  })
+
+  it('FR-CHAR-003: old metadata reads with open decisions unknown, creating and no sources; a record without id is ignored', async () => {
+    const old = { id: 'old', name: 'Liliana', ancestry: 'Human', status: 'complete', sources: ['sotdl.core'], updatedAt: '2026-01-01T00:00:00.000Z' }
+    const result = await createApp({ repository: listing([old, { name: 'no id' }, null, { id: 7 }]), ...deps }).listCharacters()
+    expect(result).toEqual({
+      ok: true,
+      characters: [
+        {
+          id: 'old',
+          name: 'Liliana',
+          ancestry: 'Human',
+          status: 'creating',
+          openDecisions: null,
+          sources: [],
+          contentVersion: '',
+          updatedAt: '2026-01-01T00:00:00.000Z',
+        },
+      ],
+    })
+  })
+
+  it('FR-CHAR-003: the status is recalculated from a valid count, never read from the record', async () => {
+    const records = [
+      { ...summary('done', '2026-01-02T00:00:00.000Z'), status: 'creating', openDecisions: 0 },
+      { ...summary('open', '2026-01-01T00:00:00.000Z'), status: 'complete', openDecisions: 2 },
+      { ...summary('odd', '2026-01-01T00:00:00.000Z'), name: 3, ancestry: 4, openDecisions: 1.5 },
+    ]
+    const result = await createApp({ repository: listing(records), ...deps }).listCharacters()
+    expect(result.ok && result.characters.map(({ id, name, ancestry, status, openDecisions }) => ({ id, name, ancestry, status, openDecisions }))).toEqual([
+      { id: 'done', name: 'done', ancestry: null, status: 'complete', openDecisions: 0 },
+      { id: 'odd', name: '', ancestry: null, status: 'creating', openDecisions: null },
+      { id: 'open', name: 'open', ancestry: null, status: 'creating', openDecisions: 2 },
+    ])
+  })
+
+  it('FR-HELP-005: a list that rejects gives storage-unavailable (FEAT-007 §8)', async () => {
+    const repository = { ...memoryRepository(), list: () => Promise.reject(new DOMException('blocked', 'SecurityError')) }
+    await expect(createApp({ repository, ...deps }).listCharacters()).resolves.toEqual({ ok: false, reason: 'storage-unavailable' })
+  })
+})
