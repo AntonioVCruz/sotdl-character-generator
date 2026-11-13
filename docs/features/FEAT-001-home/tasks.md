@@ -1,7 +1,7 @@
 # Tasks: FEAT-001 — Home: listar, continuar e excluir personagens
 
 > Executa: `docs/features/FEAT-001-home/technical-design.md`
-> Status: pending · Última atualização: 2026-11-13
+> Status: pending · Última atualização: 2026-11-13 (emenda pelas pendências do ui-design: foco, T4a e medidas a 320 px)
 > Tela (SCR-WEB-001): do ui-design, pelo `docs/design-manifest.json`. As tarefas de ui aqui são só integração.
 > Pré-requisito: o technical-design (com o §7 "Contratos alterados") está no `main` antes da T1.
 
@@ -61,13 +61,19 @@ Em toda tarefa, o pronto-quando inclui `npm run typecheck` e `npm run lint` pass
       - `FR-CHAR-014`: `delete` que rejeita → `delete-failed`, com documento, metadados e chave intactos;
       - `FR-CHAR-014`: `forget` que lança → `{ ok: true }`.
 
-- [ ] **T4. Rota e construtor: abrir na última etapa e nome no cabeçalho** (design §3.5 `builderRedirect` e `Builder`; FR-CHAR-007, 011, FR-FLOW-005, 006)
+- [ ] **T4. Rota e construtor: abrir na última etapa, nome no cabeçalho e foco no `h1`** (design §3.5 `builderRedirect` e `Builder`; ui-design, Builder frame focus; FR-CHAR-007, 011, FR-FLOW-005, 006, 007, 008, 011)
   - Em `src/ui/router.ts`: `builderRedirect(route, steps, lastStep?)`.
   - Em `src/ui/screens/Builder.tsx`:
     - `lastStep` no redirect;
     - `session.visit(current.slug)` a cada etapa mostrada;
     - `displayName(document.text.name)` no cabeçalho.
-  - `displayName` como função pura do `ui`, fora de `src/ui/builder/` (a Home a usa na T5).
+  - `displayName` em `src/ui/copy.ts` (novo), função pura do `ui` fora de `src/ui/builder/` (a Home a usa na T5).
+  - Foco no `h1` da etapa (ui-design, Builder frame focus):
+    - `tabindex="-1"` no `h1` do `step-header`;
+    - o foco vai ao `h1` quando se chega à etapa por navegação dentro do app: "Continue", "New character", Next, Back, mapa e seletor;
+    - no seletor do celular, o foco no `h1` vence a devolução do popover ao gatilho (no quadro seguinte);
+    - com `?slot=`, o foco fica na vaga (FR-FLOW-011, sem mudança);
+    - num carregamento completo da página (reload ou link direto), o foco não é movido.
   - **Pronto quando** os testes passam:
     - `router.test.ts`, `FR-CHAR-007`:
       - sem etapa e com a última liberada → ela;
@@ -78,7 +84,27 @@ Em toda tarefa, o pronto-quando inclui `npm run typecheck` e `npm run lint` pass
       - `FR-CHAR-007`: abrir sem etapa com `lastStep` vai à etapa salva;
       - `FR-CHAR-007`: trocar de etapa chama `visit`;
       - `FR-CHAR-011`: nome só de espaços → "Unnamed character" no cabeçalho;
-      - `FR-CHAR-011`: nome definido → o nome.
+      - `FR-CHAR-011`: nome definido → o nome;
+      - `FR-FLOW-007`: depois de Next, o foco está no `h1` da nova etapa;
+      - `FR-CHAR-007`: chegar pelo "Continue" (rota sem etapa) vai à etapa resolvida com o foco no `h1`;
+      - `FR-FLOW-011`: com `?slot=`, o foco fica na vaga, não no `h1`;
+    - E2E nos projetos de celular, `FR-FLOW-006`: escolher uma etapa no seletor deixa o foco no `h1`, não no gatilho;
+    - E2E, `NFR-ACC-001`: num carregamento completo da URL do construtor (`page.goto` direto ou `reload`), o foco não é movido (`document.activeElement` é o `body`);
+    - o `e2e/builder-dock.spec.ts` continua verde, sem mudança: o foco no `h1` não o quebra.
+
+- [ ] **T4a. Peças compartilhadas da Home e do construtor** (ui-design, Decisões entre telas; nenhum FR novo)
+  - Só reorganização: nenhum texto nem aparência do construtor muda.
+  - Em `src/ui/copy.ts`: `STORAGE_UNAVAILABLE`, a mensagem da falha de leitura. O `OPEN_MESSAGE['storage-unavailable']` de `src/ui/builder/copy.ts` passa a apontar para ela, com o mesmo texto.
+  - `src/ui/parts.tsx` (novo): `InlineAlert` e `PillCounter`, movidos de `src/ui/builder/parts.tsx`; o construtor passa a importá-los dali. O `InlineAlert` ganha a opção `live={false}` (sem `role`); o padrão continua o de hoje (`alert` no danger, `status` no warning).
+  - CSS:
+    - `pill-counter` e `skeleton*` saem do `builder.css` para o `base.css`;
+    - `button-danger` e `dialog` entram no `base.css`;
+    - a `.character-list` sai do `base.css` (a lista atual da Home fica sem esse estilo até a T5, que a refaz);
+    - a `.notice` deixa de ser usada pela Home (o aviso dela passa ao `InlineAlert` danger, com o mesmo texto) e continua no `base.css` enquanto o `ErrorBoundary` (`src/ui/ErrorBoundary.tsx:20`) a usar. Nenhuma mudança no `ErrorBoundary`: a migração é da FEAT-022.
+  - **Pronto quando:**
+    - `npm run typecheck`, `npm run lint`, `npm test` e `npm run e2e` (inclusive o `e2e/builder-dock.spec.ts`) passam, sem nenhum teste alterado;
+    - o axe do construtor (os testes `NFR-ACC-001` do `ancestry.spec.ts` e do `attributes.spec.ts`) continua verde;
+    - a guarda do `Builder-*.js` (`e2e/skeleton.spec.ts:61`) continua verde.
 
 - [ ] **T5. Home: estados, cartões, menu e exclusão** (design §3.5 Home; FR-CHAR-003, 005, 006, 011, 013, 014, 015, 016; AC-1 a AC-12, AC-16, AC-17)
   - Integração da tela do ui-design (SCR-WEB-001, manifesto):
@@ -88,7 +114,7 @@ Em toda tarefa, o pronto-quando inclui `npm run typecheck` e `npm run lint` pass
     - aviso "só neste navegador" nos estados vazio e populado;
     - `formatEdited`;
     - foco e nomes acessíveis conforme o ui-design.
-  - A Home não importa de `src/ui/builder/`.
+  - A Home não importa de `src/ui/builder/`: usa as peças da T4a (`src/ui/copy.ts`, `src/ui/parts.tsx`, CSS do `base.css`); o resto do CSS da Home vai a `src/ui/styles/home.css`, importado pelo `Home.tsx`.
   - **Contrato alterado (§7):** `skeleton.spec.ts:77`, com o seletor do cartão definido pelo ui-design. **Expectativa nova:** nesse teste, depois do `reload` com o personagem salvo, nenhum pedido a `/packs/` nem ao `Builder-*.js` (zerar a lista de pedidos antes do `reload`).
   - **Pronto quando:**
     - os testes do `Home.test.tsx` passam:
@@ -103,6 +129,12 @@ Em toda tarefa, o pronto-quando inclui `npm run typecheck` e `npm run lint` pass
       - `FR-CHAR-015`: estado vazio;
       - `FR-CHAR-016`: aviso nos dois estados;
       - `formatEdited`: data válida em inglês e inválida → sem data;
+    - os testes de foco do ui-design (Foco na Home), no `Home.test.tsx` ou em E2E quando dependem da navegação:
+      - `FR-CHAR-013`: depois de cancelar (Esc ou "Cancel"), o foco volta ao "···" do cartão;
+      - `FR-CHAR-014`: depois de excluir, o foco vai ao título do cartão vizinho (o seguinte; se era o último da lista, o anterior);
+      - `FR-CHAR-015`: depois de excluir o último, o foco vai a "No characters yet";
+      - `NFR-ACC-001`: chegar à Home por navegação interna (a marca ou "Back to My characters") → foco no `h1` "My characters";
+      - `NFR-ACC-001`: carregamento inicial da Home → foco não movido;
     - o `skeleton.spec.ts` passa nos 5 projetos;
     - a tela confere com o manifesto.
 
@@ -120,12 +152,16 @@ Em toda tarefa, o pronto-quando inclui `npm run typecheck` e `npm run lint` pass
   - axe sem violação grave na Home com personagens e com o diálogo aberto, uma análise por teste (scaffold-notes, Firefox).
   - **Pronto quando:** `npm run e2e` passa nos 5 projetos, sem violação de CSP.
 
-- [ ] **T7. NFR-CAP-001: 100 personagens, E2E e Lighthouse** (design D8, D9; AC-15; NFR-CAP-001, NFR-PERF-001)
+- [ ] **T7. NFR-CAP-001: 100 personagens, E2E e Lighthouse** (design D8, D9; AC-15; ui-design, Medidas de capacidade; NFR-CAP-001, NFR-PERF-001, NFR-COMP-002)
   - `e2e/seed-characters.js`: a função de navegador da D9, sem dependência e sem nada no bundle.
   - `e2e/capacity.spec.ts` (novo), nos 5 projetos:
     - cria um personagem pela interface, volta à Home, semeia até 100 pelo `page.evaluate` e recarrega;
     - confere 100 cartões na ordem da FR-CHAR-004;
-    - **expectativa nova:** nenhum pedido a `/packs/` nem ao `Builder-*.js` depois do `reload`.
+    - **expectativa nova:** nenhum pedido a `/packs/` nem ao `Builder-*.js` depois do `reload`;
+    - as medidas do ui-design, com 100 cartões:
+      - a 320 px (e a 360, como no ui-design), sem rolagem horizontal: `document.documentElement.scrollWidth <= clientWidth` (NFR-COMP-002);
+      - a 320 px, com o diálogo de exclusão aberto: `getBoundingClientRect` do diálogo e dos dois botões dele com `left >= 0` e `right <= window.innerWidth`;
+      - a 320 px, o mesmo para o popover do menu "···" do último cartão da grade.
   - Lighthouse com 100:
     - `lighthouserc.capacity.desktop.cjs` e `lighthouserc.capacity.mobile.cjs` pelo `lighthouserc.shared.cjs`, com `puppeteerScript` (`lighthouse/seed.cjs` ou equivalente, que cria o personagem, semeia com a mesma função, recarrega a Home, confere que há 100 cartões e lança um erro se não houver, D8);
     - `puppeteerLaunchOptions` com os flags de headless;
@@ -147,4 +183,4 @@ Em toda tarefa, o pronto-quando inclui `npm run typecheck` e `npm run lint` pass
   - O CI do commit final está verde (`check`, `e2e`, `lighthouse`).
   - Revisão de textos visíveis (NFR-USE-001) e de acessibilidade da Home (NFR-ACC-001, revisão manual), como no plano §6.
   - Todo teste novo começa pelo FR ou NFR que verifica.
-  - **Pronto quando:** tudo acima demonstrado e as caixas de T1 a T7 marcadas.
+  - **Pronto quando:** tudo acima demonstrado e as caixas de T1 a T7 marcadas, inclusive a T4a.
