@@ -4,6 +4,7 @@
 > Padrão: technical-design.md §6 @ `7c0883e` · Fontes: srs.md, use-cases.md (UC-003), ui-design.md, design-manifest.json
 > Estado auditado: `33330d9` (código de `7c0883e` mais as correções de teste abaixo)
 > Re-verificação: Accepted · 2026-11-13 · DEF-001 e DEF-002 (ver a seção no fim)
+> Re-verificação: Accepted · 2026-11-13 · DEF-003, DEF-004 e DEF-005, com o DEF-006 aberto (ver a seção no fim)
 
 ## Veredito
 
@@ -126,3 +127,55 @@ Nenhum critério foi mudado.
 2. **Janelas baixas** (registrado no ui-design): a 320 × 568 sobram 394 px com a barra em duas linhas. Sem ação agora.
 
 **RTM.** Sem mudança: o Test ref da NFR-ACC-001 e dos FRs da FEAT-007 já aponta para este relatório.
+
+## Re-verificação de 2026-11-13: DEF-003, DEF-004 e DEF-005
+
+> Veredito: Accepted, com o DEF-006 aberto · Estado auditado: `3c6712e`, mais `7c1f14a` (só o nome e os comentários de um teste) · Padrão: technical-design.md §6 e ui-design.md, sem mudança
+
+**Veredito.** Aceita de novo. As três correções de manutenção (`docs/defects.md`) fazem o que o ui-design já dizia, e cada teste vermelho falha sem a correção e passa com ela. Todas as suítes passaram nesta execução, sem retry. Um achado novo, o DEF-006, é uma variante do DEF-005 fora do sintoma registrado. Ficou registrado e aberto, sem correção.
+
+**Padrão.** Os 13 critérios da §6 continuam valendo. A manutenção toca três pontos:
+- o AC-3 (FR-FLOW-014): a prévia é do jogador;
+- o AC-8 (FR-FLOW-003, D8): "dependents-blocked", em que a seleção volta à escolha atual;
+- o AC-9 com a NFR-ACC-001: no SCR-WEB-003, ao confirmar, o snapshot muda antes de gravar e o foco vai ao título do detalhe (D11); no SCR-WEB-016, o foco não fica escondido sob a região fixa.
+
+**Mudanças de teste auditadas** (`62add3f..3c6712e`). Nenhum skip, retry, timeout aumentado nem asserção removida. As únicas linhas removidas são duas assinaturas de função que ganharam um parâmetro.
+
+| Mudança | Commit | Classe | Auditoria |
+| :-- | :-- | :-- | :-- |
+| `Builder.test.tsx`: opção `holdSave` no `setup`, que retém a gravação até `release()` | `34f7670` | montagem determinística | Desligada por padrão; nenhum teste existente muda. Faz o IndexedDB lento sem depender de tempo. |
+| `Builder.test.tsx`: teste do DEF-003, foco no título antes da gravação | `34f7670` | teste novo | Fiel ao "Ao confirmar": confere a escolha na tela e a gravação pendente, depois o foco, e de novo o foco depois da gravação. |
+| `Builder.test.tsx`: teste do DEF-005, prévia de outro cartão aberta durante a gravação | `d290bcc` | teste novo | Fiel ao FR-FLOW-014 e ao "selected". |
+| `builder-dock.spec.ts`, teste do DEF-002: espera o foco no título antes de tabular | `0e3e76b` | sincronização | É o estado que o ui-design manda depois de "Choose". A espera é uma asserção a mais, e nada saiu. |
+| `builder-dock.spec.ts`, `tabIntoPartlyCovered`: põe o invólucro do input oculto na rolagem máxima antes de montar o pior caso | `0e3e76b` | montagem determinística | Fixa a geometria antes de posicionar a página. As pré-condições do pior caso e a asserção do resultado não mudaram. O estado natural, sem normalização, foi verificado direto (abaixo). |
+| `builder-dock.spec.ts`: opção `unscrolledHiddenInput` e teste do DEF-003 | `34f7670` | teste novo | Guarda a normalização: sem ela, 20/20 vermelhos na pré-condição. |
+
+**Nome do teste novo do `builder-dock.spec.ts`: rejeitado e corrigido** (`7c1f14a`). O nome "the worst case under the fixed builder dock is built whether or not the browser scrolled the hidden input" tinha dois problemas:
+- descrevia a montagem do próprio teste, não o que o produto faz;
+- prometia os dois estados do invólucro, quando o teste parte só do estado sem rolagem. O outro é o ponto de partida do teste do DEF-002.
+
+O nome novo diz a asserção e a condição: "tabbing into a segment partly under the fixed builder dock brings it entirely above the dock, also when the browser left the hidden input unscrolled". Os dois JSDoc empilhados do ajudante viraram um só. Montagem e asserções não mudaram.
+
+**Vermelhos conferidos** (produção trocada só no disco, restaurada com `git checkout` depois de cada rodada):
+
+| Teste | Sem a correção | Com a correção |
+| :-- | :-- | :-- |
+| `Builder.test.tsx`, DEF-003 | `AncestryStep` de `34f7670`: 3/3 vermelhos, no foco antes da gravação (`:205`) | 3/3 verdes |
+| `Builder.test.tsx`, DEF-005 | `AncestryStep` de `0e3e76b`: 3/3 vermelhos, depois do `release()` (`:228`) | 3/3 verdes |
+| `builder-dock.spec.ts`, DEF-003, nos 2 projetos de celular, 320 e 412 px | sem a normalização: 20/20 vermelhos (`--repeat-each=5`), na pré-condição "a base do contêiner fica sob a região fixa" | 80/80 (`--repeat-each=20`) |
+| `builder-dock.spec.ts:213`, DEF-002, mobile-safari | — | 120/120 (`--repeat-each=60 --workers=1`), o critério de zero do DEF-003 |
+| DEF-004, `ancestry.spec.ts:189`, webkit. O DEF-004 não tem teste próprio; a guarda é o teste de unidade do DEF-003. | `AncestryStep` de `34f7670`: 3 falhas em 30, todas "Decided." ausente, o sintoma do DEF-004 | 20/20 |
+
+**Caminho `has-dependents` do DEF-005: não precisa de teste próprio.** Na sessão (`src/app/session.ts`, `commit`), a recusa volta antes de mudar o snapshot e antes de qualquer gravação. A continuação do "Choose" roda numa microtarefa, e nenhum evento do jogador cabe entre o clique e ela. Por isso o `setSelected(null)` antigo e o `clearPreviewOf(id)` novo são equivalentes nesse caminho. Com o código antigo só nele, os 19 testes do `Builder.test.tsx` passam: um teste vermelho é impossível. O comportamento do caminho já tem guarda: sem limpar a prévia, o teste FR-FLOW-003 ("has-dependents shows a warning…") fica vermelho.
+
+**Execução independente** (do zero, porta 4173 livre antes): `npm ci`, `typecheck`, `lint`, `packs:check` e Vitest (159 testes em 18 arquivos) verdes. `npx playwright test --retries=0 --workers=1` nos 5 projetos: 164 passaram, 36 pulados, 0 falhas, 0 instáveis, em 6,3 min. O build e o servidor vieram do `webServer`. A Lighthouse não foi rodada: a Home não mudou.
+
+**Verificação direta.** Script Playwright fora do repositório, no build de `HEAD`, com Pixel 7 (Chromium) e iPhone 15 (WebKit) a 320 × 568 e 412 × 568. Para reter a gravação, a transação do documento fica aberta por 400 ms.
+- **Foco sem esperar a gravação:** depois de "Choose Human", o foco chega ao título "Human" de 406 a 454 ms antes do fim da gravação. 4/4.
+- **Prévia logo depois de "Choose":** com "Choose Dwarf" retido, abrir a prévia do Human logo depois a mantém depois da gravação. 4/4. Com a gravação natural, abrir a prévia do Dwarf logo depois de "Choose Human" também a mantém. 4/4.
+- **Tab sob a barra fixa, no estado natural, sem a normalização do teste:** o cartão "Human, your choice" e o segmento "Strength" foram postos com 40 px acima da barra e o resto sob ela. Depois do Tab, cada um termina acima da barra: base 386 contra 394 a 320 px, e 435 contra 443 a 412 px. 8/8.
+
+**Achados.** Rework: nenhum. Defeito de design: nenhum. Novo, em `docs/defects.md`:
+1. **DEF-006** (FR-FLOW-014), variante do DEF-005. Sequência: "Choose Human" com gravação lenta, depois "Choose Dwarf", depois a prévia do Human. Quando a gravação do Human termina, a continuação dele limpa essa prévia nova, porque o `clearPreviewOf(id)` compara o item, não a prévia. Reproduzido 8 de 8 (2 motores, 2 larguras, gravação retida 150 e 400 ms). Com a gravação natural (~10 ms), a sequência não cabe na janela. O DEF-005 como registrado (prévia de *outro* cartão) está corrigido. **Para:** a rota de manutenção do `sdlc-orchestrator`.
+
+**RTM.** Sem mudança.
