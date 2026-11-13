@@ -3,7 +3,7 @@
 > Feature de: `docs/implementation-plan.md` §3 (E1) e §4 (posição 3) · Épico: E1 Personagens
 > Implementa: FR-CHAR-003, 004, 005, 006, 007, 011, 013, 014, 015, 016 · Verifica: NFR-CAP-001 (plano §6)
 > Realiza: UC-001 (parcial: fluxo alternativo 1a e a lista da tela inicial) · Telas: SCR-WEB-001 (desenhada pelo ui-design)
-> Status: Verified · Data: 2026-11-12
+> Status: Verified · Data: 2026-11-12 · Emenda: 2026-11-13 (§7, `skeleton.spec.ts:86`)
 
 ## 1. Intenção
 
@@ -330,6 +330,7 @@ Expectativas antigas que mudam por decisão aprovada. Este documento é o commit
 | `src/ui/screens/Home.test.tsx` (mock) | `listCharacters: async () => []` | `listCharacters: async () => ({ ok: true, characters: [] })` | D4 |
 | `e2e/skeleton.spec.ts:77` | `getByRole('list', { name: 'Saved characters' }).getByRole('link')` com texto `['Unnamed character']` | o cartão com o nome "Unnamed character" e um "Continue" com nome acessível próprio, vindo do conteúdo. O seletor exato é do ui-design | §3.5 (cartão no lugar da lista de links) |
 | `summarize(document, rules?)` (chamadas) | `rules` opcional | obrigatório; a única chamada sem regras (`createCharacter`) passa a ter | D1 |
+| `e2e/skeleton.spec.ts:86` (emenda de 2026-11-13, antes da mudança do teste na T5) | `getByRole('button', { name: 'More' })` | `page.getByRole('banner').getByRole('button', { name: 'More' })` | O "···" do cartão se chama "More actions for {name}" (ui-design, Nomes acessíveis), e o Playwright compara o nome por substring, sem diferenciar maiúsculas: no celular, o seletor antigo acha dois botões (strict mode). A asserção fica mais estrita, porque passa a conferir que o About está no menu do cabeçalho (FR-HELP-001). |
 
 Conferidos, sem mudança:
 - `session.test.ts`: o `toMatchObject` parcial do metadado continua valendo;
@@ -338,7 +339,16 @@ Conferidos, sem mudança:
 - `storage/index.test.ts`: o `Repository` não muda;
 - `e2e/flow.ts`, `ancestry.spec.ts`, `attributes.spec.ts`, `perf.spec.ts`: todos os `goto` levam a etapa, e cada contexto tem um personagem;
 - o "Back to My characters" do `AppHeader` e do erro do construtor;
-- a guarda `skeleton.spec.ts:61`.
+- a guarda `skeleton.spec.ts:61`;
+- **varredura de localizadores por nome (emenda de 2026-11-13).** Os nomes e textos novos da Home (ui-design, "Textos" e "Nomes acessíveis") só aparecem na rota `home` (`src/ui/App.tsx:28`). Por isso, só os localizadores avaliados com a Home na tela podem colidir: os do `skeleton.spec.ts`, o `New character` do `flow.ts:20` e do `perf.spec.ts:74`, e o `home.spec.ts`. Conferidos nos 5 projetos (o "More" do cabeçalho só existe no celular):
+  - `button` "New character" (`skeleton.spec.ts:33`, `flow.ts:20`, `perf.spec.ts:74`): é o único botão cujo nome contém o texto. "To start, choose New character." é parágrafo, não botão;
+  - `heading` "My characters" (`skeleton.spec.ts:54`, `:111`): os `h2` da Home ("No characters yet", os nomes dos cartões, "Delete {name}?") não contêm o texto;
+  - `list` "Saved characters", `article` e o `link` "Continue Unnamed character" (`skeleton.spec.ts:79`, `:81`): o seletor do ui-design, restrito ao cartão;
+  - `menuitem` "About" (`skeleton.spec.ts:87`): com o menu do cabeçalho aberto, os menus dos cartões estão fechados, e o item deles é "Delete";
+  - `contentinfo` > `link` "About" e `heading` "About" (`skeleton.spec.ts:89`, `:91`): o primeiro é restrito ao rodapé, e o segundo roda na tela About;
+  - os links da marca e do "Back to My characters" (`skeleton.spec.ts:75`, `home.spec.ts:12`, `:18`) rodam no construtor e no About;
+  - os demais (`ancestry`, `attributes`, `builder-dock`, `builder-focus` e o resto do `perf.spec.ts`) rodam só no construtor, onde a Home não é renderizada;
+  - `src/**/*.test.tsx`: só o `Home.test.tsx` renderiza a Home. No Testing Library 10.4, o `name` do `ByRole` compara o nome inteiro (`matches`, igualdade, sem levar em conta o `exact`), e o `ByText` usa `exact: true` por padrão. As consultas anteriores à T5 (`button` "New character", `heading` "No characters yet", `list` "Saved characters", `alert` sem nome) não colidem.
 
 **Expectativas novas** (não são contratos alterados):
 - `skeleton.spec.ts`, depois do `reload` com o personagem salvo: nenhum pedido a `/packs/` nem ao `Builder-*.js`;
