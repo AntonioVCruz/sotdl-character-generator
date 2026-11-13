@@ -71,3 +71,71 @@ for (const width of [320, 360]) {
     await expectDockFits(page, 'Review')
   })
 }
+
+// Foco não escondido (WCAG 2.4.11; ui-design da FEAT-007, SCR-WEB-016, emenda de 2026-11-13): percorrendo a etapa com
+// Tab, cada controle focado do corpo fica inteiro acima do topo da região fixa.
+
+type Focused = { name: string; bottom: number; dockTop: number; inStep: boolean; inDock: boolean }
+
+/**
+ * Tab a partir do gatilho do seletor de etapas (o último controle antes do `main`) até o foco entrar na região fixa;
+ * devolve cada parada no corpo da etapa, medida depois que a rolagem para (o WebKit rola de forma assíncrona). O input
+ * oculto de um `option-card` ou de um segmento conta pelo `label` visível que mostra o foco.
+ */
+async function tabThroughStep(page: Page) {
+  await page.getByRole('button', { name: /^Step \d of 8/ }).focus()
+  const stops: Focused[] = []
+  for (let i = 0; i < 80; i++) {
+    await page.keyboard.press('Tab')
+    const stop = await page.evaluate(async () => {
+      const frame = () => new Promise((resolve) => requestAnimationFrame(resolve))
+      for (let last = -1; last !== window.scrollY; ) {
+        last = window.scrollY
+        await frame()
+        await frame()
+      }
+      const element = document.activeElement as HTMLElement | null
+      const dock = document.querySelector<HTMLElement>('.builder__dock')
+      if (!element || element === document.body || !dock) return null
+      const visible = element instanceof HTMLInputElement ? (element.closest('label') ?? element) : element
+      return {
+        name: (element.getAttribute('aria-label') || visible.textContent || element.tagName).trim().slice(0, 60),
+        bottom: visible.getBoundingClientRect().bottom,
+        dockTop: dock.getBoundingClientRect().top,
+        inStep: !!element.closest('main'),
+        inDock: dock.contains(element),
+      }
+    })
+    if (!stop) continue
+    if (stop.inDock) return stops
+    if (stop.inStep) stops.push(stop)
+  }
+  return stops
+}
+
+async function expectFocusNotObscured(page: Page, state: string) {
+  const stops = await tabThroughStep(page)
+  expect(stops.length, `${state}: controles da etapa percorridos com Tab`).toBeGreaterThan(0)
+  const hidden = stops.filter(({ bottom, dockTop }) => bottom > dockTop).map(({ name, bottom, dockTop }) => `${state} · "${name}": bottom ${bottom} > dock top ${dockTop}`)
+  expect.soft(hidden, `${state}: foco acima da região fixa`).toEqual([])
+}
+
+for (const width of [320, 412]) {
+  test(`NFR-ACC-001: at ${width} px, tabbing through the Ancestry and Attributes steps never leaves the focused control under the fixed builder dock`, async ({
+    page,
+  }, testInfo) => {
+    test.skip(!testInfo.project.name.startsWith('mobile'), 'A região fixa só existe abaixo de --bp-md (projetos de celular).')
+    await page.setViewportSize({ width, height: testInfo.project.use.viewport?.height ?? 800 })
+
+    await createCharacter(page)
+    await page.locator('label.option-card').filter({ hasText: 'Human' }).click()
+    await page.getByRole('button', { name: 'Choose Human' }).click()
+    await expect(page.getByRole('radio', { name: 'Human, your choice' })).toBeChecked()
+    await expectFocusNotObscured(page, 'Ancestry, Human chosen')
+
+    await page.getByRole('button', { name: 'Next: Attributes' }).click()
+    await expect(page).toHaveURL(/\/attributes$/)
+    await expect(page.locator('#slot-ancestry_human_attribute-increase')).toContainText('+1 to one attribute')
+    await expectFocusNotObscured(page, 'Attributes, Human')
+  })
+}
