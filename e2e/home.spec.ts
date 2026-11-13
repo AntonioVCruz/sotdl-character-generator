@@ -112,6 +112,25 @@ test.describe('Home flow', () => {
     expect(csp).toEqual([])
   })
 
+  test('FR-CHAR-004: deciding something on the older character brings it to the top', async ({ page }, testInfo) => {
+    const csp = await watchCsp(page)
+    await dwarfThenHuman(page, testInfo)
+    await expect(cards(page).nth(1)).toContainText('Dwarf · Level 0')
+
+    // Uma decisão no Dwarf, o mais antigo: o ajuste de atributos na etapa Attributes.
+    await card(page, 'Dwarf · Level 0').getByRole('link', { name: 'Continue Unnamed character' }).click()
+    await page.getByRole('button', { name: 'Next: Attributes' }).click()
+    await page.getByRole('radiogroup', { name: 'Raise one attribute by 1' }).getByText('Intellect', { exact: true }).click()
+    await page.getByRole('radiogroup', { name: 'Lower another attribute by 1' }).getByText('Strength', { exact: true }).click()
+    await page.getByRole('button', { name: 'Apply adjustment' }).click()
+    await expect(page.getByText('Applied: Intellect +1, Strength −1.')).toBeVisible()
+
+    await backHome(page, testInfo)
+    await expect(cards(page).nth(0)).toContainText('Dwarf · Level 0')
+    await expect(cards(page).nth(1)).toContainText('Human · Level 0')
+    expect(csp).toEqual([])
+  })
+
   test('FR-CHAR-007: "Continue" opens the last visited step, also after a reload', async ({ page }, testInfo) => {
     const csp = await watchCsp(page)
     await createCharacter(page)

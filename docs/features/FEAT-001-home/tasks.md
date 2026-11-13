@@ -1,7 +1,7 @@
 # Tasks: FEAT-001 — Home: listar, continuar e excluir personagens
 
 > Executa: `docs/features/FEAT-001-home/technical-design.md`
-> Status: in-progress · Última atualização: 2026-11-13 (emenda pelas pendências do ui-design: foco, T4a e medidas a 320 px)
+> Status: done · Última atualização: 2026-11-13 (T1 a T8 concluídas)
 > Tela (SCR-WEB-001): do ui-design, pelo `docs/design-manifest.json`. As tarefas de ui aqui são só integração.
 > Pré-requisito: o technical-design (com o §7 "Contratos alterados") está no `main` antes da T1.
 
@@ -178,7 +178,7 @@ Em toda tarefa, o pronto-quando inclui `npm run typecheck` e `npm run lint` pass
     - mutação: com a semente gravando 0 personagens, o `npm run lighthouse` falha pela guarda do `puppeteerScript`; restaurar a semente depois;
     - o tempo do job anotado no aceite.
 
-- [ ] **T8. Verificação** (design §6; NFR-MAINT-002)
+- [x] **T8. Verificação** (design §6; NFR-MAINT-002)
   - Todos os critérios da §6, de AC-1 a AC-17, passam, cada um com o teste que o cobre.
   - `npm run typecheck`, `npm run lint`, `npm test`, `npm run packs:check`, `npm run build`, `npm run e2e` e `npm run lighthouse` passam no local.
   - O CI do commit final está verde (`check`, `e2e`, `lighthouse`).
