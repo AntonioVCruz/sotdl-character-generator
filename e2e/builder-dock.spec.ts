@@ -156,7 +156,12 @@ async function settle(page: Page) {
 }
 
 /** Tab até o `target`, com a página rolada no pior caso logo antes do último Tab; devolve a base do contêiner e o topo da região. */
-async function tabIntoPartlyCovered(page: Page, target: Locator) {
+/**
+ * `unscrolledHiddenInput` (DEF-003): o input do rádio fica num invólucro de 1 px com `overflow: hidden` (VisuallyHidden
+ * do React Aria). Ao focar o input, o navegador pode rolar esse invólucro para mostrá-lo; o WebKit nem sempre rola. A
+ * opção deixa o invólucro sem rolagem antes de montar o pior caso, o estado que o WebKit às vezes deixa.
+ */
+async function tabIntoPartlyCovered(page: Page, target: Locator, { unscrolledHiddenInput = false } = {}) {
   const element = await target.elementHandle()
   const trigger = page.getByRole('button', { name: /^Step \d of 8/ })
   const isFocused = () => page.evaluate((el) => document.activeElement === el, element)
@@ -170,6 +175,7 @@ async function tabIntoPartlyCovered(page: Page, target: Locator) {
   }
   await page.keyboard.press('Shift+Tab')
   expect(await isFocused(), 'foco no controle anterior ao alvo').toBe(false)
+  if (unscrolledHiddenInput) await page.evaluate((el) => void (el!.parentElement!.scrollTop = 0), element)
   // A base do input fica 16 px acima do topo da região: visível mesmo com a folga de rolagem do 432636b. Repete até a
   // posição ficar estável, porque o WebKit ainda pode rolar até o controle anterior depois do Shift+Tab.
   for (let attempt = 0, delta = Infinity; Math.abs(delta) >= 1 && attempt < 5; attempt++) {
@@ -220,6 +226,27 @@ for (const width of [320, 412]) {
     await expect(page).toHaveURL(/\/attributes$/)
     const strength = page.getByRole('radiogroup', { name: 'Raise one attribute by 1' }).getByRole('radio', { name: 'Strength' })
     const segment = await tabIntoPartlyCovered(page, strength)
+    expect.soft(segment.bottom, 'Attributes: segmento "Strength" acima da região fixa').toBeLessThanOrEqual(segment.dockTop)
+  })
+}
+
+// DEF-003: o pior caso tem de se formar qualquer que seja a rolagem que o navegador deixou no invólucro do input oculto.
+for (const width of [320, 412]) {
+  test(`NFR-ACC-001 (DEF-003): at ${width} px, the worst case under the fixed builder dock is built whether or not the browser scrolled the hidden input`, async ({
+    page,
+  }, testInfo) => {
+    test.skip(!testInfo.project.name.startsWith('mobile'), 'A região fixa só existe abaixo de --bp-md (projetos de celular).')
+    await page.setViewportSize({ width, height: 568 })
+
+    await createCharacter(page)
+    await page.locator('label.option-card').filter({ hasText: 'Human' }).click()
+    await page.getByRole('button', { name: 'Choose Human' }).click()
+    // Ao confirmar, o foco vai ao título do detalhe (ui-design da FEAT-007); só depois o teclado é do teste.
+    await expect(page.getByRole('heading', { level: 2, name: 'Human' })).toBeFocused()
+    await page.getByRole('button', { name: 'Next: Attributes' }).click()
+    await expect(page).toHaveURL(/\/attributes$/)
+    const strength = page.getByRole('radiogroup', { name: 'Raise one attribute by 1' }).getByRole('radio', { name: 'Strength' })
+    const segment = await tabIntoPartlyCovered(page, strength, { unscrolledHiddenInput: true })
     expect.soft(segment.bottom, 'Attributes: segmento "Strength" acima da região fixa').toBeLessThanOrEqual(segment.dockTop)
   })
 }

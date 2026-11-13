@@ -104,9 +104,11 @@ function stored(decisions: Record<string, string | number> = {}, order = ['test.
 }
 
 const sessions: { current?: CharacterSession } = {}
-function setup(options: { document?: unknown; failGet?: boolean; failSave?: boolean; lastStep?: string } = {}) {
+function setup(options: { document?: unknown; failGet?: boolean; failSave?: boolean; holdSave?: boolean; lastStep?: string } = {}) {
   const document = 'document' in options ? options.document : stored()
-  const control = { failSave: options.failSave ?? false }
+  const control = { failSave: options.failSave ?? false, release: () => {} }
+  // `holdSave`: a gravação fica pendente até `control.release()`, como um IndexedDB lento (DEF-003).
+  const held = options.holdSave ? new Promise<void>((resolve) => (control.release = resolve)) : Promise.resolve()
   // Cada gravação bem-sucedida fica registrada, para conferir o que foi gravado (e o que não foi).
   const saved: { decisions: Record<string, { value: unknown }> }[] = []
   const repository: Repository = {
@@ -116,6 +118,7 @@ function setup(options: { document?: unknown; failGet?: boolean; failSave?: bool
       return document as never
     },
     save: vi.fn(async (doc) => {
+      await held
       if (control.failSave) throw new Error('quota exceeded')
       saved.push(structuredClone(doc))
     }),
@@ -188,6 +191,23 @@ describe('Builder states', () => {
     expect(saved).toHaveLength(1)
     expect(saved[0].decisions).toEqual({ ancestry: { mode: 'chosen', value: 'ancestry:troll' } })
     expect(screen.getByRole('radio', { name: 'Troll, your choice' })).toBeTruthy()
+  })
+
+  it('NFR-ACC-001 (DEF-003): after "Choose", the focus goes to the detail title as soon as the choice is on screen, without waiting for the save', async () => {
+    const { control, saved } = setup({ holdSave: true })
+    renderBuilder()
+    await userEvent.click(await screen.findByRole('radio', { name: 'Troll' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Choose Troll' }))
+
+    // A escolha já está na tela, e a gravação continua pendente (technical-design da FEAT-007, D11).
+    expect(screen.getByRole('radio', { name: 'Troll, your choice' })).toBeTruthy()
+    const title = screen.getByRole('heading', { level: 2, name: 'Troll' })
+    await vi.waitFor(() => expect(document.activeElement).toBe(title))
+    expect(saved).toEqual([])
+
+    control.release()
+    await vi.waitFor(() => expect(saved).toHaveLength(1))
+    expect(document.activeElement).toBe(title)
   })
 
   it('FR-FLOW-003: has-dependents shows a warning that names the choice in the way (Size of the Human, here Stature of the Gnome)', async () => {
