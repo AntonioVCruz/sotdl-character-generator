@@ -155,11 +155,14 @@ async function settle(page: Page) {
   })
 }
 
-/** Tab até o `target`, com a página rolada no pior caso logo antes do último Tab; devolve a base do contêiner e o topo da região. */
 /**
+ * Tab até o `target`, com a página rolada no pior caso logo antes do último Tab; devolve a base do contêiner e o topo da
+ * região.
+ *
  * `unscrolledHiddenInput` (DEF-003): o input do rádio fica num invólucro de 1 px com `overflow: hidden` (VisuallyHidden
  * do React Aria). Ao focar o input, o navegador pode rolar esse invólucro para mostrá-lo; o WebKit nem sempre rola. A
- * opção deixa o invólucro sem rolagem antes de montar o pior caso, o estado que o WebKit às vezes deixa.
+ * opção parte do invólucro sem rolagem, o estado que o WebKit às vezes deixa; a normalização logo abaixo o leva à mesma
+ * rolagem de sempre, e o teste que usa a opção prova que o pior caso se forma também a partir desse estado.
  */
 async function tabIntoPartlyCovered(page: Page, target: Locator, { unscrolledHiddenInput = false } = {}) {
   const element = await target.elementHandle()
@@ -235,9 +238,11 @@ for (const width of [320, 412]) {
   })
 }
 
-// DEF-003: o pior caso tem de se formar qualquer que seja a rolagem que o navegador deixou no invólucro do input oculto.
+// DEF-003: o mesmo pior caso da Attributes, partindo do invólucro do input oculto sem rolagem (o estado que o WebKit às
+// vezes deixa; o teste do DEF-002 parte do estado que o navegador deixou). Guarda a normalização do
+// `tabIntoPartlyCovered`: sem ela, o pior caso não se forma, e o teste falha na pré-condição.
 for (const width of [320, 412]) {
-  test(`NFR-ACC-001 (DEF-003): at ${width} px, the worst case under the fixed builder dock is built whether or not the browser scrolled the hidden input`, async ({
+  test(`NFR-ACC-001 (DEF-003): at ${width} px, tabbing into a segment partly under the fixed builder dock brings it entirely above the dock, also when the browser left the hidden input unscrolled`, async ({
     page,
   }, testInfo) => {
     test.skip(!testInfo.project.name.startsWith('mobile'), 'A região fixa só existe abaixo de --bp-md (projetos de celular).')
