@@ -1,0 +1,107 @@
+/* Home (SCR-WEB-001; ui-design da FEAT-001). Só tokens (tokens.generated.css) e breakpoints (@custom-media de
+   media.generated.css). Peças compartilhadas (inline-alert, pill-counter, skeleton, button-danger, dialog) no base.css. */
+
+.home {
+  display: grid;
+  gap: var(--space-6);
+}
+
+/* Cabeçalho da página: h1 à esquerda, "New character" à direita; abaixo de --bp-md, o botão ocupa a largura toda. */
+.home__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+@media (--bp-below-md) {
+  .home__new {
+    width: 100%;
+  }
+}
+
+/* Grade de cartões: a mesma regra da grade de option-card (FEAT-007). */
+.character-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, var(--size-summary)), 1fr));
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.character-card-skeleton {
+  height: calc(3 * var(--size-header));
+  border-radius: var(--radius-lg);
+}
+
+/* character-card (design.md §4) */
+.character-card {
+  gap: var(--space-2);
+  height: 100%;
+}
+
+.character-card__name {
+  overflow-wrap: anywhere;
+}
+
+.character-card__secondary {
+  color: var(--color-text-secondary);
+}
+
+.character-card__divider {
+  margin: var(--space-1) 0;
+  border-top: var(--border-width-default) solid var(--color-border-divider);
+}
+
+.character-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.character-card__actions .button-primary {
+  text-decoration: none;
+}
+
+.character-card__date {
+  color: var(--color-text-muted);
+}
+
+/* Estado vazio: o texto limitado à medida de leitura. */
+.home-empty > * {
+  max-width: var(--size-prose-max);
+}
+
+/* Diálogo de exclusão: até --size-prose-max, dentro do máximo do dialog. */
+.delete-dialog {
+  max-width: var(--size-prose-max);
+}
+
+.delete-dialog__title {
+  overflow-wrap: anywhere;
+}
+
+.delete-dialog__identification {
+  color: var(--color-text-secondary);
+}
+
+/* Lado a lado quando cabem; quando não cabem (a 320 px), duas linhas de largura total, na ordem do DOM. Abaixo da
+   largura --size-summary da área das ações, a base de cada botão passa da linha inteira; acima, fica negativa (0) e o
+   botão tem a largura do rótulo. */
+.delete-dialog__actions > * {
+  flex: 0 1 calc((var(--size-summary) - 100%) * 999);
+  white-space: nowrap;
+}
+
+/* loading de botão (design.md §4): spinner de --size-icon-sm, rótulo mantido. */
+.spinner {
+  animation: spinner-turn calc(5 * var(--duration-normal)) linear infinite;
+}
+
+@keyframes spinner-turn {
+  to {
+    transform: rotate(1turn);
+  }
+}

@@ -106,7 +106,7 @@ Em toda tarefa, o pronto-quando inclui `npm run typecheck` e `npm run lint` pass
     - o axe do construtor (os testes `NFR-ACC-001` do `ancestry.spec.ts` e do `attributes.spec.ts`) continua verde;
     - a guarda do `Builder-*.js` (`e2e/skeleton.spec.ts:61`) continua verde.
 
-- [ ] **T5. Home: estados, cartões, menu e exclusão** (design §3.5 Home; FR-CHAR-003, 005, 006, 011, 013, 014, 015, 016; AC-1 a AC-12, AC-16, AC-17)
+- [x] **T5. Home: estados, cartões, menu e exclusão** (design §3.5 Home; FR-CHAR-003, 005, 006, 011, 013, 014, 015, 016; AC-1 a AC-12, AC-16, AC-17)
   - Integração da tela do ui-design (SCR-WEB-001, manifesto):
     - estados `loading`, `error`, `empty` e `populated`;
     - `character-card` com "Continue" (`href.builder(id)`) e o menu "···" só com "Delete";

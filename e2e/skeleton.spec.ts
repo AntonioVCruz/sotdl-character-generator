@@ -73,12 +73,17 @@ test('FR-CHAR-001, FR-CHAR-009: New character creates a level 0 character that i
   )
 
   await page.getByRole('link', { name: isMobile(testInfo) ? 'Back to My characters' : 'SotDL Generator' }).click()
+  // NFR-PERF-001 (FEAT-001): com o personagem salvo, a Home recarregada não pede pacotes nem o construtor.
+  requests.length = 0
   await page.reload()
-  await expect(page.getByRole('list', { name: 'Saved characters' }).getByRole('link')).toHaveText(['Unnamed character'])
+  const card = page.getByRole('list', { name: 'Saved characters' }).getByRole('article', { name: 'Unnamed character' })
+  await expect(card).toHaveCount(1)
+  await expect(card.getByRole('link', { name: 'Continue Unnamed character' })).toBeVisible()
+  expect(requests.filter((url) => url.includes('/packs/') || /Builder-[\w-]+\.js/.test(url))).toEqual([])
 
   // FR-HELP-001: About no rodapé (desktop) ou no menu "···" (celular).
   if (isMobile(testInfo)) {
-    await page.getByRole('button', { name: 'More' }).click()
+    await page.getByRole('banner').getByRole('button', { name: 'More' }).click()
     await page.getByRole('menuitem', { name: 'About' }).click()
   } else {
     await page.getByRole('contentinfo').getByRole('link', { name: 'About' }).click()
