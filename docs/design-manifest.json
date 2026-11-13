@@ -39,16 +39,15 @@
         "ui displayName, formatEdited (technical-design §3.5)"
       ],
       "conformance": {
-        "result": "escalation-pending",
+        "result": "pass",
         "corrections": [
           "falha ao criar: .notice (borda inteira) → inline-alert danger",
-          "lista de links .character-list → character-card"
+          "lista de links .character-list → character-card",
+          "Re-verificado em 2026-11-13 contra o design.md emendado (E6, 2c69e58): o aviso \"só neste navegador\" do §6 é o texto desta tela; nenhum componente nem token muda"
         ],
-        "escalations": [
-          "E6: texto do aviso \"só neste navegador\" no design.md §6 (sem promessa de exportar antes da FEAT-002; limpar os dados do site apaga os personagens, ADR-002), proposto à ux-foundations"
-        ]
+        "escalations": []
       },
-      "status": "escalation-pending",
+      "status": "designed",
       "designed_at": "2026-11-13"
     },
     "SCR-WEB-003": {

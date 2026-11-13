@@ -272,6 +272,8 @@ Moldura comum às etapas do construtor. A FEAT-007 a cria; as features das outra
 
 **Teclado:** grade de cartões e `segmented-control` com setas (radiogroup); mapa como lista de links; Disclosure com Enter e Espaço; popover e menu com Esc.
 
+**Anel de foco num contêiner** (convenção do DEF-002, `851b60a`): todo componente de etapa que desenha o anel de foco num contêiner, e não no próprio elemento focado (como o `option-card` e o `segmented-control`, cujo input fica oculto), marca esse contêiner com `data-focus-ring`. Abaixo de `--bp-md`, no foco por teclado, a moldura leva esse contêiner à vista, acima da região fixa. Toda etapa nova com esse padrão entra no `e2e/builder-dock.spec.ts`.
+
 ## Textos
 
 Fechados para a FEAT-007, revisados contra a NFR-USE-001, a lição 5 e o `design.md` §6 (o que aconteceu, o que ficou a salvo, o que fazer). Nenhum id, enum ou nome de vaga aparece na tela. Os rascunhos do technical-design ficam lá; vale esta tabela.

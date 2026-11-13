@@ -159,10 +159,10 @@ Lista vazia (FR-CHAR-015; UC-001 1a).
 │ ┌──────────────────────────────────────────────────────────────────────────┐   │
 │ │ No characters yet                                                        │   │
 │ │ This generator guides you through creating a level 0 character for       │   │
-│ │ Shadow of the Demon Lord, one step at a time. It shows where each rule   │   │
-│ │ comes from and how each number is calculated.                            │   │
-│ │ It shows each rule's mechanics and the page it's on. The full rules text │   │
-│ │ is in the books.                                                         │   │
+│ │ Shadow of the Demon Lord, one step at a time, and shows how each number  │   │
+│ │ is calculated.                                                           │   │
+│ │ For each rule, it shows the mechanics and the book and page they come    │   │
+│ │ from. The full rules text is in the books.                               │   │
 │ │ To start, choose New character.                                          │   │
 │ └──────────────────────────────────────────────────────────────────────────┘   │
 
@@ -260,7 +260,7 @@ Papel `article` com o nome do personagem (pelo `aria-labelledby` do `h2`), e o "
 
 Foco ao mostrar uma etapa no construtor (achado menor 2 do aceite da FEAT-008; technical-design §8). Muda a moldura da FEAT-007 ([Builder frame](../FEAT-007-ancestry-step-map-live-summary/ui-design.md#builder-frame)) e o seletor do SCR-WEB-016.
 
-**Regra única:** quando a etapa mostrada muda, inclusive na primeira vez que o construtor fica pronto, o foco vai para o `h1` da etapa (`tabindex="-1"` no `h1` do `step-header`). Vale para qualquer origem:
+**Regra única:** quando se chega a uma etapa por navegação dentro do app, o foco vai para o `h1` da etapa (`tabindex="-1"` no `h1` do `step-header`). Num carregamento completo da página (recarregar, ou abrir um link direto para a URL do construtor), o foco não é movido, como na Home. Vale para qualquer origem dentro do app:
 - "Continue" da Home e "New character" (a entrada, depois do redirecionamento para a etapa);
 - Next e Back;
 - um link do mapa de etapas;
@@ -290,7 +290,7 @@ Nenhum teste depende do foco que fica no botão Next nem do primeiro Tab depois 
   - `src/ui/parts.tsx` (novo): `InlineAlert` e `PillCounter`, movidos de `src/ui/builder/parts.tsx`. O construtor passa a importá-los dali. O `InlineAlert` ganha a opção de não ter região viva (`live={false}`, sem `role`), para o aviso estático; o padrão continua o de hoje (`alert` no danger, `status` no warning).
   - `src/ui/home/`: `CharacterCard`, `DeleteDialog` e `copy.ts` (textos da Home e `formatEdited`).
   - CSS: `pill-counter` e `skeleton*` saem do `builder.css` (carregado com o construtor) para o `base.css`; `button-danger` e `dialog` entram no `base.css`; o resto da Home vai a `src/ui/styles/home.css`, importado pelo `Home.tsx`. A `.notice` e a `.character-list` saem do `base.css`.
-- **Foco ao trocar de tela, pela mesma regra:** a etapa do construtor e a Home recebem o foco no `h1` quando se chega a elas por navegação interna. Uma regra, duas telas; nenhuma das duas move o foco no carregamento inicial da Home.
+- **Foco ao trocar de tela, pela mesma regra:** a etapa do construtor e a Home recebem o foco no `h1` quando se chega a elas por navegação dentro do app. Num carregamento completo da página (recarregar ou link direto), nenhuma das duas move o foco. Uma regra, duas telas.
 
 ## Textos
 
@@ -305,8 +305,8 @@ Fechados para a FEAT-001, revisados contra a NFR-USE-001 e o `design.md` §6 (o 
 | Carregando (oculto) | "Loading characters…" |
 | Falha da lista (`storage-unavailable`, em `src/ui/copy.ts`) | "This browser didn't let the generator read your saved characters. Nothing was changed. Reload the page to try again. If it keeps happening, check that this site is allowed to store data." |
 | Vazio: título | "No characters yet" |
-| Vazio: o que o app faz | "This generator guides you through creating a level 0 character for Shadow of the Demon Lord, one step at a time. It shows where each rule comes from and how each number is calculated." |
-| Vazio: texto nos livros (D35) | "It shows each rule's mechanics and the page it's on. The full rules text is in the books." |
+| Vazio: o que o app faz | "This generator guides you through creating a level 0 character for Shadow of the Demon Lord, one step at a time, and shows how each number is calculated." |
+| Vazio: texto nos livros (D35) | "For each rule, it shows the mechanics and the book and page they come from. The full rules text is in the books." |
 | Vazio: ação | "To start, choose New character." |
 | Cartão: nome | `displayName`: o nome, ou "Unnamed character" (FR-CHAR-011) |
 | Cartão: contexto | "{Ancestry} · Level 0" · "Level 0" |
@@ -331,12 +331,12 @@ Fechados para a FEAT-001, revisados contra a NFR-USE-001 e o `design.md` §6 (o 
 - **O que diverge:** o exemplo "Faça" do §6 é "Characters are saved in this browser only. Export a character file to keep a copy." A segunda frase promete uma ação que só existe na FEAT-002, e falta o que a ADR-002 pede: que limpar os dados do navegador apaga os personagens.
 - **Proposta:** trocar o exemplo por "Characters are saved in this browser only. Clearing your browser's data for this site deletes them.", com uma nota: "Com a exportação (FEAT-002), acrescenta-se 'Export a character file to keep a copy.'". O "Não faça" ("Data persisted in IndexedDB.") continua.
 - **Telas:** SCR-WEB-001.
-- **Situação:** proposta, não aplicada. A entrada do manifesto fica em `escalation-pending` até a emenda; a tela pode ser implementada com o texto daqui, que não muda nenhum componente nem token.
+- **Situação:** aplicada ao `design.md` em 2026-11-13 (`2c69e58`). A SCR-WEB-001 foi re-verificada contra o `design.md` emendado: o aviso é o texto desta tela, sem componente nem token novo. A entrada do manifesto passou a `designed`.
 
 **Emenda do tasks.md, pelo detailed-design** (este documento não edita o `tasks.md`). O technical-design não muda: os contratos atendem a tela. O `tasks.md` não tem pronto-quando para três pontos deste design:
 - **T4 (construtor):** o foco no `h1` a cada troca de etapa ([Builder frame focus](#builder-frame-focus)). Testes:
   - `Builder.test.tsx`, `FR-FLOW-007`: depois de Next, o foco está no `h1` da nova etapa;
-  - `Builder.test.tsx`, `FR-CHAR-007`: abrir sem etapa vai à etapa resolvida com o foco no `h1`;
+  - `Builder.test.tsx`, `FR-CHAR-007`: chegar pelo "Continue" (rota sem etapa) vai à etapa resolvida com o foco no `h1`;
   - `Builder.test.tsx`, `FR-FLOW-011`: com `?slot=`, o foco fica na vaga, não no `h1`;
   - E2E móvel: escolher uma etapa no seletor deixa o foco no `h1`, não no gatilho.
 - **T5 (Home):** a reorganização de [Decisões entre telas](#decisões-entre-telas) (`src/ui/copy.ts`, `src/ui/parts.tsx`, CSS compartilhado), que toca arquivos do construtor. Testes de foco: depois de cancelar, no "···"; depois de excluir, no título vizinho; depois do último, em "No characters yet".
