@@ -12,7 +12,8 @@ import { LiveSummary, OpenDecisions } from '../builder/LiveSummary'
 import { InlineAlert } from '../builder/parts'
 import { StepHeader } from '../builder/StepHeader'
 import { StepMap } from '../builder/StepMap'
-import { builderRedirect, href, navigate, replace } from '../router'
+import { displayName } from '../copy'
+import { builderRedirect, hasNavigatedInApp, href, navigate, replace } from '../router'
 import '../styles/builder.css'
 import { mediaQuery } from '../styles/breakpoints.generated'
 import { useCharacterSession } from '../useCharacterSession'
@@ -84,16 +85,33 @@ function BuilderReady({ session, snapshot, route }: {
   route: { id: string; step?: string; slot?: string }
 }) {
   const { view, rules, id } = snapshot
-  const redirect = builderRedirect(route, view.steps)
+  const redirect = builderRedirect(route, view.steps, snapshot.lastStep)
   const current = view.steps.find((step) => step.slug === route.step)
   const [summaryOpen, setSummaryOpen] = useState(false)
   const root = useRef<HTMLDivElement>(null)
   const dock = useRef<HTMLDivElement>(null)
   const step = useRef<HTMLElement>(null)
+  const title = useRef<HTMLHeadingElement>(null)
+  const shown = redirect ? undefined : current?.slug
 
   useEffect(() => {
     if (redirect) replace(redirect)
   }, [redirect])
+
+  // FR-CHAR-007: a etapa mostrada é a última visitada; registrar não grava o documento (FEAT-001 §3.4).
+  useEffect(() => {
+    if (shown) session.visit(shown)
+  }, [session, shown])
+
+  // Foco no `h1` da etapa ao chegar a ela por navegação dentro do app (ui-design da FEAT-001, Builder frame focus):
+  // "Continue", "New character", Next, Back, mapa e seletor. No quadro seguinte, para vencer a devolução do foco ao
+  // gatilho quando o popover do seletor fecha. Com `?slot=`, o foco é da vaga (FR-FLOW-011); num carregamento
+  // completo da página, nada é movido.
+  useEffect(() => {
+    if (!shown || route.slot || !hasNavigatedInApp()) return
+    const frame = requestAnimationFrame(() => title.current?.focus())
+    return () => cancelAnimationFrame(frame)
+  }, [shown, route.slot])
 
   // FR-FLOW-011: o atalho de uma pendência abre a etapa no ponto exato e põe o foco nele.
   useEffect(() => {
@@ -140,7 +158,7 @@ function BuilderReady({ session, snapshot, route }: {
 
   return (
     <>
-      <AppHeader character={{ name: 'Unnamed character', detail }} />
+      <AppHeader character={{ name: displayName(snapshot.document.text.name), detail }} />
       <div className="builder" ref={root}>
         <nav className="builder__map" aria-label="Creation steps">
           <div className="builder__map-list">
@@ -150,7 +168,7 @@ function BuilderReady({ session, snapshot, route }: {
         </nav>
         <main className="builder__step" ref={step}>
           <SaveAlert session={session} snapshot={snapshot} />
-          <StepHeader step={current} steps={view.steps} slots={view.slots} rules={rules} />
+          <StepHeader step={current} steps={view.steps} slots={view.slots} rules={rules} titleRef={title} />
           {/* O corpo sai do `kind` da vaga raiz da etapa, nunca do nome dela (ADR-003 §6). */}
           {stepRoot?.kind === 'choose-entity' && stepRoot.of === 'ancestry' ? (
             <AncestryStep session={session} snapshot={snapshot} slot={stepRoot} nameOf={nameOf} />

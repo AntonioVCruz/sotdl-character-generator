@@ -1,8 +1,10 @@
 // @vitest-environment jsdom
-import { cleanup, render, screen, within } from '@testing-library/react'
+import { act, cleanup, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { createCharacterSession, createRulesLoader, type CharacterSession, type Repository } from '../../app'
+import { slotElementId } from '../builder/copy'
+import { useRoute } from '../router'
 import Builder from './Builder'
 
 // Pacote fictício servido por um fetch falso; sessão real do `app` sobre um repositório em memória.
@@ -102,7 +104,7 @@ function stored(decisions: Record<string, string | number> = {}, order = ['test.
 }
 
 const sessions: { current?: CharacterSession } = {}
-function setup(options: { document?: unknown; failGet?: boolean; failSave?: boolean } = {}) {
+function setup(options: { document?: unknown; failGet?: boolean; failSave?: boolean; lastStep?: string } = {}) {
   const document = 'document' in options ? options.document : stored()
   const control = { failSave: options.failSave ?? false }
   // Cada gravação bem-sucedida fica registrada, para conferir o que foi gravado (e o que não foi).
@@ -119,7 +121,13 @@ function setup(options: { document?: unknown; failGet?: boolean; failSave?: bool
     }),
     delete: async () => undefined,
   }
-  const session = createCharacterSession({ repository, loadRules: createRulesLoader({ baseUrl: '/', fetch }) })
+  const steps = new Map(options.lastStep ? [['c1', options.lastStep]] : [])
+  const lastStep = {
+    get: (id: string) => steps.get(id),
+    set: (id: string, slug: string) => void steps.set(id, slug),
+    forget: () => undefined,
+  }
+  const session = createCharacterSession({ repository, loadRules: createRulesLoader({ baseUrl: '/', fetch }), lastStep })
   sessions.current = session
   return { session, control, repository, saved }
 }
@@ -264,5 +272,98 @@ describe('Attributes step', () => {
       'Capped at 25−1',
       'Power25',
     ])
+  })
+})
+
+// O construtor pela rota do hash, como no `App`: a navegação dentro do app passa por `hashchange`.
+function Routed() {
+  const route = useRoute()
+  return route.name === 'builder' ? <Builder route={route} /> : null
+}
+async function goTo(hash: string) {
+  if (window.location.hash === hash) return
+  const changed = new Promise((resolve) => window.addEventListener('hashchange', resolve, { once: true }))
+  window.location.hash = hash
+  await changed
+}
+const nextFrame = () => act(() => new Promise<void>((resolve) => requestAnimationFrame(() => resolve())))
+const stepTitle = (name: string) => screen.findByRole('heading', { level: 1, name })
+
+describe('Builder: last step, name and focus', () => {
+  afterEach(cleanup)
+
+  it('FR-CHAR-007: opening without a step, with a last step saved, goes to that step', async () => {
+    setup({ document: stored({ ancestry: 'ancestry:troll' }), lastStep: 'traits' })
+    await goTo('#/')
+    await goTo('#/characters/c1')
+    render(<Routed />)
+    await stepTitle('Traits')
+    expect(window.location.hash).toBe('#/characters/c1/traits')
+  })
+
+  it('FR-CHAR-007: each step shown is recorded with visit', async () => {
+    const { session } = setup({ document: stored({ ancestry: 'ancestry:troll' }) })
+    const visit = vi.spyOn(session, 'visit')
+    await goTo('#/characters/c1/ancestry')
+    render(<Routed />)
+    await stepTitle("What is your character's ancestry?")
+    await userEvent.click(screen.getByRole('button', { name: 'Next: Traits' }))
+    await stepTitle('Traits')
+    await userEvent.click(screen.getByRole('button', { name: 'Back' }))
+    await stepTitle("What is your character's ancestry?")
+    expect(visit.mock.calls.map(([slug]) => slug)).toEqual(['ancestry', 'traits', 'ancestry'])
+  })
+
+  it('FR-CHAR-011: a name of only spaces shows "Unnamed character" in the header', async () => {
+    setup({ document: { ...stored(), text: { name: '   ' } } })
+    renderBuilder()
+    await stepTitle("What is your character's ancestry?")
+    const banner = screen.getByRole('banner')
+    expect(within(banner).getAllByText(/^Unnamed character/).length).toBeGreaterThan(0)
+    expect(banner.textContent).not.toMatch(/ {3}/)
+  })
+
+  it('FR-CHAR-011: a defined name shows in the header', async () => {
+    setup({ document: { ...stored(), text: { name: 'Liliana' } } })
+    renderBuilder()
+    await stepTitle("What is your character's ancestry?")
+    const banner = screen.getByRole('banner')
+    expect(within(banner).getAllByText(/^Liliana/).length).toBeGreaterThan(0)
+    expect(within(banner).queryByText(/Unnamed character/)).toBeNull()
+  })
+
+  it('FR-FLOW-007: after Next, the focus is on the h1 of the new step', async () => {
+    setup({ document: stored({ ancestry: 'ancestry:troll' }) })
+    await goTo('#/characters/c1/ancestry')
+    render(<Routed />)
+    await stepTitle("What is your character's ancestry?")
+    await userEvent.click(screen.getByRole('button', { name: 'Next: Traits' }))
+    const title = await stepTitle('Traits')
+    await nextFrame()
+    expect(document.activeElement).toBe(title)
+    expect(title.getAttribute('tabindex')).toBe('-1')
+  })
+
+  it('FR-CHAR-007: arriving through "Continue" (a route without a step) goes to the resolved step with the focus on its h1', async () => {
+    setup({ document: stored({ ancestry: 'ancestry:troll' }), lastStep: 'traits' })
+    await goTo('#/')
+    await goTo('#/characters/c1')
+    render(<Routed />)
+    const title = await stepTitle('Traits')
+    await nextFrame()
+    expect(window.location.hash).toBe('#/characters/c1/traits')
+    expect(document.activeElement).toBe(title)
+  })
+
+  it('FR-FLOW-011: with ?slot=, the focus stays on the slot, not on the h1', async () => {
+    setup({ document: stored({ ancestry: 'ancestry:gnome' }) })
+    await goTo('#/')
+    await goTo('#/characters/c1/ancestry?slot=ancestry%3Dgnome%2Fstature')
+    render(<Routed />)
+    await stepTitle("What is your character's ancestry?")
+    await nextFrame()
+    const slot = document.getElementById(slotElementId('ancestry=gnome/stature'))
+    expect(slot).not.toBeNull()
+    expect(document.activeElement).toBe(slot)
   })
 })

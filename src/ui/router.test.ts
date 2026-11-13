@@ -41,4 +41,23 @@ describe('hash routes', () => {
     expect(builderRedirect({ id: 'c1', step: 'origin' }, steps)).toBeNull()
     expect(builderRedirect({ id: 'c1', step: 'traits' }, [step('origin', 'done'), step('traits', 'not-started')])).toBeNull()
   })
+
+  it('FR-CHAR-007: without a step, opens the last visited step when it is open', () => {
+    const steps = [step('origin', 'done'), step('traits', 'not-started'), step('end', 'open')]
+    expect(builderRedirect({ id: 'c1' }, steps, 'traits')).toBe('#/characters/c1/traits')
+    expect(builderRedirect({ id: 'c1' }, steps, 'end')).toBe('#/characters/c1/end')
+  })
+
+  it('FR-CHAR-007: without a step, a last visited step that is locked gives the first open step', () => {
+    const steps = [step('origin', 'locked'), step('traits', 'not-started'), step('end', 'locked')]
+    expect(builderRedirect({ id: 'c1' }, steps, 'end')).toBe('#/characters/c1/traits')
+  })
+
+  it('FR-CHAR-007: without a step, a last step that no longer exists, or no record, gives the first step', () => {
+    const steps = [step('origin', 'not-started'), step('traits', 'locked')]
+    expect(builderRedirect({ id: 'c1' }, steps, 'removed')).toBe('#/characters/c1/origin')
+    expect(builderRedirect({ id: 'c1' }, steps, undefined)).toBe('#/characters/c1/origin')
+    // Com etapa na rota, o registro não muda nada (FR-FLOW-005).
+    expect(builderRedirect({ id: 'c1', step: 'origin' }, steps, 'traits')).toBeNull()
+  })
 })

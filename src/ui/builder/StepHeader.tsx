@@ -1,9 +1,17 @@
+import type { Ref } from 'react'
 import type { Rules, SlotView, StepView } from '../../engine'
 import { REGIME_LABEL, stepQuestion, stepRule } from './copy'
 import { PillCounter, SourceBadge } from './parts'
 
 /** `step-header` (FR-FLOW-009): regime, pergunta, linha de regra com página e contadores. */
-export function StepHeader({ step, steps, slots, rules }: { step: StepView; steps: StepView[]; slots: SlotView[]; rules: Rules }) {
+export function StepHeader({ step, steps, slots, rules, titleRef }: {
+  step: StepView
+  steps: StepView[]
+  slots: SlotView[]
+  rules: Rules
+  /** Alvo do foco ao chegar à etapa por navegação dentro do app (ui-design da FEAT-001, Builder frame focus). */
+  titleRef?: Ref<HTMLHeadingElement>
+}) {
   const rule = stepRule(step)
   const provenance = rules.items.get(step.id)?.provenance
   // O ajuste não usado não ganha pílula: ele não é pendência (D2 da FEAT-008).
@@ -14,7 +22,9 @@ export function StepHeader({ step, steps, slots, rules }: { step: StepView; step
         {`Step ${step.index + 1} of ${steps.length}`}
         {step.regime && ` · ${REGIME_LABEL[step.regime]}`}
       </p>
-      <h1 className="typography-display">{stepQuestion(step, slots)}</h1>
+      <h1 className="typography-display" tabIndex={-1} ref={titleRef}>
+        {stepQuestion(step, slots)}
+      </h1>
       {rule && (
         <p className="typography-body step-header__rule">
           {rule} {provenance?.page !== undefined && <SourceBadge provenance={provenance} />}

@@ -33,18 +33,41 @@ export const href = {
 }
 
 /**
- * Para onde a rota do construtor deve ir antes de mostrar a etapa: sem etapa (ou etapa desconhecida), a primeira;
- * etapa bloqueada, a primeira liberada (FR-FLOW-005). `null` quando a rota já serve.
+ * Para onde a rota do construtor deve ir antes de mostrar a etapa (FEAT-007 D10; FEAT-001 §3.5):
+ * - com etapa: desconhecida, a primeira; bloqueada, a primeira liberada (FR-FLOW-005); liberada, `null`;
+ * - sem etapa: a última visitada (FR-CHAR-007), ou a primeira liberada se ela estiver bloqueada, ou a primeira sem
+ *   registro ou se ela não existir mais. Sem etapa, a URL sempre ganha uma, então nunca `null`.
  */
-export function builderRedirect(route: { id: string; step?: string }, steps: StepView[]): string | null {
+export function builderRedirect(route: { id: string; step?: string }, steps: StepView[], lastStep?: string): string | null {
   const first = steps[0]
   if (!first) return null
+  const firstOpen = () => steps.find((candidate) => candidate.status !== 'locked') ?? first
+  if (route.step === undefined) {
+    const last = steps.find((candidate) => candidate.slug === lastStep)
+    const target = !last ? first : last.status === 'locked' ? firstOpen() : last
+    return href.builder(route.id, target.slug)
+  }
   const step = steps.find((candidate) => candidate.slug === route.step)
   if (!step) return href.builder(route.id, first.slug)
   if (step.status !== 'locked') return null
-  const open = steps.find((candidate) => candidate.status !== 'locked') ?? first
-  return href.builder(route.id, open.slug)
+  return href.builder(route.id, firstOpen().slug)
 }
+
+// Navegação dentro do app (ui-design da FEAT-001, Builder frame focus): num carregamento completo da página (recarregar
+// ou link direto), nenhum `hashchange` aconteceu ainda, e as telas não movem o foco. Os redirecionamentos por
+// `replace` não contam como navegação: eles só completam a URL que o carregamento trouxe.
+let navigated = false
+let replacing: string | null = null
+if (typeof window !== 'undefined') {
+  window.addEventListener('hashchange', () => {
+    const redirected = replacing !== null && window.location.hash === replacing
+    replacing = null
+    if (!redirected) navigated = true
+  })
+}
+
+/** Se a tela atual foi alcançada por navegação dentro do app, e não pelo carregamento da página. */
+export const hasNavigatedInApp = () => navigated
 
 const subscribe = (onChange: () => void) => {
   window.addEventListener('hashchange', onChange)
@@ -61,5 +84,6 @@ export function navigate(to: string) {
 
 /** Troca a rota sem nova entrada no histórico (redirecionamentos). */
 export function replace(to: string) {
+  replacing = to
   window.location.replace(to)
 }

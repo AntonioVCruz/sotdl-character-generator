@@ -61,7 +61,7 @@ Em toda tarefa, o pronto-quando inclui `npm run typecheck` e `npm run lint` pass
       - `FR-CHAR-014`: `delete` que rejeita → `delete-failed`, com documento, metadados e chave intactos;
       - `FR-CHAR-014`: `forget` que lança → `{ ok: true }`.
 
-- [ ] **T4. Rota e construtor: abrir na última etapa, nome no cabeçalho e foco no `h1`** (design §3.5 `builderRedirect` e `Builder`; ui-design, Builder frame focus; FR-CHAR-007, 011, FR-FLOW-005, 006, 007, 008, 011)
+- [x] **T4. Rota e construtor: abrir na última etapa, nome no cabeçalho e foco no `h1`** (design §3.5 `builderRedirect` e `Builder`; ui-design, Builder frame focus; FR-CHAR-007, 011, FR-FLOW-005, 006, 007, 008, 011)
   - Em `src/ui/router.ts`: `builderRedirect(route, steps, lastStep?)`.
   - Em `src/ui/screens/Builder.tsx`:
     - `lastStep` no redirect;
