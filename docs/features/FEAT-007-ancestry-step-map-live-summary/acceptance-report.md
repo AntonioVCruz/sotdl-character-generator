@@ -3,6 +3,7 @@
 > Veredito: Accepted · Data: 2026-11-12
 > Padrão: technical-design.md §6 @ `7c0883e` · Fontes: srs.md, use-cases.md (UC-003), ui-design.md, design-manifest.json
 > Estado auditado: `33330d9` (código de `7c0883e` mais as correções de teste abaixo)
+> Re-verificação: Accepted · 2026-11-13 · DEF-001 e DEF-002 (ver a seção no fim)
 
 ## Veredito
 
@@ -82,3 +83,46 @@ Do zero, com os comandos do AGENTS.md:
 ## RTM
 
 Test ref acrescentado (`features/FEAT-007-ancestry-step-map-live-summary/acceptance-report.md`) em: FR-SRC-010; FR-FLOW-001 a 014 e 018; FR-DEC-011; FR-STEP-001, 002, 003; FR-CALC-001; FR-CONT-006, 009; FR-CONT-003 com `(partial)`.
+
+## Re-verificação de 2026-11-13: DEF-001 e DEF-002
+
+> Veredito: Accepted · Estado auditado: `6c2b188` · Padrão: technical-design.md §6 (sem mudança) e ui-design.md emendado em `3beb2ff` (SCR-WEB-016, região fixa)
+
+**Veredito.** Aceita de novo. As duas correções de manutenção na região fixa do celular (`docs/defects.md`) atendem a emenda do ui-design. Todas as suítes passaram nesta execução, sem retry. A instabilidade encontrada no caminho foi eliminada.
+
+**Padrão.** Os 13 critérios da §6 continuam valendo; a manutenção toca o AC-9 (FR-FLOW-018) e a NFR-ACC-001. A emenda acrescenta ao SCR-WEB-016:
+- "Summary" em linha própria, de largura total, quando a barra não cabe;
+- foco não escondido pela região fixa (WCAG 2.4.11).
+
+Nenhum critério foi mudado.
+
+**Testes auditados** (`e2e/builder-dock.spec.ts`, novo; nenhum teste existente mudou em `fe419b5..6c2b188`):
+
+| Teste | Codifica | Auditoria | Observado |
+| :-- | :-- | :-- | :-- |
+| DEF-001, a 320 e 360 px | Controles da região dentro do gutter de 16 px, alvo de 44 px, sem rolagem horizontal; Ancestry sem e com escolha, Attributes com o +1 pendente, Review (`design.md` §3 e §5) | fiel | verde |
+| Tab pela etapa, a 320 e 412 px | Cada parada do corpo termina acima do topo da região, medida pelo contêiner visível do anel | fiel | verde |
+| DEF-002, pior caso, a 320 e 412 px | Contêiner do anel (`option-card`, segmento) com o topo visível e a base sob a região; depois do Tab, inteiro acima dela | fiel | verde |
+| DEF-002, toque e clique, a 320 e 412 px | Ponteiro não rola a página | fiel; mutação conferida: sem `:focus-visible`, 4/4 vermelhos | verde |
+
+**Execução independente** (do zero): `npm ci`, `typecheck`, `lint`, `packs:check`, `build` e `npm test` (111) verdes. `npm run e2e` numa porta nova, sem retry: 88 passaram, 27 pulados, 0 falhas, 0 instáveis. Os 27 pulados são os 8 testes da região fixa nos 3 projetos de desktop, mais os 3 do `perf.spec`, que já existiam. A Lighthouse passou nas asserções. Antes, na mesma árvore: o spec da região com `--repeat-each=10` nos dois projetos de celular deu 160/160, e a bateria completa rodou duas vezes seguidas, verde.
+
+**Verificação direta:**
+- **Oito etapas a 320 e 360 px** (mobile-chrome e mobile-safari): nenhum controle da região fora do gutter, abaixo de 44 px ou com texto vazando.
+- **Barra de resumo:** a 320 px o "Summary" fica em 16–304 px, abaixo dos atributos, e a região tem 174 px. A 360 px fica igual a antes (125 px).
+- **Painel aberto:** termina no topo da região (a 320 px, 526 contra 526,42; a folga de 0,42 px vem do arredondamento do `--dock-height`, já existente).
+- **Capturas** antes e depois das duas correções: idênticas pixel a pixel a 360, 412 e 1024 px, com a barra fechada e com o resumo aberto. A 320 px, só a faixa da região muda.
+- **axe**, todas as gravidades: 0 violações na Ancestry, na Attributes e no resumo aberto, a 320, 360, 412 e 1024 px.
+- A rolagem não usa `smooth`, então respeita `prefers-reduced-motion`. O foco depois de "Next" não foi tocado (é da FEAT-001).
+
+**Instabilidade encontrada e eliminada.**
+- A primeira correção do DEF-002 (`432636b`) usava só `scroll-margin-bottom`, que garante o input oculto, mas não o cartão que desenha o anel. Ela passou numa bateria completa e falhou na seguinte (mobile-safari, 320 px, cartão "Human, your choice"). Repetida, deu 4/10 no WebKit.
+- O teste de pior caso (`a2a41c8`) tornou a falha determinística: 40/40 vermelhos nos dois motores com o código do `432636b`.
+- A correção `851b60a` levou à vista o contêiner `[data-focus-ring]` só no foco por teclado: depois dela, 10/10 em todas as combinações.
+- Na construção do teste houve duas fontes de instabilidade, corrigidas antes do commit: Tab contado enquanto a etapa ainda se acomodava, e rolagem assíncrona do WebKit.
+
+**Achados.** Rework: nenhum. Defeito de design: nenhum. Menores:
+1. **Links fora do percurso de Tab do WebKit.** O WebKit pula links no Tab (padrão do Safari), então o foco não escondido em links da etapa só é exercitado no Chromium. Só registro.
+2. **Janelas baixas** (registrado no ui-design): a 320 × 568 sobram 394 px com a barra em duas linhas. Sem ação agora.
+
+**RTM.** Sem mudança: o Test ref da NFR-ACC-001 e dos FRs da FEAT-007 já aponta para este relatório.
