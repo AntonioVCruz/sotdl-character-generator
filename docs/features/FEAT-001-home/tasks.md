@@ -116,7 +116,7 @@ Em toda tarefa, o pronto-quando inclui `npm run typecheck` e `npm run lint` pass
     - `formatEdited`;
     - foco e nomes acessíveis conforme o ui-design.
   - A Home não importa de `src/ui/builder/`: usa as peças da T4a (`src/ui/copy.ts`, `src/ui/parts.tsx`, CSS do `base.css`); o resto do CSS da Home vai a `src/ui/styles/home.css`, importado pelo `Home.tsx`.
-  - **Contrato alterado (§7):** `skeleton.spec.ts:77`, com o seletor do cartão definido pelo ui-design. **Expectativa nova:** nesse teste, depois do `reload` com o personagem salvo, nenhum pedido a `/packs/` nem ao `Builder-*.js` (zerar a lista de pedidos antes do `reload`).
+  - **Contrato alterado (§7):** `skeleton.spec.ts:77`, com o seletor do cartão definido pelo ui-design; `skeleton.spec.ts:86`, com o "More" restrito ao `banner` (emenda de 2026-11-13). **Expectativa nova:** nesse teste, depois do `reload` com o personagem salvo, nenhum pedido a `/packs/` nem ao `Builder-*.js` (zerar a lista de pedidos antes do `reload`).
   - **Pronto quando:**
     - os testes do `Home.test.tsx` passam:
       - `FR-CHAR-003`: o cartão mostra nome, ancestralidade, "Level 0", estado, fontes e data;
