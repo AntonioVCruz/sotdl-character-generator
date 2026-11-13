@@ -537,6 +537,12 @@ a.step-map__item--current:hover {
     border-top: var(--border-width-default) solid var(--color-border-divider);
   }
 
+  /* Foco não escondido (WCAG 2.4.11; DEF-002): a rolagem até um controle da etapa reserva a altura medida da região
+     fixa, mais a folga do anel de foco. */
+  .builder__step * {
+    scroll-margin-bottom: calc(var(--dock-height, 0px) + var(--space-2));
+  }
+
   .step-nav {
     flex-wrap: nowrap;
   }
