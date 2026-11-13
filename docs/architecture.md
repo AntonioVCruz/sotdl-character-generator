@@ -102,7 +102,7 @@ graph LR
     app["app<br/>comandos e store"]
     engine["engine<br/>resolve, evaluate, impact"]
     content["content<br/>schemas, validação, carga"]
-    storage["storage<br/>repositório IndexedDB"]
+    storage["storage<br/>IndexedDB e localStorage"]
     dice["dice<br/>sorteio"]
 
     ui --> app
