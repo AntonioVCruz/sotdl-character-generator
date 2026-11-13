@@ -3,7 +3,7 @@
 > Feature de: `docs/implementation-plan.md` §3 (E3) · Épico: E3 Construtor de nível 0
 > Implementa: FR-STEP-007, 009, 010, 011; FR-CALC-002, 003, 006, 007, 008; FR-CALC-005 (parcial: base, modifier e limit); FR-CALC-009 (parcial: resumo vivo e etapa, sem a ficha)
 > Realiza: UC-004 (fluxo principal 1, 3 e 4; 3a; 3b) · Telas: SCR-WEB-005 (desenhada pelo ui-design)
-> Status: Draft · Data: 2026-11-12
+> Status: Verified · Data: 2026-11-12
 
 ## 1. Intenção
 

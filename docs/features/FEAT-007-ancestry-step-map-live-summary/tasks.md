@@ -1,7 +1,7 @@
 # Tasks: FEAT-007 — Etapa Ancestry, mapa de etapas e resumo vivo
 
 > Executa: `docs/features/FEAT-007-ancestry-step-map-live-summary/technical-design.md`
-> Status: developer-done · Última atualização: 2026-11-12
+> Status: done · Última atualização: 2026-11-12
 > Telas (SCR-WEB-003, SCR-WEB-016): do ui-design, pelo `docs/design-manifest.json`. As tarefas de ui aqui são só integração.
 
 - [x] **T1. Schemas do pacote e do documento v1** (design §3.1, §4; FR-CONT-004, 006; ADR-004 §2; D1–D4)

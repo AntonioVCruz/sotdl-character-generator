@@ -1,7 +1,7 @@
 # Tasks: FEAT-008 — Etapa Attributes: ajuste ±1, características com fórmula e composição
 
 > Executa: `docs/features/FEAT-008-attributes-step/technical-design.md`
-> Status: pending · Última atualização: 2026-11-12
+> Status: done · Última atualização: 2026-11-12
 > Tela (SCR-WEB-005): do ui-design, pelo `docs/design-manifest.json`. As tarefas de ui aqui são só integração.
 
 - [x] **T1. Schemas: vaga `attribute-shift`, limites e decisão em par** (design §3.1, §4; FR-STEP-009, FR-CALC-006; ADR-004 §2; D8)

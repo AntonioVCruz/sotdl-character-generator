@@ -3,7 +3,7 @@
 > Feature de: `docs/implementation-plan.md` §3 (E3) e §5 · Épico: E3 Construtor de nível 0
 > Implementa: FR-STEP-001, 002, 003; FR-FLOW-001 a 014, 018; FR-CALC-001; FR-DEC-011; FR-SRC-010; FR-CONT-006, 009; FR-CONT-003 (parcial: Dwarf e Human do core na etapa Ancestry)
 > Realiza: UC-003 (fluxo principal e 4a) · Telas: SCR-WEB-003, SCR-WEB-016 (desenhadas pelo ui-design)
-> Status: Draft · Data: 2026-11-12
+> Status: Verified · Data: 2026-11-12
 
 ## 1. Intenção
 
