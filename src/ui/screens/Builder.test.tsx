@@ -210,6 +210,24 @@ describe('Builder states', () => {
     expect(document.activeElement).toBe(title)
   })
 
+  it('FR-FLOW-014 (DEF-005): a slow save of "Choose" does not clear the preview of another card opened meanwhile', async () => {
+    const { session, control, saved } = setup({ holdSave: true })
+    renderBuilder()
+    await userEvent.click(await screen.findByRole('radio', { name: 'Troll' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Choose Troll' }))
+    expect(screen.getByRole('radio', { name: 'Troll, your choice' })).toBeTruthy()
+
+    // Com a gravação ainda pendente, a pessoa abre a prévia de outro cartão.
+    await userEvent.click(screen.getByRole('radio', { name: 'Gnome' }))
+    expect(screen.getByRole('button', { name: 'Choose Gnome' })).toBeTruthy()
+
+    control.release()
+    await vi.waitFor(() => expect(saved).toHaveLength(1))
+    await vi.waitFor(() => expect(session.getSnapshot()).toMatchObject({ save: 'saved' }))
+    await act(async () => {}) // a continuação do "Choose" roda e a tela é atualizada
+    expect(screen.getByRole('button', { name: 'Choose Gnome' })).toBeTruthy()
+  })
+
   it('FR-FLOW-003: has-dependents shows a warning that names the choice in the way (Size of the Human, here Stature of the Gnome)', async () => {
     const { repository } = setup({ document: stored({ ancestry: 'ancestry:gnome', 'ancestry=gnome/stature': 1 }) })
     renderBuilder()
