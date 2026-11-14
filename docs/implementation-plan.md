@@ -28,7 +28,7 @@ O caminho mínimo de ponta a ponta, publicado.
 
 | ID | Fatia | FRs | UCs | Telas | Blocos | Dados |
 | :- | :-- | :-- | :-- | :-- | :-- | :-- |
-| FEAT-001 | Home: listar, continuar e excluir personagens, com estado vazio e aviso de dados só no navegador | FR-CHAR-003, 004, 005, 006, 007, 011, 013, 014, 015, 016 | UC-001 (parcial) | SCR-WEB-001 | `app`, `storage`, `engine.evaluate` (contagem de decisões abertas) | Personagem (metadados), documento |
+| FEAT-001 | Home: listar, continuar e excluir personagens, com estado vazio e aviso de dados só no navegador | FR-CHAR-003, 004, 005, 006, 007, 011, 013, 014, 015, 016 | UC-001 (parcial) | SCR-WEB-001 | `app`, `storage`, `engine.evaluate` (contagem de decisões abertas), `engine.resolve` (`Rules.books`) | Personagem (metadados), documento |
 | FEAT-002 | Exportar e importar o arquivo do personagem | FR-CHAR-018, 019, 023 | UC-015 | SCR-WEB-001, SCR-WEB-014 | `app`, `content` (schema do personagem), `storage` | Documento do personagem, arquivo JSON |
 
 ### E2. Conteúdo e fontes (`content`, `engine.resolve`, `packs/`)
