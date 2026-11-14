@@ -76,6 +76,8 @@ test('FR-CHAR-001, FR-CHAR-009: New character creates a level 0 character that i
   // NFR-PERF-001 (FEAT-001): com o personagem salvo, a Home recarregada não pede pacotes nem o construtor.
   requests.length = 0
   await page.reload()
+  // Um cartão só na lista, como a asserção anterior à T5 (`toHaveText(['Unnamed character'])` sobre os links).
+  await expect(page.getByRole('list', { name: 'Saved characters' }).getByRole('article')).toHaveCount(1)
   const card = page.getByRole('list', { name: 'Saved characters' }).getByRole('article', { name: 'Unnamed character' })
   await expect(card).toHaveCount(1)
   await expect(card.getByRole('link', { name: 'Continue Unnamed character' })).toBeVisible()
