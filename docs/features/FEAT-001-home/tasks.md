@@ -138,6 +138,15 @@ Em toda tarefa, o pronto-quando inclui `npm run typecheck` e `npm run lint` pass
       - `NFR-ACC-001`: carregamento inicial da Home → foco não movido;
     - o `skeleton.spec.ts` passa nos 5 projetos;
     - a tela confere com o manifesto.
+  - **Nota (retrabalho antes do aceite, teste instável):**
+    - **Defeito:** o teste `FR-CHAR-013` de "Cancel" e Esc oscilava no `Home.test.tsx:194`, no segundo `openDelete`: o menu "···" não abria (4 falhas em 15 numa máquina de 2 núcleos).
+    - **Causa:** sincronização do teste, não corrida do produto.
+      - Depois de "Cancel", o `Home.tsx` devolve o foco ao "···" no quadro seguinte (ui-design, Foco na Home), e o teste clicava no "···" antes desse quadro. O foco devolvido tirava então o menu recém-aberto (blur fecha o popover).
+      - No navegador isso não acontece: com o menu aberto, o React Aria põe `inert` fora dele, e o foco no "···" não muda nada. O jsdom não tem `inert`.
+      - Conferência no navegador: um spec temporário, nos 5 projetos e sem a correção, clicou no "···" logo depois de "Cancel" e de Esc, no mesmo quadro do fechamento. O menu ficou aberto em 30 de 30.
+      - Pior caso montado (quadros retidos até o foco entrar no menu): o teste falhava 10 em 10 no `openDelete`.
+    - **Correção:** só no teste, antes do segundo clique, esperar o foco no "···", o estado que o ui-design define. Nenhuma asserção mudou, e o produto não mudou.
+    - **Resultado:** com o pior caso, 10 em 10 verdes. Sem ele, o comando 30 vezes: 0 falhas, tanto livre quanto preso a 2 núcleos.
 
 - [x] **T6. E2E do fluxo da Home** (fluxo crítico 1, UC-001 parcial; design §6; FR-CHAR-001, 003, 004, 005, 006, 007, 013, 014, 015; AC-13; NFR-ACC-001)
   - `e2e/home.spec.ts` (novo), nos 5 projetos, contra o build com a CSP ativa, pela interface:

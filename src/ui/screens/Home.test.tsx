@@ -190,6 +190,9 @@ describe('Home: delete', () => {
     expect(document.activeElement).toBe(within(dialog).getByRole('button', { name: 'Cancel' }))
     await userEvent.click(within(dialog).getByRole('button', { name: 'Cancel' }))
     await waitFor(() => expect(screen.queryByRole('alertdialog')).toBeNull())
+    // O foco volta ao "···" no quadro seguinte (ui-design, Foco na Home); antes disso, o jsdom, sem `inert`, deixa esse
+    // foco tirar o menu recém-aberto. O segundo clique espera esse estado.
+    await waitFor(() => expect(document.activeElement).toBe(screen.getByRole('button', { name: 'More actions for Liliana' })))
 
     await openDelete('Liliana')
     await userEvent.keyboard('{Escape}')
