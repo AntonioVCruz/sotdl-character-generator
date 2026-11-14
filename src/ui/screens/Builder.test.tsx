@@ -308,6 +308,60 @@ describe('Attributes step', () => {
     expect(repository.save).not.toHaveBeenCalled()
   })
 
+  const card = () => screen.getByRole('heading', { level: 2, name: 'Score adjustment' }).closest('section')!
+  const groupRadio = (group: string, name: string) =>
+    within(screen.getByRole('radiogroup', { name: group })).getByRole('radio', { name }) as HTMLInputElement
+  async function applyMightOverWits() {
+    await userEvent.click(groupRadio('Raise one attribute by 1', 'Might'))
+    await userEvent.click(groupRadio('Lower another attribute by 1', 'Wits'))
+    await userEvent.click(screen.getByRole('button', { name: 'Apply adjustment' }))
+  }
+  async function settled(session: CharacterSession, saved: unknown[], count: number) {
+    await vi.waitFor(() => expect(saved).toHaveLength(count))
+    await vi.waitFor(() => expect(session.getSnapshot()).toMatchObject({ save: 'saved' }))
+    await act(async () => {}) // as continuações dos comandos rodam e a tela é atualizada
+    await nextFrame()
+  }
+
+  it('NFR-ACC-001 (DEF-008): after Apply, the focus goes to the status line as soon as the adjustment is on screen, and a slow save does not pull it back', async () => {
+    const { session, control, saved } = setup({ document: stored({ ancestry: 'ancestry:troll' }, ['test.scores']), holdSave: true })
+    renderBuilder('scores')
+    await screen.findByRole('heading', { name: 'Score adjustment' })
+    await applyMightOverWits()
+
+    // O ajuste já está na tela e a gravação continua pendente: o foco vai à linha de estado (ui-design, applied).
+    const status = screen.getByText('Applied: Might +1, Wits −1.')
+    await vi.waitFor(() => expect(document.activeElement).toBe(status))
+    expect(saved).toEqual([])
+
+    // Antes de a gravação terminar, a pessoa abre a composição de Might.
+    const might = within(screen.getByRole('main')).getByRole('button', { name: 'Might 13 Modifier +3' })
+    await userEvent.click(might)
+    expect(document.activeElement).toBe(might)
+
+    control.release()
+    await settled(session, saved, 1)
+    expect(document.activeElement).toBe(might)
+  })
+
+  it('FR-STEP-011 (DEF-008): undoing during a slow save of Apply shows the empty card, and a new choice survives that save', async () => {
+    const { session, control, saved } = setup({ document: stored({ ancestry: 'ancestry:troll' }, ['test.scores']), holdSave: true })
+    renderBuilder('scores')
+    await screen.findByRole('heading', { name: 'Score adjustment' })
+    await applyMightOverWits()
+    await userEvent.click(screen.getByRole('button', { name: 'Undo adjustment' }))
+
+    // Desfeito, o card volta ao default (ui-design, undone): nada marcado e sem prévia.
+    expect(groupRadio('Raise one attribute by 1', 'Might').checked).toBe(false)
+    expect(groupRadio('Lower another attribute by 1', 'Wits').checked).toBe(false)
+    expect(within(card()).queryByText(/If you apply this adjustment/i)).toBeNull()
+
+    await userEvent.click(groupRadio('Raise one attribute by 1', 'Wits'))
+    control.release()
+    await settled(session, saved, 2)
+    expect(groupRadio('Raise one attribute by 1', 'Wits').checked).toBe(true)
+  })
+
   it('FR-CALC-002, FR-CALC-007: the composition lists the adjustment and the limit, and the total is their sum', async () => {
     setup({ document: withAdjustment() })
     renderBuilder('scores')
