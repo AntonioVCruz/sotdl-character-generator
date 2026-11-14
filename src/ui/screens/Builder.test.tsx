@@ -362,6 +362,41 @@ describe('Attributes step', () => {
     expect(groupRadio('Raise one attribute by 1', 'Wits').checked).toBe(true)
   })
 
+  it('NFR-ACC-001 (DEF-009): after Undo, the focus and the announcement come as soon as the card is back, and a slow save does not pull the focus back', async () => {
+    const { session, control, saved } = setup({ document: withAdjustment(), holdSave: true })
+    renderBuilder('scores')
+    await screen.findByRole('heading', { name: 'Score adjustment' })
+    await userEvent.click(screen.getByRole('button', { name: 'Undo adjustment' }))
+
+    // O card já voltou ao default e a gravação continua pendente (ui-design, undone).
+    const title = screen.getByRole('heading', { level: 2, name: 'Score adjustment' })
+    await vi.waitFor(() => expect(document.activeElement).toBe(title))
+    expect(within(card()).getByRole('status').textContent).toBe('Adjustment undone.')
+    expect(saved).toEqual([])
+
+    // Antes de a gravação terminar, a pessoa escolhe o atributo que sobe.
+    const wits = groupRadio('Raise one attribute by 1', 'Wits')
+    await userEvent.click(wits)
+    expect(document.activeElement).toBe(wits)
+
+    control.release()
+    await settled(session, saved, 1)
+    expect(document.activeElement).toBe(wits)
+  })
+
+  it('FR-STEP-011 (DEF-009): a new adjustment applied during a slow save of Undo is not announced as undone', async () => {
+    const { session, control, saved } = setup({ document: withAdjustment(), holdSave: true })
+    renderBuilder('scores')
+    await screen.findByRole('heading', { name: 'Score adjustment' })
+    await userEvent.click(screen.getByRole('button', { name: 'Undo adjustment' }))
+    await applyMightOverWits()
+    expect(screen.getByText('Applied: Might +1, Wits −1.')).toBeTruthy()
+
+    control.release()
+    await settled(session, saved, 2)
+    expect(within(card()).getByRole('status').textContent).toBe('')
+  })
+
   it('FR-CALC-002, FR-CALC-007: the composition lists the adjustment and the limit, and the total is their sum', async () => {
     setup({ document: withAdjustment() })
     renderBuilder('scores')
