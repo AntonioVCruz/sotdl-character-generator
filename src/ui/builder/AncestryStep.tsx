@@ -34,15 +34,24 @@ export function AncestryStep({ session, snapshot, slot, nameOf }: {
     return () => cancelAnimationFrame(frame)
   }, [current])
 
+  // Ações da pessoa nesta etapa (selecionar ou escolher um cartão). A continuação de um "Choose" só mexe na prévia se
+  // nenhuma ação veio depois daquele clique: comparar o item não distingue uma prévia nova do mesmo item (DEF-005, DEF-006).
+  const actions = useRef(0)
+
   function select(id: string) {
+    actions.current += 1
     onNotice(null)
     setSelected(id === current ? null : id)
   }
 
   async function choose(id: string) {
+    const action = (actions.current += 1)
     onNotice(null)
     focusOnChoice.current = id
     const result = await session.decide(slot.key, id)
+    const clearPreview = () => {
+      if (actions.current === action) setSelected(null)
+    }
     // Recusada, a escolha não chega à tela e o foco fica onde está. Falha ao gravar mantém a escolha na tela (D11).
     if (!result.ok && result.reason !== 'save-failed') focusOnChoice.current = null
     if (!result.ok && result.reason === 'has-dependents') {
@@ -51,16 +60,10 @@ export function AncestryStep({ session, snapshot, slot, nameOf }: {
         return dependent ? decisionTitle({ kind: dependent.kind, target: 'target' in dependent ? dependent.target : undefined }, nameOf) : ''
       })
       onNotice(hasDependentsMessage(nameOf(id), current ? nameOf(current) : '', titles))
-      clearPreviewOf(id)
+      clearPreview()
       return
     }
-    clearPreviewOf(id)
-  }
-
-  // A continuação de um "Choose" só limpa a prévia se ela ainda for a do item escolhido: a pessoa pode ter aberto a de
-  // outro cartão enquanto a gravação corria (DEF-005).
-  function clearPreviewOf(id: string) {
-    setSelected((previewed) => (previewed === id ? null : previewed))
+    clearPreview()
   }
 
   return (
