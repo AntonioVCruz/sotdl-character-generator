@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, render, screen, waitFor, within } from '@testing-library/react'
+import { act, cleanup, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { CharacterSummary } from '../../app'
@@ -70,6 +70,17 @@ const openDelete = async (name: string) => {
   await userEvent.click(screen.getByRole('button', { name: `More actions for ${name}` }))
   await userEvent.click(await screen.findByRole('menuitem', { name: 'Delete' }))
   return screen.findByRole('alertdialog', { name: `Delete ${name}?` })
+}
+/**
+ * Foco de volta ao "···" depois de cancelar, já assentado. O Home devolve o foco no quadro seguinte (ui-design, Foco na
+ * Home), e o React Aria pode devolvê-lo antes, ao fechar o modal: o foco no "···" sozinho não garante que esse quadro
+ * já rodou. Sem ele, o jsdom (sem `inert`) deixa o foco tardio tirar um menu aberto em seguida. Espera o foco, um
+ * quadro, e confere de novo.
+ */
+async function focusSettledOn(element: HTMLElement) {
+  await waitFor(() => expect(document.activeElement).toBe(element))
+  await act(() => new Promise<void>((resolve) => requestAnimationFrame(() => resolve())))
+  expect(document.activeElement).toBe(element)
 }
 const CONSEQUENCE = "This permanently deletes Liliana and its creation log from this browser. You can't undo this."
 const DELETE_FAILED = "Liliana wasn't deleted. It's still saved in this browser. Try again, and if it keeps failing, reload the page."
@@ -190,9 +201,8 @@ describe('Home: delete', () => {
     expect(document.activeElement).toBe(within(dialog).getByRole('button', { name: 'Cancel' }))
     await userEvent.click(within(dialog).getByRole('button', { name: 'Cancel' }))
     await waitFor(() => expect(screen.queryByRole('alertdialog')).toBeNull())
-    // O foco volta ao "···" no quadro seguinte (ui-design, Foco na Home); antes disso, o jsdom, sem `inert`, deixa esse
-    // foco tirar o menu recém-aberto. O segundo clique espera esse estado.
-    await waitFor(() => expect(document.activeElement).toBe(screen.getByRole('button', { name: 'More actions for Liliana' })))
+    // O segundo clique espera o foco assentado no "···" (focusSettledOn).
+    await focusSettledOn(screen.getByRole('button', { name: 'More actions for Liliana' }))
 
     await openDelete('Liliana')
     await userEvent.keyboard('{Escape}')
@@ -206,7 +216,7 @@ describe('Home: delete', () => {
     const more = screen.getByRole('button', { name: 'More actions for Brokk' })
     const dialog = await openDelete('Brokk')
     await userEvent.click(within(dialog).getByRole('button', { name: 'Cancel' }))
-    await waitFor(() => expect(document.activeElement).toBe(more))
+    await focusSettledOn(more)
 
     await openDelete('Brokk')
     await userEvent.keyboard('{Escape}')
