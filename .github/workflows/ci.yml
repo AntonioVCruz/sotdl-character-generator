@@ -84,6 +84,7 @@ jobs:
           name: lighthouse
           path: .lighthouseci/
           if-no-files-found: error
+          include-hidden-files: true
 
   deploy:
     name: Deploy to GitHub Pages
