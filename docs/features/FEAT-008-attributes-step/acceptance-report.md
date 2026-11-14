@@ -3,6 +3,7 @@
 > Veredito: Accepted · Data: 2026-11-12
 > Padrão: technical-design.md §6 e §5, ui-design.md @ `e3a06ce` · Fontes: srs.md, use-cases.md (UC-004), design-manifest.json (SCR-WEB-005), architecture.md §10
 > Estado auditado: `9979aed` (código de `84d43fd` mais as correções de teste abaixo)
+> Re-verificação: Accepted · 2026-11-14 · DEF-008 e DEF-009 (ver a seção no fim)
 
 ## Veredito
 
@@ -94,3 +95,62 @@ Do zero, com os comandos do AGENTS.md (Windows, PowerShell, sem servidor em exec
 ## RTM
 
 Test ref acrescentado (`features/FEAT-008-attributes-step/acceptance-report.md`) em: FR-STEP-007, 009, 010, 011; FR-CALC-002, 003, 006, 007, 008; FR-CALC-005 e FR-CALC-009 com `(partial)`; FR-FLOW-001, 009 e 014 (comportamento mudado pela FEAT-008: estado da etapa, regime e linha de regra da Attributes, prévia com par e com linhas de etapa); NFR-PERF-002; NFR-REL-001, NFR-ACC-001, NFR-USE-001, NFR-L10N-001 e NFR-MAINT-002 com `(partial)`, porque valem para o produto todo (Plan ref "Foundations") e este relatório só as verifica na etapa Attributes.
+
+## Re-verificação de 2026-11-14: DEF-008 e DEF-009
+
+> Veredito: Accepted · Estado auditado: `779f7c6` (código de `d1e4e70`) · Padrão: technical-design.md §6, sem mudança; ui-design.md emendado em `779f7c6` (applied e undone começam no snapshot)
+
+**Veredito.** Aceita de novo. As duas correções de manutenção (`docs/defects.md`) atendem o ui-design emendado: applied e undone começam quando o snapshot muda, antes da gravação, e o fim da gravação não move o foco nem anuncia nada. Cada teste vermelho falha sem a sua correção e passa com ela. Todas as suítes passaram nesta execução, sem retry. Ficam dois achados menores, sem bloqueio, e nenhum defeito novo.
+
+**Padrão.** Os 15 critérios da §6 continuam valendo. A manutenção toca o AC-2 (FR-STEP-009), o AC-4 (FR-STEP-011) e a NFR-ACC-001. A emenda do ui-design (`779f7c6`) define, para applied e undone:
+- a entrada é o snapshot mostrar o ajuste aplicado ou desfeito, antes da gravação, também quando ela falha;
+- na entrada de applied, a seleção local sai;
+- foco e anúncio uma vez, na entrada; o fim da gravação não move o foco nem anuncia; se ela falhar, só aparece o alerta do save-failed;
+- uma recusa do comando não entra no estado: seleção, foco e anúncio ficam como estão.
+
+O código (`AttributesStep.tsx`, `AdjustmentCard`) segue isso: uma marca no clique, um efeito sobre `slot.decided` que faz a entrada, e a marca desfeita na continuação só numa recusa.
+
+**Mudanças de teste auditadas** (`0e0c8ae..779f7c6`, `src/ui/screens/Builder.test.tsx`): 89 linhas acrescentadas por `757060d` e `90f6c79`, nenhuma removida. Os ajudantes novos (`card`, `groupRadio`, `applyMightOverWits`, `settled`) só montam e esperam; `settled` usa o `nextFrame` que já existia. Nenhum skip, `.only`, retry, timeout aumentado nem mudança de configuração.
+
+| Teste | Commit | Classe | Auditoria |
+| :-- | :-- | :-- | :-- |
+| NFR-ACC-001 (DEF-008): foco na linha de estado assim que o ajuste está na tela; a gravação lenta não o puxa de volta | `757060d` | teste novo, montagem determinística (`holdSave`) | Fiel ao "Foco e anúncio" de applied: o foco na linha "Applied: …" com nada gravado, depois um clique na linha de Might, e o foco nela depois da gravação. |
+| FR-STEP-011 (DEF-008): Undo durante a gravação do Apply mostra o card vazio; a escolha nova sobrevive | `757060d` | teste novo | Fiel ao undone ("o card volta ao default": nada marcado, sem prévia) e à seleção local do selecting. |
+| NFR-ACC-001 (DEF-009): foco e anúncio do Undo assim que o card volta; a gravação lenta não puxa o foco | `90f6c79` | teste novo | Fiel ao "Foco e anúncio" de undone: o `h2` focado e "Adjustment undone." com nada gravado, depois um clique em Wits, e o foco nele depois da gravação. |
+| FR-STEP-011 (DEF-009): um ajuste novo aplicado durante a gravação do Undo não é anunciado como desfeito | `90f6c79` | teste novo | Fiel a "o fim da gravação não dispara anúncio": a região de estado vazia depois das duas gravações. |
+
+As cláusulas emendadas de save-failed (o fim com falha não move o foco nem anuncia) e da recusa não têm teste automatizado na etapa Attributes. Foram verificadas direto (abaixo). Ver o achado menor 1.
+
+**Vermelhos conferidos** (produção trocada só no disco, restaurada com `git checkout` depois de cada rodada; cada linha, 3 vezes):
+
+| Testes | Comando | Sem a correção | Com a correção |
+| :-- | :-- | :-- | :-- |
+| DEF-008 (2 testes) | `npx vitest run src/ui/screens/Builder.test.tsx -t "DEF-008"` | `AttributesStep` de `757060d`: 3/3 vermelhos nos dois, no foco antes da gravação (`:334`) e no Might ainda marcado depois do Undo (`:355`) | `AttributesStep` de `106e359`: 3/3 verdes |
+| DEF-009 (2 testes) | `npx vitest run src/ui/screens/Builder.test.tsx -t "DEF-009"` | `AttributesStep` de `90f6c79`: 3/3 vermelhos nos dois, no foco no `h2` antes da gravação (`:373`) e no "Adjustment undone." depois da gravação (`:397`) | `AttributesStep` de `d1e4e70`: 3/3 verdes |
+
+**Execução independente** (do zero, porta 4173 livre antes; Windows 11, Node 22.15.0, Playwright 1.65.0): `npm ci`, `typecheck`, `lint`, `packs:check` e Vitest (167 testes em 18 arquivos) verdes. `npx playwright test --retries=0 --workers=1` nos 5 projetos: 164 passaram, 36 pulados, 0 falhas, 0 instáveis, em 6,3 min. A NFR-PERF-002 não foi medida de novo: o `perf.spec` passou no chromium e no mobile-chrome na mesma rodada, e a mudança não toca o cálculo.
+
+**Verificação direta.** Script Playwright fora do repositório (descartado), contra um build de `HEAD` servido do zero, com Dwarf. A gravação retida é só a relevante: o `put` seguinte no store `characters` mantém a transação aberta (`count()` em laço) até o script liberá-la. Para a falha, a transação é abortada ao liberar. Perfis: Desktop Chrome, Desktop Firefox e Desktop Safari; Pixel 7 (Chromium) e iPhone 15 (WebKit) a 320 × 568 e a 412 × 568. Cada sequência rodou 3 vezes em cada perfil, 21/21 cada:
+
+| Sequência | Observado |
+| :-- | :-- |
+| DEF-008 (1): Apply retido, Tab | O foco chega à linha "Applied: Intellect +1, Strength −1." com a gravação pendente. Depois dela, o foco continua onde o Tab o pôs. |
+| DEF-008 (1b): Apply retido, clique na linha de Intellect | O foco continua na linha de Intellect depois da gravação. |
+| DEF-008 (2): Apply retido, Undo, Raise Agility | Com a gravação pendente, o card está no default: nenhum segmento marcado, o grupo de baixar desabilitado, sem prévia. Depois da gravação, Agility continua marcado. |
+| DEF-009 (1): Undo retido, clique em Will | O `h2` "Score adjustment" focado e "Adjustment undone." na região, com a gravação pendente. Depois dela, o foco continua em Will. O anúncio aconteceu uma vez, e a região não mudou depois do fim da gravação. |
+| DEF-009 (2): Undo retido, ajuste novo Will/Agility | O foco vai à linha de estado do ajuste novo. Depois da gravação do Undo, a região está vazia, não mudou depois do fim da gravação, e o foco continua na linha. |
+| Recusa: segunda tentativa nos grupos só leitura | Clique em Agility, seta, Espaço e clique em Will no grupo de baixar: o foco fica no segmento, o par aplicado continua marcado, nada é gravado e a região não muda. |
+| Gravação falhando no Apply | Na entrada, o foco vai à linha de estado; depois, Tab. Na falha, o alerta "Your last choice wasn't saved…" aparece, o ajuste continua na tela e o foco fica onde o Tab o pôs, sem anúncio. "Try again" grava, e o alerta sai. |
+| Gravação falhando no Undo | Na entrada, o `h2` é focado e há o anúncio; depois, um clique em Will. Na falha, o alerta aparece, o card continua no default, o foco fica em Will e o anúncio não se repete. |
+
+- **Recusa do comando:** `already-decided` e `not-decided` não são alcançáveis pela tela, porque "Apply adjustment" só existe sem ajuste e "Undo adjustment" só com ele. Nesse caminho o snapshot não muda, então não há entrada no estado. A marca do clique é desfeita na continuação, e a leitura do código confere com o ui-design.
+- **A sonda discrimina:** contra um build com a `AttributesStep` de `e6b68d5` (antes das duas correções), as sete sequências com gravação retida falham nos 7 perfis, todas na entrada: o foco não está na linha de estado nem no `h2` com a gravação pendente, e no DEF-008 (2) o par antigo continua marcado. A da recusa passa nos 7, como devia.
+- **Ordem no WebKit:** o foco no `h2` (por `requestAnimationFrame`) chega alguns milissegundos antes de o texto "Adjustment undone." entrar na região, porque o estado do anúncio é renderizado depois do quadro. Os dois acontecem na entrada, antes da gravação, e o ui-design não fixa a ordem. Ver o achado menor 2.
+
+Na construção da sonda houve dois erros de sincronização, corrigidos antes da rodada que vale. Ela conferia a gravação retida antes de o `put` existir, e lia a região de estado no mesmo instante do foco. A asserção corrigida continua exigindo o anúncio antes do fim da gravação.
+
+**Achados.** Rework: nenhum. Defeito de design: nenhum. Menores:
+1. **Sem guarda automatizada para as cláusulas emendadas de save-failed e de recusa** na etapa Attributes. O teste FR-CHAR-010 da moldura (`Builder.test.tsx:175`) cobre só a Ancestry. O comportamento foi observado direto, 21/21 em cada caso. **Para:** feature-implementation, se o usuário quiser a guarda (um teste de unidade com `failSave` depois de Apply e de Undo). Sem bloqueio.
+2. **Foco antes do anúncio no WebKit** (acima). Só registro.
+
+**RTM.** Sem mudança.
