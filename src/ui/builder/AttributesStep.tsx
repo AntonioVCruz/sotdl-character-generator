@@ -152,11 +152,22 @@ function AdjustmentCard({ session, snapshot, slot, nameOf }: {
     if (!result.ok && result.reason !== 'save-failed') applying.current = false
   }
 
-  async function undo() {
-    const result = await session.clear(slot.key)
-    if (!result.ok && result.reason !== 'save-failed') return
+  // Ao desfazer, o anúncio e o foco no título vêm assim que o card volta ao default, sem esperar a gravação (ui-design,
+  // undone; moldura da FEAT-007, D11; DEF-009). O `clear` muda o snapshot antes de gravar.
+  const undoing = useRef(false)
+  useEffect(() => {
+    if (slot.decided || !undoing.current) return
+    undoing.current = false
     setAnnouncement('Adjustment undone.')
-    requestAnimationFrame(() => title.current?.focus())
+    const frame = requestAnimationFrame(() => title.current?.focus())
+    return () => cancelAnimationFrame(frame)
+  }, [slot.decided])
+
+  async function undo() {
+    undoing.current = true
+    const result = await session.clear(slot.key)
+    // Recusado, o ajuste continua na tela, sem anúncio, e o foco fica onde está.
+    if (!result.ok && result.reason !== 'save-failed') undoing.current = false
   }
 
   const current = slot.decided ? slot.value : undefined
