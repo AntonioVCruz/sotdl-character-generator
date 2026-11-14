@@ -254,4 +254,65 @@ describe('Home: delete', () => {
     expect(screen.queryByRole('article', { name: 'Liliana' })).toBeNull()
     expect(card('Brokk')).toBeTruthy()
   })
+
+  it('FR-CHAR-013: while deleting, "Cancel" is disabled and Esc does not close the dialog', async () => {
+    let finish: (value: unknown) => void = () => undefined
+    deleteCharacter.mockReturnValueOnce(new Promise((done) => (finish = done)))
+    await listing(liliana, brokk)
+    const dialog = await openDelete('Liliana')
+    const confirm = within(dialog).getByRole('button', { name: 'Delete permanently' })
+    const cancel = within(dialog).getByRole('button', { name: 'Cancel' })
+    await userEvent.click(confirm)
+    expect(deleteCharacter).toHaveBeenCalledTimes(1)
+    // ui-design, delete-confirm, "Excluindo": "Cancel" desabilitado e Esc ignorado até o resultado.
+    expect(cancel.hasAttribute('disabled')).toBe(true)
+
+    await userEvent.keyboard('{Escape}')
+    await userEvent.click(cancel)
+    expect(screen.getByRole('alertdialog', { name: 'Delete Liliana?' })).toBe(dialog)
+    expect(screen.getByRole('article', { name: 'Liliana', hidden: true })).toBeTruthy()
+
+    finish({ ok: true })
+    await waitFor(() => expect(screen.queryByRole('alertdialog')).toBeNull())
+    expect(screen.queryByRole('article', { name: 'Liliana' })).toBeNull()
+    expect(deleteCharacter).toHaveBeenCalledTimes(1)
+  })
+
+  it('FR-CHAR-013: a click on the backdrop does not close the dialog', async () => {
+    await listing(liliana, brokk)
+    const dialog = await openDelete('Liliana')
+    const backdrop = document.querySelector('.dialog-overlay')
+    expect(backdrop).not.toBeNull()
+    await userEvent.click(backdrop as Element)
+    expect(screen.getByRole('alertdialog', { name: 'Delete Liliana?' })).toBe(dialog)
+    expect(deleteCharacter).not.toHaveBeenCalled()
+  })
+
+  it('FR-CHAR-014: on retry the failure alert goes away, comes back if it fails again, and a later success deletes', async () => {
+    let finish: (value: unknown) => void = () => undefined
+    deleteCharacter
+      .mockResolvedValueOnce({ ok: false, reason: 'delete-failed' })
+      .mockReturnValueOnce(new Promise((done) => (finish = done)))
+    await listing(liliana, brokk)
+    const dialog = await openDelete('Liliana')
+    const confirm = within(dialog).getByRole('button', { name: 'Delete permanently' })
+    await userEvent.click(confirm)
+    expect((await within(dialog).findByRole('alert')).textContent).toBe(DELETE_FAILED)
+
+    // Segunda tentativa, ainda sem resultado: o alerta sai ao acionar "Delete permanently" de novo (ui-design, delete-failed).
+    await userEvent.click(confirm)
+    expect(deleteCharacter).toHaveBeenCalledTimes(2)
+    expect(within(dialog).queryByRole('alert')).toBeNull()
+    expect(within(dialog).queryByText(DELETE_FAILED)).toBeNull()
+
+    // Falha outra vez: o alerta volta, e "Cancel" volta a funcionar.
+    finish({ ok: false, reason: 'delete-failed' })
+    expect((await within(dialog).findByRole('alert')).textContent).toBe(DELETE_FAILED)
+    expect(within(dialog).getByRole('button', { name: 'Cancel' }).hasAttribute('disabled')).toBe(false)
+
+    await userEvent.click(confirm)
+    expect(deleteCharacter).toHaveBeenCalledTimes(3)
+    await waitFor(() => expect(screen.queryByRole('alertdialog')).toBeNull())
+    expect(screen.queryByRole('article', { name: 'Liliana' })).toBeNull()
+  })
 })
