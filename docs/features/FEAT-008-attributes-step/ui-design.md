@@ -1,7 +1,7 @@
 # UI Design: FEAT-008 — Etapa Attributes: ajuste ±1, características com fórmula e composição
 
 > Feature de: `docs/implementation-plan.md` · Par com: `technical-design.md`
-> Telas: SCR-WEB-005 · Modo: por feature · Status: Verified (re-verificação após a emenda E5 do design system, 2026-11-12) · Data: 2026-11-12
+> Telas: SCR-WEB-005 · Modo: por feature · Status: Verified (re-verificação após a emenda E5 do design system, 2026-11-12) · Data: 2026-11-12 · Emenda de 2026-11-14: entrada de applied e undone pelo snapshot (DEF-008, DEF-009)
 
 Autoridade: `docs/design.md` e `docs/tokens.json`. Todo valor visual abaixo é token (`--…`) ou classe `.typography-*`; breakpoints pelos `@custom-media` da FEAT-007. Ícones Lucide, decorativos com `aria-hidden`. A moldura (mapa, resumo vivo, Open decisions, Back e Next, celular) é a da FEAT-007 ([Builder frame](../FEAT-007-ancestry-step-map-live-summary/ui-design.md#builder-frame) e SCR-WEB-016), sem mudança. Texto da interface em inglês, fechado em [Textos](#textos). Nenhum texto dos livros (P22).
 
@@ -113,7 +113,7 @@ O jogador escolhe na primeira `subdecision` (ex.: Intellect).
 
 ### applied
 
-`session.decide` devolveu `ok` (ajuste decidido). Este estado também cobre a segunda tentativa (FR-STEP-010).
+Começa quando o snapshot mostra o ajuste aplicado (a vaga `attribute-shift` decidida), antes da gravação: `session.decide` muda o snapshot antes de gravar (D11 da FEAT-007; "Ao confirmar" da moldura). Vale também quando a gravação falha ([save-failed](#save-failed)). Na entrada, a seleção local do [selecting](#selecting) sai. Uma recusa do comando não entra no estado: a seleção, o foco e o anúncio ficam como estão. Este estado também cobre a segunda tentativa (FR-STEP-010).
 
 - As duas `subdecision` passam de tracejada a sólida (`--color-border-divider`), como o Size decidido da FEAT-007. A prévia e "Apply adjustment" saem.
 - **Só leitura:** os dois `segmented-control` ficam com `isReadOnly` (React Aria), com o par aplicado selecionado. Os segmentos continuam focáveis e legíveis, sem `--opacity-disabled` (não estão desabilitados) e sem mudança de fundo no hover. Clicar, tocar ou usar as setas não muda a seleção e não chama comando nenhum.
@@ -123,15 +123,15 @@ O jogador escolhe na primeira `subdecision` (ex.: Intellect).
   - ao lado deles, à direita, `button-secondary` "Undo adjustment".
 - **Segunda tentativa:** é tentar mudar um segmento só leitura. Nada muda, nada é gravado, e não há alerta transitório: o motivo e a oferta de desfazer já estão visíveis, e o leitor de tela lê o motivo ao focar o grupo. A recusa do comando (`already-decided`, D3) continua valendo para quem chamar `decide` sem passar pela tela, e é coberta pelos testes de sessão da T4.
 - Pílula "Adjustment used" no cabeçalho; linhas e resumo com os valores novos; a composição de Intellect e Strength ganha a parcela "Score adjustment".
-- **Foco e anúncio:** o foco vai para a linha de estado, que o leitor de tela lê. O resumo vivo anuncia os valores em `aria-live="polite"` (FEAT-007).
+- **Foco e anúncio:** uma vez, na entrada do estado: o foco vai para a linha de estado, que o leitor de tela lê. O resumo vivo anuncia os valores em `aria-live="polite"` (FEAT-007). O fim da gravação não move o foco nem dispara anúncio; se ela falhar, só aparece o alerta do [save-failed](#save-failed).
 
 ### undone
 
-"Undo adjustment" chama `session.clear(key)`, e o comando devolve `ok`.
+"Undo adjustment" chama `session.clear(key)`. O estado começa quando o snapshot mostra o ajuste desfeito (a vaga `attribute-shift` sem decisão), antes da gravação: `session.clear` muda o snapshot antes de gravar (D11 da FEAT-007). Vale também quando a gravação falha ([save-failed](#save-failed)). Uma recusa do comando não entra no estado: o ajuste continua na tela, e a seleção, o foco e o anúncio ficam como estão.
 
 - O card volta ao [default](#default): `subdecision` tracejadas e vazias, sem prévia, "Apply adjustment" desabilitado com o motivo.
 - Os dois atributos e as características dependentes voltam aos valores sem o ajuste; a pílula "Adjustment used" sai.
-- **Foco e anúncio:** o foco vai para o `h2` "Score adjustment"; uma região `role="status"` visualmente oculta, no card, diz "Adjustment undone." O resumo vivo anuncia os valores.
+- **Foco e anúncio:** uma vez, na entrada do estado: o foco vai para o `h2` "Score adjustment"; uma região `role="status"` visualmente oculta, no card, diz "Adjustment undone." O resumo vivo anuncia os valores. O fim da gravação não move o foco nem dispara anúncio; se ela falhar, só aparece o alerta do [save-failed](#save-failed).
 - Um ajuste novo pode ser aplicado em seguida (FR-STEP-011).
 
 ### increase-pending
