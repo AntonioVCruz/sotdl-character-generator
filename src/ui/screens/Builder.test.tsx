@@ -228,6 +228,27 @@ describe('Builder states', () => {
     expect(screen.getByRole('button', { name: 'Choose Gnome' })).toBeTruthy()
   })
 
+  it('FR-FLOW-014 (DEF-006): a slow save of "Choose" does not clear a new preview of the same card, opened after another choice', async () => {
+    const { session, control, saved } = setup({ holdSave: true })
+    renderBuilder()
+    await userEvent.click(await screen.findByRole('radio', { name: 'Troll' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Choose Troll' }))
+    expect(screen.getByRole('radio', { name: 'Troll, your choice' })).toBeTruthy()
+
+    // Com a gravação do Troll pendente, a pessoa escolhe o Gnome e abre de novo a prévia do Troll.
+    await userEvent.click(screen.getByRole('radio', { name: 'Gnome' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Choose Gnome' }))
+    expect(screen.getByRole('radio', { name: 'Gnome, your choice' })).toBeTruthy()
+    await userEvent.click(screen.getByRole('radio', { name: 'Troll' }))
+    expect(screen.getByRole('button', { name: 'Choose Troll' })).toBeTruthy()
+
+    control.release()
+    await vi.waitFor(() => expect(saved).toHaveLength(2))
+    await vi.waitFor(() => expect(session.getSnapshot()).toMatchObject({ save: 'saved' }))
+    await act(async () => {}) // as continuações dos dois "Choose" rodam e a tela é atualizada
+    expect(screen.getByRole('button', { name: 'Choose Troll' })).toBeTruthy()
+  })
+
   it('FR-FLOW-003: has-dependents shows a warning that names the choice in the way (Size of the Human, here Stature of the Gnome)', async () => {
     const { repository } = setup({ document: stored({ ancestry: 'ancestry:gnome', 'ancestry=gnome/stature': 1 }) })
     renderBuilder()
