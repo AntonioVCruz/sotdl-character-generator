@@ -5,6 +5,7 @@
 > Estado auditado: `33330d9` (código de `7c0883e` mais as correções de teste abaixo)
 > Re-verificação: Accepted · 2026-11-13 · DEF-001 e DEF-002 (ver a seção no fim)
 > Re-verificação: Accepted · 2026-11-13 · DEF-003, DEF-004 e DEF-005, com o DEF-006 aberto (ver a seção no fim)
+> Re-verificação: Accepted · 2026-11-14 · DEF-006 (ver a seção no fim)
 
 ## Veredito
 
@@ -177,5 +178,39 @@ O nome novo diz a asserção e a condição: "tabbing into a segment partly unde
 
 **Achados.** Rework: nenhum. Defeito de design: nenhum. Novo, em `docs/defects.md`:
 1. **DEF-006** (FR-FLOW-014), variante do DEF-005. Sequência: "Choose Human" com gravação lenta, depois "Choose Dwarf", depois a prévia do Human. Quando a gravação do Human termina, a continuação dele limpa essa prévia nova, porque o `clearPreviewOf(id)` compara o item, não a prévia. Reproduzido 8 de 8 (2 motores, 2 larguras, gravação retida 150 e 400 ms). Com a gravação natural (~10 ms), a sequência não cabe na janela. O DEF-005 como registrado (prévia de *outro* cartão) está corrigido. **Para:** a rota de manutenção do `sdlc-orchestrator`.
+
+**RTM.** Sem mudança.
+
+## Re-verificação de 2026-11-14: DEF-006
+
+> Veredito: Accepted · Estado auditado: `779f7c6` (código de `e6b68d5`; depois dele só a `AttributesStep` e documentos) · Padrão: technical-design.md §6 e ui-design.md, sem mudança
+
+**Veredito.** Aceita de novo. A correção do DEF-006 (`docs/defects.md`) faz o que o ui-design já dizia: a prévia é do jogador e só sai por ação dele. O teste vermelho falha sem a correção e passa com ela. Todas as suítes passaram nesta execução, sem retry. Os casos do DEF-003 e do DEF-005 continuam valendo. Nenhum achado novo.
+
+**Padrão.** Os 13 critérios da §6 continuam valendo. A manutenção toca o AC-3 (FR-FLOW-014): a continuação de um "Choose" pendente não limpa uma prévia que a pessoa abriu depois, nem do mesmo item.
+
+**Mudanças de teste auditadas** (`0e0c8ae..779f7c6`, só `src/ui/screens/Builder.test.tsx` entre os testes desta feature): 21 linhas acrescentadas, nenhuma removida. Nenhum skip, `.only`, retry, timeout aumentado nem mudança de configuração (`playwright.config.ts`, `vite.config.ts`, `package.json`). As outras mudanças de teste do intervalo (`Home.test.tsx`, `skeleton.spec.ts`) são da FEAT-001 e foram auditadas no aceite dela.
+
+| Mudança | Commit | Classe | Auditoria |
+| :-- | :-- | :-- | :-- |
+| Teste do DEF-006: "Choose Troll" com a gravação retida, "Choose Gnome", prévia do Troll de novo; depois da gravação, "Choose Troll" continua na tela | `0c9eea4` | teste novo, montagem determinística (o `holdSave` do `34f7670`) | Fiel ao FR-FLOW-014 e ao estado "selected": confere a escolha nova e a prévia reaberta antes do `release()`, as duas gravações concluídas e a prévia depois. |
+
+**Vermelho conferido** (produção trocada só no disco, restaurada com `git checkout` depois):
+
+| Teste | Comando | Sem a correção (`AncestryStep` de `0c9eea4`) | Com a correção (`HEAD`) |
+| :-- | :-- | :-- | :-- |
+| `Builder.test.tsx`, DEF-006 | `npx vitest run src/ui/screens/Builder.test.tsx -t "DEF-006"`, 3 vezes | 3/3 vermelhos, na asserção depois do `release()` (`:249`, "Choose Troll" ausente) | 3/3 verdes |
+
+**Execução independente** (do zero, porta 4173 livre antes; Windows 11, Node 22.15.0, Playwright 1.65.0): `npm ci`, `typecheck`, `lint`, `packs:check` e Vitest (167 testes em 18 arquivos) verdes. `npx playwright test --retries=0 --workers=1` nos 5 projetos: 164 passaram, 36 pulados, 0 falhas, 0 instáveis, em 6,3 min. O build e o servidor vieram do `webServer`. A Lighthouse não foi rodada: a Home não mudou.
+
+**Verificação direta.** Script Playwright fora do repositório (descartado), contra um build de `HEAD` servido do zero. A gravação retida é só a relevante: o `put` seguinte no store `characters` mantém a transação aberta (`count()` em laço) até ser liberado pelo script. Perfis: Desktop Chrome, Desktop Firefox e Desktop Safari; Pixel 7 (Chromium) e iPhone 15 (WebKit) a 320 × 568 e a 412 × 568. Cada sequência rodou 3 vezes em cada perfil.
+- **DEF-006:** "Choose Human" retido, "Choose Dwarf", prévia do Human. Depois das gravações do Human e do Dwarf, "Choose Human" continua na tela e o cartão Human continua marcado em prévia. 21/21.
+- **DEF-003:** depois de "Choose Human", o foco chega ao título "Human" do detalhe com a gravação pendente, e continua nele depois. 21/21. No WebKit, o foco chega antes de o `put` começar.
+- **DEF-005:** "Choose Human" retido e prévia do Dwarf. Depois da gravação, "Choose Dwarf" continua na tela. 21/21.
+- **A sonda discrimina:** contra um build com a `AncestryStep` de `0e0c8ae` (antes da correção), a sequência do DEF-006 falha nos 7 perfis, no mesmo ponto do teste de unidade (a prévia sumiu depois da gravação). As do DEF-003 e do DEF-005 passam nos 7, como deviam.
+
+Na construção da sonda houve um erro de sincronização, corrigido antes da rodada que vale: ela conferia a gravação retida antes de o `put` existir (no WebKit, o foco chega antes da gravação começar).
+
+**Achados.** Rework: nenhum. Defeito de design: nenhum. Menores: nenhum.
 
 **RTM.** Sem mudança.
