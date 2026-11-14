@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Button, Label, Radio, RadioGroup } from 'react-aria-components'
 import type { CharacterSession, Snapshot } from '../../app'
 import { preview, type SlotView } from '../../engine'
@@ -131,14 +131,25 @@ function AdjustmentCard({ session, snapshot, slot, nameOf }: {
     if (lower === id) setLower(null)
   }
 
+  // Ao aplicar, a seleção local sai e o foco vai à linha de estado assim que o ajuste aparece na tela, sem esperar a
+  // gravação (ui-design, applied; moldura da FEAT-007, D11; DEF-008). O `decide` muda o snapshot antes de gravar.
+  const applying = useRef(false)
+  useEffect(() => {
+    if (!slot.decided || !applying.current) return
+    applying.current = false
+    setRaise(null)
+    setLower(null)
+    const frame = requestAnimationFrame(() => applied.current?.focus())
+    return () => cancelAnimationFrame(frame)
+  }, [slot.decided])
+
   async function apply() {
     if (!pair) return
     setAnnouncement('')
+    applying.current = true
     const result = await session.decide(slot.key, pair)
-    if (!result.ok && result.reason !== 'save-failed') return
-    setRaise(null)
-    setLower(null)
-    requestAnimationFrame(() => applied.current?.focus())
+    // Recusado, o ajuste não chega à tela, e a seleção e o foco ficam onde estão.
+    if (!result.ok && result.reason !== 'save-failed') applying.current = false
   }
 
   async function undo() {
