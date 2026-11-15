@@ -33,6 +33,27 @@ describe('Home', () => {
     expect(window.location.hash).toBe('#/')
   })
 
+  it('FR-CHAR-001 (DEF-010): while the character is being created, "New character" shows the decorative spinner before its label', async () => {
+    let finish: (value: unknown) => void = () => undefined
+    createCharacter.mockReturnValueOnce(new Promise((done) => (finish = done)))
+    window.location.hash = '#/'
+    render(<Home />)
+    const button = screen.getByRole('button', { name: 'New character' })
+    expect(button.querySelector('svg')).toBeNull()
+
+    await userEvent.click(button)
+    // design.md §4, loading (E7): spinner de --size-icon-sm antes do rótulo, decorativo; o rótulo fica.
+    const spinner = button.querySelector('svg')
+    expect(spinner).not.toBeNull()
+    expect(spinner?.getAttribute('aria-hidden')).toBe('true')
+    expect(spinner?.classList.contains('icon--sm')).toBe(true)
+    expect(button.firstElementChild).toBe(spinner)
+    expect(button.textContent).toBe('New character')
+
+    await act(async () => finish({ ok: false, reason: 'save-failed' }))
+    expect(button.querySelector('svg')).toBeNull()
+  })
+
   it('FR-HELP-005: a list that cannot be read shows the alert, not the empty state', async () => {
     listCharacters.mockResolvedValueOnce({ ok: false, reason: 'storage-unavailable' })
     render(<Home />)
