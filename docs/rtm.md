@@ -1,6 +1,6 @@
 # Matriz de rastreabilidade de requisitos (RTM)
 
-> Fonte: `docs/srs.md`, `docs/use-cases.md` · Última atualização: 2026-11-11
+> Fonte: `docs/srs.md` (v1.2), `docs/use-cases.md` · Última atualização: 2026-11-15
 > As colunas Design, Plan e Test são preenchidas pelas etapas seguintes, cada uma só na sua coluna: arquitetura e design detalhado (Design), planejamento (Plan), verificação (Test). Sempre acrescentar, nunca sobrescrever.
 
 | Req ID | Requisito (curto) | Prioridade | Status | Origem | Caso(s) de uso | Design ref | Plan ref | Test ref |
@@ -91,7 +91,7 @@
 | FR-DEC-016 | Registrar quantas vezes ela já foi rolada | Must | Active | P8 | UC-005 | ADR-004, features/FEAT-009-decide-a-table/technical-design.md | FEAT-009 | _TBD_ |
 | FR-DEC-017 | Submetê-la à confirmação de dependentes antes de aplicar | Must | Active | P6 | UC-005, UC-010 | ADR-004 | FEAT-011 | _TBD_ |
 | FR-DEC-018 | Tratar o novo resultado como substituição do anterior | Must | Active | Entrevista de requisitos | UC-005, UC-010 | ADR-004 | FEAT-011 | _TBD_ |
-| FR-DEC-019 | Aceitar o valor de cada dado ou etapa da rolagem | Must | Active | D30 | UC-005 | ADR-009, features/FEAT-009-decide-a-table/technical-design.md | FEAT-009 | _TBD_ |
+| FR-DEC-019 | Aceitar o valor de cada expressão de dado ou etapa da rolagem | Must | Active | D30 | UC-005 | ADR-009, features/FEAT-009-decide-a-table/technical-design.md | FEAT-009 | _TBD_ |
 | FR-DEC-020 | Recusá-lo e informar a faixa válida | Must | Active | Entrevista de requisitos | UC-005 | ADR-009, features/FEAT-009-decide-a-table/technical-design.md | FEAT-009 | _TBD_ |
 | FR-DEC-021 | Recusar o registro e pedir o texto | Must | Active | Entrevista de requisitos | UC-005 | _TBD_ | FEAT-010 | _TBD_ |
 | FR-DEC-022 | Abrir um ajuste manual ligado a esse resultado | Must | Active | SCR-09 | UC-005 | ADR-004 | FEAT-019 | _TBD_ |
@@ -144,37 +144,41 @@
 | FR-CALC-012 | Exibi-lo com o seu efeito e não incluí-lo no cálculo da Defense | Must | Active | Entrevista de requisitos | UC-008 | ADR-004 | FEAT-013 | _TBD_ |
 | FR-CALC-013 | Substituir a Defense base pela da armadura e indicar quando a Strength estiver abaixo… | Should | Active | P11b | — | ADR-004 | FEAT-030 | _TBD_ |
 | FR-CALC-014 | Incluí-lo no cálculo sem registrá-lo no log | Could | Active | P11c | — | ADR-004 | _TBD_ | _TBD_ |
-| FR-CHG-001 | Exibir o diálogo de impacto antes de aplicá-la | Must | Active | P6, D6, SCR-07 | UC-002, UC-010 | ADR-004 | FEAT-011 | _TBD_ |
-| FR-CHG-002 | Aplicá-la sem diálogo | Must | Active | Entrevista de requisitos | UC-010 | ADR-004 | FEAT-011 | _TBD_ |
+| FR-CHG-001 | Exibir o diálogo de impacto antes de aplicá-la | Must | Active | P6, D6, D40, SCR-07 | UC-002, UC-010 | ADR-004 | FEAT-011 | _TBD_ |
+| FR-CHG-002 | Aplicá-la sem diálogo | Must | Active | D40 | UC-010 | ADR-004 | FEAT-011 | _TBD_ |
 | FR-CHG-003 | Mostrar lado a lado o estado atual e o novo | Must | Active | SCR-07 | UC-010 | ADR-004 | FEAT-011 | _TBD_ |
-| FR-CHG-004 | Listar o que será removido, o que será recalculado e o que permanece | Must | Active | SCR-07 | UC-010 | ADR-004 | FEAT-011 | _TBD_ |
-| FR-CHG-005 | Incluir os dependentes transitivos | Must | Active | Entrevista de requisitos | UC-010 | ADR-004 | FEAT-011 | _TBD_ |
+| FR-CHG-004 | Listar o que fica suspenso, o que é restaurado, o que é recalculado e o que fica… | Must | Active | SCR-07, D40 | UC-010 | ADR-004 | FEAT-011 | _TBD_ |
+| FR-CHG-005 | Incluir os dependentes transitivos | Must | Active | D40 | UC-010 | ADR-004 | FEAT-011 | _TBD_ |
 | FR-CHG-006 | Mostrar o valor antigo e o novo | Must | Active | Entrevista de requisitos | UC-010 | ADR-004 | FEAT-011 | _TBD_ |
 | FR-CHG-007 | Agrupar o impacto por livro | Must | Active | Entrevista de requisitos | UC-002, UC-010 | ADR-004 | FEAT-004 | _TBD_ |
-| FR-CHG-008 | Remover os dependentes, recalcular os derivados e deixar o personagem em estado válido | Must | Active | P6 | UC-010 | ADR-004 | FEAT-011 | _TBD_ |
+| FR-CHG-008 | Suspender os dependentes, restaurar as decisões cujo contexto voltou, recalcular os… | Must | Active | P6, D40 | UC-010 | ADR-004 | FEAT-011 | _TBD_ |
 | FR-CHG-009 | Manter o personagem exatamente como estava | Must | Active | Entrevista de requisitos | UC-010 | ADR-004 | FEAT-011 | _TBD_ |
 | FR-CHG-010 | Registrar o valor recusado no log como desfeito | Must | Active | SCR-15 | UC-010 | ADR-004 | FEAT-011 | _TBD_ |
-| FR-CHG-011 | Registrá-la no log como desfeita, com o motivo | Must | Active | P8 | UC-010 | ADR-004 | FEAT-011 | _TBD_ |
-| FR-CHG-012 | Devolvê-la como decisão aberta | Must | Active | Entrevista de requisitos | UC-010 | ADR-004 | FEAT-011 | _TBD_ |
-| FR-CHG-013 | Removê-lo junto e listá-lo entre os removidos | Must | Active | Entrevista de requisitos | UC-010, UC-013 | ADR-004 | FEAT-011 | _TBD_ |
+| FR-CHG-011 | Registrar no log a suspensão ou a restauração, com o motivo | Must | Active | P8, D40 | UC-010 | ADR-004 | FEAT-011 | _TBD_ |
+| FR-CHG-012 | Reabrir a vaga como decisão aberta | Must | Active | D40 | UC-010 | ADR-004 | FEAT-011 | _TBD_ |
+| FR-CHG-013 | Suspendê-lo junto, listá-lo entre os suspensos e restaurá-lo com ela | Must | Active | D40 | UC-010, UC-013 | ADR-004 | FEAT-011 | _TBD_ |
 | FR-CHG-014 | Mantê-lo e listá-lo entre os recalculados | Must | Active | P12 | UC-010, UC-013 | ADR-004 | FEAT-011 | _TBD_ |
-| FR-CHG-015 | Manter os resultados já obtidos, marcados com a fonte de origem, e usar a nova fonte… | Should | Active | P6b, D21 | — | ADR-004 | FEAT-024 | _TBD_ |
-| FR-CHG-016 | Reabrir a decisão, com a confirmação de dependentes | Should | Active | D32, SCR-15 | — | ADR-004 | FEAT-029 | _TBD_ |
+| FR-CHG-015 | Suspender os resultados obtidos com a fonte anterior, reabrir a tabela e restaurá-los… | Should | Active | P6b, D21, D40 | — | ADR-004 | FEAT-024 | _TBD_ |
+| FR-CHG-016 | Reabri-la no construtor, na etapa do nível dela, com a confirmação de dependentes | Should | Active | D32, D40 | — | ADR-004 | FEAT-029 | _TBD_ |
 | FR-CHG-017 | Reverter a última mudança confirmada | Could | Active | Entrevista de requisitos | — | _TBD_ | _TBD_ | _TBD_ |
+| FR-CHG-018 | Restaurar a decisão suspensa quando o contexto dela voltar, com dependentes e ajustes… | Must | Active | D40, P6, P6b | UC-010, UC-015 | _TBD_ | _TBD_ | _TBD_ |
+| FR-CHG-019 | Guardar a decisão suspensa no personagem, fora da ficha e do cálculo, até ser… | Must | Active | D40 | UC-010, UC-015 | _TBD_ | _TBD_ | _TBD_ |
+| FR-CHG-020 | Descartar as decisões suspensas, com confirmação, e registrar o descarte no log | Should | Active | D40 | — | _TBD_ | _TBD_ | _TBD_ |
+| FR-CHG-021 | Suspender a decisão inelegível pela regra e reabrir a vaga | Should | Active | D39, D40 | — | _TBD_ | _TBD_ | _TBD_ |
 | FR-LOG-001 | Adicionar ao log uma entrada com o tipo, a descrição, a fonte e o modo (rolado,… | Must | Active | P8, SCR-15 | UC-005 | ADR-004, features/FEAT-009-decide-a-table/technical-design.md | FEAT-009 | _TBD_ |
 | FR-LOG-002 | Registrar o valor de cada dado, cada modificador aplicado, o total e o número de… | Must | Active | P8 | UC-005 | ADR-009, features/FEAT-009-decide-a-table/technical-design.md | FEAT-009 | _TBD_ |
 | FR-LOG-003 | Registrar o texto digitado | Must | Active | Entrevista de requisitos | UC-005 | _TBD_ | FEAT-010 | _TBD_ |
 | FR-LOG-004 | Registrar os valores informados com a marca "entered" | Must | Active | D30 | UC-005 | features/FEAT-009-decide-a-table/technical-design.md | FEAT-009 | _TBD_ |
 | FR-LOG-005 | Registrar a mudança no log | Must | Active | P12 | UC-013 | ADR-004 | FEAT-019 | _TBD_ |
 | FR-LOG-006 | Registrar uma entrada "Sources" com a ordem resultante dos livros ligados | Must | Active | P14a, SCR-15 | UC-002 | _TBD_ | FEAT-004 | _TBD_ |
-| FR-LOG-007 | Manter a entrada no log, marcada como desfeita, com o motivo | Must | Active | P8 | UC-010 | ADR-004 | FEAT-011 | _TBD_ |
+| FR-LOG-007 | Manter a entrada original e registrar o desfeito, a suspensão ou a restauração, com o… | Must | Active | P8, D40 | UC-010 | ADR-004 | FEAT-011 | _TBD_ |
 | FR-LOG-008 | Salvar a alteração sem registrá-la no log | Must | Active | D36 | UC-011 | _TBD_ | FEAT-015 | _TBD_ |
 | FR-LOG-009 | Impedir a edição e a exclusão de entradas do log | Must | Active | Entrevista de requisitos | UC-014 | ADR-004 | FEAT-020 | _TBD_ |
 | FR-LOG-010 | Guardar a data e a hora | Must | Active | Entrevista de requisitos | UC-014 | features/FEAT-009-decide-a-table/technical-design.md | FEAT-009 | _TBD_ |
 | FR-LOG-011 | Exibir as entradas em ordem cronológica, agrupadas por fase | Must | Active | SCR-15 | UC-014 | _TBD_ | FEAT-020 | _TBD_ |
 | FR-LOG-012 | Exibir só as entradas do tipo filtrado | Must | Active | Entrevista de requisitos | UC-014 | _TBD_ | FEAT-020 | _TBD_ |
-| FR-LOG-013 | Exibir as entradas desfeitas riscadas, com o motivo | Must | Active | Entrevista de requisitos | UC-014 | _TBD_ | FEAT-020 | _TBD_ |
-| FR-LOG-014 | Ocultar as entradas desfeitas | Must | Active | Entrevista de requisitos | UC-014 | _TBD_ | FEAT-020 | _TBD_ |
+| FR-LOG-013 | Exibir as desfeitas riscadas e as de suspensão e de restauração, com o motivo | Must | Active | D40 | UC-014 | _TBD_ | FEAT-020 | _TBD_ |
+| FR-LOG-014 | Ocultar as entradas desfeitas e as de suspensão e de restauração | Must | Active | D40 | UC-014 | _TBD_ | FEAT-020 | _TBD_ |
 | FR-LOG-015 | Oferecer acesso ao log no cabeçalho | Must | Active | Entrevista de requisitos | UC-014 | _TBD_ | FEAT-020 | _TBD_ |
 | FR-LOG-016 | Gerar o log sozinho ou junto com a ficha | Should | Active | P8a, SCR-15 | — | _TBD_ | FEAT-029 | _TBD_ |
 | FR-LOG-017 | Mostrar a data e a hora | Could | Active | Entrevista de requisitos | — | _TBD_ | _TBD_ | _TBD_ |
@@ -228,7 +232,7 @@
 | FR-CONT-013 | Aceitar o pacote e usar o caminho alternativo | Must | Active | P26 | — | ADR-003 | FEAT-003 | _TBD_ |
 | FR-CONT-014 | Exibir a página e sugerir o ajuste manual | Must | Active | P11d | UC-005 | ADR-004 | FEAT-019 | _TBD_ |
 | FR-CONT-015 | Recalcular os personagens pela versão atual | Must | Active | P6a | — | ADR-004 | FEAT-011 | _TBD_ |
-| FR-CONT-016 | Reabri-la como decisão aberta, avisar ao abrir o personagem e registrar no log | Must | Active | P6, P8 | — | ADR-004 | FEAT-011 | _TBD_ |
+| FR-CONT-016 | Suspendê-la, reabrir a vaga se exigida, avisar ao abrir o personagem e registrar no log | Must | Active | P6, P6a, P8, D40 | — | ADR-004 | FEAT-011 | _TBD_ |
 | FR-CONT-017 | Ter documentação com exemplos e modelos para copiar | Should | Active | P21b | — | ADR-005 | FEAT-023 | _TBD_ |
 | FR-HELP-001 | Oferecer acesso à página "About" em todas as telas | Must | Active | Entrevista de requisitos | — | _TBD_ | FEAT-022 | _TBD_ |
 | FR-HELP-002 | Informar que o projeto não é oficial nem afiliado à Schwalb Entertainment e que os… | Must | Active | Entrevista de requisitos | — | _TBD_ | FEAT-022 | _TBD_ |
