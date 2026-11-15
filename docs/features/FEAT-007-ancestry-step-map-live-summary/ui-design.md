@@ -124,7 +124,7 @@ Ancestralidade decidida.
 - `inline-alert` danger (ícone `circle-alert`, `--size-icon-md`, `aria-hidden`; borda esquerda `--border-width-alert`) fixo no topo do corpo da etapa, `role="alert"`, com o texto de [Textos](#textos) e `button-secondary` "Try again", que chama `session.retrySave()`.
 - Durante a nova tentativa, o botão fica em loading (`design.md` §4: spinner de `--size-icon-sm`).
 - O estado novo continua na tela; o alerta some quando `save` volta a `'saved'`.
-- **Foco depois da nova tentativa:** quando ela dá certo e o alerta sai, o foco só se move se estiver dentro do alerta (em "Try again"): vai para o `h1` da etapa. Se a pessoa o moveu para fora do alerta durante a nova tentativa, ele fica onde ela o pôs; o fim da gravação não puxa o foco (C2 das lições, DEF-008). Quando falha, o alerta continua, o foco fica em "Try again" e o React Aria anuncia o rótulo ao sair do estado pendente (`design.md` §4, loading). Nenhum texto novo na interface.
+- **Foco depois da nova tentativa:** quando ela dá certo e o alerta sai, o foco só se move se estiver dentro do alerta (em "Try again"): vai para o `h1` da etapa. Se a pessoa o moveu para fora do alerta durante a nova tentativa, ele fica onde ela o pôs; o fim da gravação não puxa o foco (C2 das lições, DEF-008). Quando falha, o alerta continua e o foco não se move; se ele está em "Try again", o React Aria anuncia o rótulo ao sair do estado pendente (`design.md` §4, loading). Nenhum texto novo na interface.
 
 ### loading
 
