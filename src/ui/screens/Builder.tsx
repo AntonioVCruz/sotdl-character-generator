@@ -1,5 +1,5 @@
 import { ChevronDown, ChevronUp, LoaderCircle } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { type RefObject, useEffect, useRef, useState } from 'react'
 import { Button, Dialog, DialogTrigger, Popover } from 'react-aria-components'
 import type { CharacterSession, Snapshot } from '../../app'
 import type { CharacterView, StepView } from '../../engine'
@@ -172,7 +172,7 @@ function BuilderReady({ session, snapshot, route }: {
           <StepSelector id={id} steps={view.steps} current={current} onNavigate={() => (fromSelector.current = true)} />
         </nav>
         <main className="builder__step" ref={step}>
-          <SaveAlert session={session} snapshot={snapshot} />
+          <SaveAlert session={session} snapshot={snapshot} titleRef={title} />
           <StepHeader step={current} steps={view.steps} slots={view.slots} rules={rules} titleRef={title} />
           {/* O corpo sai do `kind` da vaga raiz da etapa, nunca do nome dela (ADR-003 §6). */}
           {stepRoot?.kind === 'choose-entity' && stepRoot.of === 'ancestry' ? (
@@ -271,18 +271,30 @@ function SummaryBar({ view, expanded, onToggle }: { view: CharacterView; expande
 }
 
 /** FR-CHAR-010: a decisão fica na tela; "Try again" grava o estado atual. */
-function SaveAlert({ session, snapshot }: { session: CharacterSession; snapshot: Ready }) {
+function SaveAlert({ session, snapshot, titleRef }: {
+  session: CharacterSession
+  snapshot: Ready
+  /** O `h1` da etapa, destino do foco quando o alerta sai com o foco dentro dele (ui-design da FEAT-007, save-failed). */
+  titleRef: RefObject<HTMLHeadingElement | null>
+}) {
   const [retrying, setRetrying] = useState(false)
+  const button = useRef<HTMLButtonElement>(null)
   if (snapshot.save !== 'failed' && !retrying) return null
   return (
     <InlineAlert tone="danger">
       <p>{SAVE_FAILED}</p>
       <Button
+        ref={button}
         className="button-secondary typography-label"
         isPending={retrying}
         onPress={async () => {
           setRetrying(true)
           await session.retrySave()
+          // DEF-012: se a nova tentativa deu certo, o alerta sai agora. O foco só vai para o `h1` se ainda está dentro do
+          // alerta; se a pessoa o levou para fora durante a gravação, fica onde ela o pôs (C2). Na falha, nada se move.
+          const now = session.getSnapshot()
+          const leaving = now.status === 'ready' && now.save !== 'failed'
+          if (leaving && button.current?.closest('[role="alert"]')?.contains(document.activeElement)) titleRef.current?.focus()
           setRetrying(false)
         }}
       >
