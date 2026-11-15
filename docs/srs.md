@@ -1,6 +1,6 @@
 # Especificação de Requisitos de Software: Gerador de personagens SotDL
 
-> Versão: 1.1 · Status: Finalizado · Última atualização: 2026-11-11
+> Versão: 1.2 · Status: Finalizado · Última atualização: 2026-11-15
 > Sintaxe dos requisitos: EARS, em português — "Quando ⟨evento⟩, o sistema deve ⟨resposta⟩"; "Enquanto ⟨estado⟩, o sistema deve …"; "Onde ⟨recurso⟩, o sistema deve …"; "Se ⟨situação indesejada⟩, então o sistema deve …"; ubíquo: "O sistema deve …"
 
 ## Histórico de revisões
@@ -10,6 +10,7 @@
 | 1.0 | 2026-11-08 | Antônio Cruz | Especificação inicial finalizada: 230 FR (12 áreas), 22 NFR, 14 casos de uso. |
 | 1.0.1 | 2026-11-11 | Antônio Cruz | Q2 resolvida na etapa de arquitetura (empilhamento conferido no core); nota da FR-CALC-011 atualizada. Nenhum requisito mudou. |
 | 1.1 | 2026-11-11 | Antônio Cruz | Exportar e importar o arquivo do personagem passa para o MVP (Must), contra a limpeza de dados do Safari (ADR-002): FR-CHAR-018 e 019 viram Must, FR-CHAR-023 entra, NFR-SEC-002 vira Must, UC-015 entra. 231 FR. |
+| 1.2 | 2026-11-15 | Antônio Cruz | Emenda 1 da FEAT-009 e D40 (mudança a montante não destrutiva; log só como registro). Alteradas: FR-DEC-019 (Enter result por expressão de dado); FR-CHG-001, 002, 004, 005, 008, 011, 012, 013 (remover passa a suspender); FR-CHG-015 (reescrita, Should); FR-CHG-016 (no construtor, sem "Change" no log, Should); FR-LOG-007, 013, 014 (suspensão e restauração); FR-CONT-016 (suspende e restaura); notas em FR-CHAR-018, 019, FR-DEC-015, FR-LOG-009, FR-CONT-015. Novas: FR-CHG-018 (restauração, Must), FR-CHG-019 (suspensas guardadas no personagem, Must), FR-CHG-020 (descartar suspensas, Should), FR-CHG-021 (inelegível pela regra, Should). Restrição nova em 2.5: log só como registro. 235 FR. |
 
 ## 1. Introdução
 
@@ -33,8 +34,8 @@ O MVP cria um personagem de nível 0 e entrega a ficha. O fluxo vem de ponta a p
 | 4 | Regimes de decisão: escolher, rolar ou escrever/informar em qualquer tabela; distribuição publicada respeitada; subdecisões adiáveis. | P7, D1, D30, P30 |
 | 5 | Navegação por dependências: mapa de etapas com estado, pendências não bloqueantes, contagem de decisões abertas. | P4, P5, D5, P29 |
 | 6 | Derivados calculados com composição visível, fórmulas vindas das fontes, ordem de cálculo e limites; efeito na escolha e resumo vivo. | P11, P11a, P11b, D2, P10, P24 |
-| 7 | Mudança a montante: lista o que será desfeito e pede confirmação. | P6, D6 |
-| 8 | Log de criação: escolhas e rolagens com origem e valores; desfeitos ficam marcados. | P8 |
+| 7 | Mudança a montante: lista o que fica suspenso, o que é restaurado e o que se recalcula e pede confirmação; a decisão suspensa continua guardada no personagem e volta com o contexto. | P6, D6, D40 |
+| 8 | Log de criação: escolhas e rolagens com origem e valores; desfeitos, suspensões e restaurações ficam registrados com o motivo. Só registro. | P8, D40 |
 | 9 | Ficha final em tela: campos fixos do nível 0 com origem; mecânica e página, sem texto dos livros. | P28, P9, P22 |
 | 10 | Ajuste manual: modificador ou substituição, nomeado, reversível, no log; cobre o que não foi modelado. | P12, P11d |
 | 11 | Imprimir a ficha (PDF pelo navegador). | P8a (parcial) |
@@ -47,7 +48,7 @@ O MVP cria um personagem de nível 0 e entrega a ficha. O fluxo vem de ponta a p
 4. Motivos de indisponível e inelegível, resumo das fontes, lista de livros navegável (P3, P31, P15, P2a).
 5. Concessões e decisões do mestre (P23, D15). No MVP, decisões do mestre entram por escrever/informar.
 6. Gatilhos de regra na criação (P34). No MVP, o resultado entra por ajuste manual (P11d).
-7. Demais ancestralidades do core; mudar escolha pelo log (D32); exportar o log (P8a).
+7. Demais ancestralidades do core; mudar escolha de nível anterior no construtor (D32, D40); descartar decisões suspensas (D40); exportar o log (P8a).
 8. Subida de nível 1–10 com paths e magia (P13b, D16).
 
 **Could:** ficha como ferramenta de jogo (D17, P13c, P11c, D31, D34, D33); pacotes da casa importáveis e sua atualização (P21, P21b, P6a, D13); editor e pacote de textos (P9a, D18); demais suplementos.
@@ -96,8 +97,8 @@ Produto novo e independente, sem integração com sistemas externos no MVP. O co
 - Conduzir a criação de nível 0 por etapas guiadas por dependências.
 - Registrar cada decisão como escolha, rolagem ou resultado informado.
 - Calcular os valores derivados e mostrar sua composição.
-- Desfazer dependentes quando uma escolha anterior muda, com confirmação.
-- Manter o log de criação.
+- Suspender os dependentes quando uma escolha anterior muda, com confirmação, e restaurá-los quando o contexto deles voltar.
+- Manter o log de criação, só como registro.
 - Exibir e imprimir a ficha final, com ajustes manuais.
 
 ### 2.3 Classes de usuários
@@ -120,6 +121,7 @@ Navegador moderno, em computador e celular (largura a partir de 390px, SCR-16). 
 - **Formato único de conteúdo:** o pacote oficial usa o formato documentado dos pacotes (P21a).
 - **Custo:** projeto pessoal; hospedagem e operação devem ter custo compatível (meta nos requisitos não funcionais).
 - **Nível inicial:** a criação sempre começa no nível 0 (wireframe, seção 8).
+- **Log só como registro:** o log é registro e auditoria. O sistema não o relê para montar o personagem, que se monta das decisões, fontes e ajustes guardados, nem oferece edição ou mudança de decisão por ele (P8, D40; FR-LOG-009, FR-CHG-016).
 
 ### 2.6 Premissas e dependências
 - A mesa decide como joga; o gerador registra (P7).
@@ -151,8 +153,8 @@ Navegador moderno, em computador e celular (largura a partir de 390px, SCR-16). 
 | FR-CHAR-015 | Enquanto não houver personagem salvo, o sistema deve exibir um estado vazio que diz o que o app faz, avisa que o texto das regras vem do livro e oferece "New character". | Must | Active | D35. |
 | FR-CHAR-016 | Onde os personagens forem guardados apenas no navegador, o sistema deve informar ao usuário que eles ficam disponíveis somente naquele navegador. | Must | Active | Depende da decisão de arquitetura. |
 | FR-CHAR-017 | Se o personagem aberto for alterado em outra aba, então o sistema deve avisar o usuário e recarregar o personagem antes de aceitar nova mudança. | Should | Active | Evita perda silenciosa. |
-| FR-CHAR-018 | Quando o usuário exportar o arquivo do personagem, o sistema deve gerar um arquivo que reabre o personagem no gerador com suas fontes e regras. | Must | Active | P8a. Inclui decisões, ajustes e log. Promovido na v1.1 (ADR-002). |
-| FR-CHAR-019 | Quando o usuário importar um arquivo de personagem, o sistema deve recriar o personagem com suas fontes e regras. | Must | Active | P8a, SCR-01. Sempre cria um personagem novo, sem sobrescrever. Decisões que não existem no pacote atual seguem a FR-CONT-016. Promovido na v1.1. |
+| FR-CHAR-018 | Quando o usuário exportar o arquivo do personagem, o sistema deve gerar um arquivo que reabre o personagem no gerador com suas fontes e regras. | Must | Active | P8a. Inclui decisões, decisões suspensas (FR-CHG-019), ajustes e log. Promovido na v1.1 (ADR-002); nota da v1.2 (D40). |
+| FR-CHAR-019 | Quando o usuário importar um arquivo de personagem, o sistema deve recriar o personagem com suas fontes e regras. | Must | Active | P8a, SCR-01. Sempre cria um personagem novo, sem sobrescrever. Decisões que não existem no pacote atual seguem a FR-CONT-016. As suspensas do arquivo continuam suspensas e seguem a FR-CHG-018. Promovido na v1.1; nota da v1.2 (D40). |
 | FR-CHAR-020 | Quando o usuário acionar "Duplicate" num personagem, o sistema deve criar uma cópia independente dele. | Could | Active | Não detalhado. |
 | FR-CHAR-021 | Quando o usuário criar um personagem, o sistema deve permitir copiar as fontes de outro personagem. | Could | Active | SCR-01. Não detalhado. |
 | FR-CHAR-022 | Onde o usuário tiver definido fontes padrão, o sistema deve aplicá-las a cada personagem novo. | Could | Active | SCR-01 "Default sources"; P2. Não detalhado. |
@@ -231,11 +233,11 @@ Navegador moderno, em computador e celular (largura a partir de 390px, SCR-16). 
 | FR-DEC-012 | Quando o sistema exibir as entradas de uma tabela para escolha, o sistema deve mostrar a faixa do dado de cada entrada. | Must | Active | SCR-09, SCR-10. |
 | FR-DEC-013 | Enquanto o personagem já possuir uma opção, o sistema deve exibi-la desabilitada, como "already yours", onde ela reaparecer para escolha. | Must | Active | SCR-10. |
 | FR-DEC-014 | Enquanto uma tabela depender do resultado de outra ainda não decidida, o sistema deve exibi-la como aguardando, com o motivo. | Must | Active | Wireframe 3.4. |
-| FR-DEC-015 | Quando o usuário acionar Reroll, o sistema deve substituir o resultado e registrar o anterior no log como desfeito. | Must | Active | P8. |
+| FR-DEC-015 | Quando o usuário acionar Reroll, o sistema deve substituir o resultado e registrar o anterior no log como desfeito. | Must | Active | P8. O anterior não fica suspenso: fica só no log; os dependentes dele seguem a FR-CHG (D40). Nota da v1.2. |
 | FR-DEC-016 | Quando o usuário rolar uma tabela, o sistema deve registrar quantas vezes ela já foi rolada. | Must | Active | P8. |
 | FR-DEC-017 | Quando a substituição de um resultado afetar decisões dependentes, o sistema deve submetê-la à confirmação de dependentes antes de aplicar. | Must | Active | P6; ver FR-CHG. |
 | FR-DEC-018 | Quando o usuário trocar o modo de uma tabela já decidida, o sistema deve tratar o novo resultado como substituição do anterior. | Must | Active | Ex.: de Roll para Write. Aplica-se FR-DEC-015 e FR-DEC-017. |
-| FR-DEC-019 | Quando o usuário acionar "Enter result", o sistema deve aceitar o valor de cada dado ou etapa da rolagem. | Must | Active | D30. |
+| FR-DEC-019 | Quando o usuário acionar "Enter result", o sistema deve aceitar o valor de cada expressão de dado ou etapa da rolagem. | Must | Active | D30. O valor é a soma que os dados mostram, sem modificador (3d6: 3 a 18); o sistema soma os modificadores e mostra o cálculo (FR-DEC-007). FEAT-009 D4. Revisto na v1.2. |
 | FR-DEC-020 | Se um valor informado em "Enter result" estiver fora da faixa possível, então o sistema deve recusá-lo e informar a faixa válida. | Must | Active | Ex.: 3–18 para 3d6. |
 | FR-DEC-021 | Se o usuário confirmar um resultado no modo Write sem texto, então o sistema deve recusar o registro e pedir o texto. | Must | Active | — |
 | FR-DEC-022 | Quando o usuário marcar que um resultado escrito tem efeito de regra, o sistema deve abrir um ajuste manual ligado a esse resultado. | Must | Active | SCR-09; ver FR-ADJ. |
@@ -303,27 +305,33 @@ Páginas aproximadas do core, a confirmar nos dados do pacote: Human p.11–12, 
 
 #### 3.1.7 Mudança a montante (FR-CHG)
 
-Mudanças a montante: trocar uma escolha, rerrolar, trocar de modo numa tabela decidida, ligar ou desligar livro, reordenar livros (P6, D6).
+Mudanças a montante: trocar uma escolha, rerrolar, trocar de modo numa tabela decidida, ligar ou desligar livro, reordenar livros, versão nova do pacote e, fora do MVP, trocar a fonte de uma tabela e a decisão que fica inelegível pela regra (P6, D6, D40).
+
+Decisão **suspensa** (D40): deixou de valer por uma mudança a montante; sai da ficha e do cálculo, mas continua guardada no personagem e é restaurada quando o contexto dela voltar. Substituir o valor na própria vaga (Reroll, Choose → Choose, troca de modo, limpar) não suspende o valor antigo: ele fica só no log (FR-DEC-015); as decisões que dependiam dele ficam suspensas.
 
 | ID | Requisito | Prioridade | Status | Origem / notas |
 |---|---|---|---|---|
-| FR-CHG-001 | Quando o usuário pedir uma mudança da qual outras decisões dependem, o sistema deve exibir o diálogo de impacto antes de aplicá-la. | Must | Active | P6, D6; SCR-07. |
-| FR-CHG-002 | Quando o usuário pedir uma mudança sem dependentes, o sistema deve aplicá-la sem diálogo. | Must | Active | — |
+| FR-CHG-001 | Quando o usuário pedir uma mudança que suspende ou restaura decisões, o sistema deve exibir o diálogo de impacto antes de aplicá-la. | Must | Active | P6, D6, D40; SCR-07. Revisto na v1.2. |
+| FR-CHG-002 | Quando o usuário pedir uma mudança que não suspende nem restaura nenhuma decisão, o sistema deve aplicá-la sem diálogo. | Must | Active | D40. Inclui a mudança que só recalcula derivados. Revisto na v1.2. |
 | FR-CHG-003 | Quando o sistema exibir o diálogo de impacto, o sistema deve mostrar lado a lado o estado atual e o novo. | Must | Active | SCR-07. |
-| FR-CHG-004 | Quando o sistema exibir o diálogo de impacto, o sistema deve listar o que será removido, o que será recalculado e o que permanece. | Must | Active | SCR-07: "Will be removed", "Will be recalculated", "Stays as it is". |
-| FR-CHG-005 | Quando o sistema listar o que será removido, o sistema deve incluir os dependentes transitivos. | Must | Active | — |
+| FR-CHG-004 | Quando o sistema exibir o diálogo de impacto, o sistema deve listar o que fica suspenso, o que é restaurado, o que é recalculado e o que fica como está. | Must | Active | SCR-07; D40. Termos da D40 para a interface: "set aside" e "restored" (a ux-foundations fecha os rótulos). Revisto na v1.2. |
+| FR-CHG-005 | Quando o sistema listar o que fica suspenso ou é restaurado, o sistema deve incluir os dependentes transitivos. | Must | Active | D40. Revisto na v1.2. |
 | FR-CHG-006 | Quando o sistema listar o que será recalculado, o sistema deve mostrar o valor antigo e o novo. | Must | Active | Ex.: "Corruption 1 → 0". |
 | FR-CHG-007 | Quando a mudança vier da configuração de fontes, o sistema deve agrupar o impacto por livro. | Must | Active | — |
-| FR-CHG-008 | Quando o usuário confirmar a mudança, o sistema deve remover os dependentes, recalcular os derivados e deixar o personagem em estado válido. | Must | Active | P6. |
+| FR-CHG-008 | Quando o usuário confirmar a mudança, o sistema deve suspender os dependentes, tirando-os da ficha e do cálculo, restaurar as decisões cujo contexto voltou, recalcular os derivados e deixar o personagem em estado válido. | Must | Active | P6, D40. Onde a suspensa fica: FR-CHG-019. Revisto na v1.2. |
 | FR-CHG-009 | Quando o usuário recusar a mudança, o sistema deve manter o personagem exatamente como estava. | Must | Active | — |
 | FR-CHG-010 | Quando o usuário recusar uma rerrolagem no diálogo, o sistema deve registrar o valor recusado no log como desfeito. | Must | Active | SCR-15. |
-| FR-CHG-011 | Quando uma decisão for removida por mudança a montante, o sistema deve registrá-la no log como desfeita, com o motivo. | Must | Active | P8. |
-| FR-CHG-012 | Quando uma decisão removida ainda for exigida pela regra, o sistema deve devolvê-la como decisão aberta. | Must | Active | Ex.: tabelas de história da nova ancestralidade. |
-| FR-CHG-013 | Quando um ajuste manual estiver ligado a uma decisão removida, o sistema deve removê-lo junto e listá-lo entre os removidos. | Must | Active | Ex.: efeito de um resultado escrito (FR-DEC-022). |
+| FR-CHG-011 | Quando uma decisão ficar suspensa ou for restaurada, o sistema deve registrar no log a suspensão ou a restauração, com o motivo. | Must | Active | P8, D40; FR-LOG-007. Revisto na v1.2. |
+| FR-CHG-012 | Quando uma decisão suspensa ocupar uma vaga que a regra ainda exige, o sistema deve reabrir a vaga como decisão aberta. | Must | Active | D40. Ex.: entrada que sumiu do pacote (FR-CONT-016), tabela cuja fonte mudou (FR-CHG-015). A suspensa não conta como decisão aberta. Revisto na v1.2. |
+| FR-CHG-013 | Quando um ajuste manual estiver ligado a uma decisão suspensa, o sistema deve suspendê-lo junto, listá-lo entre os suspensos e restaurá-lo com ela. | Must | Active | D40. Ex.: efeito de um resultado escrito (FR-DEC-022). Revisto na v1.2. |
 | FR-CHG-014 | Quando um ajuste manual livre incidir sobre um valor que será recalculado, o sistema deve mantê-lo e listá-lo entre os recalculados. | Must | Active | P12. |
-| FR-CHG-015 | Quando a fonte de uma tabela mudar, o sistema deve manter os resultados já obtidos, marcados com a fonte de origem, e usar a nova fonte só nas próximas rolagens. | Should | Active | P6b, D21. Não detalhado. |
-| FR-CHG-016 | Quando o usuário acionar "Change" numa entrada do log, o sistema deve reabrir a decisão, com a confirmação de dependentes. | Should | Active | D32; SCR-15. Não detalhado. |
+| FR-CHG-015 | Quando a fonte de uma tabela mudar, o sistema deve suspender os resultados obtidos com a fonte anterior, reabrir a tabela como decisão aberta e, se a fonte anterior voltar, restaurar esses resultados. | Should | Active | P6b, D21, D40; FEAT-009 D3. Errata do mesmo livro: o resultado fica enquanto a entrada existir. Trocar a fonte só para uma rolagem (FR-SRC-021, P2f) não é troca de fonte. Desempate: FR-CHG-018. Não ocorre com o conteúdo do MVP. Reescrita na v1.2. |
+| FR-CHG-016 | Quando o usuário mudar uma decisão de um nível anterior, o sistema deve reabri-la no construtor, na etapa do nível dela, com a confirmação de dependentes. | Should | Active | D32, revista pela D40. O log não oferece "Change": é só registro (2.5). Não detalhado. Revisto na v1.2. |
 | FR-CHG-017 | Quando o usuário acionar "desfazer", o sistema deve reverter a última mudança confirmada. | Could | Active | Sem desfazer geral no MVP; a confirmação prévia cumpre o papel. Não detalhado. |
+| FR-CHG-018 | Quando o contexto de uma decisão suspensa voltar, o sistema deve restaurá-la, com os dependentes e os ajustes ligados a ela, sem pedir que o usuário a decida de novo. | Must | Active | D40, P6, P6b. O contexto volta quando a vaga existe de novo e a decisão passa na validade (FEAT-009 D3, regras (a) e (b)); a decisão que valia e deixa de passar fica suspensa (ex.: o livro A volta, a decisão do A volta e a do B fica suspensa). Desempate: se mais de uma decisão da mesma vaga passar na validade, vale a mais recente e as outras continuam suspensas. Mudança do usuário: a restauração aparece no diálogo de impacto (FR-CHG-001, 004); versão nova do pacote: no aviso da FR-CONT-016. Onde guardar mais de uma decisão por vaga é da arquitetura (ADR-004). Entra com a FEAT-011. Acrescentado na v1.2. |
+| FR-CHG-019 | Enquanto uma decisão estiver suspensa, o sistema deve guardá-la no personagem, fora da ficha e do cálculo, com os valores e a origem com que foi registrada, até ela ser restaurada ou descartada. | Must | Active | D40. Vale para o salvamento (FR-CHAR-009) e para o arquivo exportado e importado (FR-CHAR-018, 019). A suspensa não conta como decisão aberta. Acrescentado na v1.2. |
+| FR-CHG-020 | Quando o usuário pedir no construtor para descartar as decisões suspensas, o sistema deve pedir confirmação informando que o descarte é irreversível e, ao confirmar, apagá-las do personagem e registrar o descarte no log. | Should | Active | D40 ("Descartar guardadas"; o rótulo em inglês é da ux-foundations). As entradas de log das descartadas ficam (FR-LOG-009). Acrescentado na v1.2. |
+| FR-CHG-021 | Quando uma decisão ficar inelegível pela regra, o sistema deve suspendê-la e reabrir a vaga como decisão aberta. | Should | Active | D39, D40. Os requisitos de elegibilidade entram com a FEAT-030 (D39). Não detalhado. Acrescentado na v1.2. |
 
 #### 3.1.8 Log de criação (FR-LOG)
 
@@ -335,14 +343,14 @@ Mudanças a montante: trocar uma escolha, rerrolar, trocar de modo numa tabela d
 | FR-LOG-004 | Quando a decisão for feita por "Enter result", o sistema deve registrar os valores informados com a marca "entered". | Must | Active | D30. |
 | FR-LOG-005 | Quando o usuário criar, alterar ou remover um ajuste manual, o sistema deve registrar a mudança no log. | Must | Active | P12. |
 | FR-LOG-006 | Quando o usuário aplicar uma mudança de fontes, o sistema deve registrar uma entrada "Sources" com a ordem resultante dos livros ligados. | Must | Active | P14a; SCR-15. |
-| FR-LOG-007 | Quando uma decisão for desfeita, o sistema deve manter a entrada no log, marcada como desfeita, com o motivo. | Must | Active | P8; FR-CHG-011. |
+| FR-LOG-007 | Quando uma decisão for desfeita, suspensa ou restaurada, o sistema deve manter a entrada original no log e acrescentar uma entrada que registra o desfeito, a suspensão ou a restauração, com o motivo. | Must | Active | P8, D40; FR-CHG-011. Desfeita: substituída na própria vaga (FR-DEC-015, FR-CHG-010). Revisto na v1.2. |
 | FR-LOG-008 | Quando o usuário alterar o nome, as notas ou outro campo de texto livre, o sistema deve salvar a alteração sem registrá-la no log. | Must | Active | Nomes digitados em entradas de tabela (D36) são registrados, por fazerem parte da decisão. |
-| FR-LOG-009 | O sistema deve impedir a edição e a exclusão de entradas do log. | Must | Active | O log some só com o personagem (FR-CHAR-014). |
+| FR-LOG-009 | O sistema deve impedir a edição e a exclusão de entradas do log. | Must | Active | O log some só com o personagem (FR-CHAR-014). O log é só registro: não é relido para montar o personagem (2.5, D40). Nota da v1.2. |
 | FR-LOG-010 | Quando o sistema registrar uma entrada, o sistema deve guardar a data e a hora. | Must | Active | Não exibidas no MVP. |
 | FR-LOG-011 | Quando o usuário abrir o log, o sistema deve exibir as entradas em ordem cronológica, agrupadas por fase. | Must | Active | SCR-15. No MVP, só "Creation · level 0". |
 | FR-LOG-012 | Quando o usuário selecionar um filtro, o sistema deve exibir só as entradas do tipo filtrado. | Must | Active | Filtros do MVP: All, Choices, Rolls, Edits. |
-| FR-LOG-013 | Enquanto "Show undone entries" estiver ligado, o sistema deve exibir as entradas desfeitas riscadas, com o motivo. | Must | Active | Ligado por padrão. |
-| FR-LOG-014 | Quando o usuário desligar "Show undone entries", o sistema deve ocultar as entradas desfeitas. | Must | Active | — |
+| FR-LOG-013 | Enquanto "Show undone entries" estiver ligado, o sistema deve exibir as entradas desfeitas riscadas e as entradas de suspensão e de restauração, cada uma com o motivo. | Must | Active | Ligado por padrão. D40. O rótulo pode mudar na ux-foundations. Revisto na v1.2. |
+| FR-LOG-014 | Quando o usuário desligar "Show undone entries", o sistema deve ocultar as entradas desfeitas e as entradas de suspensão e de restauração. | Must | Active | D40. Revisto na v1.2. |
 | FR-LOG-015 | Enquanto o construtor ou a ficha estiver aberto, o sistema deve oferecer acesso ao log no cabeçalho. | Must | Active | Wireframe 3.1. |
 | FR-LOG-016 | Quando o usuário exportar o log, o sistema deve gerar o log sozinho ou junto com a ficha. | Should | Active | P8a; SCR-15. Não detalhado. |
 | FR-LOG-017 | Quando o sistema exibir uma entrada do log, o sistema deve mostrar a data e a hora. | Could | Active | Não detalhado. |
@@ -410,8 +418,8 @@ Mudanças a montante: trocar uma escolha, rerrolar, trocar de modo numa tabela d
 | FR-CONT-012 | Se um pacote fizer uma referência não condicional a algo inexistente, então o sistema deve recusá-lo e listar cada referência que falta, com o local. | Must | Active | P20, P21b. |
 | FR-CONT-013 | Quando uma referência estiver condicionada a um livro ou regra inativo, o sistema deve aceitar o pacote e usar o caminho alternativo. | Must | Active | P26. Exibição do outro caminho: FR-SRC-025 (Should). |
 | FR-CONT-014 | Quando uma entrada declarar um efeito não modelado, o sistema deve exibir a página e sugerir o ajuste manual. | Must | Active | P11d. |
-| FR-CONT-015 | Quando o pacote oficial mudar numa nova versão do app, o sistema deve recalcular os personagens pela versão atual. | Must | Active | P6a, por analogia. |
-| FR-CONT-016 | Se uma decisão de um personagem deixar de existir no pacote atual, então o sistema deve reabri-la como decisão aberta, avisar ao abrir o personagem e registrar no log. | Must | Active | P6, P8. |
+| FR-CONT-015 | Quando o pacote oficial mudar numa nova versão do app, o sistema deve recalcular os personagens pela versão atual. | Must | Active | P6a, por analogia. Recalculam-se os derivados (efeitos, fórmulas, itens); resultados de tabela ficam como obtidos e só deixam de valer se a entrada deixar de existir (FR-CONT-016) ou se o livro da tabela mudar (FR-CHG-015). Nota da v1.2 (FEAT-009 D3). |
+| FR-CONT-016 | Se uma decisão de um personagem deixar de existir no pacote atual, então o sistema deve suspendê-la, reabrir a vaga se a regra ainda a exigir, avisar ao abrir o personagem e registrar a suspensão no log. | Must | Active | P6, P6a, P8, D40. Se uma versão posterior do pacote voltar a ter a entrada, a decisão é restaurada (FR-CHG-018), com o mesmo aviso e o registro no log. Revisto na v1.2. |
 | FR-CONT-017 | O formato de pacote deve ter documentação com exemplos e modelos para copiar. | Should | Active | P21b. Não detalhado. |
 
 #### 3.1.12 Sobre, aviso legal e erros gerais (FR-HELP)
@@ -480,12 +488,13 @@ Mudanças a montante: trocar uma escolha, rerrolar, trocar de modo numa tabela d
 | Regime de decisão | Escolha, rolagem com escolha permitida, rolagem prescrita ou derivado (princípios §1.1). |
 | Decisão aberta | Escolha ainda não feita; aparece em "Open decisions" e não bloqueia o que não depende dela (P4). |
 | Subdecisão | Escolha menor gerada por uma opção ou resultado, adiável (P30). |
-| Mudança a montante | Mudança numa decisão da qual outras dependem (P6). |
-| Diálogo de impacto | Confirmação que lista o que uma mudança a montante remove, recalcula e mantém (SCR-07). |
+| Mudança a montante | Mudança numa decisão, nas fontes ou no pacote da qual outras decisões dependem (P6, D40). |
+| Decisão suspensa | Decisão que deixou de valer por uma mudança a montante: sai da ficha e do cálculo, continua guardada no personagem e é restaurada quando o contexto dela voltar (D40). |
+| Diálogo de impacto | Confirmação que lista o que uma mudança a montante suspende, restaura, recalcula e mantém (SCR-07). |
 | Valor derivado | Valor calculado a partir de outros, nunca guardado solto (D2). |
 | Composição | Base, parcelas e total de um valor, cada parcela com a sua origem (P11). |
 | Ajuste manual | Modificador ou substituição nomeados e reversíveis sobre a ficha (P12). |
-| Log | Registro só de acréscimo das decisões e ajustes do personagem (P8). |
+| Log | Registro só de acréscimo das decisões, ajustes, suspensões e restaurações do personagem; não é relido para montar o personagem (P8, D40). |
 | Campo fixo | Seção da ficha que recebe resultados de tabelas, com a origem de cada entrada (P28). |
 
 ## Apêndice B — Questões em aberto
