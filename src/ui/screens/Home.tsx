@@ -1,3 +1,4 @@
+import { LoaderCircle } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { Button } from 'react-aria-components'
 import { app, type CharacterSummary } from '../../app'
@@ -99,6 +100,7 @@ export function Home() {
           {HOME_TEXT.title}
         </h1>
         <Button className="button-primary typography-label home__new" onPress={create} isPending={creating}>
+          {creating && <LoaderCircle className="icon icon--sm spinner" aria-hidden="true" />}
           {HOME_TEXT.newCharacter}
         </Button>
       </div>
