@@ -230,6 +230,32 @@ describe('Builder states', () => {
     expect(tryAgain.isConnected).toBe(true)
   })
 
+  it('NFR-ACC-001 (DEF-012): when the retry succeeds with the focus on "Try again", the focus goes to the step h1', async () => {
+    const { control, saved, tryAgain } = await failThenHoldRetry()
+    await userEvent.click(tryAgain)
+    expect(document.activeElement).toBe(tryAgain)
+
+    control.release()
+    await vi.waitFor(() => expect(saved).toHaveLength(1))
+    await vi.waitFor(() => expect(screen.queryByRole('alert')).toBeNull())
+    expect(document.activeElement).toBe(screen.getByRole('heading', { level: 1 }))
+  })
+
+  it('NFR-ACC-001 (DEF-012): when the person tabs out of the alert during the retry, its success leaves the focus where they put it', async () => {
+    const { control, saved, alert, tryAgain } = await failThenHoldRetry()
+    await userEvent.click(tryAgain)
+    await userEvent.tab()
+    const outside = document.activeElement
+    expect(outside).not.toBe(document.body)
+    expect(alert.contains(outside)).toBe(false)
+
+    control.release()
+    await vi.waitFor(() => expect(saved).toHaveLength(1))
+    await vi.waitFor(() => expect(screen.queryByRole('alert')).toBeNull())
+    await act(async () => {}) // a continuação da nova tentativa roda e a tela é atualizada
+    expect(document.activeElement).toBe(outside)
+  })
+
   it('NFR-ACC-001 (DEF-003): after "Choose", the focus goes to the detail title as soon as the choice is on screen, without waiting for the save', async () => {
     const { control, saved } = setup({ holdSave: true })
     renderBuilder()
