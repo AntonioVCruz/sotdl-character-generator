@@ -1,7 +1,7 @@
 # UI Design: FEAT-001 — Home: listar, continuar e excluir personagens
 
 > Feature de: `docs/implementation-plan.md` · Par com: `technical-design.md`
-> Telas: SCR-WEB-001 (e o foco da moldura do construtor, SCR-WEB-003 e SCR-WEB-016) · Modo: por feature · Status: Verified · Data: 2026-11-13
+> Telas: SCR-WEB-001 (e o foco da moldura do construtor, SCR-WEB-003 e SCR-WEB-016) · Modo: por feature · Status: Verified (re-verificação após a emenda E7 do design system, 2026-11-14) · Data: 2026-11-13
 
 Autoridade: `docs/design.md` e `docs/tokens.json`. Todo valor visual abaixo é token (`--…`) ou classe `.typography-*`, e os breakpoints são os `@custom-media` da FEAT-007 (`--bp-md` = 768 px, `--bp-xl` = 1280 px). Ícones Lucide, decorativos com `aria-hidden`. Texto da interface em inglês (NFR-L10N-001), fechado em [Textos](#textos). Nenhum texto dos livros (P22).
 
@@ -185,7 +185,7 @@ Lista não vazia: um `character-card` por personagem, na ordem do `app` (FR-CHAR
   - ações no rodapé, `--space-2` entre elas, alinhadas à direita: `button-secondary` "Cancel" à esquerda e `button-danger` "Delete permanently" à direita (`design.md` §4, `dialog`). Quando não cabem lado a lado (a 320 px, ~260 px pedidos para 256 disponíveis), quebram em duas linhas de largura total, na mesma ordem do DOM.
 - **Foco inicial:** "Cancel" (a ação conservadora). Foco preso no diálogo.
 - **Fechar:** Esc e "Cancel" fecham sem excluir (FR-CHAR-013). Clique no backdrop não fecha (`isDismissable` falso): numa confirmação destrutiva, só as duas ações e o Esc.
-- **Excluindo:** "Delete permanently" com `isPending` (spinner `--size-icon-sm`, rótulo mantido, `aria-busy`); "Cancel" desabilitado e Esc ignorado até o resultado, para o diálogo não fechar com o resultado desconhecido.
+- **Excluindo:** "Delete permanently" com `isPending` (`design.md` §4, loading: spinner `--size-icon-sm` antes do rótulo, rótulo mantido, `aria-disabled`, foco mantido no botão, anúncio do rótulo ao entrar e ao sair do estado quando o botão tem o foco); "Cancel" desabilitado e Esc ignorado até o resultado, para o diálogo não fechar com o resultado desconhecido.
 - **Sucesso:** o diálogo fecha; o cartão sai da lista local, sem nova leitura; a região `role="status"` diz "{name} was deleted."; o foco segue a [regra de foco](#foco-na-home). Se era o último, a tela passa a [empty](#empty).
 
 ```text
