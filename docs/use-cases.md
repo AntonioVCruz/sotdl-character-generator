@@ -1,6 +1,6 @@
 # Casos de uso: Gerador de personagens SotDL
 
-> Fonte: `docs/srs.md` (v1.1) · Última atualização: 2026-11-11
+> Fonte: `docs/srs.md` (v1.2) · Última atualização: 2026-11-15
 > Escopo: MVP (requisitos Must). Requisitos Should e Could não têm caso de uso.
 
 ## Atores
@@ -143,7 +143,7 @@ graph LR
 **Fluxos alternativos**
 - 4a. Human: o sistema oferece Size ½ ou 1; o jogador escolhe ou adia (vira decisão aberta).
 - 4b. Clockwork: o sistema oferece Purpose e Form, com rolar ou escolher (UC-005).
-- 4c. O jogador troca uma ancestralidade já escolhida: segue o UC-010.
+- 4c. O jogador troca uma ancestralidade já escolhida: segue o UC-010. As decisões da anterior ficam suspensas e voltam se ela for escolhida de novo.
 
 ## UC-004: Definir os atributos
 
@@ -182,13 +182,13 @@ graph LR
 **Fluxos alternativos**
 - 2a. Choose: o jogador escolhe uma entrada pela faixa; o sistema registra a entrada sem valor de dado.
 - 2b. Write (rolagem com escolha permitida): o jogador escreve o resultado; pode marcar que ele tem efeito de regra, o que abre um ajuste manual (UC-013).
-- 2c. "Enter result" (rolagem prescrita): o jogador informa o valor de cada dado.
+- 2c. "Enter result" (rolagem prescrita): o jogador informa o valor de cada expressão de dado, a soma que os dados mostram, sem modificador (3d6: 3 a 18); o sistema soma os modificadores e mostra o cálculo.
 - 3a. Entrada sem texto: o sistema mostra "No text added for this entry" com faixa e página.
 - 3b. Nome não incluído no pacote (D36): o sistema pede que o jogador digite o nome.
 - 3c. O resultado gera uma subdecisão: o jogador resolve agora ou adia (vira decisão aberta).
 - 3d. Efeito não modelado: o sistema mostra a página e sugere ajuste manual.
 - 2d. "Roll all undecided": o sistema rola só as tabelas sem decisão e não aguardando outra.
-- 2e. Reroll ou troca de modo numa tabela decidida: o resultado anterior vai para o log como desfeito; com dependentes, segue o UC-010.
+- 2e. Reroll ou troca de modo numa tabela decidida: o resultado anterior fica só no log, como desfeito (não fica suspenso); com dependentes, segue o UC-010.
 
 **Fluxos de exceção**
 - 2f. Valor informado fora da faixa: o sistema recusa e informa a faixa válida.
@@ -268,21 +268,24 @@ graph LR
 ## UC-010: Mudar uma decisão que tem dependentes
 
 - **Atores:** Jogador
-- **Descrição:** Mudar uma escolha, rolagem, modo ou fonte da qual outras decisões dependem, sabendo antes o que será desfeito.
-- **Pré-condições:** A decisão a mudar tem dependentes.
-- **Pós-condições (sucesso):** A mudança está aplicada; dependentes removidos estão no log como desfeitos; decisões ainda exigidas voltaram a ficar abertas; o personagem está em estado válido.
-- **Rastreia:** FR-CHG-001..014, FR-DEC-015, FR-DEC-017, FR-DEC-018, FR-STEP-005, FR-LOG-007
+- **Descrição:** Mudar uma escolha, rolagem, modo ou fonte da qual outras decisões dependem, sabendo antes o que fica suspenso e o que volta.
+- **Pré-condições:** A mudança suspende ou restaura alguma decisão.
+- **Pós-condições (sucesso):** A mudança está aplicada; os dependentes que deixaram de valer estão suspensos, fora da ficha e do cálculo e guardados no personagem; as decisões cujo contexto voltou estão restauradas; as vagas ainda exigidas estão abertas; as suspensões e as restaurações estão no log; o personagem está em estado válido.
+- **Rastreia:** FR-CHG-001..014, FR-CHG-018, FR-CHG-019, FR-DEC-015, FR-DEC-017, FR-DEC-018, FR-STEP-005, FR-LOG-007
 
 **Fluxo principal**
 1. O jogador pede a mudança (ex.: rerrolar a idade, trocar a ancestralidade, desligar um livro).
-2. O sistema exibe o diálogo de impacto: atual × novo; o que será removido (inclusive dependentes transitivos e ajustes ligados); o que será recalculado (valor antigo → novo); o que permanece.
+2. O sistema exibe o diálogo de impacto: atual × novo; o que fica suspenso (inclusive dependentes transitivos e ajustes ligados); o que é restaurado; o que é recalculado (valor antigo → novo); o que fica como está.
 3. O jogador aplica a mudança.
-4. O sistema remove os dependentes, recalcula, devolve como abertas as decisões ainda exigidas e registra os desfeitos no log.
+4. O sistema suspende os dependentes, restaura as decisões cujo contexto voltou, recalcula, reabre as vagas ainda exigidas e registra as suspensões e as restaurações no log.
 
 **Fluxos alternativos**
-- 1a. A mudança não tem dependentes: o sistema aplica direto, sem diálogo.
+- 1a. A mudança não suspende nem restaura nada: o sistema aplica direto, sem diálogo.
+- 1b. O jogador volta a uma escolha anterior (ex.: troca Dwarf por Human e depois volta ao Dwarf): o diálogo lista como restauradas as decisões da escolha anterior, com os valores originais, e como suspensas as da escolha que sai.
 - 2a. A mudança vem das fontes: o impacto aparece agrupado por livro.
+- 2b. Mais de uma decisão da mesma vaga passa na validade: vale a mais recente, e as outras continuam suspensas (FR-CHG-018).
 - 3a. O jogador mantém o atual: nada muda; numa rerrolagem, o valor recusado vai para o log como desfeito.
+- 4a. Substituição na própria vaga (Reroll, Choose → Choose, troca de modo, limpar): o valor anterior não fica suspenso, fica só no log como desfeito; os dependentes dele ficam suspensos.
 
 ## UC-011: Revisar e concluir a criação
 
@@ -356,19 +359,19 @@ graph LR
 
 **Fluxo principal**
 1. O jogador abre o log pelo cabeçalho do construtor ou da ficha.
-2. O sistema exibe as entradas em ordem cronológica, agrupadas por fase, com as desfeitas riscadas e o motivo.
+2. O sistema exibe as entradas em ordem cronológica, agrupadas por fase, com as desfeitas riscadas e as de suspensão e de restauração, cada uma com o motivo. O log só se consulta: não oferece edição nem mudança de decisão (SRS 2.5).
 
 **Fluxos alternativos**
 - 2a. O jogador filtra por All, Choices, Rolls ou Edits.
-- 2b. O jogador oculta as entradas desfeitas.
+- 2b. O jogador oculta as entradas desfeitas, de suspensão e de restauração.
 
 ## UC-015: Exportar e importar o personagem
 
 - **Atores:** Jogador
 - **Descrição:** Guardar o personagem num arquivo e recriá-lo a partir dele, como cópia de segurança ou para usar em outro navegador.
 - **Pré-condições:** Para exportar, o personagem existe.
-- **Pós-condições (sucesso):** Exportar: o arquivo foi baixado. Importar: existe um personagem novo com as fontes, decisões, ajustes e log do arquivo.
-- **Rastreia:** FR-CHAR-018, FR-CHAR-019, FR-CHAR-023, NFR-SEC-002
+- **Pós-condições (sucesso):** Exportar: o arquivo foi baixado. Importar: existe um personagem novo com as fontes, decisões (inclusive as suspensas), ajustes e log do arquivo.
+- **Rastreia:** FR-CHAR-018, FR-CHAR-019, FR-CHAR-023, FR-CHG-019, NFR-SEC-002
 
 **Fluxo principal**
 1. O jogador aciona a exportação de um personagem.
@@ -377,7 +380,8 @@ graph LR
 4. O sistema valida o arquivo e cria um personagem novo com o conteúdo dele.
 
 **Fluxos alternativos**
-- 4a. Alguma decisão do arquivo não existe no pacote atual: o sistema a reabre como decisão aberta, avisa e registra no log (FR-CONT-016).
+- 4a. Alguma decisão do arquivo não existe no pacote atual: o sistema a suspende, reabre a vaga se a regra ainda a exigir, avisa e registra no log (FR-CONT-016).
+- 4c. O arquivo traz decisões suspensas: continuam suspensas; se o contexto de alguma voltar no pacote atual, ela é restaurada, com o mesmo aviso (FR-CHG-018).
 
 **Fluxos de exceção**
 - 4b. O arquivo não é um arquivo de personagem válido: o sistema recusa, informa o motivo e não altera os personagens salvos.
