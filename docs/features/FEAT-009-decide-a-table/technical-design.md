@@ -3,7 +3,7 @@
 > Feature de: `docs/implementation-plan.md` §3 (E3) e §4 (posição 4) · Épico: E3 Construtor de nível 0
 > Implementa: FR-DEC-001, 002, 004, 005, 007, 008, 012, 019, 020, 024; FR-DEC-016 (parcial: contador na primeira rolagem); FR-STEP-012 (parcial: Roll e Choose, sem Write), 013, 014; FR-CALC-010, 011; FR-CALC-005 (parcial: estágios `define` e `sum`); FR-CONT-008 (parcial: tabela sem concessões nem ligações); FR-LOG-001, 002, 004, 010
 > Realiza: UC-005 (fluxo principal; 2a, 2c, 3a, 2f) · UC-006 (1, 2, 4; 1a) · Telas: SCR-WEB-009 (desenhada pelo ui-design)
-> Status: Verified · Data: 2026-11-15 · Emenda: 2026-11-15, com as decisões do usuário (D2, D3 e D4 reescritas, D13, AC-17, ordem das entradas)
+> Status: Verified · Data: 2026-11-15 · Emenda: 2026-11-15, com as decisões do usuário (D2, D3 e D4 reescritas, D13, AC-17, ordem das entradas) · Emenda D40: 2026-11-15 (D2, D3, D9, AC-17 (v), §8)
 
 ## 1. Intenção
 
@@ -167,7 +167,7 @@ DiceResult  = { mode: 'rolled', faces, modifier, total } | { mode: 'entered', su
   - (a) `book` é o livro da versão vigente da tabela (FR-SRC-009). A exceção por rolagem (P2f, Should) muda essa versão só naquela vaga, e (a) compara com ela;
   - (b) a entrada gravada (`entry`, ou `value` no `chosen`) existe nessa versão.
 
-  Se não, a decisão é ignorada e a vaga reabre, como a ancestralidade que sumiu (FEAT-007). Isso vale também para uma decisão de tabela sem `book` ou sem `entry`.
+  Se não, o cálculo ignora a decisão, mas ela continua no documento (suspensa, D40), e a vaga reabre, como a ancestralidade que sumiu (FEAT-007); se (a) e (b) voltarem a valer, ela volta sem nova gravação. Isso vale também para uma decisão de tabela sem `book` ou sem `entry`.
 - **Resultado exibido:** faces (ou soma), modificador, total e entrada são os gravados, nunca recalculados pelo dado atual da tabela. Página e efeitos vêm da `EntryView` da versão vigente: os efeitos são regra, e uma errata que os muda vale para o personagem; o total e a entrada, não (D2). As conferências "faces válidas para o dado" e "a entrada contém o total" só existem no comando (§3.2).
 - **Vaga `roll-effect`:** cada efeito `add.dice` da entrada vigente abre uma vaga filha da tabela, com chave `<vaga da tabela>=<entrada>/<id do efeito>` (ex.: `ancestry=clockwork/background=2/insanity`), na mesma etapa, com `source` = a tabela. É obrigatória: conta em `open`, `total` e `openDecisions` (FR-DEC-011). Trocar a entrada a faz sumir; decidida, ela é dependente. A decisão dela vale enquanto a vaga existir, com os valores gravados.
 - **`OpenDecision`** ganha `table?: { id, name }`, para o rótulo da pendência ("Dwarf Age"); a `roll-effect` usa `target` e `dice`.
@@ -367,7 +367,7 @@ sequenceDiagram
 | AC-14 | Com a gravação retida, Roll, Choose e Enter result mostram o resultado antes de a gravação terminar. Se a pessoa leva o foco a outro cartão durante a gravação, o fim dela não move o foco nem muda o outro cartão. Uma recusa deixa foco e campo como estavam. Com `save-failed`, o resultado fica e o alerta da moldura aparece. | D11 da FEAT-007; C2; FR-CHAR-010 |
 | AC-15 | A carga recusa, com o caminho: faixa com buraco, sobreposição ou fora do dado; chave de entrada inválida; `entity` ou `target` inexistentes; concessão `table` para tabela inexistente. Com pacote fictício, uma tabela de 3d6 com as chaves `"3"`, `"4"`, `"5-6"`, `"7-16"`, `"17"`, `"18"` (o objeto põe as chaves inteiras primeiro) é aceita, e `entries` sai na ordem 3, 4, 5-6, 7-16, 17, 18; a mesma tabela sem `"5-6"` é recusada pelo buraco. O pacote do core passa no `packs:check`. | FR-CONT-008 (parcial); ADR-003 §7 |
 | AC-16 | O E2E do fluxo crítico 1 percorre a Story do Dwarf a partir de "New character", nos 5 projetos: escolhe a Hatred, rola uma tabela (faces e entrada coerentes), escolhe o Background 1 e vê Corruption 1, recarrega, decide as seis e vê "Complete" na Home. axe sem violação grave na Story; a Story entra no `builder-dock.spec.ts`. | UC-005, UC-006; ADR-008 fluxo 1; NFR-ACC-001 |
-| AC-17 | Só motor, com pacotes fictícios: (i) decisão rolada com modificador +2; uma versão do mesmo livro com +4 → faces, modificador, total e entrada exibidos são os gravados; (ii) uma versão em que o efeito da entrada gravada muda → o valor afetado segue a versão nova; (iii) uma versão sem a entrada gravada → a decisão é ignorada e a vaga reabre; (iv) um segundo livro, acima, com `replaces` da tabela → a decisão deixa de valer e a vaga reabre. | FR-CONT-015, 016 (parte do motor); FR-CHG-015 revista; FR-SRC-009; D2, D3 |
+| AC-17 | Só motor, com pacotes fictícios: (i) decisão rolada com modificador +2; uma versão do mesmo livro com +4 → faces, modificador, total e entrada exibidos são os gravados; (ii) uma versão em que o efeito da entrada gravada muda → o valor afetado segue a versão nova; (iii) uma versão sem a entrada gravada → a decisão é ignorada e a vaga reabre; (iv) um segundo livro, acima, com `replaces` da tabela → a decisão deixa de valer e a vaga reabre; (v) voltando à versão ou ao livro anterior (sem a versão de (iii) ou sem o livro de (iv)), a decisão gravada volta a valer, sem nova gravação nem entrada de log nesta feature. | FR-CONT-015, 016 (parte do motor); FR-CHG-015 revista; FR-SRC-009; D2, D3; D40 |
 
 **NFRs:**
 - NFR-PERF-001: a Home importa `app` → `session` → `engine` e `content` de forma estática (`src/app/index.ts:1–4`), e esta feature aumenta os dois. A verificação mede a mediana do Lighthouse CI da Home vazia no celular, com o elemento LCP (C6). Base: 2,62 s, com o parágrafo "This generator guides you…" como elemento (DEF-007); meta: 4 s.
@@ -377,7 +377,7 @@ sequenceDiagram
 
 - **D1. Tabela é item `table:`, concedida pela ancestralidade numa etapa.** Motivo: ADR-003 §6. Consequência: um `kind` de vaga novo (`table`), com código no motor e na interface, como a ADR-003 prevê.
 - **D2. A faixa é a chave da entrada** ("4-7"). Motivo: é o dado mecânico da entrada, estável e sem texto (P22). Alternativa rejeitada: slug por entrada, que exigiria um nome inventado para entradas sem nome. Consequência (decisão do usuário):
-  - versão de outro livro (`replaces`, ou a troca de fonte): a decisão deixa de valer pela regra (a) da D3 e, quando a FEAT-011 existir, entra no impacto como removida;
+  - versão de outro livro (`replaces`, ou a troca de fonte): a decisão deixa de valer pela regra (a) da D3 e fica suspensa (D40); quando a FEAT-011 existir, entra no impacto como suspensa. Volta a valer se o livro voltar;
   - errata do mesmo livro: o resultado fica enquanto a entrada existir, mesmo que as faces hoje caíssem noutra entrada;
   - entrada removida: a vaga reabre (FR-CONT-016).
 - **D3. O resultado de uma tabela é um fato registrado** (ADR-009, terceiro item da Decisão). Decisão do usuário.
@@ -387,10 +387,13 @@ sequenceDiagram
     - escolhida: `{ mode: 'chosen', value: entry, book }`;
     - vaga `roll-effect`: `{ mode: 'rolled', dice, modifier, total }` ou `{ mode: 'entered', sum, modifier, total }`, sem `entry` nem `book`.
   - No comando (gravação): faces válidas para o dado, ou `sum` na faixa; `total` = soma das faces (ou `sum`) + modificador da versão vigente; `entry` = a entrada que contém o total.
-  - Na leitura: a decisão vale se (a) `book` é o livro da versão vigente da tabela (FR-SRC-009) e (b) a entrada gravada existe nessa versão. Se não, é ignorada e a vaga reabre. Faces, modificador e total exibidos são os gravados, nunca recalculados pelo dado atual. Página e efeitos vêm da versão vigente: os efeitos são regra, e uma errata que os muda vale para o personagem (o total e a entrada, não). A conferência "a entrada contém o total" só existe no comando.
+  - Na leitura: a decisão vale se (a) `book` é o livro da versão vigente da tabela (FR-SRC-009) e (b) a entrada gravada existe nessa versão. Se não, o cálculo a ignora, mas ela continua no documento (suspensa, D40), e a vaga reabre; se (a) e (b) voltarem a valer, ela volta sem nova gravação.
+    - Nenhuma gravação desta feature apaga uma decisão que não vale: o `commit` mantém as decisões de vagas que não estão vivas (`session.ts:207–212`), o `clear` recusa a vaga reaberta com `not-decided`, e abrir e avaliar não gravam.
+    - Limite conhecido (decisão do usuário): decidir de novo a vaga reaberta (Roll, Enter result, Choose) grava na mesma chave e substitui a decisão suspensa. Onde a suspensa fica nesse caso é decisão da sessão 2 (ADR-004) e entra com a FEAT-011 (§8). No MVP não dá para chegar a esse caso, porque só existe o core.
+    - Faces, modificador e total exibidos são os gravados, nunca recalculados pelo dado atual. Página e efeitos vêm da versão vigente: os efeitos são regra, e uma errata que os muda vale para o personagem (o total e a entrada, não). A conferência "a entrada contém o total" só existe no comando.
   - Motivo: o cartão e o log mostram o cálculo original mesmo depois de uma errata do dado (FR-DEC-007, FR-LOG-002).
   - Alternativas rejeitadas: só faces (total e entrada mudariam com uma errata do dado); faces e entrada sem modificador e total (o cartão não poderia mostrar o cálculo original depois de uma errata).
-  - Consequência: a troca de fonte de uma tabela desfaz o resultado obtido com a fonte anterior, e a regra (a) é a definitiva, não provisória. Isso revê o P6b e a FR-CHG-015 e emenda a ADR-004 §1 e §3 (§2, divergências 3 e 4; §8, escalações 1 e 2).
+  - Consequência: a troca de fonte de uma tabela suspende o resultado obtido com a fonte anterior (D40), e a regra (a) é a definitiva, não provisória. Isso revê o P6b e a FR-CHG-015 e emenda a ADR-004 §1 e §3 (§2, divergências 3 e 4; §8, escalações 1 e 2).
 - **D4. Enter result é um valor por expressão de dado: a soma que os dados mostram, sem modificador nenhum.** Decisão do usuário.
   - Faixa: `count` a `count × sides` (3d6: 3 a 18; d6+1: 1 a 6). Fora dela: `out-of-range` com `range: [count, count × sides]`.
   - Todo modificador, o da própria expressão e o de outro efeito (nenhum no MVP), é somado pelo sistema, e o cartão mostra o cálculo (FR-DEC-007).
@@ -402,7 +405,7 @@ sequenceDiagram
 - **D6. Os modos oferecidos vêm do motor (`table.modes`), e os comandos não os fiscalizam** (P7). Motivo: o regime é regra do pacote; a tela só lê.
 - **D7. Efeito com dado é uma vaga filha `roll-effect`**, obrigatória, com o valor pendente até decidir. Motivo: o resultado do dado é decisão do jogador (rolada ou informada) e vai ao log (FR-STEP-014), e a chave filha dá a dependência sem grafo (ADR-004 §3). Consequência: a FEAT-010 reaproveita o mecanismo para as subdecisões (FR-DEC-010).
 - **D8. Estágios `define` e `sum` valem para atributos e características**; dois `define` no mesmo alvo: o último em ordem de vagas vale. Motivo: FR-CALC-005 vale para "cada valor"; a Purpose da Clockwork (FEAT-017) soma em atributo. Sem regra de empilhamento por grupo (ADR-004 §2): nenhum dado a pede.
-- **D9. Só entradas `decision` no log nesta feature** (confirmada pelo usuário). `clear` e a substituição não escrevem entrada de desfeito; a FEAT-011 traz o `kind: 'undone'` com o `id` da original e o motivo (FR-LOG-007). Motivo: plano (FR-LOG-007 na FEAT-011) e o cuidado de não antecipar a mudança a montante. Alternativa: escrever já o desfeito do `clear` e da substituição, como sugere a FEAT-008 §8, e deixar o log sempre coerente. Consequência: até a FEAT-011, o log de um ajuste desfeito ou de um Size trocado tem a entrada antiga sem marca (o log só aparece na FEAT-020).
+- **D9. Só entradas `decision` no log nesta feature** (confirmada pelo usuário). `clear` e a substituição não escrevem entrada de desfeito; a FEAT-011 traz o `kind: 'undone'` com o `id` da original e o motivo (FR-LOG-007). Motivo: plano (FR-LOG-007 na FEAT-011) e o cuidado de não antecipar a suspensão e a restauração por mudança a montante (D40), entregues pela FEAT-011 com as entradas delas no log. Alternativa: escrever já o desfeito do `clear` e da substituição, como sugere a FEAT-008 §8, e deixar o log sempre coerente. Consequência: até a FEAT-011, o log de um ajuste desfeito ou de um Size trocado tem a entrada antiga sem marca (o log só aparece na FEAT-020).
 - **D10. Tipos de criatura são itens `creature-type:`, com a página da tabela Hatred** (confirmada pelo usuário). Motivo: D38. Alternativa: a página de cada criatura no bestiário, a conferir criatura por criatura. Consequência: a página pode ser corrigida depois sem mudar o id.
 - **D11. Etapa sem vaga raiz escolhe o corpo pelos `kind` das vagas concedidas** (`table` → `TablesStep`). Motivo: ADR-003 §6, "a interface renderiza por tipo de vaga".
 - **D12. Efeitos sem modelo ainda ficam fora dos dados**, sem marca (confirmada pelo usuário): profissão e idioma nas entradas 12 e 13 do Background (FEAT-010 ou FEAT-012, pela emenda do plano, §8 item 4b); item e dinheiro nas entradas 14 e 20 (FEAT-013). Motivo: cada um precisa do alvo da feature dele. Alternativa: um alvo `money` já aqui para o "2d6 cp", único caso de efeito com dado no Dwarf. Consequência: a FR-STEP-014 é verificada com pacote fictício, e até lá essas entradas aparecem só com faixa e página.
@@ -432,12 +435,13 @@ sequenceDiagram
 - **Emendas escaladas**, cada uma numa sessão própria, nesta ordem, depois deste design. Este design não edita esses documentos.
   1. **requirements-engineering**, uma sessão:
      - FR-DEC-019: "o valor de cada expressão de dado ou etapa da rolagem", com nota: a soma que os dados mostram, sem modificador (3d6: 3 a 18); o UC-005 2c no mesmo sentido; o texto curto da FR-DEC-019 no RTM;
-     - FR-CHG-015 reescrita: quando a fonte de uma tabela mudar, os resultados obtidos com a fonte anterior dependem dela; a mudança passa pela confirmação de dependentes, e a tabela volta como decisão aberta (FR-SRC-014, FR-CHG-012). Prioridade com a requirements-engineering. Nota de revisão no P6b;
+     - FR-CHG-015 reescrita: quando a fonte de uma tabela mudar, os resultados obtidos com a fonte anterior ficam suspensos, a tabela volta como decisão aberta e, se a fonte anterior voltar, os resultados são restaurados (FR-SRC-014, FR-CHG-012). Prioridade com a requirements-engineering. O P6b já foi revisto pela D40;
      - FR-CONT-015, nota: recalculam-se os derivados (efeitos, fórmulas, itens); resultados de tabela ficam como obtidos e só reabrem se a entrada deixar de existir ou o livro da tabela mudar (FR-CONT-016). Nota no P6a.
   2. **software-architecture**, uma sessão:
      - ADR-009, quarto item: o Enter result informa a soma dos dados de cada expressão, validada contra `count` a `count × sides`; o sistema soma os modificadores; grava-se a soma, os modificadores, o total e a entrada. O terceiro item fica como está;
      - ADR-004 §1: a linha `decisions` com "valor de cada dado ou soma informada, modificadores e total da rolagem", e a frase: o que se grava de uma rolagem é o fato da rolagem, não um derivado das regras; os derivados seguem a versão atual;
-     - ADR-004 §3: "é lida nessa versão. Se só a fonte da tabela mudar, o resultado fica…" passa a dizer que a decisão gravada com outro livro deixa de valer e entra no impacto como removida, e que, numa errata do mesmo livro, o resultado fica enquanto a entrada existir.
+     - ADR-004 §3: "é lida nessa versão. Se só a fonte da tabela mudar, o resultado fica…" passa a dizer que a decisão gravada com outro livro deixa de valer e fica suspensa, e que, numa errata do mesmo livro, o resultado fica enquanto a entrada existir;
+     - ADR-004 (D40): onde fica a decisão suspensa quando a vaga reaberta é decidida de novo (limite da D3).
   3. **ux-foundations**, uma sessão:
      - **E8**: token `size.roll-value` = `72px` (`$type: dimension`), "roll-card value box, width and height", para a caixa de valor do `roll-card`, no `tokens.json` e no `design.md`; a lacuna do `design.md` §9 (l.345) é reescrita sem a caixa 72×72;
      - **E9**: o estado "informado" do `roll-card` (`design.md` §4, l.251) passa a "um campo por expressão de dado, com a faixa válida na ajuda".
@@ -447,6 +451,7 @@ sequenceDiagram
      - (b) em que feature entram os efeitos 12, 13, 14 e 20 do Background do Dwarf. Conferido no plano §3: 14 e 20 (item e dinheiro) cabem na FEAT-013. Para 12 (profissão Artisan) e 13 (um idioma a mais), o plano não decide sozinho: o mecanismo de conceder uma entidade com a origem é da FEAT-010 (FR-STEP-015, FR-DEC-010), mas os dados de profissão e idioma são da FEAT-012 ("Tabelas de profissão, idiomas"), posterior (posição 7, depois da FEAT-010 na 6). Os dois dependem da FEAT-012;
      - (c) as tabelas de história do Human na FEAT-016;
      - (d) a FEAT-009 adianta a validade de decisão de tabela no motor (AC-17), e a FEAT-011 fica com aviso, log e impacto (FR-CONT-015, 016; FR-CHG-015 revista).
+- **D40 nas sessões 1 a 4:** além dos itens acima, cada sessão aplica a D40 nos próprios documentos: na mudança a montante, suspender e restaurar em vez de desfazer, e o log fica só como registro.
 - **Ordem com as tarefas:** as emendas 1, 2 e 3 vêm antes da T1; a 4, antes do aceite (tasks.md, "Pré-requisitos").
 - **Decisões do usuário (2026-11-15)**, que substituem as alternativas da versão anterior deste §8:
   - D2, D3 e D4: como no §7;
@@ -455,7 +460,8 @@ sequenceDiagram
   - Dwarf Age e Dwarf Build: sem `field` até a FEAT-018;
   - tabelas de história do Human: FEAT-016, por emenda do plano;
   - identidade: o Human do *Only Human* continua `revises` do mesmo `ancestry:human` (ADR-003 §2); nada muda no modelo;
-  - troca de fonte de uma tabela: desfaz o resultado obtido com a fonte anterior, e a regra (a) é a definitiva.
+  - troca de fonte de uma tabela: desfaz o resultado obtido com a fonte anterior, e a regra (a) é a definitiva. *Revista pela D40 (2026-11-15): o resultado fica suspenso e volta se a fonte voltar; a regra (a) continua definitiva;*
+  - decidir de novo uma vaga reaberta substitui a decisão suspensa, como limite conhecido até a sessão 2 e a FEAT-011 (D3; 2026-11-15).
 - **Pendências do ui-design:** a lista da §3.4.
 - **RTM:** Design ref acrescentado nesta emenda nas FRs do cabeçalho e nas que a feature estende (FR-DEC-011, FR-CALC-001, FR-FLOW-001, 010, 011, FR-CHAR-005, 006).
 - **Texto do app:** rascunhos da §3.4; o ui-design fecha (NFR-USE-001).
