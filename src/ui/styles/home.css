@@ -1,5 +1,5 @@
 /* Home (SCR-WEB-001; ui-design da FEAT-001). Só tokens (tokens.generated.css) e breakpoints (@custom-media de
-   media.generated.css). Peças compartilhadas (inline-alert, pill-counter, skeleton, button-danger, dialog) no base.css. */
+   media.generated.css). Peças compartilhadas (inline-alert, pill-counter, skeleton, button-danger, dialog, spinner) no base.css. */
 
 .home {
   display: grid;
@@ -93,15 +93,4 @@
 .delete-dialog__actions > * {
   flex: 0 1 calc((var(--size-summary) - 100%) * 999);
   white-space: nowrap;
-}
-
-/* loading de botão (design.md §4): spinner de --size-icon-sm, rótulo mantido. */
-.spinner {
-  animation: spinner-turn calc(5 * var(--duration-normal)) linear infinite;
-}
-
-@keyframes spinner-turn {
-  to {
-    transform: rotate(1turn);
-  }
 }

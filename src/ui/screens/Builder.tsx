@@ -1,4 +1,4 @@
-import { ChevronDown, ChevronUp } from 'lucide-react'
+import { ChevronDown, ChevronUp, LoaderCircle } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { Button, Dialog, DialogTrigger, Popover } from 'react-aria-components'
 import type { CharacterSession, Snapshot } from '../../app'
@@ -286,6 +286,7 @@ function SaveAlert({ session, snapshot }: { session: CharacterSession; snapshot:
           setRetrying(false)
         }}
       >
+        {retrying && <LoaderCircle className="icon icon--sm spinner" aria-hidden="true" />}
         Try again
       </Button>
     </InlineAlert>
