@@ -106,9 +106,12 @@ function stored(decisions: Record<string, string | number> = {}, order = ['test.
 const sessions: { current?: CharacterSession } = {}
 function setup(options: { document?: unknown; failGet?: boolean; failSave?: boolean; holdSave?: boolean; lastStep?: string } = {}) {
   const document = 'document' in options ? options.document : stored()
-  const control = { failSave: options.failSave ?? false, release: () => {} }
-  // `holdSave`: a gravação fica pendente até `control.release()`, como um IndexedDB lento (DEF-003).
-  const held = options.holdSave ? new Promise<void>((resolve) => (control.release = resolve)) : Promise.resolve()
+  const control = { failSave: options.failSave ?? false, release: () => {}, hold: () => {} }
+  // `holdSave`: a gravação fica pendente até `control.release()`, como um IndexedDB lento (DEF-003). `control.hold()`
+  // retém de novo as gravações seguintes, para reter só a que interessa (C15), como a nova tentativa (DEF-011, DEF-012).
+  let held = Promise.resolve()
+  control.hold = () => void (held = new Promise<void>((resolve) => (control.release = resolve)))
+  if (options.holdSave) control.hold()
   // Cada gravação bem-sucedida fica registrada, para conferir o que foi gravado (e o que não foi).
   const saved: { decisions: Record<string, { value: unknown }> }[] = []
   const repository: Repository = {
@@ -191,6 +194,40 @@ describe('Builder states', () => {
     expect(saved).toHaveLength(1)
     expect(saved[0].decisions).toEqual({ ancestry: { mode: 'chosen', value: 'ancestry:troll' } })
     expect(screen.getByRole('radio', { name: 'Troll, your choice' })).toBeTruthy()
+  })
+
+  /** Escolhe o Troll com a gravação falhando e prepara a nova tentativa: a próxima gravação dá certo, mas retida. */
+  async function failThenHoldRetry() {
+    const result = setup({ failSave: true })
+    renderBuilder()
+    await userEvent.click(await screen.findByRole('radio', { name: 'Troll' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Choose Troll' }))
+    const alert = await screen.findByRole('alert')
+    result.control.failSave = false
+    result.control.hold()
+    return { ...result, alert, tryAgain: within(alert).getByRole('button', { name: 'Try again' }) }
+  }
+
+  it('FR-CHAR-010 (DEF-011): during the retry, "Try again" shows the decorative spinner before its label', async () => {
+    const { control, saved, tryAgain } = await failThenHoldRetry()
+    expect(tryAgain.querySelector('svg')).toBeNull()
+
+    await userEvent.click(tryAgain)
+    // design.md §4, loading (E7); ui-design da FEAT-007, save-failed: o botão fica em loading durante a nova tentativa.
+    const spinner = tryAgain.querySelector('svg')
+    expect(spinner).not.toBeNull()
+    expect(spinner?.getAttribute('aria-hidden')).toBe('true')
+    expect(spinner?.classList.contains('icon--sm')).toBe(true)
+    expect(tryAgain.firstElementChild).toBe(spinner)
+    expect(tryAgain.textContent).toBe('Try again')
+    expect(saved).toEqual([])
+
+    // Uma nova tentativa que falha deixa o alerta e o botão sem o spinner.
+    control.failSave = true
+    control.release()
+    await vi.waitFor(() => expect(tryAgain.querySelector('svg')).toBeNull())
+    expect(screen.getByRole('alert')).toBeTruthy()
+    expect(tryAgain.isConnected).toBe(true)
   })
 
   it('NFR-ACC-001 (DEF-003): after "Choose", the focus goes to the detail title as soon as the choice is on screen, without waiting for the save', async () => {
