@@ -43,7 +43,8 @@
         "corrections": [
           "falha ao criar: .notice (borda inteira) → inline-alert danger",
           "lista de links .character-list → character-card",
-          "Re-verificado em 2026-11-13 contra o design.md emendado (E6, 2c69e58): o aviso \"só neste navegador\" do §6 é o texto desta tela; nenhum componente nem token muda"
+          "Re-verificado em 2026-11-13 contra o design.md emendado (E6, 2c69e58): o aviso \"só neste navegador\" do §6 é o texto desta tela; nenhum componente nem token muda",
+          "Re-verificado em 2026-11-14 contra o design.md emendado (E7, a4693d2; 46c1168): \"Excluindo\" com o loading do isPending (spinner --size-icon-sm antes do rótulo, rótulo mantido, aria-disabled, foco mantido, anúncio do rótulo ao entrar e ao sair), sem aria-busy; nenhum componente nem token muda"
         ],
         "escalations": []
       },
@@ -97,7 +98,9 @@
       "conformance": {
         "result": "pass",
         "corrections": [
-          "Re-verificado em 2026-11-12 contra o design.md emendado (E1–E4): step-map bloqueado sem tooltip; option-card current distinto da seleção; ícones Lucide; tokens size.pill, opacity.disabled, border-width.alert, typography.stat-sm, size.icon-sm/md, icon.stroke; button-primary com padding --space-4; About no rodapé da página"
+          "Re-verificado em 2026-11-12 contra o design.md emendado (E1–E4): step-map bloqueado sem tooltip; option-card current distinto da seleção; ícones Lucide; tokens size.pill, opacity.disabled, border-width.alert, typography.stat-sm, size.icon-sm/md, icon.stroke; button-primary com padding --space-4; About no rodapé da página",
+          "Re-verificado em 2026-11-14 contra o design.md emendado (E7, a4693d2; 46c1168): \"Try again\" do save-failed segue o loading do isPending, sem mudança de texto; nenhum componente nem token muda",
+          "Emenda de 2026-11-14 (d8020bc, d3f1925): save-failed, foco depois da nova tentativa; no sucesso, vai para o h1 da etapa só se estava no alerta, senão fica onde a pessoa o pôs (C2, DEF-008); na falha, fica em \"Try again\"; sem texto, token nem componente novo"
         ],
         "escalations": []
       },
@@ -139,7 +142,8 @@
       "conformance": {
         "result": "pass",
         "corrections": [
-          "Re-verificado em 2026-11-12 contra o design.md emendado (E5, b70733c): segmented-control de 4 segmentos em grade de 2 colunas quando não cabe numa linha (celular e reflow de 320 px), com alvos de 44 px em ponteiro grosso"
+          "Re-verificado em 2026-11-12 contra o design.md emendado (E5, b70733c): segmented-control de 4 segmentos em grade de 2 colunas quando não cabe numa linha (celular e reflow de 320 px), com alvos de 44 px em ponteiro grosso",
+          "Emenda de 2026-11-14 (779f7c6; DEF-008, DEF-009): applied e undone começam quando o snapshot mostra o ajuste aplicado ou desfeito, antes da gravação (D11 da FEAT-007), também com save-failed; recusa não entra no estado; foco e anúncio uma vez, na entrada; sem token nem componente novo"
         ],
         "escalations": []
       },
