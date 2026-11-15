@@ -2,7 +2,7 @@
 
 > Fonte da verdade para toda implementação de interface, junto com `docs/tokens.json`.
 > Gerado por ux-foundations · Modo: design file (wireframe v1 ingerido) + identidade A escolhida pelo usuário
-> Última atualização: 2026-11-13 (emenda E6 do ui-design da FEAT-001)
+> Última atualização: 2026-11-14 (emenda E7 do aceite da FEAT-001)
 
 ## 1. Tema visual e atmosfera
 
@@ -205,7 +205,7 @@ Base: React Aria Components (ADR-006) para todo controle interativo. Os estilos 
 - **focus-visible:** anel de 2px `--color-focus` com deslocamento de 2px. Nunca remover sem substituto.
 - **active:** igual ao hover, mais escuro.
 - **disabled:** opacidade `--opacity-disabled`, cursor `not-allowed`, com o motivo em texto quando ele existir (P31).
-- **loading:** spinner de `--size-icon-sm` no lugar do ícone, com o rótulo mantido e `aria-busy`.
+- **loading:** o `isPending` do React Aria. Spinner de `--size-icon-sm` no lugar do ícone, ou antes do rótulo quando o botão não tem ícone (como em "Delete permanently"), com o rótulo mantido. O botão fica com `aria-disabled` e mantém o foco; anúncio do rótulo ao entrar e ao sair do estado, quando o botão tem o foco; durante o estado, o botão ignora o acionamento.
 - **error:** borda `--color-state-danger` mais mensagem abaixo com ícone.
 
 ### Ações
@@ -328,7 +328,7 @@ Erros dizem: o que aconteceu, o que ficou a salvo, o que fazer. Confirmações d
 
 ## 9. Proveniência e lacunas
 
-**Proveniência.** Estrutura, componentes, medidas (raios 4/6/8/999, espaços 2–24, Inter e IBM Plex Mono, cinzas quentes) ingeridos do wireframe v1 (`docs/reference/wireframe/`, código `.dc.html` e telas). Identidade visual (pergaminho, vermelho-sangue, Spectral) escolhida pelo usuário entre duas propostas (direção A), dentro do P33 e da D28. Ajustes exigidos pela NFR-ACC-001: o cinza `#A8A8A2` do wireframe (2,4:1 sobre branco) foi substituído por `#85847E` em bordas de controle e por `#65645E` em texto apagado; corpo subiu de 13 para 14px; campos de formulário em 16px; alvos de 44px em ponteiro grosso; anel de foco definido (o wireframe não tinha). Emenda de 2026-11-12, do ui-design da FEAT-007 (E1–E4): estado bloqueado do `step-map` sem tooltip; estado `current` do `option-card`; ícones Lucide; tokens `size.pill`, `size.icon-sm`, `size.icon-md`, `icon.stroke`, `opacity.disabled`, `border-width.alert` e `typography.stat-sm`; padding do `button-primary` em `--space-4`. Emenda de 2026-11-12, do ui-design da FEAT-008 (E5): regra de quebra do `segmented-control` em grade de 2 colunas, sem token novo. Emenda de 2026-11-13, do ui-design da FEAT-001 (E6): texto do aviso "só neste navegador" no §6.
+**Proveniência.** Estrutura, componentes, medidas (raios 4/6/8/999, espaços 2–24, Inter e IBM Plex Mono, cinzas quentes) ingeridos do wireframe v1 (`docs/reference/wireframe/`, código `.dc.html` e telas). Identidade visual (pergaminho, vermelho-sangue, Spectral) escolhida pelo usuário entre duas propostas (direção A), dentro do P33 e da D28. Ajustes exigidos pela NFR-ACC-001: o cinza `#A8A8A2` do wireframe (2,4:1 sobre branco) foi substituído por `#85847E` em bordas de controle e por `#65645E` em texto apagado; corpo subiu de 13 para 14px; campos de formulário em 16px; alvos de 44px em ponteiro grosso; anel de foco definido (o wireframe não tinha). Emenda de 2026-11-12, do ui-design da FEAT-007 (E1–E4): estado bloqueado do `step-map` sem tooltip; estado `current` do `option-card`; ícones Lucide; tokens `size.pill`, `size.icon-sm`, `size.icon-md`, `icon.stroke`, `opacity.disabled`, `border-width.alert` e `typography.stat-sm`; padding do `button-primary` em `--space-4`. Emenda de 2026-11-12, do ui-design da FEAT-008 (E5): regra de quebra do `segmented-control` em grade de 2 colunas, sem token novo. Emenda de 2026-11-13, do ui-design da FEAT-001 (E6): texto do aviso "só neste navegador" no §6. Emenda de 2026-11-14, do aceite da FEAT-001 (M1) (E7): o estado `loading` de botão passa a ser o `isPending` do React Aria (`aria-disabled`, foco mantido, anúncio do rótulo), sem `aria-busy`, que o `Button` do `react-aria-components` 1.22.1 não repassa ao DOM; sem token novo.
 
 ```json
 { "design_provenance": {
