@@ -6,6 +6,7 @@
 > Re-verificação: Accepted · 2026-11-13 · DEF-001 e DEF-002 (ver a seção no fim)
 > Re-verificação: Accepted · 2026-11-13 · DEF-003, DEF-004 e DEF-005, com o DEF-006 aberto (ver a seção no fim)
 > Re-verificação: Accepted · 2026-11-14 · DEF-006 (ver a seção no fim)
+> Re-verificação: Accepted · 2026-11-15 · DEF-011 e DEF-012 (ver a seção no fim)
 
 ## Veredito
 
@@ -212,5 +213,57 @@ O nome novo diz a asserção e a condição: "tabbing into a segment partly unde
 Na construção da sonda houve um erro de sincronização, corrigido antes da rodada que vale: ela conferia a gravação retida antes de o `put` existir (no WebKit, o foco chega antes da gravação começar).
 
 **Achados.** Rework: nenhum. Defeito de design: nenhum. Menores: nenhum.
+
+**RTM.** Sem mudança.
+
+## Re-verificação de 2026-11-15: DEF-011 e DEF-012
+
+> Veredito: Accepted · Estado auditado: `347246e` (código de `e0e0df1`) · Padrão: technical-design.md §6, sem mudança; ui-design.md com o save-failed emendado (`d8020bc`, `d3f1925`, `6688610`) e a emenda E7 do design.md (`a4693d2`)
+
+**Veredito.** Aceita de novo. As duas correções de manutenção (`docs/defects.md`) atendem o save-failed emendado. Durante a nova tentativa, "Try again" fica em loading pela E7. Quando ela dá certo com o foco no alerta, o foco vai para o `h1` da etapa; se a pessoa saiu do alerta, ele fica onde ela o pôs. Quando falha, o foco não se move. Cada teste vermelho falha sem a sua correção e passa com ela, e a guarda do Tab falha com uma correção ingênua. Todas as suítes passaram nesta execução, sem retry. Fica um achado menor, sem bloqueio, e nenhum defeito novo.
+
+**Padrão.** Os 13 critérios da §6 continuam valendo. A manutenção toca o AC-12 (FR-CHAR-010) e a NFR-ACC-001. O save-failed emendado define:
+- durante a nova tentativa, "Try again" em loading (`design.md` §4, E7: spinner de `--size-icon-sm` antes do rótulo, `aria-disabled`, foco mantido, acionamento ignorado);
+- no sucesso, o foco só se move se estiver dentro do alerta: vai para o `h1` da etapa; fora dele, fica onde a pessoa o pôs (C2);
+- na falha, o alerta continua e o foco não se move; com o foco em "Try again", o React Aria anuncia o rótulo ao sair do estado pendente.
+
+O código (`Builder.tsx`, `SaveAlert`) segue isso: o spinner com `retrying` e, depois do `await session.retrySave()`, o foco vai para o `h1` só se o snapshot saiu do save-failed e o foco ainda está dentro do alerta.
+
+**Mudanças de teste auditadas** (`8da11df..360c96d`, `src/ui/screens/Builder.test.tsx`): 66 linhas acrescentadas e 3 removidas, todas no `setup`. Nenhum skip, `.only`, retry, timeout aumentado nem mudança de configuração.
+
+| Mudança | Commit | Classe | Auditoria |
+| :-- | :-- | :-- | :-- |
+| `setup`: `control.hold()` retém de novo as gravações seguintes; `holdSave` passa a chamá-lo | `15dfa0a` | montagem determinística (C15: reter só a gravação relevante), sem afrouxamento | Com `holdSave`, o comportamento é o anterior: a primeira gravação espera o `release()`, e as seguintes passam direto. Os 7 testes que já usavam `holdSave` (DEF-003, DEF-005, DEF-006, DEF-008 ×2, DEF-009 ×2) não mudaram. Rodados com o arquivo de teste de `8da11df` (setup antigo, numa cópia temporária apagada depois) e com o atual, contra o código de `HEAD`, filtrando por `DEF-003`, `DEF-005`, `DEF-006`, `DEF-008` e `DEF-009`: 14 passed, 7 em cada arquivo. |
+| FR-CHAR-010 (DEF-011): durante a nova tentativa, "Try again" mostra o spinner antes do rótulo | `15dfa0a` | teste novo (`failSave` e `control.hold()`) | Fiel à E7 e ao save-failed: `svg` como primeiro filho, `aria-hidden`, `icon--sm`, rótulo mantido, nada gravado; na falha, sem `svg`, com o alerta e o botão na tela. Não confere o foco nem o anúncio na falha; ver o achado menor 1. |
+| NFR-ACC-001 (DEF-012): sucesso com o foco em "Try again" leva o foco ao `h1` | `03bd7b7` | teste novo | Fiel ao save-failed emendado: foco no botão durante a nova tentativa; depois da gravação e da saída do alerta, foco no `h1`. |
+| NFR-ACC-001 (DEF-012): Tab para fora do alerta durante a nova tentativa; o sucesso deixa o foco onde a pessoa o pôs | `03bd7b7` | teste novo, guarda | Fiel à cláusula do C2: antes do fim, o foco fora do alerta e fora do `body`; depois, o mesmo elemento. |
+
+**Vermelhos conferidos** (produção trocada só no disco, restaurada com `git checkout` depois de cada rodada; cada linha, 3 vezes):
+
+| Teste | Comando | Sem a correção | Com a correção (`HEAD`) |
+| :-- | :-- | :-- | :-- |
+| DEF-011 | `npx vitest run src/ui/screens/Builder.test.tsx -t "DEF-011"` | `Builder.tsx` de `1d0bd9a`: 3/3 vermelhos em `:218` ("expected null not to be null", sem o `svg`) | 3/3 verdes |
+| DEF-012 (2 testes) | `npx vitest run src/ui/screens/Builder.test.tsx -t "DEF-012"` | `Builder.tsx` de `a264857`: 3/3 vermelhos no caso do foco em "Try again", em `:241` (o foco no `body`); o caso do Tab passa, porque o código anterior não move o foco | 3/3 verdes nos dois |
+| DEF-012, guarda do Tab | o mesmo comando | correção ingênua temporária (`if (leaving) titleRef.current?.focus()`, foco no `h1` em todo sucesso): 3/3 vermelhos no caso do Tab, em `:256` (o foco no `h1`, não no `input` onde o Tab o pôs); o caso do foco em "Try again" passa | — |
+
+**Execução independente** (do zero, porta 4173 livre antes; Windows 11, Node 22.15.0, Playwright 1.65.0): `npm ci`, `typecheck`, `lint`, `packs:check` verdes. Vitest completo 3 vezes: 173 testes em 18 arquivos, 3/3 verdes. `npx playwright test --retries=0 --workers=1` nos 5 projetos: 164 passaram, 36 pulados, 0 falhas, 0 instáveis, em 6,3 min.
+
+**Verificação direta.** O mesmo script da re-verificação da FEAT-001 desta data: fora do repositório e descartado, contra um build de `HEAD` servido do zero, com só a gravação relevante retida (e abortada quando a sequência pede a falha), e os anúncios lidos no `[data-live-announcer]` do React Aria. Perfis: Desktop Chrome, Desktop Firefox e Desktop Safari; Pixel 7 (Chromium) e iPhone 15 (WebKit) a 320 × 568 e a 412 × 568. Cada sequência rodou 3 vezes em cada perfil, 21/21 cada. As de nova tentativa rodaram na Ancestry ("Choose Human" com a gravação abortada) e na Attributes (Apply Intellect/Strength com a gravação abortada):
+
+| Sequência | Observado |
+| :-- | :-- |
+| Nova tentativa retida que falha, com o foco no botão | Durante: spinner como primeiro filho, 16 × 16 px, `aria-hidden`, rótulo "Try again", `aria-disabled="true"`, foco no botão, rótulo anunciado na entrada; clique (forçado) e Enter não gravam nada. Na falha: o alerta continua, o foco continua em "Try again", sem spinner, e o rótulo é anunciado de novo na saída. |
+| Nova tentativa retida que falha, com Tab para fora do alerta | O rótulo é anunciado na entrada (o botão tinha o foco). Na falha, o alerta continua, o foco fica onde o Tab o pôs, e não há anúncio na saída. |
+| Nova tentativa retida que dá certo, com o foco no botão | Loading como acima; depois da gravação, o alerta sai e o foco está no `h1` da etapa. |
+| Nova tentativa retida que dá certo, com Tab para fora do alerta | O alerta sai e o foco continua onde o Tab o pôs. |
+| DEF-003 | Depois de "Choose Human" retido, o foco no título "Human" do detalhe com a gravação pendente, e nele depois. |
+| DEF-005 | "Choose Human" retido e prévia do Dwarf: depois da gravação, "Choose Dwarf" continua na tela. |
+| DEF-006 | "Choose Human" retido, "Choose Dwarf" e prévia do Human: depois das gravações, "Choose Human" continua na tela. |
+
+- **Spinner:** `spinner-turn 1s linear infinite`, o mesmo do "Delete permanently" da Home, que agora vem do `base.css` (`a264857`). Com `prefers-reduced-motion: reduce`, parado e visível (relatório da FEAT-001, mesma data).
+- **A sonda discrimina:** contra um build com a produção de `03bd7b7`, as duas sequências de nova tentativa com o foco no botão falham nos 7 perfis, no spinner ausente. Essas sequências param ali e não chegam à cláusula do foco no `h1`. Para prová-la, a sonda rodou também contra um build com o `Builder.tsx` de `a264857` (spinner corrigido, foco ainda não): as duas falham nos 7 perfis só no foco no `h1`, depois de as cláusulas de loading, falha e anúncio passarem. As de Tab para fora passam nos dois builds, como deviam, e as do DEF-003, DEF-005 e DEF-006 também.
+
+**Achados.** Rework: nenhum. Defeito de design: nenhum. Menores:
+1. **Sem guarda automatizada para a falha da nova tentativa** (o foco não se move; o rótulo é anunciado só com o foco no botão). O teste do DEF-011 confere o alerta e o botão depois da falha, mas não o foco nem o anúncio. O comportamento foi observado direto, 21/21 na Ancestry e na Attributes. **Para:** feature-implementation, se o usuário quiser a guarda. Sem bloqueio.
 
 **RTM.** Sem mudança.
