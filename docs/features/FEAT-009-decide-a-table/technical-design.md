@@ -41,7 +41,7 @@ Levantado no `c8b95ab`, nas FEAT-007, 008 e 001 (technical-design, ui-design, ac
      - a ADR-009, quarto item da Decisão ("com as faces informadas pelo usuário");
      - o estado "informado" do `roll-card` (`design.md` §4, l.251: "um campo por dado").
      Escalações 1, 2 e 3.
-  3. **Troca de fonte de uma tabela (D2, D3).** A decisão gravada com outro livro deixa de valer, e a tabela volta como decisão aberta. Isso contraria o P6b ("o resultado fica na ficha, marcado com a fonte de origem"), a FR-CHG-015 ("manter os resultados já obtidos… e usar a nova fonte só nas próximas rolagens") e a ADR-004 §3 ("Se só a fonte da tabela mudar, o resultado fica…"). Escalações 1 e 2.
+  3. **Troca de fonte de uma tabela (D2, D3).** A decisão gravada com outro livro fica suspensa (D40), e a tabela volta como decisão aberta, de acordo com o P6b revisto; a divergência que sobra é com a FR-CHG-015 ("manter os resultados já obtidos… e usar a nova fonte só nas próximas rolagens") e a ADR-004 §3 ("Se só a fonte da tabela mudar, o resultado fica…"), que as sessões 1 e 2 emendam. Escalações 1 e 2.
   4. **Errata do pacote (D3).** Faces, modificador, total e entrada gravados ficam como obtidos; só página e efeitos seguem a versão nova. Isso precisa de nota na FR-CONT-015 ("recalcular os personagens pela versão atual") e no P6a ("derivados se recalculam sozinhos"), e contraria a ADR-004 §1 ("Nada derivado é gravado"). Escalações 1 e 2.
 
 ## 3. Contratos
