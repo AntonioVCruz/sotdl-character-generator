@@ -1,7 +1,7 @@
 # Tasks: FEAT-009 — Decidir uma tabela: Roll, Choose, Enter result
 
 > Executa: `docs/features/FEAT-009-decide-a-table/technical-design.md`
-> Status: pending · Última atualização: 2026-11-15 (emenda com as decisões do usuário, design §8)
+> Status: pending · Última atualização: 2026-11-15 (emenda com as decisões do usuário, design §8; emenda D40: AC-17 (v) na T3)
 > Tela (SCR-WEB-009, e o "Decide now" da SCR-WEB-003): do ui-design, pelo `docs/design-manifest.json`. As tarefas de ui aqui são só integração.
 > Pré-requisitos (design §8): as emendas escaladas 1 (requirements-engineering), 2 (software-architecture) e 3 (ux-foundations: E8 `size.roll-value` e E9) aplicadas antes da T1; a 4 (emenda do plano, implementation-planning) antes do aceite.
 
@@ -31,7 +31,7 @@ Todo "pronto quando" inclui `npm run typecheck`, `npm run lint` e os testes exis
     - `FR-DEC-024`, `FR-DEC-005`, `FR-DEC-019`: documento com decisão `chosen` com entrada, `rolled` e `entered` nos formatos da D3 (tabela e `roll-effect`) aceito; com campo a mais recusado;
     - `FR-LOG-001`: documento com uma `LogEntry` de cada modo aceito; com campo a mais recusado; `log: []` continua válido.
 
-- [ ] **T3. Motor: vagas `table` e `roll-effect`, resultado, modos e pendências** (design §3.3, "Vaga `table`"; FR-DEC-001, 002, 004, 007, 008, 012, 016 parcial, FR-STEP-014, FR-CONT-016 e FR-SRC-009 (AC-17, iii e iv); D2, D3, D5, D6, D7)
+- [ ] **T3. Motor: vagas `table` e `roll-effect`, resultado, modos e pendências** (design §3.3, "Vaga `table`"; FR-DEC-001, 002, 004, 007, 008, 012, 016 parcial, FR-STEP-014, FR-CONT-016 e FR-SRC-009 (AC-17, iii, iv e v); D2, D3, D5, D6, D7; D40)
   - Em `src/engine/evaluate.ts`:
     - a concessão `table` na árvore, com `TableView`, `EntryView`, `modes` e `range`;
     - `range` e `enterRange` (D4); `entries` na ordem do início da faixa;
@@ -46,7 +46,7 @@ Todo "pronto quando" inclui `npm run typecheck`, `npm run lint` e os testes exis
     - `FR-DEC-007`, `FR-DEC-016`: rolado com faces, modificador, total, entrada e `rolls` gravados (AC-4, sem o pacote real);
     - `FR-DEC-008`, `FR-DEC-012`: toda entrada com faixa e página, e a entidade quando houver, na ordem do início da faixa (AC-5, AC-6);
     - `FR-DEC-024`: escolhido com a entrada e sem faces; decisão sem `book` ou sem `entry`, ou com chave inexistente, ignorada;
-    - `FR-CONT-016`, `FR-SRC-009`: (iii) uma versão sem a entrada gravada reabre a vaga; (iv) um segundo livro, acima, com `replaces` da tabela faz a decisão deixar de valer e reabre a vaga (AC-17);
+    - `FR-CONT-016`, `FR-SRC-009`: (iii) uma versão sem a entrada gravada reabre a vaga; (iv) um segundo livro, acima, com `replaces` da tabela faz a decisão deixar de valer e reabre a vaga; (v) voltando à versão ou ao livro anterior, a mesma decisão gravada volta a valer, sem nova gravação nem entrada de log (AC-17);
     - `FR-STEP-014`, `FR-DEC-011`: a `roll-effect` aparece com a entrada, conta em `open` e `openDecisions`, e some ao trocar a entrada (AC-8, parte do motor);
     - `FR-FLOW-001`: etapa com tabelas concedidas fica `open` e, com todas decididas, `done`.
 
