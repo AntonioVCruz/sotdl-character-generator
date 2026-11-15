@@ -3,6 +3,7 @@
 > Veredito: Accepted · Data: 2026-11-14
 > Padrão: technical-design.md §3, §6 e §7 @ `e297f60`, ui-design.md @ `b42f799` · Fontes: srs.md, use-cases.md (UC-001 1a), design-manifest.json (SCR-WEB-001), implementation-plan.md §6
 > Estado auditado: `1806a9d` (código de `cf813de`, mais as correções de teste abaixo)
+> Re-verificação: Accepted · 2026-11-15 · DEF-010, com o M1 resolvido pela E7 (ver a seção no fim)
 
 ## Veredito
 
@@ -113,3 +114,44 @@ Test ref acrescentado com `features/FEAT-001-home/acceptance-report.md`:
 - nas FRs da FEAT-001 (FR-CHAR-003, 004, 005, 006, 007, 011, 013, 014, 015, 016) e na NFR-CAP-001;
 - nas FRs de outras entregas que a FEAT-001 mudou, sem "(partial)": FR-CHAR-001, FR-FLOW-006, 007, 008, FR-HELP-004 e 005;
 - com "(partial)", pela regra do plano §6: NFR-PERF-001, NFR-ACC-001, NFR-USE-001, NFR-L10N-001, NFR-REL-001, NFR-PRIV-001, NFR-COMP-002 e NFR-MAINT-002.
+
+## Re-verificação de 2026-11-15: DEF-010
+
+> Veredito: Accepted · Estado auditado: `347246e` (código de `e0e0df1`) · Padrão: technical-design.md §6, sem mudança; ui-design.md re-verificado contra a emenda E7 do design.md (`a4693d2`, `46c1168`)
+
+**Veredito.** Aceita de novo. A correção do DEF-010 (`docs/defects.md`) põe "New character" no estado loading da E7: spinner de `--size-icon-sm` antes do rótulo. O teste vermelho falha sem a correção e passa com ela. Todas as suítes passaram nesta execução, sem retry. Nenhum achado novo.
+
+**Padrão.** Os 17 critérios da §6 continuam valendo. A manutenção toca o AC-13 (FR-CHAR-001, "New character") e o AC-16 (NFR-ACC-001). O estado loading de botão é o da E7 (`design.md` §4): o `isPending` do React Aria, com spinner de `--size-icon-sm` no lugar do ícone ou antes do rótulo, rótulo mantido, `aria-disabled`, foco mantido, anúncio do rótulo ao entrar e ao sair quando o botão tem o foco, e acionamento ignorado. O `46c1168` alinhou o "Excluindo" do delete-confirm a essa regra.
+
+**M1 resolvido.** O achado menor M1 deste relatório (`aria-busy` de "Delete permanently" fora do DOM) ficou resolvido no design: a E7 (`a4693d2`) tirou o `aria-busy` do loading de botão, e o `46c1168` re-verificou o ui-design contra ela. A prop `aria-busy` continua no `DeleteDialog.tsx:62` e não chega ao DOM (observado abaixo); fica, por decisão.
+
+**Mudanças de teste auditadas** (`8da11df..360c96d`, só `src/ui/screens/Home.test.tsx` entre os testes desta feature): 21 linhas acrescentadas, nenhuma removida. Nenhum skip, `.only`, retry, timeout aumentado nem mudança de configuração.
+
+| Teste | Commit | Classe | Auditoria |
+| :-- | :-- | :-- | :-- |
+| FR-CHAR-001 (DEF-010): enquanto o personagem é criado, "New character" mostra o spinner decorativo antes do rótulo | `67b61df` | teste novo, montagem determinística (`createCharacter` com uma promessa resolvida pelo teste) | Fiel à E7 na parte que o defeito tocou: sem `svg` antes; durante, `svg` como primeiro filho, `aria-hidden="true"`, classe `icon--sm`, rótulo "New character" mantido; depois do resultado, sem `svg`. `aria-disabled`, foco e acionamento ignorado são do `Button` do React Aria e não mudaram; verificados direto. |
+
+**Vermelho conferido** (produção trocada só no disco, restaurada com `git checkout`):
+
+| Teste | Comando | Sem a correção (`Home.tsx` de `03bd7b7`) | Com a correção (`HEAD`) |
+| :-- | :-- | :-- | :-- |
+| `Home.test.tsx`, DEF-010 | `npx vitest run src/ui/screens/Home.test.tsx -t "DEF-010"`, 3 vezes | 3/3 vermelhos em `:47` ("expected null not to be null", sem o `svg`) | 3/3 verdes |
+
+**Execução independente** (do zero, porta 4173 livre antes; Windows 11, Node 22.15.0, Playwright 1.65.0): `npm ci`, `typecheck`, `lint`, `packs:check` verdes. Vitest completo 3 vezes: 173 testes em 18 arquivos, 3/3 verdes. `npx playwright test --retries=0 --workers=1` nos 5 projetos: 164 passaram, 36 pulados, 0 falhas, 0 instáveis, em 6,3 min; build e servidor do `webServer`. A Lighthouse não foi rodada: a Home só ganhou o spinner no estado pendente.
+
+**Verificação direta.** Script Playwright fora do repositório (descartado), contra um build de `HEAD` servido do zero. A gravação retida é só a relevante: a próxima operação `put` ou `delete` no store `characters` mantém a transação aberta (`count()` em laço) até o script liberá-la. Os anúncios do React Aria foram lidos no `[data-live-announcer]` por um `MutationObserver`. Perfis: Desktop Chrome, Desktop Firefox e Desktop Safari; Pixel 7 (Chromium) e iPhone 15 (WebKit) a 320 × 568 e a 412 × 568. Cada sequência rodou 3 vezes em cada perfil, 21/21 cada:
+
+| Sequência | Observado |
+| :-- | :-- |
+| "New character" com a criação retida | `svg.spinner.icon--sm` como primeiro filho, `aria-hidden="true"`, 16 × 16 px computados (igual a `--size-icon-sm`), visível, `spinner-turn 1s linear infinite`; rótulo "New character"; `aria-disabled="true"`; foco no botão; o rótulo anunciado uma vez na entrada. Clique (forçado) e Enter durante o estado: nenhuma operação nova no IndexedDB, foco no botão. Depois da gravação, a etapa Ancestry; de volta à Home, um cartão só. |
+| O mesmo, com `prefers-reduced-motion: reduce` | Spinner visível, 16 × 16 px, `animation-duration: 0s`; o `transform` é o mesmo em quadros seguidos (identidade): parado. |
+| "Delete permanently" com a exclusão retida | Spinner como primeiro filho, 16 × 16 px, `aria-hidden="true"`, rótulo mantido; `aria-disabled="true"` no DOM; **sem `aria-busy` no DOM** (a prop do `DeleteDialog.tsx:62` não chega, por decisão); foco no botão; "Cancel" desabilitado; Esc não fecha; clique e Enter ignorados (uma exclusão só). Depois, o diálogo fecha e a lista fica vazia. |
+
+- **Casos anteriores:** as sequências do DEF-003, DEF-005 e DEF-006 (Ancestry) e do DEF-008 e DEF-009 (Attributes) passaram na mesma rodada, 21/21 cada (detalhe no relatório da FEAT-007, re-verificação de 2026-11-15).
+- **A sonda discrimina:** contra um build com a produção de `03bd7b7` (antes das três correções), as duas sequências de "New character" falham nos 7 perfis, no ponto do defeito (sem `svg` no botão pendente). A de "Delete permanently" e as dos casos anteriores passam, como deviam.
+
+Na construção da sonda houve um erro de medida, corrigido antes da rodada que vale: o `getBoundingClientRect` de um quadrado de 16 px em rotação dá até 22,6 px (16 √2). A medida que vale é a largura e a altura computadas.
+
+**Achados.** Rework: nenhum. Defeito de design: nenhum. Menores: nenhum novo; o M1 está resolvido (acima).
+
+**RTM.** Sem mudança.
