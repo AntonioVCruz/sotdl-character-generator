@@ -332,5 +332,6 @@ sequenceDiagram
   - **Faixa de 1 a 20 dos scores.** A p.10 do core diz que um score vai de 1 a 20. O SRS (FR-CALC-006) lista só os quatro limites de característica. Não entra nesta feature; se valer, precisa de emenda do SRS e de `limits` nos atributos.
   - **Insanity ao chegar à Will.** O livro (impressa 35) trata isso como o momento de enlouquecer, o gatilho do P34 (fora do MVP). Aqui fica só o máximo do FR-CALC-006; o gatilho não é modelado.
 - **Log:** o registro do ajuste e do `clear` entra com a FEAT-009 (FR-LOG-001); a marca de desfeito é da FR-LOG-007, que o RTM dá à FEAT-011.
+  - Emenda de 2026-11-15: o registro do `clear` é a entrada de desfeito (FR-LOG-007) e entra com a FEAT-011, não com a FEAT-009 (D9 da FEAT-009).
 - **`CONTENT_VERSION`:** continua `0.0.0`.
 - **Texto do app:** a pergunta e a linha de regra da etapa Attributes, os rótulos das parcelas novas e o texto do +1 pendente são rascunho; o ui-design fecha (NFR-USE-001).
