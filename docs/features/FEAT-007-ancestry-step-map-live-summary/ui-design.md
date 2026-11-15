@@ -1,7 +1,7 @@
 # UI Design: FEAT-007 — Etapa Ancestry, mapa de etapas e resumo vivo
 
 > Feature de: `docs/implementation-plan.md` · Par com: `technical-design.md`
-> Telas: SCR-WEB-003, SCR-WEB-016 · Modo: por feature, com rigor de âncora (primeira execução; não houve telas-âncora) · Status: Verified (re-verificação após a emenda E1–E4 do design system, 2026-11-12) · Data: 2026-11-12
+> Telas: SCR-WEB-003, SCR-WEB-016 · Modo: por feature, com rigor de âncora (primeira execução; não houve telas-âncora) · Status: Verified (re-verificação após a emenda E1–E4 do design system, 2026-11-12) · Data: 2026-11-12 · Emenda de 2026-11-14: foco do save-failed depois de "Try again" (re-verificação contra a E7)
 
 Autoridade: `docs/design.md` e `docs/tokens.json`. Todo valor visual abaixo é token (`--…`) ou classe `.typography-*`; os breakpoints são `@custom-media` (`--bp-md`, `--bp-below-md`, `--bp-xl`, `--bp-below-xl`). Ícones: Lucide (`design.md` §2), traço `--icon-stroke`, decorativos com `aria-hidden`. Texto da interface em inglês (NFR-L10N-001), fechado na seção [Textos](#textos). Nenhum texto dos livros (P22).
 
@@ -124,6 +124,7 @@ Ancestralidade decidida.
 - `inline-alert` danger (ícone `circle-alert`, `--size-icon-md`, `aria-hidden`; borda esquerda `--border-width-alert`) fixo no topo do corpo da etapa, `role="alert"`, com o texto de [Textos](#textos) e `button-secondary` "Try again", que chama `session.retrySave()`.
 - Durante a nova tentativa, o botão fica em loading (`design.md` §4: spinner de `--size-icon-sm`).
 - O estado novo continua na tela; o alerta some quando `save` volta a `'saved'`.
+- **Foco depois da nova tentativa:** quando ela dá certo e o alerta sai, o foco vai para o `h1` da etapa. Quando falha, o alerta continua, o foco fica em "Try again" e o React Aria anuncia o rótulo ao sair do estado pendente (`design.md` §4, loading). Nenhum texto novo na interface.
 
 ### loading
 
