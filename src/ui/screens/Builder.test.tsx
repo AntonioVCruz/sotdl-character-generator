@@ -460,6 +460,72 @@ describe('Attributes step', () => {
     expect(within(card()).getByRole('status').textContent).toBe('')
   })
 
+  /** A gravação retida falha ao ser liberada: o alerta do save-failed aparece e as continuações rodam. */
+  async function failed(session: CharacterSession, control: { release: () => void }) {
+    control.release()
+    expect((await screen.findByRole('alert')).textContent).toMatch(/Your last choice wasn't saved/)
+    await vi.waitFor(() => expect(session.getSnapshot()).toMatchObject({ save: 'failed' }))
+    await act(async () => {}) // as continuações dos comandos rodam e a tela é atualizada
+    await nextFrame()
+  }
+
+  it('FR-CHAR-010, NFR-ACC-001 (FEAT-008): when the save of Apply fails, the alert shows, the adjustment stays, and the focus stays where the person put it', async () => {
+    const { session, control, saved } = setup({ document: stored({ ancestry: 'ancestry:troll' }, ['test.scores']), holdSave: true, failSave: true })
+    renderBuilder('scores')
+    await screen.findByRole('heading', { name: 'Score adjustment' })
+    await applyMightOverWits()
+
+    // Na entrada de applied, o foco vai à linha de estado (ui-design, applied), com a gravação pendente.
+    const status = screen.getByText('Applied: Might +1, Wits −1.')
+    await vi.waitFor(() => expect(document.activeElement).toBe(status))
+    expect(saved).toEqual([])
+
+    // A pessoa move o foco antes de a gravação falhar.
+    const might = within(screen.getByRole('main')).getByRole('button', { name: 'Might 13 Modifier +3' })
+    await userEvent.click(might)
+    expect(document.activeElement).toBe(might)
+
+    // Na falha, só aparece o alerta: o ajuste continua na tela e o foco não se move (ui-design, applied e save-failed).
+    await failed(session, control)
+    expect(saved).toEqual([])
+    expect(screen.getByText('Applied: Might +1, Wits −1.')).toBeTruthy()
+    expect(groupRadio('Raise one attribute by 1', 'Might').checked).toBe(true)
+    expect(groupRadio('Lower another attribute by 1', 'Wits').checked).toBe(true)
+    expect(screen.getByRole('button', { name: 'Undo adjustment' })).toBeTruthy()
+    expect(document.activeElement).toBe(might)
+  })
+
+  it('FR-CHAR-010, NFR-ACC-001 (FEAT-008): when the save of Undo fails, the alert shows, the card stays undone, the focus stays on the segment, and nothing is announced again', async () => {
+    const { session, control, saved } = setup({ document: withAdjustment(), holdSave: true, failSave: true })
+    renderBuilder('scores')
+    await screen.findByRole('heading', { name: 'Score adjustment' })
+    await userEvent.click(screen.getByRole('button', { name: 'Undo adjustment' }))
+
+    // Na entrada de undone, o h2 focado e o anúncio (ui-design, undone), com a gravação pendente.
+    const title = screen.getByRole('heading', { level: 2, name: 'Score adjustment' })
+    await vi.waitFor(() => expect(document.activeElement).toBe(title))
+    const region = within(card()).getByRole('status')
+    expect(region.textContent).toBe('Adjustment undone.')
+    expect(saved).toEqual([])
+
+    // A pessoa clica num segmento de "Raise" antes de a gravação falhar.
+    const wits = groupRadio('Raise one attribute by 1', 'Wits')
+    await userEvent.click(wits)
+    expect(document.activeElement).toBe(wits)
+    const before = region.textContent
+
+    // Na falha, só aparece o alerta: o card continua sem o ajuste, o foco fica no segmento e a região não muda.
+    await failed(session, control)
+    expect(saved).toEqual([])
+    expect(screen.queryByText(/^Applied:/)).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Undo adjustment' })).toBeNull()
+    expect(screen.getByRole('button', { name: 'Apply adjustment' })).toBeTruthy()
+    expect(groupRadio('Raise one attribute by 1', 'Might').checked).toBe(false)
+    expect(groupRadio('Raise one attribute by 1', 'Wits').checked).toBe(true)
+    expect(document.activeElement).toBe(wits)
+    expect(region.textContent).toBe(before)
+  })
+
   it('FR-CALC-002, FR-CALC-007: the composition lists the adjustment and the limit, and the total is their sum', async () => {
     setup({ document: withAdjustment() })
     renderBuilder('scores')
