@@ -1,29 +1,30 @@
 # Gerador SotDL — Documento de princípios
- 
+
 Documento vivo. Atualizado ao longo da conversa.
- 
+
 **Status:** 3 referências de geradores, 4 suplementos e o core completo analisados. Decisões D1–D40 fechadas; nenhuma em aberto. Todos os princípios validados (P1–P34). Wireframe v1 publicado (16 telas, ver seção 6).
- 
+
 **Legenda de fontes**
 - **[Core]** — confirmado no livro básico (capítulo de criação lido por OCR; livro completo lido em texto).
 - **[Não verificado]** — vem da memória; precisa de confirmação do Antônio.
+
 ---
- 
+
 ## 1. Base de comparação: fluxo de criação do livro básico [Core]
- 
+
 ### 1.1 Regimes de decisão
- 
+
 O core usa quatro regimes, não dois:
- 
+
 | Regime | Significado |
 |---|---|
 | **Escolha** | O jogador decide. |
 | **Rolagem com escolha permitida** | O texto manda rolar, mas permite escolher ou inventar o resultado. |
 | **Rolagem prescrita** | O texto só fala em rolar. |
 | **Derivado** | Valor calculado a partir de outros. |
- 
+
 ### 1.2 Etapas (nível 0)
- 
+
 | # | Etapa | Regime | Observações |
 |---|---|---|---|
 | 1 | Ancestralidade | Escolha | Seis no core: humano, changeling, clockwork, anão, goblin, orc. O texto prevê "outras a critério do mestre". |
@@ -37,22 +38,24 @@ O core usa quatro regimes, não dois:
 | 5 | Coisa interessante | Rolagem prescrita (d6 + d20) | Sem opção de escolher no texto. |
 | 6 | Interpretação | Livre | Dois traços positivos e um negativo (tabela d20 opcional "para inspiração"); perguntas de interpretação; nome a partir de lista sugerida. |
 | 7 | Avanço (níveis 1–10) | Escolha nos níveis 1, 3 e 7 | Nos demais, benefícios automáticos. Nível 4: benefício da ancestralidade (magia **ou** talento). Começando em nível alto: +2d6 ss por nível e +1 coisa interessante aleatória a cada path escolhido (1, 3 e 7). |
- 
+
 ### 1.3 Observações relevantes para o design
- 
+
 - **Tabelas narrativas com efeito mecânico.** Backgrounds podem dar 1d6 Insanity, Corruption, idioma, leitura do Common, 2d6 cp ou profissão extra; um background do changeling bloqueia Steal Identity. Rolar de novo uma tabela "de história" pode mexer no esqueleto.
 - **Etapas que puxam outras tabelas.** Aparência do changeling redireciona para tabelas de outra ancestralidade (num resultado, quem decide é o mestre). Humano e alguns backgrounds puxam a tabela de profissões. Coisas interessantes ficam atreladas aos níveis em que se escolhe path.
 - **Decisões do mestre dentro do fluxo:** magia do pergaminho, ancestralidades extras, profissões renomeadas, um resultado do changeling.
 - **Ambiguidade a decidir:** o texto permite escolher resultados das tabelas "de história" da ancestralidade. Não está claro se isso vale para Purpose e Form da clockwork, que alteram números.
 - **Paths e magia:** verificados no core completo (ver 1.5).
+
 ### 1.4 Comparação com a ficha da Liliana
- 
+
 - **Possíveis campos ausentes** (confirmar; o HTML veio truncado na leitura): idade, porte, aparência, background, personalidade, religião, riqueza/estilo de vida e coisas interessantes (no nível 7 seriam quatro: uma inicial + uma em cada nível 1, 3 e 7).
 - **Derivado vs. armazenado:** a ficha guarda Health como valor-base editável; a regra deriva Health de Strength. Decidir no esqueleto.
+
 ---
- 
+
 ### 1.5 Verificado no core completo
- 
+
 **Paths e subida de nível**
 - Níveis: novice em 1, 2, 5 e 8; expert em 3, 6 e 9; master em 7 e 10 (cada path traz os benefícios do seu nível).
 - Benefícios possíveis por nível: aumento de atributos à escolha (novice: dois atributos em 1; experts variam entre dois e três), características fixas (Health, Power, Defense), idiomas e profissões (muitas vezes à escolha), magia (descobrir tradição ou aprender magia, N vezes) e talentos.
@@ -60,6 +63,7 @@ O core usa quatro regimes, não dois:
 - Ao chegar ao nível expert, o personagem define um *Objective* (tabela d20 de *Character Objectives*: escolher ou rolar).
 - Ao escolher um expert ou master path, o equipamento não mágico se desgasta e precisa ser substituído.
 - Tabela opcional de *Group Identity* (d6) no nível 1, para o grupo.
+
 **Magia**
 - Descobrir uma tradição dá automaticamente uma magia de rank 0 dela (à escolha). O Magician ganha uma rank 0 extra por tradição (Cantrip).
 - Aprender magia: de tradição já descoberta, com rank ≤ Power. Ao aprender, pode trocar uma magia já aprendida por outra de rank igual ou menor.
@@ -67,18 +71,20 @@ O core usa quatro regimes, não dois:
 - Conjurações por rank dependem do Power (tabela Castings); recuperadas após um descanso + 1 minuto de meditação ou estudo.
 - Magia sombria (Forbidden, Necromancy): +1 Corruption ao descobrir a tradição; ao aprender cada magia, rola d6 e, se for menor que o total de magias sombrias aprendidas, +1 Corruption. Cada magia sombria dá 1 boon para resistir a Insanity.
 - Grimoire (Wizard): três magias de rank ≥ 1, de qualquer tradição; conta como "aprender" para fins de Corruption.
+
 **Características e estado**
 - Defense máxima 25; Perception máxima 25; Healing rate = ¼ Health, mínimo 1; Health acompanha mudanças de Strength.
 - Armadura substitui a Defense (Agility + X ou valor fixo) e exige Strength mínima (11, 13 ou 15).
 - Insanity: máximo = Will; ao chegar a Will, o personagem enlouquece (tabela d20 de Madness) e depois reduz 1d6 + modificador de Will. *Quirks* (definidas pelo mestre) reduzem Insanity e são permanentes.
 - Corruption: efeitos por faixa (0–3 nenhum; 4–6 1 bane social e animais hostis; 7–8 −1 nas rolagens de destino e sinal físico; 9+ morre ao ficar incapacitado, alma presa no Inferno).
 - **Marks of Darkness:** sempre que ganhar Corruption, rola d20; se for menor que a nova Corruption, rola na tabela de *Mark of Darkness* (d20). Uma marca repetida vira 2d6 de Insanity.
+
 ## 2. Interferência dos suplementos
- 
+
 As seções 2.1 e 2.2 nasceram da memória ([Não verificado]); a 2.3 traz os casos verificados nos suplementos enviados pelo Antônio.
- 
+
 ### 2.1 Pontos de interferência
- 
+
 | Ponto do fluxo | Tipo provável | Exemplo |
 |---|---|---|
 | Lista de ancestralidades | Expande | Novas ancestralidades no *Demon Lord's Companion* e em suplementos menores |
@@ -92,9 +98,9 @@ As seções 2.1 e 2.2 nasceram da memória ([Não verificado]); a 2.3 traz os ca
 | Paths novice, expert e master | Expande (muito), às vezes revisa | Novos paths em vários livros; paths de sacerdote ligados a religiões |
 | Tradições e magias | Expande, talvez substitua | Novas tradições; revisões de magias |
 | Tabelas que apontam para outras | Efeito colateral | Aparência do changeling e profissões aleatórias ganham ou não mais opções, conforme o suplemento |
- 
+
 ### 2.2 Padrões de interferência
- 
+
 1. **Adição.** Entradas novas numa lista existente. Sem conflito: união de listas.
 2. **Substituição de entidade.** Mesma coisa (ex.: "Goblin"), conteúdo diferente. Pede fonte padrão + troca; afeta escolhas já feitas.
 3. **Substituição de tabela.** Mesmo dado e mesmo lugar no fluxo, conteúdo diferente. Um resultado já rolado pode deixar de existir.
@@ -102,25 +108,26 @@ As seções 2.1 e 2.2 nasceram da memória ([Não verificado]); a 2.3 traz os ca
 5. **Regra opcional.** Variante que coexiste com a original e se liga/desliga, em vez de substituí-la. Pode se acumular.
 6. **Propagação.** Qualquer padrão acima pode se espalhar por etapas que referenciam outras tabelas.
 7. **Conteúdo condicional.** Uma entrada muda conforme outro livro ou regra esteja ativo ("se você tem o *Terrible Beauty*…; se não…"). Verificado em 2.3.
+
 **Resolvido:** os padrões 4 e 5 não cabem no mecanismo de "trocar a fonte"; são tratados como componentes com estado padrão próprio (P14a, D3, D20).
- 
+
 ### 2.3 Casos verificados
- 
+
 | Livro | O que traz | Padrões | Observações |
 |---|---|---|---|
 | *Only Human* | Humano variante (atributos padrão **ou** aleatórios 8 + 1d3; idiomas e profissões vêm das tabelas); nível 4 com opção extra "discover a tradition"; tabelas de desenvolvimento (família, idade, infância, experiências de vida, profissões com itens, estilo de vida, personalidade) | 2, 3, 4, 7 | As tabelas substituem as etapas de profissões e riqueza do core para Humanos e são encadeadas com modificadores (Idade define quantas Life Experiences; Family dá bônus em Childhood; experiências somam bônus no Lifestyle). O livro manda rolar e aceitar o resultado. Várias entradas dependem de outros livros (*Demon Lord's Companion*, *Tombs of the Desolation*, *Terrible Beauty*, *Tooth and Claw*). |
 | *Oddities, Artifacts, and Esoterica* | Tabelas de coisas interessantes (d20 de tipo + d20 por tipo) | 3, 7 | "Quando você for ganhar uma coisa interessante, pode usar estas tabelas no lugar das do core": a escolha é por ocorrência. Uma entrada remete ao *Dark Passages*. |
 | *Insupposable Instruments* | Itens (alquímicos, proibidos, poções, equipamento, engenharia), animais, veículos, propriedades, negócios, mercadores errantes | 1, 7 | Sem conflito. Referências condicionais a *Battle Scars* (Sawbones Tools, Clockwork Limb) e ao *Demon Lord's Companion*. Parte do conteúdo (veículos, negócios, mercadores) é material de mestre e fica fora do personagem. |
 | *Battle Scars* | Duas regras opcionais (Injuries; Incapacitated Characters, mais letal); próteses e membros mecânicos; magias Restore Body (Life 4) e Unspeakable Graft (Forbidden 4) | 1, 5 | As regras afetam o jogo, não a criação: ferimentos podem ser permanentes (−1 em atributo, perda de membro). Conteúdo útil mesmo com as regras desligadas. |
- 
+
 ---
- 
+
 ## 3. Princípios de design
- 
+
 Estado de cada princípio: **proposto** (extraído de referência, aguardando validação) ou **fechado** (decidido pelo Antônio).
- 
+
 ### Fontes
- 
+
 - **P1. A fonte aparece no ponto de escolha.** Toda opção mostra no próprio cartão de que livro vem **e** o tipo: novo, substitui [original] ou casa. *Fechado (validado; revisado após o SWCharGen e a D11) — origem: D&D Beyond.*
 - **P2. Fontes escolhidas nas configurações, livro a livro.** A configuração é por personagem e lista cada livro individualmente (D7). Cada item aparece no fluxo como uma entrada única, na versão definida pelas configurações (D4). O escopo de cada configuração é explícito (personagem, usuário, navegador). *Fechado (D4, D7).*
 - **P2e. Cada livro abre uma lista de componentes.** O livro é a unidade de ligar/desligar e da ordem de prioridade, mas dentro dele cada componente se liga e desliga sozinho: conteúdo novo, substituição de entidade, substituição de tabela, revisão de procedimento, regra opcional. Ex.: *Only Human* ligado com as tabelas de desenvolvimento desligadas; *Battle Scars* ligado com as regras de ferimentos desligadas. Componentes podem declarar dependência entre si (P20). *Fechado (D20; amplia a D7 após os suplementos).*
@@ -149,20 +156,23 @@ Estado de cada princípio: **proposto** (extraído de referência, aguardando va
   - **concessão do mestre** (vale para um personagem, fora da regra — P23);
   - **ajuste manual** (muda um valor da ficha — P12).
   *Fechado (validado; revisado após o SWCharGen e a D11) — origem: D&D Beyond (Homebrew como categoria de fonte).*
+
 ### Navegação
- 
+
 - **P4. Navegação guiada por dependências.** Uma etapa só é liberada quando suas dependências estão resolvidas. Pendências que não são dependências não bloqueiam nada: ex., faltar escolher uma tradição não impede rolar as tabelas aleatórias. O que falta aparece como contagem ("2 escolhas"). *Fechado (D5). Consequência: é preciso mapear explicitamente o grafo de dependências entre etapas.*
 - **P5. Ordem segue as dependências da regra.** No SotDL, ancestralidade vem primeiro, porque define atributos e as tabelas narrativas. *Fechado (decorre da D5).*
 - **P6. Mudança a montante suspende os dependentes, com confirmação.** Ao trocar uma escolha da qual outras dependem, a interface lista, antes de aplicar, o que fica suspenso, o que volta, o que se recalcula e o que fica. A decisão suspensa sai da ficha e do cálculo, mas continua guardada no personagem; se o contexto dela voltar, ela é restaurada sozinha. O estado visível fica sempre válido. Vale para qualquer mudança a montante: escolha, versão no cartão (P2c), regra opcional (P14a), ligar ou desligar livro, reordenar a lista de livros, remover ou atualizar pacote (D13), e para a decisão que fica inelegível pela regra (D39). *Fechado (D6; ampliado após o SWCharGen; revisado pela D40). Contra aceito: suspensas ocupam o documento do personagem até serem descartadas.*
 - **P6b. Resultado de tabela depende do livro da tabela.** Fica suspenso o que depende de uma *escolha* que mudou (trocar de ancestralidade suspende o background dela), de um *procedimento* que mudou (desligar as tabelas do *Only Human* suspende o background feito com elas) ou da *fonte* da tabela (o resultado obtido com um livro fica suspenso quando outro livro passa a valer para a tabela, e a tabela volta como decisão aberta). Se o contexto voltar, o resultado volta. Errata do mesmo livro: o resultado fica enquanto a entrada existir. A escolha de fonte por rolagem (P2f) não é troca de fonte: cada rolagem guarda o livro usado. *Fechado (D21; revisado pela D3 da FEAT-009 e pela D40).*
 - **P6a. Personagem acompanha a versão atual dos pacotes.** Quando o mestre atualiza um pacote já usado, o personagem passa a usar a nova versão: derivados se recalculam sozinhos e, se a mudança invalidar escolhas, vale o P6 (ficam suspensas). *Fechado (D13; revisado pela D40). Contra aceito: um personagem pode mudar sem o jogador ter feito nada.*
+
 ### Escolha e aleatoriedade
- 
+
 - **P7. O gerador registra, não fiscaliza.** Toda tabela aceita rolar ou escolher, inclusive as que têm efeito mecânico (Purpose/Form da clockwork). Presume-se que o personagem foi criado do jeito que a mesa joga. O regime da regra (ver 1.1) aparece como indicação, não como restrição. Rolar é um botão ao lado da escolha, não um modo global. *Fechado (D1). Confirmado: vale também para as tabelas de rolagem prescrita (riqueza e coisa interessante).*
 - **P8. Log do personagem.** Cada mudança permanente fica registrada com sua origem: rolado (com o valor do dado e quantas vezes foi rolado), escolhido, inventado, versão alterada (P2c), editado manualmente (P12), concedido pela mesa (P23), suspenso ou restaurado por mudança a montante (P6) ou ocorrido em jogo (P13c). O log é só registro e auditoria: não é relido para montar o personagem nem serve para editá-lo (D40). O log cobre a criação e toda a vida do personagem; estado de sessão (dano, usos por descanso, efeitos temporários) fica de fora. Rolagens com modificadores registram o dado e cada modificador aplicado (ex.: "3d6 = 9, +1 por família Comfortable → 10"). *Fechado (D1, ampliado pela D19). Efeito colateral útil: decisões suspensas (D40) somem da ficha, mas continuam no personagem e no log. Registro de modificadores: validado após o Only Human.*
 - **P8a. Exportação independente de ficha e log.** O usuário exporta só a ficha, só o log ou ambos. *Fechado.*
+
 ### Apresentação das regras
- 
+
 - **P9. Divulgação progressiva, com mecânica sempre visível e texto preenchível.** Três níveis de texto por item: **uma linha → resumo → texto completo**. Quem conhece o sistema lê só a primeira linha; quem não conhece expande.
   - **Dados mecânicos sempre aparecem.** O que o gerador já precisa saber para calcular (P11a) é mostrado como resumo gerado automaticamente a partir do modelo. Ex.: "Health +5 at level 4; learn one spell or gain Determined". Isso mantém o P10 funcionando desde o primeiro uso.
   - **Texto descritivo começa vazio, só com a referência de página** (P22). O gerador não traz texto dos livros.
@@ -172,8 +182,9 @@ Estado de cada princípio: **proposto** (extraído de referência, aguardando va
   *Fechado (D18; revisado após o SWCharGen e o P22) — origem: D&D Beyond.*
 - **P9a. Texto entra campo a campo ou por importação, nos dois sentidos.** O usuário pode editar cada campo de texto no próprio gerador ou importar todos os textos num formato documentado (o mesmo dos pacotes, P21a). O que for digitado pode ser exportado nesse formato, para que o mestre preencha uma vez e distribua um pacote de textos à mesa. Esse editor só de texto é uma **exceção explícita à D10**: não mexe em mecânica nem em dependências; cria a camada "só texto" do P17. *Fechado (D18).*
 - **P10. O efeito aparece no momento da escolha.** Ao escolher uma opção, a interface mostra o que ela muda na ficha (atributos, características, etapas novas). *Fechado (validado).*
+
 ### Edição depois da criação
- 
+
 - **P11. Valores derivados são sempre calculados e mostram sua composição.** Ex.: Health = Strength + bônus de ancestralidade + bônus dos paths + efeitos ativos + ajuste manual. Nada derivado é guardado como número solto. *Fechado (D2) — origem: D&D Beyond (Score Calculations).*
 - **P11a. Fórmulas pertencem às fontes.** Cada ancestralidade, path, item ou efeito declara as fórmulas e modificadores que aplica, como dado, não como código espalhado. Uma fonte pode substituir a fórmula padrão (ex.: clockwork tem Defense 13 fixa, em vez de Defense = Agility). Assim a troca de versão (P2b, P2c) já leva junto as fórmulas certas. *Fechado (validado).*
 - **P11b. Ordem de cálculo fixa e explícita.** Base da ancestralidade → modificadores permanentes (paths, itens) → efeitos que *definem* um valor → efeitos que *somam* → limites (máximos e mínimos) → ajuste manual. Limites verificados no core: Defense máxima 25, Perception máxima 25, Healing rate mínimo 1; armadura substitui a Defense base. *Fechado (validado). [Ainda não verificado: regras gerais de empilhamento de efeitos.]*
@@ -195,12 +206,14 @@ Estado de cada princípio: **proposto** (extraído de referência, aguardando va
   - **Campos extras:** *Personality* (traços do core; personalidade, relacionamentos, desejos, medos, obrigações e moralidade do *Only Human*), *Religion* (core e *Only Human*) e *Companions* (aliados e criaturas com estatísticas, ex.: "um soldado, como mercenary"; um cavalo; um pequeno construto). *Fechado (D27).*
   - **Marks of Darkness:** campo próprio na ficha, com cada marca e sua origem (P8). Faltava na ficha da Liliana. *Fechado (pedido do Antônio).*
   - **Quirks** (reduzem Insanity e são permanentes) e **Objective** (definido ao chegar ao nível expert) também precisam de campo. *Fechado (validado).*
+
 - **P23. Concessões do mestre são uma camada própria, feita no construtor.** O que a mesa concede fora da regra fica marcado como "concedido pela mesa", separado da edição manual (P12) e do conteúdo da casa (P16), e registrado no log. A ficha da Liliana já tem esse caso: "12 magias extras concedidas pela mesa". Uma concessão pode ser de dois tipos:
   - **Vinculada:** segue as regras e dependências como uma escolha normal (P4, P6). Ex.: "aprende uma magia da tradição Fire" — o jogador escolhe Fireball entre as magias elegíveis.
   - **Avulsa:** concede algo diretamente, sem dependências. Ex.: "pode conjurar Fireball 3 vezes por dia", sem conhecer a tradição. Referencia um item existente e acrescenta parâmetros (usos, limites); o que não estiver modelado cai no P11d.
   *Fechado (D15) — origem: SWCharGen (GM Grants).*
+
 ### Conteúdo e banco de dados
- 
+
 - **P17. Dados oficiais são imutáveis; toda personalização é uma camada por cima.** A camada identifica o tipo de mudança: item **novo**, **substituição** de um item oficial ou **só texto** (nome ou descrição). Remover a personalização devolve o original. *Fechado (validado) — origem: SWCharGen (DataCustom; AddedItem / CustomItem / DescOnly).*
 - **P18. Identidade estável.** Cada entidade tem um identificador fixo, independente do nome exibido e do livro. Uma versão de outro livro declara explicitamente qual entidade substitui. É o que permite saber que "Goblin revisado" e "Goblin" são a mesma coisa (D4, D8), e é a base do mapa de dependências (P4), da regra de suspender e restaurar (P6) e do log (P8). *Fechado (validado) — origem: SWCharGen (keys únicas e imutáveis).*
 - **P19. Variantes por herança.** Uma versão revisada, um subtipo ou um item da casa herda do original e sobrescreve só os campos que mudam. A comparação entre versões (P2d) mostra exatamente esses campos. *Fechado (validado) — origem: SWCharGen (sub-species com "Override" por campo).*
@@ -216,36 +229,41 @@ Estado de cada princípio: **proposto** (extraído de referência, aguardando va
   - **Nomes curtos que são o conteúdo inteiro da entrada** (ex.: tabelas de profissões) entram só quando outra regra os referencia (ex.: a profissão da família no *Only Human*); os demais são texto e ficam de fora, com a entrada mostrando faixa e página e o jogador digitando o nome (D36).
   - **Tipos de criatura são entidades** (D38), então todos os nomes entram, referenciados ou não. Ex.: a tabela Hated Creature do Anão traz os nomes (Ogres, Troglodytes, Beastmen…), e a escolha fica ligada à entidade, o que permite a regras e efeitos apontarem para ela (ex.: o boon contra a criatura odiada). A regra da D36 vale só para nomes que não são entidades.
   - **Pacotes com texto próprio** (da casa ou de demonstração) podem trazer texto completo; a referência de página só é exigida quando a fonte tem páginas.
+
 ### Navegação (complemento)
- 
+
 - **P24. Resumo vivo sempre visível.** Durante a criação, um painel mostra o estado atual da ficha e se atualiza a cada escolha. Complementa o P10. *Fechado (validado) — origem: SWCharGen (painel de resumo).*
 - **P29. Cada etapa abre com uma pergunta, uma linha de regra e contadores.** Ex.: "Choose your ancestry" + "Your ancestry sets your starting attributes and the tables you roll on" + contadores do que falta ("Languages 0/1"). Os contadores são as pendências do P4, mostradas no ponto da decisão. *Fechado (validado) — origem: Progeny ("Pick your Disciplines" · "2 powers in one discipline · 1 in another" · "CLAN POWERS 0/3").*
 - **P30. Etapas densas se dividem em subdecisões sequenciais quando a regra tem ordem natural.** Ex.: atributos-base → rolar (se permitido) → atributo a aumentar → atributo a diminuir; tabelas encadeadas do *Only Human* uma por vez. Quem conhece pode expandir tudo de uma vez (P9). *Fechado (validado) — origem: Progeny (atributos: mais forte → mais fraco → três médios → o resto automático).*
 - **P31. Opção inelegível por regra aparece esmaecida, com o motivo.** Ex.: magia de rank acima do permitido, path sem pré-requisito. Opção indisponível por fonte segue o P3. O que não pertence à vaga não aparece: na vaga "magia de rank 0 da tradição recém-descoberta", só as magias de rank 0 dessa tradição são listadas. Esmaecer vale para o que pertence à vaga, mas a regra impede (D39). *Fechado (validado) — origem: Progeny (poderes de nível 2 esmaecidos).*
 - **P32. Três zonas na tela, recolhíveis em tela pequena.** Resumo vivo (P24), etapa atual e mapa de etapas (P4). No celular, a etapa ocupa a tela e as outras duas zonas ficam a um toque. *Fechado (validado) — origem: Progeny (resumo à esquerda, etapas à direita, coluna de etapas oculta em tela pequena).*
+
 ### Identidade visual
- 
+
 - **P33. Estrutura limpa, identidade temática nas bordas.** Layout e densidade seguem o D&D Beyond: fundo neutro, conteúdo em cartões e listas expansíveis. O clima do SotDL aparece em cor, tipografia e cabeçalhos de etapa, nunca atrás de conteúdo denso. Cuidado: evitar um meio-termo sem graça. *Fechado (D28).*
+
 ### Idioma
- 
+
 - **P25. Tudo em inglês.** Interface e conteúdo do gerador em inglês, como os livros. Os documentos de design do projeto continuam em português. Vale também para a ficha gerada. *Fechado (D12). Nota: a ficha da Liliana, usada como referência de saída, hoje mistura português e inglês; a ficha gerada sai toda em inglês.*
+
 ### Nota para a versão pública
- 
+
 Decidido para o MVP (D35): o gerador traz a mecânica oficial sem texto, como o P22 define. Um visitante sem os livros percorre o fluxo inteiro, vê de onde vem cada regra e os efeitos de cada resultado; o texto descritivo depende do livro, do modo Write ou de um pacote de textos (P9a). O resultado aceito é o da SCR-09 (Build do Brokk): "No text added for this entry · CORE p.17".
- 
+
 Pendências fora deste documento (projeto de planejamento):
 - A regra do CLAUDE.md que proíbe tabelas dos livros no repositório conflita com a D35 e precisa ser revista.
 - O risco de propriedade intelectual continua: nomes e números tendem a ter menos proteção que texto, mas não há licença de terceiros publicada pela Schwalb (só "All rights reserved"). Caminho intermediário: manter o site restrito à mesa até consultar a Schwalb, e só depois abrir ao público. *[Não verificado: termos de licença da Schwalb para terceiros; nada encontrado em busca de novembro de 2026.]*
+
 Consequências: o P2b não precisa ser generalizado para um "livro-base", porque a mecânica do core está sempre disponível; um pacote de demonstração deixa de ser obrigatório no MVP (o pacote oficial de mecânica já serve de exemplo do formato, P21a) e só volta a fazer sentido se o site for publicado sem nenhum conteúdo oficial.
- 
+
 ## 4. Decisões
- 
+
 ### 4.1 Em aberto
- 
+
 *Nenhuma no momento.*
- 
+
 ### 4.2 Fechadas
- 
+
 | # | Decisão | Escolha | Comentário do Antônio |
 |---|---|---|---|
 | D1 | Escolha manual em tabelas mecânicas | Sim | Presumir que o personagem foi criado do jeito que a mesa joga. Manter um log de criação que registre se cada resultado foi rolado (uma ou n vezes) ou selecionado. Vale para todas as tabelas, inclusive as de rolagem prescrita. Exportação: só a ficha, só o log ou ambos. |
@@ -288,15 +306,15 @@ Consequências: o P2b não precisa ser generalizado para um "livro-base", porque
 | D38 | Nomes de tipos de criatura | Tratar tipos de criatura como entidades: todos os nomes entram no pacote oficial | Exceção à D36, que vale só para nomes que não são entidades. Ex.: tabela Hated Creature do Anão. Ajusta a lista de entidades do P22. |
 | D39 | Escolhas com regra de elegibilidade na geração (ex.: magia) | Opções limitadas ao permitido: o que não pertence à vaga não aparece; o que a regra impede aparece esmaecido, com o motivo (P31); a saída para fora da regra é a concessão do mestre (P23). Magia em subdecisões (P30), na ordem da regra (§1.5): descobrir tradição → magia de rank 0 dela (mais a do Cantrip, no Magician; só rank 0 aparece) → descobrir outra tradição ou aprender magia → ao aprender, oferecer a troca de uma magia já aprendida por outra de rank igual ou menor | Origem: comparação com o Lemonlord, que deixa escolher qualquer magia e só alerta. Não muda o P7, que trata de rolar ou escolher em tabelas. Fora do MVP: entra com a subida de nível (FEAT-030, item 8 dos Should); o SRS só recebe os requisitos quando a FEAT-030 for detalhada. |
 | D40 | Mudança a montante não destrutiva; log só como registro | (1) Toda decisão que deixa de valer fica **suspensa**: sai da ficha e do cálculo, mas continua guardada no personagem; a vaga que a regra ainda exige reabre como pendente. Vale para mudança de escolha a montante, livro ou componente desligado, reordenação de livros, versão nova de pacote sem a entrada, troca da fonte de uma tabela e decisão inelegível pela regra (D39). (2) Quando o contexto volta (a mesma vaga existe de novo), a suspensa é **restaurada** sozinha. (3) O diálogo de impacto continua e lista o que fica suspenso, o que volta, o que se recalcula e o que fica; sem nada suspenso nem restaurado, a mudança se aplica sem diálogo. (4) Substituir o valor de uma decisão na própria vaga (Reroll, Choose → Choose, troca de modo, limpar) não suspende o valor antigo: ele fica só no log; as decisões que dependiam dele ficam suspensas. (5) As suspensas ficam no arquivo do personagem, inclusive na exportação. "Descartar guardadas" fica no construtor, com confirmação, e apaga de vez (Should). (6) O log é só registro e auditoria, com entradas de suspensão e de restauração; não é relido para montar o personagem nem serve para editar. Mudar uma escolha anterior acontece no construtor (revisa a D32). | Revisa a D6 e a D32. Motivos: trocar de ideia não custa trabalho; voltar ao contexto devolve as rolagens originais, em vez de rerrolar de graça; desligar um livro por engano não apaga nada. Contras aceitos: um conceito a mais, o documento do personagem cresce, e suspensas que não vão voltar ficam até o descarte. Termos da interface: "set aside" e "restored" (a ux-foundations pode refinar). Origem: comparação com o Lemonlord. |
- 
+
 ---
- 
+
 ## 5. Referências analisadas
- 
+
 ### 5.1 D&D Beyond — Character Builder (D&D 5e/5.5e)
- 
+
 **O que o Antônio gosta:** interface limpa, navegação fácil entre etapas.
- 
+
 **Destaques observados nos prints:**
 - Abas numeradas (Class, Background, Species, Abilities, Equipment, What's Next) + Settings, todas clicáveis; setas de anterior/próximo.
 - Lista de classes agrupada por conjunto de regras (5.5e Core, 5e Core, Critical Role); a mesma classe aparece duas vezes, uma por versão, cada cartão com o livro de origem.
@@ -305,6 +323,7 @@ Consequências: o P2b não precisa ser generalizado para um "livro-base", porque
 - Atributos: seletor de método de geração; tabela de cálculo com Base, Bonus, Set Score, Stacking Bonus, Other Modifier e Override Score.
 - Equipamento: escolha entre pacote A ou B, ou pular.
 - Nome com sugestões aleatórias.
+
 **Aba Settings ("Character Preferences"):**
 - Configuração por personagem, não por conta; vale para o construtor e para a ficha.
 - Fontes organizadas por categoria, não por livro: Homebrew, 5.5e Core, 5.5e Expanded, D&D Beyond Drops, Blizzard, 5e Core, 5e Expanded, Legacy/Noncore. Cada uma com uma frase de descrição e livros de exemplo.
@@ -313,12 +332,13 @@ Consequências: o P2b não precisa ser generalizado para um "livro-base", porque
 - Aviso: sem nenhuma fonte, não é possível completar o personagem.
 - Rolagem de dados digital na mesma página, mas com escopo diferente (navegador), indicado no texto.
 - Só o topo da página foi visto; o que vem abaixo de Dice Rolling não foi analisado.
+
 ### 5.2 SWCharGen (OggDude) — Star Wars RPG da Fantasy Flight
- 
+
 **O que o Antônio gosta:** liberdade de criação e a possibilidade de o usuário alimentar o banco de dados. **O que não gosta:** a interface.
- 
+
 **Fonte da análise:** documentação em PDF (link enviado), lida por ferramenta de extração em três partes. A parte sobre a janela de Options e a seleção de fontes veio só em resumo.
- 
+
 **Destaques:**
 - Quatro aplicativos: lançador, gerador de personagens, ferramentas do mestre e editor de dados.
 - Dados do jogo em XML; personalizações numa pasta separada (DataCustom), sem tocar nos originais.
@@ -336,34 +356,35 @@ Consequências: o P2b não precisa ser generalizado para um "livro-base", porque
 - Subespécies com caixa "Override" por campo: o que não é marcado herda da espécie principal.
 - Ferimentos registrados em coluna separada do valor-base.
 - Idioma da interface e dos textos como pacotes de tradução em XML.
+
 **Confirma decisões já fechadas:** D6 (dependentes removidos), D8 (precedência, mas aqui implícita; a nossa é explícita), P7 (botão de aleatório por tabela), P11c (estado temporário separado do valor-base), P14a (regras da casa nas configurações).
- 
+
 **Não se aplica:** economia de XP para comprar tudo; aplicativo desktop Windows com arquivos XML; ferramentas de veículos e encontros; a interface densa.
- 
+
 **Princípios extraídos:** P17–P24.
- 
+
 **Não visto nos prints (descrito de memória, [Não verificado]):** comportamento ao trocar uma escolha anterior; métodos exatos de geração de atributos.
- 
+
 **Princípios extraídos:** P1–P4, P9, P11–P16.
- 
+
 ### 5.3 Suplementos do SotDL — *Only Human*, *Oddities, Artifacts, and Esoterica*, *Insupposable Instruments*, *Battle Scars*
- 
+
 **Objetivo:** mostrar como a maior parte dos suplementos funciona e revisar os princípios. Texto completo lido dos PDFs do projeto.
- 
+
 **Resumo:** ver tabela 2.3.
- 
+
 **Confirma:** P19 (Humano revisado herda do core e acrescenta uma opção no nível 4), P14a (regras do *Battle Scars* desligáveis com o conteúdo ligado), D11/união de listas (*Insupposable Instruments*).
- 
+
 **Mudou:** componentes por livro (P2e), estado padrão por componente (P14a, D20), ordem padrão dos livros (P2b), exceção por rolagem (P2f, D21), resultados preservados quando a fonte da tabela muda (P6b), regras que afetam a ficha em jogo (P14a).
- 
+
 **Novo:** padrão 7 e P26 (conteúdo condicional), P14b (regra global com parâmetros por entidade), registro de modificadores no log (P8).
- 
+
 ### 5.4 Progeny — Vampire: The Masquerade 5e
- 
+
 **O que o Antônio gosta:** intuitivo, responsivo, bonito. **Receio:** com o volume de informação do SotDL, a mesma estética ficaria poluída.
- 
+
 **Fonte da análise:** README do repositório, código do frontend (etapas, barra de etapas, layout em tela pequena) e capturas de tela incluídas no repositório. O site não foi navegado.
- 
+
 **Destaques:**
 - Três zonas: resumo do personagem à esquerda, etapa no centro, lista de etapas ("Stages") à direita com marca de concluída e número.
 - Cada etapa: título em forma de pedido ("Pick your Disciplines"), uma linha com a regra e chips de contagem ("CLAN POWERS 0/3").
@@ -375,18 +396,19 @@ Consequências: o P2b não precisa ser generalizado para um "livro-base", porque
 - Exportação para PDF editável, JSON (salvar e carregar) e Foundry VTT.
 - Ficha com rolagem de dados e controle de Health, Willpower e Hunger.
 - Fundos fotográficos escuros atrás do conteúdo.
+
 **Confirma:** P4/D5 (etapas liberadas por dependência; aqui, mais rígido: sequência linear), P14a (escolhas que acrescentam etapas), P24 (resumo vivo), P8a (exportação), D17 (ficha como ferramenta de jogo).
- 
+
 **Não se aplica:** sistema simples, regra única, sem fontes nem suplementos; poucas opções por etapa (o SotDL tem listas longas, como magias por tradição); fundos fotográficos atrás de texto denso prejudicam a leitura; contas e grupos (coteries) fora do escopo.
- 
+
 **Princípios extraídos:** P29–P33.
- 
+
 ---
- 
+
 ## 6. Wireframe v1
- 
+
 Canvas de design com 16 telas em escala de cinza, interface em inglês (P25). Exemplo principal: Liliana, Humana, com Only Human ativo; fluxo do core mostrado com Brokk, Anão.
- 
+
 | Grupo | Telas | Princípios mais visíveis |
 |---|---|---|
 | Configuração | Home; Sources & rules | P2–P2f, P14a/b, P15, P21, P27, P9 |
@@ -394,11 +416,11 @@ Canvas de design com 16 telas em escala de cinza, interface em inglês (P25). Ex
 | Fluxo do core (Brokk) | Story tables; Professions & languages; Wealth & equipment | regimes rolar/escolher/inventar, P9 (entrada sem texto), P23, P30 |
 | Subida de nível | Level 3 expert path; Magic | P13b, P31, P11 (Castings), P34 (magia sombria) |
 | Jogo | Play sheet; Log & export; Mobile builder | P11c, P12, P13, P13c, P28, P34, P8/P8a, P32 |
- 
+
 **Escolhas feitas ao desenhar** (revisar se algo não bater com a intenção):
 - Com o Only Human ativo, a etapa **Development** substitui Profissões, Riqueza e as tabelas de história do core para Humanos (o livro diz que as tabelas substituem as do core e as profissões e riqueza aleatórias). A lista de etapas avisa disso.
 - O cenário assume um pacote de textos importado pelo usuário; entradas sem texto mostram a referência de página e o botão "Add text" (P9).
 - Hated Creature do Anão aparece na etapa de história, como subdecisão da ancestralidade.
 - Rolagens desfeitas por mudança a montante continuam no log, marcadas como desfeitas. *(Revisto pela D40: ficam suspensas, no personagem e no log, e voltam com o contexto.)*
+
 **Não verificado no wireframe:** a ordem do d6 de tipos de profissão (Academic, Common, Criminal, Martial, Religious, Wilderness); páginas exatas das regras de magia sombria e dos expert paths (aparecem como "ch."); efeitos de magias e do Lifestyle, mostrados como placeholders.
- 
