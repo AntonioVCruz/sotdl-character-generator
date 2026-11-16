@@ -83,6 +83,16 @@
             "state": "builder-frame-focus",
             "strategy": "code-native",
             "source": "features/FEAT-001-home/ui-design.md#builder-frame-focus"
+          },
+          {
+            "state": "decide-now-tables",
+            "strategy": "code-native",
+            "source": "features/FEAT-009-decide-a-table/ui-design.md#decide-now-tables"
+          },
+          {
+            "state": "dependents-blocked-tables",
+            "strategy": "code-native",
+            "source": "features/FEAT-009-decide-a-table/ui-design.md#dependents-blocked-tables"
           }
         ]
       },
@@ -93,14 +103,17 @@
         "engine.CharacterView: steps, slots, openDecisions, summary (technical-design §3.3)",
         "engine.preview (technical-design §3.3)",
         "engine.ancestryDetail (technical-design §3.3)",
-        "ui routes #/characters/:id/:step?slot= (technical-design §3.4)"
+        "ui routes #/characters/:id/:step?slot= (technical-design §3.4)",
+        "engine.SlotView kind table concedida pela ancestralidade em outra etapa: stepId, decided (FEAT-009 technical-design §3.3)",
+        "app.session.decide → has-dependents com vagas table (FEAT-009 technical-design §3.2, AC-11)"
       ],
       "conformance": {
         "result": "pass",
         "corrections": [
           "Re-verificado em 2026-11-12 contra o design.md emendado (E1–E4): step-map bloqueado sem tooltip; option-card current distinto da seleção; ícones Lucide; tokens size.pill, opacity.disabled, border-width.alert, typography.stat-sm, size.icon-sm/md, icon.stroke; button-primary com padding --space-4; About no rodapé da página",
           "Re-verificado em 2026-11-14 contra o design.md emendado (E7, a4693d2; 46c1168): \"Try again\" do save-failed segue o loading do isPending, sem mudança de texto; nenhum componente nem token muda",
-          "Emenda de 2026-11-14 (d8020bc, d3f1925): save-failed, foco depois da nova tentativa; no sucesso, vai para o h1 da etapa só se estava no alerta, senão fica onde a pessoa o pôs (C2, DEF-008); na falha, fica em \"Try again\"; sem texto, token nem componente novo"
+          "Emenda de 2026-11-14 (d8020bc, d3f1925): save-failed, foco depois da nova tentativa; no sucesso, vai para o h1 da etapa só se estava no alerta, senão fica onde a pessoa o pôs (C2, DEF-008); na falha, fica em \"Try again\"; sem texto, token nem componente novo",
+          "FEAT-009 (2026-11-16): Decide now com as vagas table agrupadas numa linha por etapa; mensagem de has-dependents com \"result\" para resultados de tabela; sem token nem componente novo"
         ],
         "escalations": []
       },
@@ -149,6 +162,64 @@
       },
       "status": "designed",
       "designed_at": "2026-11-12"
+    },
+    "SCR-WEB-009": {
+      "name": "Builder · 3 Story",
+      "surface": "WEB",
+      "feature": "FEAT-009",
+      "strategy": "code-native",
+      "source": {
+        "tool": null,
+        "locator": "features/FEAT-009-decide-a-table/ui-design.md#scr-web-009--story-step"
+      },
+      "states": {
+        "covered": [
+          "to-decide",
+          "entering",
+          "rolled",
+          "entered",
+          "chosen",
+          "no-text",
+          "effect-open",
+          "effect-decided",
+          "decided-locked",
+          "dependents-blocked",
+          "save-failed",
+          "loading",
+          "error"
+        ],
+        "gaps": [
+          "written (Write, FEAT-010)",
+          "waiting (FEAT-010)",
+          "with-subdecision de resultado (FEAT-010)",
+          "reroll e troca de modo com impacto (FEAT-011)"
+        ],
+        "supplements": []
+      },
+      "contract_bindings": [
+        "app.session.roll(key) → DecideResult (technical-design §3.2)",
+        "app.session.enter(key, sum) → DecideResult com out-of-range e range (technical-design §3.2)",
+        "app.session.decide(key, entry) em vaga table, com has-dependents (technical-design §3.2)",
+        "app.session.retrySave (FEAT-007 technical-design §3.2)",
+        "engine.SlotView table: TableView (name, dice, regime, provenance, modes, enterRange, entries), value, result: TableResult (technical-design §3.3)",
+        "engine.SlotView roll-effect: dice, enterRange, target, result: DiceResult (technical-design §3.3)",
+        "engine.EntryView: key, range, provenance, entity, effects: EffectView (technical-design §3.3)",
+        "engine.OpenDecision.table (technical-design §3.3)",
+        "engine.Stage define e sum com ResultOrigin; AttributeSummary.pendingOn (technical-design §3.3)",
+        "ui routes #/characters/:id/:step?slot= e slotElementId (FEAT-007 technical-design §3.4)"
+      ],
+      "conformance": {
+        "result": "escalation-pending",
+        "corrections": [
+          "Caixa de valor (--size-roll-value, E8): valor stat-lg com altura de linha --font-size-4xl em vez de 1.2 para caber com o rótulo caption e padding --space-1-5 (medido: 57,4 de 58 px); sem token novo"
+        ],
+        "escalations": [
+          "E10: range-grid sem o campo \"Name\" nas tabelas de história (design.md §4 range-grid; ux-foundations F2); tratamento provisório: grade sem o campo",
+          "E11: ux-foundations A5.1 alinhado ao SRS (FR-DEC-001, 002, 003, 004); a tela não muda"
+        ]
+      },
+      "status": "escalation-pending",
+      "designed_at": "2026-11-16"
     },
     "SCR-WEB-016": {
       "name": "Builder · layout de celular",
