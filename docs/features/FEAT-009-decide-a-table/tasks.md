@@ -31,7 +31,7 @@ Todo "pronto quando" inclui `npm run typecheck`, `npm run lint` e os testes exis
     - `FR-DEC-024`, `FR-DEC-005`, `FR-DEC-019`: documento com decisão `chosen` com entrada, `rolled` e `entered` nos formatos da D3 (tabela e `roll-effect`) aceito; com campo a mais recusado;
     - `FR-LOG-001`: documento com uma `LogEntry` de cada modo aceito; com campo a mais recusado; `log: []` continua válido.
 
-- [ ] **T3. Motor: vagas `table` e `roll-effect`, resultado, modos e pendências** (design §3.3, "Vaga `table`"; FR-DEC-001, 002, 004, 007, 008, 012, 016 parcial, FR-STEP-014, FR-CONT-016 e FR-SRC-009 (AC-17, iii, iv e v); D2, D3, D5, D6, D7; D40)
+- [x] **T3. Motor: vagas `table` e `roll-effect`, resultado, modos e pendências** (design §3.3, "Vaga `table`"; FR-DEC-001, 002, 004, 007, 008, 012, 016 parcial, FR-STEP-014, FR-CONT-016 e FR-SRC-009 (AC-17, iii, iv e v); D2, D3, D5, D6, D7; D40)
   - Em `src/engine/evaluate.ts`:
     - a concessão `table` na árvore, com `TableView`, `EntryView`, `modes` e `range`;
     - `range` e `enterRange` (D4); `entries` na ordem do início da faixa;

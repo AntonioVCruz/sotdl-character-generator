@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } 
 import { Check } from 'lucide-react'
 import { Button, Label, Radio, RadioGroup } from 'react-aria-components'
 import type { CharacterSession, Snapshot } from '../../app'
-import { ancestryDetail, formatNumber, preview, type CharacterView, type SlotView } from '../../engine'
+import { ancestryDetail, formatNumber, preview, toOpenDecision, type CharacterView, type SlotView } from '../../engine'
 import { href } from '../router'
 import { decisionTitle, formatValue, hasDependentsMessage, lockReason, slotElementId, statusLabel } from './copy'
 import { InlineAlert } from '../parts'
@@ -57,7 +57,7 @@ export function AncestryStep({ session, snapshot, slot, nameOf }: {
     if (!result.ok && result.reason === 'has-dependents') {
       const titles = result.dependents.map((key) => {
         const dependent = snapshot.view.slots.find((candidate) => candidate.key === key)
-        return dependent ? decisionTitle({ kind: dependent.kind, target: 'target' in dependent ? dependent.target : undefined }, nameOf) : ''
+        return dependent ? decisionTitle(toOpenDecision(dependent), nameOf) : ''
       })
       onNotice(hasDependentsMessage(nameOf(id), current ? nameOf(current) : '', titles))
       clearPreview()
@@ -296,7 +296,7 @@ function DecideNow({ snapshot, session, ancestryId, nameOf }: {
         return (
           <div key={slot.key} className="decide-now__elsewhere">
             <p className="typography-label">
-              {decisionTitle({ kind: slot.kind, target: 'target' in slot ? slot.target : undefined }, nameOf)}
+              {decisionTitle(toOpenDecision(slot), nameOf)}
             </p>
             <p className="typography-meta">
               {`Chosen in ${step.name}. `}

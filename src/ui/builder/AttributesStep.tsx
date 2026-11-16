@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Button, Label, Radio, RadioGroup } from 'react-aria-components'
 import type { CharacterSession, Snapshot } from '../../app'
-import { preview, type SlotView } from '../../engine'
+import { preview, toOpenDecision, type SlotView } from '../../engine'
 import { PreviewBox } from './AncestryStep'
 import { decisionTitle, formatModifier, formatValue, formulaLine, slotElementId } from './copy'
 import { Composition } from './LiveSummary'
@@ -24,7 +24,7 @@ export function AttributesStep({ session, snapshot, slot, nameOf }: {
   const increases = view.slots.filter((candidate) => candidate.stepId === slot.stepId && candidate.kind === 'attribute-increase' && !candidate.decided)
   const pendingTitle = (key: string) => {
     const pending = view.slots.find((candidate) => candidate.key === key)
-    return pending ? decisionTitle({ kind: pending.kind, target: 'target' in pending ? pending.target : undefined }, nameOf) : ''
+    return pending ? decisionTitle(toOpenDecision(pending), nameOf) : ''
   }
 
   return (

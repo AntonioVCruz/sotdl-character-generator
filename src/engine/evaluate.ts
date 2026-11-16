@@ -1,7 +1,22 @@
-import type { AncestryItem, AttributeShift, CharacterDocument, DecisionValue, Formula, GrantedSlot, Regime, SlotDef } from '../content'
+import type {
+  AncestryItem,
+  AttributeShift,
+  CharacterDocument,
+  Decision,
+  DecisionValue,
+  Dice,
+  EntryKey,
+  Formula,
+  GrantedSlot,
+  Regime,
+  SheetField,
+  SlotDef,
+  TableItem,
+  TableRegime,
+} from '../content'
 import { evaluateFormula, evaluateFormulas, formatFormula, type Finish, type Value } from './formula'
 import { differsFromDefault, mechanics } from './mechanics'
-import { isKind, type Provenance, type Rules } from './resolve'
+import { isKind, type Provenance, type Resolved, type Rules } from './resolve'
 
 // Visão do personagem (ADR-004 §3; technical-design §3.3 `CharacterView`): função pura das regras e das decisões.
 
@@ -46,13 +61,63 @@ interface SlotBase {
   source: SlotSource | null
 }
 
+export interface NamedRef {
+  id: string
+  name: string
+}
+
+/** Efeito de uma entrada (FEAT-009 §3.3): quantia fixa, ou dado decidido na vaga `roll-effect` de chave `slot`. */
+export type EffectView =
+  | { id: string; target: NamedRef; op: 'add' | 'set'; amount: number }
+  | { id: string; target: NamedRef; op: 'add'; dice: Dice; slot: string }
+
+export interface EntryView {
+  key: EntryKey
+  range: [number, number]
+  /** A página da entrada, ou a da tabela (FR-DEC-008, 012). */
+  provenance: Provenance
+  entity?: NamedRef
+  effects: EffectView[]
+}
+
+export type TableMode = 'roll' | 'choose' | 'enter'
+
+export interface TableView {
+  id: string
+  name: string
+  provenance: Provenance
+  dice: Dice
+  /** Do total: `count + modifier` a `count × sides + modifier`. */
+  range: [number, number]
+  /** Do Enter result: a soma que os dados mostram, `count` a `count × sides` (D4). */
+  enterRange: [number, number]
+  regime: TableRegime
+  field?: SheetField
+  /** Roll e Choose sempre; Enter result também no regime `roll` (D6; FR-DEC-001, 004). */
+  modes: TableMode[]
+  /** Na ordem do início da faixa, nunca na das chaves do objeto (§3.1). */
+  entries: EntryView[]
+}
+
+/** O que foi gravado (D3): faces ou soma, modificador, total e entrada nunca são recalculados pelo dado atual. */
+export type TableResult =
+  | { mode: 'rolled'; entry: EntryKey; faces: number[]; modifier: number; total: number; rolls: number }
+  | { mode: 'entered'; entry: EntryKey; sum: number; modifier: number; total: number }
+  | { mode: 'chosen'; entry: EntryKey }
+
+export type DiceResult =
+  | { mode: 'rolled'; faces: number[]; modifier: number; total: number }
+  | { mode: 'entered'; sum: number; modifier: number; total: number }
+
 export type SlotView =
   | (SlotBase & { kind: 'choose-entity'; options: EntityOption[] } & Omit<Extract<SlotDef, { kind: 'choose-entity' }>, 'kind'>)
-  // A concessão `table` ganha vaga própria na FEAT-009 (T3).
   | (SlotBase & { grant: string } & Exclude<GrantedSlot, { kind: 'table' }>)
   // Ajuste de scores (FEAT-008 §3.3): as opções são os atributos vigentes.
   | (Omit<SlotBase, 'value'> &
       Extract<SlotDef, { kind: 'attribute-shift' }> & { options: { id: string; name: string }[]; value?: AttributeShift })
+  // FEAT-009 §3.3: a tabela concedida e o efeito com dado da entrada vigente (D7).
+  | (SlotBase & { kind: 'table'; grant: string; table: TableView; value?: EntryKey; result?: TableResult })
+  | (SlotBase & { kind: 'roll-effect'; dice: Dice; enterRange: [number, number]; target: NamedRef; result?: DiceResult })
 
 export type SlotKind = SlotView['kind']
 
@@ -62,6 +127,23 @@ export interface OpenDecision {
   stepId: string
   source: SlotSource | null
   target?: string
+  /** Na vaga `table`, para o rótulo ("Dwarf Age"). */
+  table?: NamedRef
+  /** Na vaga `roll-effect`, com `target`, para o rótulo ("Insanity 1d6"). */
+  dice?: Dice
+}
+
+/** A vaga na forma de pendência: o que o rótulo dela precisa (FR-FLOW-010). */
+export function toOpenDecision(slot: SlotView): OpenDecision {
+  return {
+    key: slot.key,
+    kind: slot.kind,
+    stepId: slot.stepId,
+    source: slot.source,
+    ...(slot.kind === 'choose-value' && { target: slot.target }),
+    ...(slot.kind === 'table' && { table: { id: slot.table.id, name: slot.table.name } }),
+    ...(slot.kind === 'roll-effect' && { target: slot.target.id, dice: slot.dice }),
+  }
 }
 
 /**
@@ -173,15 +255,7 @@ export function evaluate(rules: Rules, character: CharacterDocument): CharacterV
   const stepIndex = new Map(steps.map((step) => [step.id, step.index]))
   const openDecisions = required
     .filter((slot) => !slot.decided)
-    .map(
-      (slot): OpenDecision => ({
-        key: slot.key,
-        kind: slot.kind,
-        stepId: slot.stepId,
-        source: slot.source,
-        ...(slot.kind === 'choose-value' && { target: slot.target }),
-      }),
-    )
+    .map(toOpenDecision)
     .sort((a, b) => stepIndex.get(a.stepId)! - stepIndex.get(b.stepId)!)
 
   const summary = summarize(
@@ -240,7 +314,7 @@ function slotTree(rules: Rules, character: CharacterDocument): SlotView[] {
 
       const entity = rules.items.get(value)
       if (!entity || !isKind(entity, 'ancestry')) continue
-      slots.push(...grantedSlots(key, entity, character))
+      slots.push(...grantedSlots(rules, key, entity, character))
     }
   }
   return slots
@@ -261,15 +335,114 @@ function shiftSlot(
   return { key, stepId, source: null, decided, ...(decided && { value }), ...def, options }
 }
 
-function grantedSlots(parent: string, entity: AncestryItem, character: CharacterDocument): SlotView[] {
+function grantedSlots(rules: Rules, parent: string, entity: AncestryItem, character: CharacterDocument): SlotView[] {
   return Object.entries(entity.grants ?? {}).flatMap(([grant, def]): SlotView[] => {
-    if (def.kind === 'table') return []
     const key = childKey(parent, entity.id, grant)
+    if (def.kind === 'table') {
+      const table = rules.items.get(def.table)
+      if (!table || !isKind(table, 'table')) return []
+      const source = { id: entity.id, name: entity.name }
+      return tableSlots(rules, { key, stepId: def.step, source, grant }, table as Resolved<TableItem>, character)
+    }
     const value = chosenValue(character, key)
     // `attribute-increase` e `language-or-profession` não têm resolvedor até a FEAT-016 (D9).
     const decided = def.kind === 'choose-value' && typeof value === 'number' && def.options.includes(value)
     return [{ key, stepId: def.step, source: { id: entity.id, name: entity.name }, decided, ...(decided && { value }), grant, ...def }]
   })
+}
+
+const span = (dice: Dice, modifier = 0): [number, number] => [dice.count + modifier, dice.count * dice.sides + modifier]
+
+/** A tabela como a vaga a mostra (FEAT-009 §3.3), com as chaves das vagas `roll-effect` sob a vaga `key`. */
+function tableView(rules: Rules, table: Resolved<TableItem>, key: string): TableView {
+  const nameOf = nameIn(rules)
+  const named = (id: string) => ({ id, name: nameOf(id) })
+  const entries = Object.entries(table.entries)
+    .map(([entryKey, entry]): EntryView => {
+      const [start, end = start] = entryKey.split('-').map(Number)
+      const effects = Object.entries(entry.effects ?? {}).map(([id, effect]): EffectView => {
+        const target = named(effect.target)
+        if ('set' in effect) return { id, target, op: 'set', amount: effect.set }
+        if (typeof effect.add === 'number') return { id, target, op: 'add', amount: effect.add }
+        return { id, target, op: 'add', dice: effect.add.dice, slot: childKey(key, entryKey, id) }
+      })
+      return {
+        key: entryKey,
+        range: [start, end],
+        provenance: { ...table.provenance, page: entry.page ?? table.page },
+        ...(entry.entity !== undefined && { entity: named(entry.entity) }),
+        effects,
+      }
+    })
+    .sort((a, b) => a.range[0] - b.range[0])
+  return {
+    id: table.id,
+    name: table.name,
+    provenance: table.provenance,
+    dice: table.dice,
+    range: span(table.dice, table.dice.modifier),
+    enterRange: span(table.dice),
+    regime: table.regime,
+    ...(table.field !== undefined && { field: table.field }),
+    modes: table.regime === 'roll' ? ['roll', 'choose', 'enter'] : ['roll', 'choose'],
+    entries,
+  }
+}
+
+/**
+ * Validade na leitura (D3): a decisão vale se (a) `book` é o livro da versão vigente da tabela e (b) a entrada gravada
+ * existe nela. Senão é ignorada, mas continua no documento (suspensa, D40), e volta a valer com (a) e (b).
+ */
+function tableResult(decision: Decision | undefined, table: TableView): TableResult | undefined {
+  if (!decision || decision.book !== table.provenance.book) return undefined
+  const entry = decision.mode === 'chosen' ? decision.value : decision.entry
+  if (typeof entry !== 'string' || !table.entries.some((candidate) => candidate.key === entry)) return undefined
+  switch (decision.mode) {
+    case 'chosen':
+      return { mode: 'chosen', entry }
+    case 'rolled':
+      return { mode: 'rolled', entry, faces: decision.dice, modifier: decision.modifier, total: decision.total, rolls: decision.rolls ?? 1 }
+    case 'entered':
+      return { mode: 'entered', entry, sum: decision.sum, modifier: decision.modifier, total: decision.total }
+  }
+}
+
+/** A vaga `roll-effect` vale com os valores gravados enquanto existir (D7). */
+function diceResult(decision: Decision | undefined): DiceResult | undefined {
+  if (decision?.mode === 'rolled') return { mode: 'rolled', faces: decision.dice, modifier: decision.modifier, total: decision.total }
+  if (decision?.mode === 'entered') return { mode: 'entered', sum: decision.sum, modifier: decision.modifier, total: decision.total }
+  return undefined
+}
+
+/** A vaga `table` e, com a decisão válida, uma vaga `roll-effect` por efeito com dado da entrada vigente. */
+function tableSlots(
+  rules: Rules,
+  base: { key: string; stepId: string; source: SlotSource; grant: string },
+  table: Resolved<TableItem>,
+  character: CharacterDocument,
+): SlotView[] {
+  const view = tableView(rules, table, base.key)
+  const result = tableResult(character.decisions[base.key], view)
+  const slot: SlotView = { ...base, kind: 'table', table: view, decided: result !== undefined, ...(result && { value: result.entry, result }) }
+  const entry = result && view.entries.find((candidate) => candidate.key === result.entry)
+  const effects = (entry?.effects ?? []).flatMap((effect): SlotView[] => {
+    if (!('dice' in effect)) return []
+    const decided = diceResult(character.decisions[effect.slot])
+    return [
+      {
+        key: effect.slot,
+        stepId: base.stepId,
+        source: { id: table.id, name: table.name },
+        kind: 'roll-effect',
+        dice: effect.dice,
+        enterRange: span(effect.dice),
+        target: effect.target,
+        decided: decided !== undefined,
+        ...(decided && { result: decided }),
+      },
+    ]
+  })
+  return [slot, ...effects]
 }
 
 type GrantValue = (grant: string) => { key?: string; value: Value }
@@ -402,7 +575,10 @@ export function preview(
   value: DecisionValue,
 ): { view: CharacterView; changes: Changes } {
   const before = evaluate(rules, character)
-  const view = evaluate(rules, { ...character, decisions: { ...character.decisions, [key]: { mode: 'chosen', value } } })
+  // Numa vaga `table`, a escolha leva o livro da versão vigente, como a gravaria o comando (D3).
+  const slot = before.slots.find((candidate) => candidate.key === key)
+  const book = slot?.kind === 'table' ? { book: slot.table.provenance.book } : {}
+  const view = evaluate(rules, { ...character, decisions: { ...character.decisions, [key]: { mode: 'chosen', value, ...book } } })
   const diff = <T extends { id: string; name: string }, V>(from: T[], to: T[], pick: (item: T) => V) =>
     to.flatMap((item, index) => {
       const old = pick(from[index])

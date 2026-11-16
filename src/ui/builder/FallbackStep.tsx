@@ -1,4 +1,4 @@
-import type { SlotView, StepView } from '../../engine'
+import { toOpenDecision, type SlotView, type StepView } from '../../engine'
 import { decisionTitle, slotElementId } from './copy'
 
 /**
@@ -14,7 +14,7 @@ export function FallbackStep({ step, slots, nameOf }: { step: StepView; slots: S
       {pending.map((slot) => (
         <li key={slot.key} id={slotElementId(slot.key)} tabIndex={-1} className="subdecision">
           <p className="typography-label">
-            {decisionTitle({ kind: slot.kind, target: 'target' in slot ? slot.target : undefined }, nameOf)}
+            {decisionTitle(toOpenDecision(slot), nameOf)}
           </p>
           {/* Texto provisório (ui-design §Textos): sai quando a etapa ganhar tela própria. */}
           <p className="typography-meta">You can&apos;t make this choice here yet. It stays in Open decisions.</p>

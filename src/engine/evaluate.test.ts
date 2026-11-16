@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import type { Book, CharacterDocument, DecisionValue } from '../content'
-import { evaluate, preview, resolve } from '.'
+import type { Book, CharacterDocument, Decision, DecisionValue } from '../content'
+import { evaluate, preview, resolve, type Resolved, type Rules, type SlotView } from '.'
 
 // Pacote fictício: três etapas, uma ancestralidade com concessões (como o Human) e uma sem (como o Dwarf).
 const book: Book = {
@@ -389,5 +389,259 @@ describe('evaluate: calculation order, limits and composition', () => {
         expect(total).toBe(composition.reduce((sum, stage) => sum + stage.value!, 0))
       }
     }
+  })
+})
+
+// Pacote fictício com tabelas (FEAT-009): a ancestralidade concede três tabelas numa etapa sem vaga raiz, uma de cada
+// regime. A "Past" tem as chaves em ordem de objeto diferente da ordem das faixas, uma entrada com página própria e
+// efeitos, e uma entrada com efeito de dado.
+const pastEntries = (): Record<string, object> => ({
+  '3': { page: 8, effects: { taint: { target: 'characteristic:taint', add: 1 } } },
+  '4': {},
+  '5-6': {},
+  '7-16': {},
+  '17': { effects: { madness: { target: 'characteristic:madness', add: { dice: { count: 1, sides: 6 } } } } },
+  '18': {},
+})
+const tableBook = (past = pastEntries()): Book => ({
+  ...book,
+  components: [
+    {
+      id: 'base',
+      type: 'adds',
+      default: 'on',
+      items: [
+        { id: 'procedure:test', steps: ['step:origin', 'step:story'] },
+        { id: 'step:origin', name: 'Origin', page: 1, slots: { ancestry: { kind: 'choose-entity', of: 'ancestry' } } },
+        { id: 'step:story', name: 'Story', page: 2, regime: 'roll-or-choose', requires: ['step:origin'] },
+        { id: 'attribute:might', name: 'Might', page: 3, modifier: { add: [{ ref: 'self' }, -10] } },
+        { id: 'attribute:will', name: 'Will', page: 3, modifier: { add: [{ ref: 'self' }, -10] } },
+        { id: 'characteristic:vigor', name: 'Vigor', page: 3, formula: { add: [{ ref: 'attribute:might' }, 2] } },
+        { id: 'characteristic:taint', name: 'Taint', page: 3, formula: 0 },
+        { id: 'characteristic:madness', name: 'Madness', page: 3, formula: 0, limits: { max: { ref: 'attribute:will' } } },
+        { id: 'creature-type:wolf', name: 'Wolves', page: 7 },
+        { id: 'creature-type:bear', name: 'Bears', page: 7 },
+        {
+          id: 'table:gnome-foe',
+          name: 'Gnome Foe',
+          page: 7,
+          dice: { count: 1, sides: 20 },
+          regime: 'choice',
+          entries: { '11-20': { entity: 'creature-type:bear' }, '1-10': { entity: 'creature-type:wolf' } },
+        },
+        { id: 'table:gnome-past', name: 'Gnome Past', page: 7, dice: { count: 3, sides: 6 }, regime: 'roll-or-choose', field: 'background', entries: past },
+        { id: 'table:gnome-fate', name: 'Gnome Fate', page: 7, dice: { count: 1, sides: 6, modifier: 1 }, regime: 'roll', entries: { '2-4': {}, '5-7': {} } },
+        {
+          id: 'ancestry:gnome',
+          name: 'Gnome',
+          page: 5,
+          attributes: { 'attribute:might': 8, 'attribute:will': 10 },
+          grants: {
+            foe: { kind: 'table', step: 'step:story', table: 'table:gnome-foe' },
+            past: { kind: 'table', step: 'step:story', table: 'table:gnome-past' },
+            fate: { kind: 'table', step: 'step:story', table: 'table:gnome-fate' },
+          },
+        },
+        { id: 'ancestry:troll', name: 'Troll', page: 6, attributes: { 'attribute:might': 12, 'attribute:will': 9 } },
+      ],
+    },
+  ],
+})
+const tableRules = resolve([tableBook()], ['test.book'])
+const FOE = 'ancestry=gnome/foe'
+const PAST = 'ancestry=gnome/past'
+const FATE = 'ancestry=gnome/fate'
+const MADNESS = 'ancestry=gnome/past=17/madness'
+const BOOK = 'test.book'
+
+function tabled(decisions: Record<string, Decision> = {}): CharacterDocument {
+  return { ...character(), decisions: { ancestry: { mode: 'chosen', value: 'ancestry:gnome' }, ...decisions } }
+}
+const slotAt = (view: ReturnType<typeof evaluate>, key: string) => view.slots.find((slot) => slot.key === key)
+const tableAt = (view: ReturnType<typeof evaluate>, key: string) => slotAt(view, key) as Extract<SlotView, { kind: 'table' }>
+const rolled = (entry: string, dice = [3, 5, 2], modifier = 0): Decision => ({
+  mode: 'rolled',
+  dice,
+  modifier,
+  total: dice.reduce((sum, face) => sum + face, modifier),
+  entry,
+  rolls: 1,
+  book: BOOK,
+})
+const chosen = (entry: string): Decision => ({ mode: 'chosen', value: entry, book: BOOK })
+
+/** A versão vigente da tabela vinda de outro livro, como o `resolve` a dará com `replaces` num livro acima (FEAT-005). */
+function replacedBy(rules: Rules, tableId: string, bookId: string): Rules {
+  const items = new Map(rules.items)
+  const table = items.get(tableId)!
+  items.set(tableId, { ...table, provenance: { ...table.provenance, book: bookId, abbr: 'TS' } } as Resolved)
+  return { ...rules, items }
+}
+
+describe('evaluate: table slots', () => {
+  it('FR-DEC-001, FR-DEC-002, FR-DEC-004: every table offers roll and choose, enter only with regime roll; the regime is in the view', () => {
+    const view = evaluate(tableRules, tabled())
+    expect(tableAt(view, FOE).table).toMatchObject({ regime: 'choice', modes: ['roll', 'choose'] })
+    expect(tableAt(view, PAST).table).toMatchObject({ regime: 'roll-or-choose', modes: ['roll', 'choose'] })
+    expect(tableAt(view, FATE).table).toMatchObject({ regime: 'roll', modes: ['roll', 'choose', 'enter'] })
+  })
+
+  it('FR-DEC-001: the table view has name, dice, provenance, field, the range of the total and the range of Enter result', () => {
+    const view = evaluate(tableRules, tabled())
+    expect(tableAt(view, PAST)).toMatchObject({
+      kind: 'table',
+      stepId: 'step:story',
+      source: { id: 'ancestry:gnome', name: 'Gnome' },
+      decided: false,
+      table: {
+        id: 'table:gnome-past',
+        name: 'Gnome Past',
+        provenance: { book: BOOK, abbr: 'TB', page: 7, type: 'core' },
+        dice: { count: 3, sides: 6 },
+        range: [3, 18],
+        enterRange: [3, 18],
+        field: 'background',
+      },
+    })
+    // d6+1: o total vai de 2 a 7; o Enter result, de 1 a 6 (D4).
+    expect(tableAt(view, FATE).table).toMatchObject({ range: [2, 7], enterRange: [1, 6] })
+  })
+
+  it('FR-DEC-008, FR-DEC-012: every entry has its range and page, and the entity when there is one, in the order of the range start', () => {
+    const view = evaluate(tableRules, tabled())
+    const past = tableAt(view, PAST).table.entries
+    expect(past.map((entry) => [entry.key, entry.range, entry.provenance.page])).toEqual([
+      ['3', [3, 3], 8],
+      ['4', [4, 4], 7],
+      ['5-6', [5, 6], 7],
+      ['7-16', [7, 16], 7],
+      ['17', [17, 17], 7],
+      ['18', [18, 18], 7],
+    ])
+    expect(past[0].effects).toEqual([{ id: 'taint', target: { id: 'characteristic:taint', name: 'Taint' }, op: 'add', amount: 1 }])
+    expect(past[4].effects).toEqual([
+      { id: 'madness', target: { id: 'characteristic:madness', name: 'Madness' }, op: 'add', dice: { count: 1, sides: 6 }, slot: MADNESS },
+    ])
+    expect(tableAt(view, FOE).table.entries.map((entry) => [entry.key, entry.range, entry.entity])).toEqual([
+      ['1-10', [1, 10], { id: 'creature-type:wolf', name: 'Wolves' }],
+      ['11-20', [11, 20], { id: 'creature-type:bear', name: 'Bears' }],
+    ])
+  })
+
+  it('FR-DEC-007, FR-DEC-016: a rolled table shows the recorded faces, modifier, total, entry and rolls', () => {
+    const view = evaluate(tableRules, tabled({ [PAST]: rolled('7-16') }))
+    expect(tableAt(view, PAST)).toMatchObject({
+      decided: true,
+      value: '7-16',
+      result: { mode: 'rolled', entry: '7-16', faces: [3, 5, 2], modifier: 0, total: 10, rolls: 1 },
+    })
+    const entered = evaluate(tableRules, tabled({ [FATE]: { mode: 'entered', sum: 3, modifier: 1, total: 4, entry: '2-4', book: BOOK } }))
+    expect(tableAt(entered, FATE).result).toEqual({ mode: 'entered', entry: '2-4', sum: 3, modifier: 1, total: 4 })
+  })
+
+  it('FR-DEC-024: a chosen table has the entry and no faces; a decision without book or entry, or with an unknown key, is ignored', () => {
+    const view = evaluate(tableRules, tabled({ [PAST]: chosen('5-6') }))
+    expect(tableAt(view, PAST)).toMatchObject({ decided: true, value: '5-6', result: { mode: 'chosen', entry: '5-6' } })
+    expect(tableAt(view, PAST).result).not.toHaveProperty('faces')
+
+    const ignored: Decision[] = [
+      { mode: 'chosen', value: '5-6' },
+      { mode: 'rolled', dice: [3, 5, 2], modifier: 0, total: 10, rolls: 1, book: BOOK },
+      { mode: 'entered', sum: 10, modifier: 0, total: 10, book: BOOK },
+      chosen('5-7'),
+      rolled('7-15'),
+    ]
+    for (const decision of ignored) {
+      const reopened = evaluate(tableRules, tabled({ [PAST]: decision }))
+      const slot = tableAt(reopened, PAST)
+      expect(slot.decided).toBe(false)
+      expect(slot).not.toHaveProperty('value')
+      expect(slot).not.toHaveProperty('result')
+      expect(reopened.openDecisions.map((decision) => decision.key)).toContain(PAST)
+    }
+  })
+
+  it('FR-CONT-016, FR-SRC-009: a version without the recorded entry, or a higher book that replaces the table, reopens the slot; going back restores the same decision without writing anything (AC-17 iii, iv, v)', () => {
+    const document = tabled({ [PAST]: rolled('7-16'), [FOE]: chosen('1-10') })
+    const before = JSON.stringify(document)
+    const recorded = { mode: 'rolled', entry: '7-16', faces: [3, 5, 2], modifier: 0, total: 10, rolls: 1 }
+    expect(tableAt(evaluate(tableRules, document), PAST)).toMatchObject({ decided: true, result: recorded })
+
+    // (iii) Errata do mesmo livro que divide a faixa 7-16: a entrada gravada deixa de existir.
+    const split = pastEntries()
+    delete split['7-16']
+    const errata = resolve([tableBook({ ...split, '7-10': {}, '11-16': {} })], ['test.book'])
+    const withoutEntry = evaluate(errata, document)
+    expect(tableAt(withoutEntry, PAST)).toMatchObject({ decided: false })
+    expect(withoutEntry.openDecisions.map((decision) => decision.key)).toEqual([PAST, FATE])
+
+    // (iv) A versão vigente da tabela vem de outro livro: a regra (a) falha.
+    const replaced = evaluate(replacedBy(tableRules, 'table:gnome-past', 'test.supplement'), document)
+    expect(tableAt(replaced, PAST)).toMatchObject({ decided: false })
+    expect(tableAt(replaced, FOE)).toMatchObject({ decided: true, value: '1-10' })
+
+    // (v) De volta à versão anterior: a mesma decisão volta a valer; o documento não mudou, e o log continua vazio.
+    expect(tableAt(evaluate(tableRules, document), PAST)).toMatchObject({ decided: true, value: '7-16', result: recorded })
+    expect(JSON.stringify(document)).toBe(before)
+    expect(document.log).toEqual([])
+    expect(document.decisions[PAST]).toEqual(rolled('7-16'))
+  })
+
+  it('FR-STEP-014, FR-DEC-011: an entry with a dice effect opens a roll-effect slot, counted as open, which goes away when the entry changes', () => {
+    const view = evaluate(tableRules, tabled({ [PAST]: chosen('17') }))
+    expect(slotAt(view, MADNESS)).toEqual({
+      key: MADNESS,
+      stepId: 'step:story',
+      source: { id: 'table:gnome-past', name: 'Gnome Past' },
+      kind: 'roll-effect',
+      dice: { count: 1, sides: 6 },
+      enterRange: [1, 6],
+      target: { id: 'characteristic:madness', name: 'Madness' },
+      decided: false,
+    })
+    expect(view.steps[1]).toMatchObject({ status: 'open', decided: 1, open: 3, total: 4 })
+    expect(view.openDecisions).toContainEqual({
+      key: MADNESS,
+      kind: 'roll-effect',
+      stepId: 'step:story',
+      source: { id: 'table:gnome-past', name: 'Gnome Past' },
+      target: 'characteristic:madness',
+      dice: { count: 1, sides: 6 },
+    })
+
+    const other = evaluate(tableRules, tabled({ [PAST]: chosen('18'), [MADNESS]: { mode: 'rolled', dice: [4], modifier: 0, total: 4 } }))
+    expect(slotAt(other, MADNESS)).toBeUndefined()
+    expect(other.openDecisions.map((decision) => decision.key)).not.toContain(MADNESS)
+
+    const decided = evaluate(tableRules, tabled({ [PAST]: chosen('17'), [MADNESS]: { mode: 'rolled', dice: [4], modifier: 0, total: 4 } }))
+    expect(slotAt(decided, MADNESS)).toMatchObject({ decided: true, result: { mode: 'rolled', faces: [4], modifier: 0, total: 4 } })
+    const entered = evaluate(tableRules, tabled({ [PAST]: chosen('17'), [MADNESS]: { mode: 'entered', sum: 5, modifier: 0, total: 5 } }))
+    expect(slotAt(entered, MADNESS)).toMatchObject({ decided: true, result: { mode: 'entered', sum: 5, modifier: 0, total: 5 } })
+  })
+
+  it('FR-FLOW-001: a step with granted tables is open, and done when all of them are decided', () => {
+    const open = evaluate(tableRules, tabled())
+    expect(statuses(open)).toEqual([
+      ['origin', 'done'],
+      ['story', 'open'],
+    ])
+    expect(open.steps[1]).toMatchObject({ decided: 0, open: 3, total: 3 })
+    expect(open.openDecisions).toEqual([
+      { key: FOE, kind: 'table', stepId: 'step:story', source: { id: 'ancestry:gnome', name: 'Gnome' }, table: { id: 'table:gnome-foe', name: 'Gnome Foe' } },
+      { key: PAST, kind: 'table', stepId: 'step:story', source: { id: 'ancestry:gnome', name: 'Gnome' }, table: { id: 'table:gnome-past', name: 'Gnome Past' } },
+      { key: FATE, kind: 'table', stepId: 'step:story', source: { id: 'ancestry:gnome', name: 'Gnome' }, table: { id: 'table:gnome-fate', name: 'Gnome Fate' } },
+    ])
+
+    const done = evaluate(tableRules, tabled({ [FOE]: chosen('11-20'), [PAST]: rolled('3', [1, 1, 1]), [FATE]: chosen('5-7') }))
+    expect(statuses(done)).toEqual([
+      ['origin', 'done'],
+      ['story', 'done'],
+    ])
+    expect(done.openDecisions).toEqual([])
+    // Sem a ancestralidade que concede tabelas, a etapa não começa.
+    expect(statuses(evaluate(tableRules, tabled({ ancestry: { mode: 'chosen', value: 'ancestry:troll' } })))).toEqual([
+      ['origin', 'done'],
+      ['story', 'not-started'],
+    ])
   })
 })

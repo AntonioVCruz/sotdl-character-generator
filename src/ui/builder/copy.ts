@@ -96,8 +96,14 @@ export const sourceBadge = (provenance: { abbr: string; page?: number }) =>
 
 export const TYPE_LABEL = { core: 'Core', adds: 'Adds' } as const
 
+/** Dado de um efeito, quantia somada: sempre com a contagem, como os livros ("1d6", "2d6+1"; ui-design da FEAT-009). */
+export const effectDice = (dice: NonNullable<OpenDecision['dice']>) => `${dice.count}d${dice.sides}${dice.modifier ? formatModifier(dice.modifier) : ''}`
+
 /** Título de uma pendência pelo `kind` da vaga. */
-export function decisionTitle(decision: Pick<OpenDecision, 'kind' | 'target'>, nameOf: (id: string) => string): string {
+export function decisionTitle(
+  decision: Pick<OpenDecision, 'kind' | 'target' | 'table' | 'dice'>,
+  nameOf: (id: string) => string,
+): string {
   switch (decision.kind) {
     case 'choose-entity':
       return 'Ancestry'
@@ -109,6 +115,11 @@ export function decisionTitle(decision: Pick<OpenDecision, 'kind' | 'target'>, n
       return 'Extra language or profession'
     case 'attribute-shift':
       return 'Score adjustment'
+    // ui-design da FEAT-009, rótulos de pendência: "Dwarf Age", "Insanity 1d6".
+    case 'table':
+      return decision.table?.name ?? 'Table'
+    case 'roll-effect':
+      return [decision.target && nameOf(decision.target), decision.dice && effectDice(decision.dice)].filter(Boolean).join(' ')
   }
 }
 

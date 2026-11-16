@@ -163,6 +163,10 @@ function isValid(slot: SlotView, value: DecisionValue): boolean {
     case 'attribute-increase':
     case 'language-or-profession':
       return false
+    // Comandos da tabela e do efeito com dado: FEAT-009 T5.
+    case 'table':
+    case 'roll-effect':
+      return false
   }
 }
 

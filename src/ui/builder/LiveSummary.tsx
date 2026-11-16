@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { ChevronDown, ChevronUp } from 'lucide-react'
 import { Button, Disclosure, DisclosurePanel } from 'react-aria-components'
-import type { CharacterView, OpenDecision, Stage, StepView } from '../../engine'
+import { toOpenDecision, type CharacterView, type OpenDecision, type Stage, type StepView } from '../../engine'
 import { href } from '../router'
 import { decisionTitle, decisionWhere, formatModifier, formatValue, limitText } from './copy'
 import { PillCounter } from '../parts'
@@ -16,7 +16,7 @@ export function LiveSummary({ view, nameOf }: { view: CharacterView; nameOf: (id
     .join(', ')
   const pendingTitle = (key: string) => {
     const slot = view.slots.find((candidate) => candidate.key === key)
-    return slot ? decisionTitle({ kind: slot.kind, target: 'target' in slot ? slot.target : undefined }, nameOf) : ''
+    return slot ? decisionTitle(toOpenDecision(slot), nameOf) : ''
   }
 
   return (
