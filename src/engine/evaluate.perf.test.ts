@@ -106,6 +106,82 @@ function sizedFixture() {
   return { rules: resolve([book], ['test.sized']), document: character(['test.sized'], decisions) }
 }
 
+/**
+ * Pacote fictício com tabelas (FEAT-009 §5): 6 tabelas d20 de 20 entradas concedidas na Story, decididas por rolagem;
+ * na entrada rolada, 10 efeitos `add`, 4 `set` e 2 `add.dice`, com as 2 vagas `roll-effect` decididas.
+ */
+function tableFixture() {
+  const attributes = ['might', 'wits', 'grace', 'nerve'].map((name) => `attribute:${name}`)
+  const trait = (i: number) => `characteristic:trait-${i}`
+  const tables = Array.from({ length: 6 }, (_, i) => `t${i}`)
+  const ROLLED = '7'
+  type Effect = { target: string; add: number } | { target: string; set: number } | { target: string; add: { dice: { count: number; sides: number } } }
+  const effects: Effect[] = [
+    ...Array.from({ length: 10 }, (_, k) => ({ target: k % 2 ? attributes[k % 4] : trait(k % 4), add: 1 })),
+    ...Array.from({ length: 4 }, (_, k) => ({ target: trait(k), set: 5 + k })),
+    { target: trait(0), add: { dice: { count: 1, sides: 6 } } },
+    { target: attributes[0], add: { dice: { count: 1, sides: 6 } } },
+  ]
+  const effectsOf = (table: number) =>
+    Object.fromEntries(effects.flatMap((effect, k) => (k % tables.length === table ? [[`e${k}`, effect]] : [])))
+
+  const book = {
+    format: 1,
+    id: 'test.tabled',
+    name: 'Tabled',
+    abbr: 'TT',
+    layer: 'core',
+    published: '2001',
+    components: [
+      {
+        id: 'base',
+        type: 'adds',
+        default: 'on',
+        items: [
+          { id: 'procedure:test', steps: ['step:origin', 'step:story'] },
+          { id: 'step:origin', name: 'Origin', page: 1, slots: { ancestry: { kind: 'choose-entity', of: 'ancestry' } } },
+          { id: 'step:story', name: 'Story', page: 2, requires: ['step:origin'] },
+          ...attributes.map((id) => ({ id, name: id, page: 3, modifier: { add: [{ ref: 'self' }, -10] } })),
+          ...Array.from({ length: 4 }, (_, i) => ({
+            id: trait(i),
+            name: `Trait ${i}`,
+            page: 3,
+            formula: { add: [{ ref: attributes[i] }, ...(i === 0 ? [] : [{ ref: trait(i - 1) }])] },
+            ...(i === 3 && { limits: { max: 25 } }),
+          })),
+          ...tables.map((t, i) => ({
+            id: `table:${t}`,
+            name: `Table ${i}`,
+            page: 4,
+            dice: { count: 1, sides: 20 },
+            regime: 'roll-or-choose',
+            entries: Object.fromEntries(
+              Array.from({ length: 20 }, (_, e) => [String(e + 1), String(e + 1) === ROLLED ? { effects: effectsOf(i) } : {}]),
+            ),
+          })),
+          {
+            id: 'ancestry:tabled',
+            name: 'Tabled',
+            page: 5,
+            attributes: Object.fromEntries(attributes.map((id) => [id, 10])),
+            grants: Object.fromEntries(tables.map((t) => [t, { kind: 'table', step: 'step:story', table: `table:${t}` }])),
+          },
+        ],
+      },
+    ],
+  } as unknown as Book
+
+  const document = character(['test.tabled'], { ancestry: 'ancestry:tabled' })
+  for (const t of tables) {
+    document.decisions[`ancestry=tabled/${t}`] = { mode: 'rolled', dice: [7], modifier: 0, total: 7, entry: ROLLED, rolls: 1, book: 'test.tabled' }
+  }
+  effects.forEach((effect, k) => {
+    if (typeof (effect as { add?: unknown }).add !== 'object') return
+    document.decisions[`ancestry=tabled/${tables[k % tables.length]}=${ROLLED}/e${k}`] = { mode: 'rolled', dice: [3], modifier: 0, total: 3 }
+  })
+  return { rules: resolve([book], ['test.tabled']), document }
+}
+
 describe('evaluate: time guard', () => {
   it('NFR-PERF-002: evaluate of the most complete core character stays under 20 ms at p95', () => {
     const rules = resolve([core as unknown as Book], ['sotdl.core'])
@@ -132,6 +208,45 @@ describe('evaluate: time guard', () => {
 
     const time = p95(rules, document)
     console.info(`NFR-PERF-002 evaluate p95, sized fixture: ${time.toFixed(3)} ms over ${RUNS} runs`)
+    expect(time).toBeLessThanOrEqual(LIMIT_MS)
+  })
+
+  it('NFR-PERF-002: evaluate of a Dwarf with the six tables decided, Background 1 and the adjustment stays under 20 ms at p95', () => {
+    const rules = resolve([core as unknown as Book], ['sotdl.core'])
+    const document = character(['sotdl.core'], {
+      ancestry: 'ancestry:dwarf',
+      adjustment: { decrease: 'attribute:strength', increase: 'attribute:intellect' },
+    })
+    const entries = { 'hated-creature': '1-2', age: '8-12', build: '9-12', appearance: '9-11', background: '1', personality: '9-12' }
+    for (const [grant, entry] of Object.entries(entries)) {
+      document.decisions[`ancestry=dwarf/${grant}`] = { mode: 'chosen', value: entry, book: 'sotdl.core' }
+    }
+    const view = evaluate(rules, document)
+    expect(view.slots.filter((slot) => slot.kind === 'table' && slot.decided)).toHaveLength(6)
+    expect(view.summary.characteristics.find((c) => c.name === 'Corruption')?.value).toBe(1)
+    expect(view.slots.find((slot) => slot.key === 'adjustment')?.decided).toBe(true)
+
+    const time = p95(rules, document)
+    console.info(`NFR-PERF-002 evaluate p95, core (Dwarf, six tables, Background 1, adjustment): ${time.toFixed(3)} ms over ${RUNS} runs`)
+    expect(time).toBeLessThanOrEqual(LIMIT_MS)
+  })
+
+  it('NFR-PERF-002: evaluate of a table fixture (6 rolled tables of 20 entries, 10 add, 4 set, 2 add.dice decided) stays under 20 ms at p95', () => {
+    const { rules, document } = tableFixture()
+    // O porte declarado no nome do teste.
+    const view = evaluate(rules, document)
+    const tables = view.slots.filter((slot) => slot.kind === 'table')
+    expect(tables.filter((slot) => slot.decided)).toHaveLength(6)
+    expect(tables.every((slot) => slot.kind === 'table' && slot.table.entries.length === 20 && slot.result?.mode === 'rolled')).toBe(true)
+    const stages = [...view.summary.attributes, ...view.summary.characteristics].flatMap((value) => value.composition)
+    const fromTables = stages.filter((stage) => (stage.stage === 'sum' || stage.stage === 'define') && stage.value !== null)
+    expect(fromTables.filter((stage) => stage.stage === 'define')).toHaveLength(4)
+    expect(fromTables.filter((stage) => stage.stage === 'sum')).toHaveLength(12)
+    expect(view.slots.filter((slot) => slot.kind === 'roll-effect' && slot.decided)).toHaveLength(2)
+    expect(view.openDecisions).toEqual([])
+
+    const time = p95(rules, document)
+    console.info(`NFR-PERF-002 evaluate p95, table fixture: ${time.toFixed(3)} ms over ${RUNS} runs`)
     expect(time).toBeLessThanOrEqual(LIMIT_MS)
   })
 })

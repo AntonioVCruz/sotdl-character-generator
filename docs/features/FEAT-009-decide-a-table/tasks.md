@@ -86,7 +86,7 @@ Todo "pronto quando" inclui `npm run typecheck`, `npm run lint` e os testes exis
       - as quatro expectativas da FEAT-007 e da FEAT-008 que mudam (design §7): as duas `FR-FLOW-014: preview…`, `FR-FLOW-001: Attributes is done with Dwarf…` e `FR-STEP-002: the detail lists … pending grants`;
     - `npm run e2e` passa nos 5 projetos, com o `home.spec.ts` emendado.
 
-- [ ] **T7. Desempenho: guarda unitária com tabelas** (design §5, "NFR-PERF-002, guarda unitária"; NFR-PERF-002)
+- [x] **T7. Desempenho: guarda unitária com tabelas** (design §5, "NFR-PERF-002, guarda unitária"; NFR-PERF-002)
   - Em `src/engine/evaluate.perf.test.ts`: os dois casos novos da §5; os da FEAT-008 continuam sem mudança.
   - **Pronto quando:** os dois casos passam com p95 ≤ 20 ms em 200 execuções, e o caso fictício confere o próprio porte (6 tabelas decididas, 10 `add`, 4 `set`, 2 `add.dice`).
 
