@@ -1,9 +1,9 @@
 # UI Design: FEAT-009 — Decidir uma tabela: Roll, Choose, Enter result
 
 > Feature de: `docs/implementation-plan.md` · Par com: `technical-design.md`
-> Telas: SCR-WEB-009, SCR-WEB-003 ("Decide now" do Dwarf) · Modo: por feature · Status: Verified, com as escalações E10 e E11 pendentes · Data: 2026-11-16
+> Telas: SCR-WEB-009, SCR-WEB-003 ("Decide now" do Dwarf) · Modo: por feature, re-verificado depois da emenda E10, E11 e caixa de valor (`9c5db16`, `095362b`) · Status: Verified · Data: 2026-11-16
 
-Autoridade: `docs/design.md` (com E8 e E9) e `docs/tokens.json`. Todo valor visual abaixo é token (`--…`) ou classe `.typography-*`; breakpoints pelos `@custom-media` da FEAT-007. Ícones Lucide, decorativos com `aria-hidden`. A moldura (mapa, resumo vivo, Open decisions, Back e Next, celular, `save-failed`, carga e erro) é a da FEAT-007 ([Builder frame](../FEAT-007-ancestry-step-map-live-summary/ui-design.md#builder-frame) e SCR-WEB-016), sem mudança, salvo os textos de [Textos](#textos). Texto da interface em inglês. Nenhum texto dos livros (P22). Fora desta tela: Write, aguardando, subdecisões e "Roll all undecided" (FEAT-010); Reroll, troca de modo e troca de resultado com impacto (FEAT-011).
+Autoridade: `docs/design.md` (com E8 a E10 e a caixa de valor) e `docs/tokens.json`. Todo valor visual abaixo é token (`--…`) ou classe `.typography-*`; breakpoints pelos `@custom-media` da FEAT-007. Ícones Lucide, decorativos com `aria-hidden`. A moldura (mapa, resumo vivo, Open decisions, Back e Next, celular, `save-failed`, carga e erro) é a da FEAT-007 ([Builder frame](../FEAT-007-ancestry-step-map-live-summary/ui-design.md#builder-frame) e SCR-WEB-016), sem mudança, salvo os textos de [Textos](#textos). Texto da interface em inglês. Nenhum texto dos livros (P22). Fora desta tela: Write, aguardando, subdecisões e "Roll all undecided" (FEAT-010); Reroll, troca de modo e troca de resultado com impacto (FEAT-011).
 
 ## SCR-WEB-009 — Story step
 
@@ -15,7 +15,7 @@ Autoridade: `docs/design.md` (com E8 e E9) e `docs/tokens.json`. Todo valor visu
   4. as pendências não-tabela da etapa, se houver, como no `FallbackStep` (technical-design §3.4);
   5. Back e Next.
 - **Dados:** a tabela do technical-design §3.4, sem acréscimo. Os modos vêm de `table.modes` (D6): a tela nunca decide quais modos existem.
-- **Conformidade:** usa `step-header`, `pill-counter`, `card`, `segmented-control`, `button-primary`, `button-secondary`, `text-input`, `range-grid`, `effect-chip`, `source-badge`, `subdecision` e `inline-alert` como o `design.md` §4 os define, e a caixa de valor com `--size-roll-value` (E8). Uma correção dentro do token (altura de linha do valor, ver [Caixa de valor](#caixa-de-valor)). Uma escalação: o `range-grid` sem o campo "Name" nas tabelas de história (E10), com tratamento provisório.
+- **Conformidade:** usa `step-header`, `pill-counter`, `card`, `segmented-control`, `button-primary`, `button-secondary`, `text-input`, `range-grid`, `effect-chip`, `source-badge`, `subdecision` e `inline-alert` como o `design.md` §4 os define, e a caixa de valor com `--size-roll-value` (E8) e altura de linha `--font-size-4xl` no valor ([Caixa de valor](#caixa-de-valor)). A grade das tabelas de história segue o `range-grid` com a E10: só faixa e página, sem campo "Name". Sem escalação.
 
 ### Cabeçalho da etapa
 
@@ -50,7 +50,7 @@ Modo inicial, estado local (technical-design §3.4): Choose quando o regime é `
 Vaga sem decisão. O corpo depende do modo aberto:
 
 - **Roll:** linha com `button-primary` "Roll {dado}" ("Roll 3d6", "Roll d20") e, só com `enter` em `table.modes`, `button-secondary` "Enter result"; ao lado, em `.typography-meta`, "Not decided yet. Nothing else waits for it." (`design.md` §4).
-- **Choose:** "Choose a result." em `.typography-meta` (rótulo visível do `range-grid`, por `aria-labelledby`), a grade ([Grade](#grade)) e, abaixo, "Not decided yet. Nothing else waits for it."
+- **Choose:** "Choose a result." em `.typography-meta` (rótulo visível do `range-grid`, parte do nome do grupo; [Grade](#grade)), a grade ([Grade](#grade)) e, abaixo, "Not decided yet. Nothing else waits for it."
 - Trocar de segmento só troca o corpo; nada é gravado.
 
 ### entering
@@ -108,8 +108,9 @@ Começa quando o snapshot mostra `result.mode: 'chosen'`. Segmento Choose; a gra
 - botão: fundo `--color-background-surface`, borda `--border-width-default` `--color-border-control`, `--radius-md`, padding `--space-2` `--space-3`, altura mínima `--size-control` (`--size-touch-target` em ponteiro grosso); hover fundo `--color-background-subtle`;
 - marcada (a decisão): borda `--border-width-selected` `--color-border-strong` e ícone `check` (`--size-icon-sm`) antes da faixa. Aqui não há prévia: marcar é decidir, então o tratamento do `option-card` `current` não se aplica;
 - colunas: 2 abaixo de `--bp-md`, 3 de `--bp-md` a `--bp-below-xl`, 4 de `--bp-xl` em diante; no máximo 3 em ponteiro grosso (`design.md` §4); gap `--space-2`;
+- nome acessível do `radiogroup` composto por referência ao conteúdo visível (C9): `aria-labelledby` com o `id` do `h2` e o do rótulo "Choose a result.", o que dá "Dwarf Age Choose a result.". Assim os seis cartões não têm grades de mesmo nome, e a grade não tem o nome do `segmented-control` ("Dwarf Age");
 - nome acessível de cada `radio` pelo conteúdo: "3–4 Troglodytes", "4–7 CORE p.18";
-- **sem campo "Name"** nas tabelas de história: a entrada é uma descrição, não um nome a digitar. Tratamento provisório até a emenda E10 ([Escalações](#escalações-e-pendências)).
+- **sem campo "Name"** (`design.md` §4, `range-grid`, E10): as entradas das tabelas de história são descrições fora do pacote (P22), não nomes a digitar; a grade mostra só faixa e página, e o resultado segue o [sem texto](#no-text).
 
 ### no-text
 
@@ -157,9 +158,9 @@ Os da moldura da FEAT-007, sem mudança. Com `save-failed`, o cartão mantém o 
 
 ### Caixa de valor
 
-Caixa de `--size-roll-value` × `--size-roll-value` (E8), `box-sizing: border-box`: fundo `--color-background-subtle`, borda `--border-width-default` `--color-border-control`, `--radius-md`, padding `--space-1-5`, coluna centrada (`justify-content` e `align-items: center`), algarismos tabulares. Valor em `.typography-stat-lg` com **altura de linha `--font-size-4xl`** (40 px, no lugar dos 48 px do estilo); rótulo em `.typography-caption` ("rolled", "entered"). `aria-hidden`: o total já está no cálculo, e o leitor de tela não precisa ouvir o número duas vezes.
+Caixa de `--size-roll-value` × `--size-roll-value` (E8), `box-sizing: border-box`: fundo `--color-background-subtle`, borda `--border-width-default` `--color-border-control`, `--radius-md`, padding `--space-1-5`, coluna centrada (`justify-content` e `align-items: center`), algarismos tabulares. Valor em `.typography-stat-lg` com altura de linha `--font-size-4xl` (40 px, no lugar dos 48 px do estilo), como o `design.md` §4; rótulo em `.typography-caption` ("rolled", "entered"). `aria-hidden`: o total já está no cálculo, e o leitor de tela não precisa ouvir o número duas vezes.
 
-Encaixe conferido em 2026-11-16 (lacuna do `design.md` §9), renderizado no Chromium com Inter e os tokens gerados: área interna de 58 px (72 − 2 de borda − 12 de padding). Com a altura de linha do estilo, valor 48 + rótulo 17,4 = 65,4 px, 7,4 px a mais que a área, que comem o padding. Com a altura de linha `--font-size-4xl`, 40 + 17,4 = 57,4 px, dentro da área. Na largura, "18" ocupa 51,8 px e "entered" 43,6 px, dentro dos 58 px. Um total de três algarismos (cerca de 78 px) não cabe; nenhuma tabela do MVP chega a 100.
+Encaixe medido em 2026-11-16 (base da regra do `design.md` §4), renderizado no Chromium com Inter e os tokens gerados: área interna de 58 px (72 − 2 de borda − 12 de padding). Com a altura de linha do estilo, valor 48 + rótulo 17,4 = 65,4 px, 7,4 px a mais que a área, que comem o padding. Com a altura de linha `--font-size-4xl`, 40 + 17,4 = 57,4 px, dentro da área. Na largura, "18" ocupa 51,8 px e "entered" 43,6 px, dentro dos 58 px. Um total de três algarismos (cerca de 78 px) não cabe; nenhuma tabela do MVP chega a 100.
 
 ### Composição
 
@@ -200,7 +201,7 @@ Dwarf escolhido: o bloco "Decide now" passa a existir (antes, "Dwarf: sem conces
 - Linha agrupada:
   - título em `.typography-label`: "{n} tables in {Step}" ("6 tables in Story"; "1 table in Story" com uma);
   - em `.typography-meta`, os nomes na ordem das vagas, unidos por vírgula: "Dwarf Hatred, Dwarf Age, Dwarf Build, Dwarf Appearance, Dwarf Background, Dwarf Personality";
-  - em `.typography-meta`: "Decided in {Step}: {d} of {n}. " + `link` "Go to {Step}", para a etapa com `?slot=` da primeira tabela sem decisão (sem `?slot=` com todas decididas). Etapa bloqueada: o motivo no lugar do link, como hoje.
+  - em `.typography-meta`: "{d} of {n} decided. " + `link` "Go to {Step}", para a etapa com `?slot=` da primeira tabela sem decisão (sem `?slot=` com todas decididas). Etapa bloqueada: o motivo no lugar do link, como hoje.
 - Ordem no bloco: as linhas desta etapa (Size) e, depois, as de outras etapas, na ordem das etapas.
 - **Decisão: uma linha por etapa, não uma por tabela.** Motivo: seis linhas iguais ("Chosen in Story. Go to Story") repetiriam o mesmo link seis vezes, com o mesmo nome acessível, e encheriam o detalhe da ancestralidade; quem quer o atalho de uma tabela tem o Open decisions. Alternativas rejeitadas: uma linha por tabela (a de hoje); um link por tabela na linha agrupada, com nomes iguais aos de Open decisions.
 
@@ -235,7 +236,7 @@ Fechados para a FEAT-009, revisados contra a NFR-USE-001 e o `design.md` §6. Os
 | Regime (FR-DEC-002) | `choice`: "The book says to choose." · `roll-or-choose`: "The book says to roll or choose." · `roll`: "The book says to roll." |
 | Segmentos | "Roll" · "Choose" |
 | A decidir | "Roll {dado}" · "Enter result" · "Not decided yet. Nothing else waits for it." |
-| Grade | "Choose a result." · "{faixa} {Nome}" · "{faixa}" + selo |
+| Grade | "Choose a result." · nome do grupo: "{Tabela} Choose a result." · "{faixa} {Nome}" · "{faixa}" + selo |
 | Enter result | "Your {dado} roll" · "Add up what the dice show, without any modifier. From {min} to {max}." · "Use this result" · "Cancel" |
 | Fora da faixa | "Enter a value from {min} to {max}." |
 | Caixa de valor | "rolled" · "entered" |
@@ -245,7 +246,7 @@ Fechados para a FEAT-009, revisados contra a NFR-USE-001 e o `design.md` §6. Os
 | Efeito com dado | "{Alvo} {dado}" ("Insanity 1d6") · "Roll {dado}" · "Enter result" · "Or decide later: it stays in Open decisions." |
 | Decidida (D5) | "Rerolling or changing this result isn't available yet." · Choose: "You can choose another result. Rolling instead isn't available yet." |
 
-**Decide now** (SCR-WEB-003): "{n} tables in {Step}" / "1 table in {Step}" · "{nomes}" · "Decided in {Step}: {d} of {n}." · "Go to {Step}".
+**Decide now** (SCR-WEB-003): "{n} tables in {Step}" / "1 table in {Step}" · "{nomes}" · "{d} of {n} decided." · "Go to {Step}".
 
 **Rótulo de regime** (acerto da tabela da FEAT-007; eyebrow das etapas): `roll-or-choose` → "Roll or choose". A FEAT-010 volta a "Roll, choose or write your own" quando o Write existir. Os outros não mudam.
 
@@ -278,7 +279,8 @@ Conferidos todos os `getByRole`, `getByText`, `getByLabel`, `getByTitle` e `getB
 
 | Localizador existente | Risco | Situação |
 | :-- | :-- | :-- |
-| `getByText('Decided.')` (`ancestry.spec.ts:193`, Size do Human) | casaria com um texto que contivesse "decided." | Sem colisão: o Decide now diz "Decided in Story: …", e a pílula, "… decided" sem ponto. Os textos foram escolhidos assim. |
+| `getByText('Decided.')` (`ancestry.spec.ts:193`, Size do Human) | casaria com um texto que contivesse "decided.", como "0 of 6 decided." do Decide now | Sem colisão: o teste roda com Human escolhido, e o Human não concede vaga `table` (`packs/sotdl.core.json`), então a linha agrupada não está na tela; a pílula da Story, "… decided", não tem ponto e fica em outra etapa. Com Dwarf, a linha casaria: localizador novo do Decide now escopa pela linha. |
+| `getByRole('radiogroup', { name: 'Size' })` (`ancestry.spec.ts:109`, `152`, `204`) | os `radiogroup` novos: "Dwarf Age" (segmentos) e "Dwarf Age Choose a result." (grade) | Sem colisão: nenhum nome de tabela contém "size", e o localizador fica na Ancestry. |
 | `getByRole('button', { name: 'Back' })` (`ancestry.spec.ts:130`, `builder-dock.spec.ts:70`) | casaria com um botão cujo nome contivesse "back" | Sem colisão: os botões novos são "Roll …", "Enter result", "Use this result" e "Cancel"; "Dwarf Background" é nome de `region`, `h2` e link, nunca de botão. |
 | `has-dependents` exato (`ancestry.spec.ts:198`, `Builder.test.tsx:323`) | a regra nova da mensagem | Sem colisão: com uma escolha, o texto é o mesmo. |
 | `getByText('Or decide later: it stays in Open decisions.')` (`ancestry.spec.ts:110`) | o texto volta na `roll-effect` | Sem colisão: só na Story, e nenhuma tabela do pacote real tem efeito com dado. |
@@ -289,27 +291,28 @@ Conferidos todos os `getByRole`, `getByText`, `getByLabel`, `getByTitle` e `getB
 
 **Como escrever os localizadores novos** (T8, T9):
 - escopar pelo cartão: `page.getByRole('region', { name: 'Dwarf Age' })`; "Roll", "Choose", "Roll 3d6" e "Choose a result." se repetem em vários cartões;
+- os dois grupos do cartão: `getByRole('radiogroup', { name: 'Dwarf Age', exact: true })` para os segmentos (sem `exact`, casaria também com a grade) e `getByRole('radiogroup', { name: 'Dwarf Age Choose a result.' })` para a grade;
 - entradas da grade com `exact: true` ou regex ancorada: `getByRole('radio', { name: /^1 CORE/ })`. Sem isso, "1" casa com "1–2 Ogres", "10 CORE p.19" e os demais de 10 a 19;
-- "Dwarf Age" sem escopo casa com o `h2`, com o link de Open decisions ("Dwarf Age Story · Dwarf", no `aside`) e, na Ancestry, com a linha do Decide now. Para o atalho, usar `aside` + regex ancorada (`/^Dwarf Age\s*Story · Dwarf$/`), como o do Size;
+- "Dwarf Age" sem escopo casa com o `h2`, com os dois `radiogroup` do cartão, com o link de Open decisions ("Dwarf Age Story · Dwarf", no `aside`) e, na Ancestry, com a linha do Decide now. Para o atalho, usar `aside` + regex ancorada (`/^Dwarf Age\s*Story · Dwarf$/`), como o do Size;
 - o campo do Enter result por `getByLabel('Your 3d6 roll')`.
 
 ## Escalações e pendências
 
-Duas escalações para a ux-foundations, decididas pelo usuário em 2026-11-16 ("emendar e seguir"), para aplicar na mesma sessão:
+Duas escalações para a ux-foundations, decididas pelo usuário em 2026-11-16 ("emendar e seguir"), aplicadas no mesmo dia (`9c5db16` no `design.md`, `095362b` na `ux-foundations.md`), com a re-verificação desta tela:
 
 - **E10. `range-grid` sem o campo "Name" nas tabelas de história** (`design.md` §4, `range-grid`; `ux-foundations.md` F2):
   - **O que falta:** os dois documentos dizem, sem condição, que uma entrada sem nome no pacote (D36) abre um `text-input` "Name" ao ser selecionada. Nas tabelas de história (Age, Build, Appearance, Background, Personality), a entrada é uma descrição, não um nome a digitar; o campo pediria algo que não existe e se confundiria com o Write (FEAT-010).
   - **Proposta:** `range-grid`: "Sem nome no pacote (D36): só faixa e página. O `text-input` "Name" abre ao selecionar só quando a entrada é um nome que a pessoa digita (ex.: profissões); nas tabelas cujas entradas são descrições (as de história), não abre." F2: o ramo "Nome no pacote? não (D36) → Digita o nome" passa a valer só para entrada que é nome. Como o app sabe que a entrada é um nome fica com a FEAT-012 (profissões), a primeira que o usa.
   - **Telas:** SCR-WEB-009 (e, adiante, SCR-WEB-010).
-  - **Situação:** pendente. Tratamento provisório nesta tela: grade sem o campo, como na [Grade](#grade). Entrada do manifesto em `escalation-pending`.
+  - **Situação:** aplicada (`design.md` §4 e F2). A [Grade](#grade) segue a regra, sem tratamento provisório. Fica para o detailed-design da FEAT-012: como o pacote marca uma tabela de nomes.
 - **E11. `ux-foundations.md` A5.1 alinhado ao SRS:**
   - **O que diverge:** a A5.1 diz "toda tabela aceita rolar, escolher, escrever ou informar"; o technical-design (D6, AC-2) e a FR-DEC-004 dão Enter result só à tabela de rolagem prescrita.
   - **Proposta:** rolar e escolher em toda tabela (FR-DEC-001); Write nas tabelas de rolagem com escolha permitida (FR-DEC-003); Enter result nas de rolagem prescrita (FR-DEC-004, D30); o regime como indicação, sem restringir (FR-DEC-002).
   - **Telas:** nenhuma muda: a tela mostra os modos de `table.modes` (D6).
-  - **Situação:** pendente.
+  - **Situação:** aplicada (A5.1 e F2).
 
 Notas, sem emenda:
 - O exemplo do `step-header` no `design.md` §4 ("STEP 3 OF 8 · ROLL, CHOOSE OR WRITE YOUR OWN") é só exemplo; até a FEAT-010, o rótulo é "ROLL OR CHOOSE".
-- A lacuna da caixa de valor (`design.md` §9) foi conferida aqui ([Caixa de valor](#caixa-de-valor)); a ux-foundations pode tirá-la da lista na sessão da E10.
+- A caixa de valor, medida aqui ([Caixa de valor](#caixa-de-valor)), entrou no `design.md` §4 na mesma emenda, e a lacuna saiu do §9.
 - **Fora desta feature:** Write, tabelas aguardando, subdecisões de resultado e "Roll all undecided" (FEAT-010); Reroll, troca de modo e troca de resultado com o diálogo de impacto (FEAT-011); o +1 do Human e as tabelas de história do Human (FEAT-016).
 - **RTM:** recebe este `ui-design.md` na Design ref das FRs que as duas telas realizam.
