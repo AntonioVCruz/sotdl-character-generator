@@ -1,9 +1,9 @@
 # Tasks: FEAT-009 — Decidir uma tabela: Roll, Choose, Enter result
 
 > Executa: `docs/features/FEAT-009-decide-a-table/technical-design.md`
-> Status: pending · Última atualização: 2026-11-15 (emenda com as decisões do usuário, design §8; emenda D40: AC-17 (v) na T3)
+> Status: pending · Última atualização: 2026-11-16 (pré-requisitos cumpridos)
 > Tela (SCR-WEB-009, e o "Decide now" da SCR-WEB-003): do ui-design, pelo `docs/design-manifest.json`. As tarefas de ui aqui são só integração.
-> Pré-requisitos (design §8): as emendas escaladas 1 (requirements-engineering), 2 (software-architecture) e 3 (ux-foundations: E8 `size.roll-value` e E9) aplicadas antes da T1; a 4 (emenda do plano, implementation-planning) antes do aceite.
+> Pré-requisitos (design §8), cumpridos: emenda 1, requirements-engineering (`8c77325`, `8bed161`, `531ff84`; P6a, `f3eb350`); emenda 2, software-architecture (`c955ae9`, `4023657`); emenda 3, ux-foundations, E8 `size.roll-value` e E9 (`a008fba`, `755be9c`); emenda 4, implementation-planning (`21c6b87`, `4eaa019`).
 
 Todo "pronto quando" inclui `npm run typecheck`, `npm run lint` e os testes existentes verdes, salvo as expectativas que o design §7 lista como mudadas (C8).
 
