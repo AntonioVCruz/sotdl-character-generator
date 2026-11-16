@@ -371,7 +371,7 @@ graph LR
 - **Descrição:** Guardar o personagem num arquivo e recriá-lo a partir dele, como cópia de segurança ou para usar em outro navegador.
 - **Pré-condições:** Para exportar, o personagem existe.
 - **Pós-condições (sucesso):** Exportar: o arquivo foi baixado. Importar: existe um personagem novo com as fontes, decisões (inclusive as suspensas), ajustes e log do arquivo.
-- **Rastreia:** FR-CHAR-018, FR-CHAR-019, FR-CHAR-023, FR-CHG-019, NFR-SEC-002
+- **Rastreia:** FR-CHAR-018, FR-CHAR-019, FR-CHAR-023, FR-CHG-018, FR-CHG-019, NFR-SEC-002
 
 **Fluxo principal**
 1. O jogador aciona a exportação de um personagem.
