@@ -50,7 +50,7 @@ Todo "pronto quando" inclui `npm run typecheck`, `npm run lint` e os testes exis
     - `FR-STEP-014`, `FR-DEC-011`: a `roll-effect` aparece com a entrada, conta em `open` e `openDecisions`, e some ao trocar a entrada (AC-8, parte do motor);
     - `FR-FLOW-001`: etapa com tabelas concedidas fica `open` e, com todas decididas, `done`.
 
-- [ ] **T4. Motor: efeitos de resultado nos estágios `define` e `sum`** (design §3.3, "Efeitos de resultado"; FR-CALC-005 parcial, FR-CALC-010, 011, FR-CONT-015 (AC-17, i e ii); D3, D8)
+- [x] **T4. Motor: efeitos de resultado nos estágios `define` e `sum`** (design §3.3, "Efeitos de resultado"; FR-CALC-005 parcial, FR-CALC-010, 011, FR-CONT-015 (AC-17, i e ii); D3, D8)
   - Em `src/engine/evaluate.ts` e `src/engine/formula.ts`: coleta dos efeitos das entradas vigentes; `define` e `sum` em atributos e características, antes do `limit`; `ResultOrigin`; `pendingOn` dos efeitos com dado, também em `AttributeSummary`.
   - Em `src/ui/builder/LiveSummary.tsx`: o rótulo das parcelas `define` e `sum` pela origem `table` (rascunho; o ui-design fecha).
   - **Pronto quando:** `evaluate.test.ts` (pacote fictício) passa para:

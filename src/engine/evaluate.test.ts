@@ -403,7 +403,9 @@ const pastEntries = (): Record<string, object> => ({
   '17': { effects: { madness: { target: 'characteristic:madness', add: { dice: { count: 1, sides: 6 } } } } },
   '18': {},
 })
-const tableBook = (past = pastEntries()): Book => ({
+type FateTable = { dice: { count: number; sides: number; modifier?: number }; entries: Record<string, object> }
+const fateTable = (): FateTable => ({ dice: { count: 1, sides: 6, modifier: 1 }, entries: { '2-4': {}, '5-7': {} } })
+const tableBook = (past = pastEntries(), fate = fateTable()): Book => ({
   ...book,
   components: [
     {
@@ -412,7 +414,12 @@ const tableBook = (past = pastEntries()): Book => ({
       default: 'on',
       items: [
         { id: 'procedure:test', steps: ['step:origin', 'step:story'] },
-        { id: 'step:origin', name: 'Origin', page: 1, slots: { ancestry: { kind: 'choose-entity', of: 'ancestry' } } },
+        {
+          id: 'step:origin',
+          name: 'Origin',
+          page: 1,
+          slots: { ancestry: { kind: 'choose-entity', of: 'ancestry' }, adjust: { kind: 'attribute-shift', amount: 1, optional: true } },
+        },
         { id: 'step:story', name: 'Story', page: 2, regime: 'roll-or-choose', requires: ['step:origin'] },
         { id: 'attribute:might', name: 'Might', page: 3, modifier: { add: [{ ref: 'self' }, -10] } },
         { id: 'attribute:will', name: 'Will', page: 3, modifier: { add: [{ ref: 'self' }, -10] } },
@@ -430,7 +437,7 @@ const tableBook = (past = pastEntries()): Book => ({
           entries: { '11-20': { entity: 'creature-type:bear' }, '1-10': { entity: 'creature-type:wolf' } },
         },
         { id: 'table:gnome-past', name: 'Gnome Past', page: 7, dice: { count: 3, sides: 6 }, regime: 'roll-or-choose', field: 'background', entries: past },
-        { id: 'table:gnome-fate', name: 'Gnome Fate', page: 7, dice: { count: 1, sides: 6, modifier: 1 }, regime: 'roll', entries: { '2-4': {}, '5-7': {} } },
+        { id: 'table:gnome-fate', name: 'Gnome Fate', page: 7, regime: 'roll', ...fate },
         {
           id: 'ancestry:gnome',
           name: 'Gnome',
@@ -643,5 +650,152 @@ describe('evaluate: table slots', () => {
       ['origin', 'done'],
       ['story', 'not-started'],
     ])
+  })
+})
+
+// Efeitos de resultado: a entrada "4" da Past e a "2-4" da Fate mexem nos mesmos alvos, com `add` e `set`.
+const effectPast = () => ({
+  ...pastEntries(),
+  '4': {
+    effects: {
+      might: { target: 'attribute:might', add: 2 },
+      taint: { target: 'characteristic:taint', add: 1 },
+      vigor: { target: 'characteristic:vigor', set: 20 },
+      will: { target: 'attribute:will', set: 12 },
+    },
+  },
+})
+const effectFate = (): FateTable => ({
+  dice: { count: 1, sides: 6, modifier: 1 },
+  entries: {
+    '2-4': {
+      effects: {
+        taint: { target: 'characteristic:taint', add: 3 },
+        vigor: { target: 'characteristic:vigor', set: 5 },
+        madness: { target: 'characteristic:madness', add: 15 },
+        will: { target: 'attribute:will', add: 1 },
+      },
+    },
+    '5-7': {},
+  },
+})
+const effectRules = resolve([tableBook(effectPast(), effectFate())], ['test.book'])
+const adjusted = (decisions: Record<string, Decision>) =>
+  tabled({ adjust: { mode: 'chosen', value: { decrease: 'attribute:will', increase: 'attribute:might' } }, ...decisions })
+const resultOrigin = (key: string, table: string, name: string, entry: string) => ({
+  kind: 'table',
+  key,
+  stepId: 'step:story',
+  table: { id: table, name },
+  entry,
+})
+const pastOrigin = (entry: string) => resultOrigin(PAST, 'table:gnome-past', 'Gnome Past', entry)
+const fateOrigin = (entry: string) => resultOrigin(FATE, 'table:gnome-fate', 'Gnome Fate', entry)
+const attributeAt = (view: ReturnType<typeof evaluate>, name: string) => view.summary.attributes.find((a) => a.name === name)!
+const parts = (stages: { stage: string; value: number | null }[]) => stages.map((stage) => [stage.stage, stage.value])
+
+describe('evaluate: result effects (define and sum)', () => {
+  it('FR-CALC-010: an add of the entry becomes a sum part with the origin of the table and the entry', () => {
+    const view = evaluate(tableRules, tabled({ [PAST]: rolled('3', [1, 1, 1]) }))
+    expect(characteristic(view, 'Taint')).toMatchObject({ value: 1 })
+    expect(characteristic(view, 'Taint').composition).toEqual([
+      { stage: 'base', value: 0, formula: '0', origin: { kind: 'default', id: 'characteristic:taint' } },
+      { stage: 'sum', value: 1, origin: pastOrigin('3') },
+    ])
+    // Sem a decisão, nenhuma parcela de resultado.
+    expect(parts(characteristic(evaluate(tableRules, tabled()), 'Taint').composition)).toEqual([['base', 0]])
+  })
+
+  it('FR-CALC-011: two adds on the same target add up, one part each', () => {
+    const view = evaluate(effectRules, adjusted({ [PAST]: chosen('4'), [FATE]: chosen('2-4') }))
+    expect(characteristic(view, 'Taint').value).toBe(4)
+    expect(characteristic(view, 'Taint').composition.slice(1)).toEqual([
+      { stage: 'sum', value: 1, origin: pastOrigin('4') },
+      { stage: 'sum', value: 3, origin: fateOrigin('2-4') },
+    ])
+  })
+
+  it('FR-CALC-005: base → modifier → define → sum → limit; a set is a difference part and the last set wins; the limit cuts after the sum (AC-9)', () => {
+    const view = evaluate(effectRules, adjusted({ [PAST]: chosen('4'), [FATE]: chosen('2-4') }))
+    expect(attributeAt(view, 'Might')).toMatchObject({ score: 11, modifier: 1 })
+    expect(parts(attributeAt(view, 'Might').composition)).toEqual([
+      ['base', 8],
+      ['modifier', 1],
+      ['sum', 2],
+    ])
+    // Will: 10 − 1 = 9; set 12 vira +3; +1 → 13.
+    expect(attributeAt(view, 'Will').score).toBe(13)
+    expect(attributeAt(view, 'Will').composition.slice(2)).toEqual([
+      { stage: 'define', value: 3, set: 12, origin: pastOrigin('4') },
+      { stage: 'sum', value: 1, origin: fateOrigin('2-4') },
+    ])
+    // Vigor: Might + 2 = 13; set 20 (+7) e set 5 (−15), em ordem de vagas: vale o último.
+    expect(characteristic(view, 'Vigor').value).toBe(5)
+    expect(characteristic(view, 'Vigor').composition.slice(1)).toEqual([
+      { stage: 'define', value: 7, set: 20, origin: pastOrigin('4') },
+      { stage: 'define', value: -15, set: 5, origin: fateOrigin('2-4') },
+    ])
+    // Madness: 0 + 15, cortado pelo máximo Will (13) depois do `sum`.
+    expect(characteristic(view, 'Madness').value).toBe(13)
+    expect(characteristic(view, 'Madness').composition.map((stage) => [stage.stage, stage.value])).toEqual([
+      ['base', 0],
+      ['sum', 15],
+      ['limit', -2],
+    ])
+    for (const value of [...view.summary.attributes.map((a) => [a.score, a.composition] as const), ...view.summary.characteristics.filter((c) => c.value !== null).map((c) => [c.value, c.composition] as const)]) {
+      expect(value[0]).toBe(value[1].reduce((sum, stage) => sum + stage.value!, 0))
+    }
+  })
+
+  it('FR-CALC-005: an add on an attribute changes the characteristic that refers to it (AC-9)', () => {
+    const without = evaluate(effectRules, adjusted({ [PAST]: chosen('5-6') }))
+    const withAdd = evaluate(effectRules, adjusted({ [PAST]: chosen('4') }))
+    expect(characteristic(without, 'Vigor').composition[0]).toMatchObject({ stage: 'base', value: 11 })
+    expect(characteristic(withAdd, 'Vigor').composition[0]).toMatchObject({ stage: 'base', value: 13 })
+  })
+
+  it('FR-STEP-014: with the roll-effect open the target is pending on it; decided, it adds the recorded total (AC-8)', () => {
+    const open = evaluate(tableRules, tabled({ [PAST]: chosen('17') }))
+    expect(characteristic(open, 'Madness')).toMatchObject({ value: null, pendingOn: MADNESS })
+    expect(characteristic(open, 'Madness').composition).toEqual([
+      { stage: 'base', value: 0, formula: '0', origin: { kind: 'default', id: 'characteristic:madness' } },
+      { stage: 'sum', value: null, origin: pastOrigin('17') },
+    ])
+    const decided = evaluate(tableRules, tabled({ [PAST]: chosen('17'), [MADNESS]: { mode: 'rolled', dice: [4], modifier: 0, total: 4 } }))
+    expect(characteristic(decided, 'Madness')).toMatchObject({ value: 4 })
+    expect(characteristic(decided, 'Madness')).not.toHaveProperty('pendingOn')
+    expect(characteristic(decided, 'Madness').composition[1]).toEqual({ stage: 'sum', value: 4, origin: pastOrigin('17') })
+
+    // Num atributo: score e modificador pendentes, e a característica que o lê também.
+    const MIGHT = 'ancestry=gnome/past=18/might'
+    const diceRules = resolve([tableBook({ ...pastEntries(), '18': { effects: { might: { target: 'attribute:might', add: { dice: { count: 1, sides: 6 } } } } } })], ['test.book'])
+    const pending = evaluate(diceRules, tabled({ [PAST]: chosen('18') }))
+    expect(attributeAt(pending, 'Might')).toMatchObject({ score: null, modifier: null, pendingOn: MIGHT })
+    expect(characteristic(pending, 'Vigor')).toMatchObject({ value: null, pendingOn: MIGHT })
+    const entered = evaluate(diceRules, tabled({ [PAST]: chosen('18'), [MIGHT]: { mode: 'entered', sum: 3, modifier: 0, total: 3 } }))
+    expect(attributeAt(entered, 'Might')).toMatchObject({ score: 11, modifier: 1 })
+    expect(attributeAt(entered, 'Might')).not.toHaveProperty('pendingOn')
+    expect(characteristic(entered, 'Vigor').value).toBe(13)
+  })
+
+  it('FR-CONT-015: an errata of the dice keeps the recorded faces, modifier, total and entry (AC-17 i)', () => {
+    const before = resolve([tableBook(pastEntries(), { dice: { count: 1, sides: 6, modifier: 2 }, entries: { '3-5': {}, '6-8': {} } })], ['test.book'])
+    const after = resolve([tableBook(pastEntries(), { dice: { count: 1, sides: 6, modifier: 4 }, entries: { '5': {}, '6-8': {}, '9-10': {} } })], ['test.book'])
+    const document = tabled({ [FATE]: rolled('6-8', [4], 2) })
+    const recorded = { mode: 'rolled', entry: '6-8', faces: [4], modifier: 2, total: 6, rolls: 1 }
+    expect(tableAt(evaluate(before, document), FATE).result).toEqual(recorded)
+    const shown = tableAt(evaluate(after, document), FATE)
+    expect(shown.result).toEqual(recorded)
+    // A tabela mostrada é a da versão nova; o resultado, o gravado.
+    expect(shown.table).toMatchObject({ dice: { count: 1, sides: 6, modifier: 4 }, range: [5, 10] })
+  })
+
+  it('FR-CONT-015: an errata that changes the effect of the recorded entry changes the affected value (AC-17 ii)', () => {
+    const document = tabled({ [PAST]: rolled('3', [1, 1, 1]) })
+    expect(characteristic(evaluate(tableRules, document), 'Taint').value).toBe(1)
+    const errata = resolve([tableBook({ ...pastEntries(), '3': { page: 8, effects: { taint: { target: 'characteristic:taint', add: 2 } } } })], ['test.book'])
+    const view = evaluate(errata, document)
+    expect(characteristic(view, 'Taint').value).toBe(2)
+    expect(tableAt(view, PAST).result).toEqual({ mode: 'rolled', entry: '3', faces: [1, 1, 1], modifier: 0, total: 3, rolls: 1 })
   })
 })

@@ -158,10 +158,26 @@ export type Stage =
       origin: { kind: 'ancestry'; id: string; name: string } | { kind: 'default'; id: string }
     }
   | { stage: 'modifier'; value: number; origin: { kind: 'slot'; key: string; stepId: string; slotKind: SlotKind } }
+  // FEAT-009 §3.3: efeitos de resultado. No `define`, `value` é a diferença para o total anterior, e `set` o valor posto;
+  // no `sum` pendente (efeito com dado sem decisão), `value` é `null`.
+  | { stage: 'define'; value: Value; set: number; origin: ResultOrigin }
+  | { stage: 'sum'; value: Value; origin: ResultOrigin }
   // Só quando o limite corta (FR-CALC-007): `value` é a diferença, `limit` o valor do limite e `formula` o texto dele.
   | { stage: 'limit'; value: number; bound: 'max' | 'min'; limit: number; formula: string; origin: { kind: 'default'; id: string } }
 
+/** De onde vem um efeito de resultado: a vaga `table` e a entrada vigente (FEAT-009 §3.3). */
+export interface ResultOrigin {
+  kind: 'table'
+  key: string
+  stepId: string
+  table: NamedRef
+  entry: EntryKey
+}
+
 type ModifierStage = Extract<Stage, { stage: 'modifier' }>
+type ResultStage = Extract<Stage, { stage: 'define' | 'sum' }>
+/** Efeito de resultado coletado para um alvo: `amount` é `null` enquanto a vaga `roll-effect` (`pendingOn`) está aberta. */
+type ResultEffect = { op: 'set' | 'add'; amount: number | null; pendingOn?: string; origin: ResultOrigin }
 type LimitStage = Extract<Stage, { stage: 'limit' }>
 
 export interface AttributeSummary {
@@ -169,6 +185,8 @@ export interface AttributeSummary {
   name: string
   score: Value
   modifier: Value
+  /** Vaga cuja decisão falta para o valor: a `roll-effect` de um efeito com dado (FEAT-009 §3.3). */
+  pendingOn?: string
   composition: Stage[]
 }
 
@@ -266,6 +284,7 @@ export function evaluate(rules: Rules, character: CharacterDocument): CharacterV
       return { key: slot?.key, value: slot?.decided ? (slot.value as number) : null }
     },
     modifiers(slots),
+    resultEffects(slots),
   )
   return { level: 0, ancestry: ancestry?.id ?? null, steps, slots, openDecisions, summary }
 }
@@ -289,6 +308,59 @@ function modifiers(slots: SlotView[]): Map<string, ModifierStage[]> {
 function chosenValue(character: CharacterDocument, key: string): DecisionValue | undefined {
   const decision = character.decisions[key]
   return decision?.mode === 'chosen' ? decision.value : undefined
+}
+
+/**
+ * Efeitos das entradas vigentes das vagas `table` decididas, em ordem de vagas, por alvo (FR-CALC-010, 011). Um efeito
+ * com dado vale o total gravado da vaga `roll-effect`, ou fica pendente nela.
+ */
+function resultEffects(slots: SlotView[]): Map<string, ResultEffect[]> {
+  const byTarget = new Map<string, ResultEffect[]>()
+  const add = (id: string, effect: ResultEffect) => byTarget.set(id, [...(byTarget.get(id) ?? []), effect])
+  for (const slot of slots) {
+    if (slot.kind !== 'table' || !slot.result) continue
+    const entry = slot.table.entries.find((candidate) => candidate.key === slot.result!.entry)
+    if (!entry) continue
+    const origin: ResultOrigin = {
+      kind: 'table',
+      key: slot.key,
+      stepId: slot.stepId,
+      table: { id: slot.table.id, name: slot.table.name },
+      entry: entry.key,
+    }
+    for (const effect of entry.effects) {
+      if (!('dice' in effect)) {
+        add(effect.target.id, { op: effect.op, amount: effect.amount, origin })
+        continue
+      }
+      const child = slots.find((candidate) => candidate.key === effect.slot)
+      const total = child?.kind === 'roll-effect' && child.result ? child.result.total : null
+      add(effect.target.id, { op: 'add', amount: total, ...(total === null && { pendingOn: effect.slot }), origin })
+    }
+  }
+  return byTarget
+}
+
+/**
+ * Estágios `define` e depois `sum` sobre um total (P11b; D8): cada `set` vira a diferença para o total anterior, e o
+ * último vale; cada `add` é uma parcela. Um `add` pendente deixa o total pendente.
+ */
+function applyResults(start: number, effects: readonly ResultEffect[]): { stages: ResultStage[]; value: Value; pendingOn?: string } {
+  let value: Value = start
+  let pendingOn: string | undefined
+  const stages: ResultStage[] = []
+  for (const effect of effects) {
+    if (effect.op !== 'set' || effect.amount === null) continue
+    stages.push({ stage: 'define', value: effect.amount - value!, set: effect.amount, origin: effect.origin })
+    value = effect.amount
+  }
+  for (const effect of effects) {
+    if (effect.op !== 'add') continue
+    stages.push({ stage: 'sum', value: effect.amount, origin: effect.origin })
+    if (effect.amount === null) pendingOn ??= effect.pendingOn
+    value = value === null || effect.amount === null ? null : value + effect.amount
+  }
+  return { stages, value, ...(pendingOn && { pendingOn }) }
 }
 
 /** Raízes: as vagas de cada etapa. Uma escolha em `choose-entity` abre as concessões da entidade como filhas. */
@@ -461,6 +533,7 @@ function summarize(
   ancestry: AncestryItem | null,
   grantValue: GrantValue,
   attributeModifiers: ReadonlyMap<string, ModifierStage[]> = new Map(),
+  results: ReadonlyMap<string, ResultEffect[]> = new Map(),
 ): Summary {
   const nameOf = nameIn(rules)
   const origin = ancestry && { kind: 'ancestry' as const, id: ancestry.id, name: ancestry.name }
@@ -468,15 +541,20 @@ function summarize(
   const attributes = rules.attributes.map((attribute): AttributeSummary => {
     const base = ancestry?.attributes[attribute.id] ?? null
     // Pendente propaga: sem base, nada se soma.
-    const composition: Stage[] =
-      origin && base !== null ? [{ stage: 'base', value: base, origin }, ...(attributeModifiers.get(attribute.id) ?? [])] : []
-    const score = base === null ? null : composition.reduce((total, stage) => total + stage.value!, 0)
-    // O modificador lê o score total, depois do ajuste (FEAT-008 §3.3, AC-2).
+    if (!origin || base === null) return { id: attribute.id, name: attribute.name, score: null, modifier: null, composition: [] }
+    // base → modifier → define → sum (P11b; FEAT-009 §3.3).
+    const modifierStages = attributeModifiers.get(attribute.id) ?? []
+    const modified = modifierStages.reduce((total, stage) => total + stage.value, base)
+    const applied = applyResults(modified, results.get(attribute.id) ?? [])
+    const composition: Stage[] = [{ stage: 'base', value: base, origin }, ...modifierStages, ...applied.stages]
+    const score = applied.value
+    // O modificador lê o score total, depois do ajuste e dos efeitos (FEAT-008 §3.3, AC-2).
     const modifier =
       score === null ? null : evaluateFormula(attribute.modifier, (ref) => (ref === 'self' ? score : null)).value
-    return { id: attribute.id, name: attribute.name, score, modifier, composition }
+    return { id: attribute.id, name: attribute.name, score, modifier, ...(applied.pendingOn && { pendingOn: applied.pendingOn }), composition }
   })
   const scores = new Map(attributes.map((attribute) => [attribute.id, attribute.score]))
+  const attributePending = new Map(attributes.flatMap((attribute) => (attribute.pendingOn ? [[attribute.id, attribute.pendingOn] as const] : [])))
 
   // A fórmula da ancestralidade substitui a padrão do item (D5).
   const formulas = new Map<string, Formula>()
@@ -484,16 +562,21 @@ function summarize(
     const formula = ancestry?.characteristics?.[characteristic.id] ?? characteristic.formula
     if (formula !== undefined) formulas.set(characteristic.id, formula)
   }
-  // Estágios depois da fórmula, na ordem fixa (P11b): `limit`, sobre o termo base. `define` e `sum` (FEAT-009) e
-  // `manual` (FEAT-019) entram aqui. Um limite pendente não corta.
+  // Estágios depois da fórmula, na ordem fixa (P11b): `define` e `sum` (FEAT-009), depois `limit`. `manual`
+  // (FEAT-019) entra aqui. Um limite pendente não corta.
   const limitsOf = new Map(rules.characteristics.flatMap((c) => (c.limits ? [[c.id, c.limits] as const] : [])))
   const bases = new Map<string, Value>()
+  const applied = new Map<string, ResultStage[]>()
   const cuts = new Map<string, LimitStage[]>()
   const finish: Finish = (id, evaluated, evaluateLimit) => {
     bases.set(id, evaluated.value)
+    if (evaluated.value === null) return evaluated
+    const effects = applyResults(evaluated.value, results.get(id) ?? [])
+    if (effects.stages.length) applied.set(id, effects.stages)
+    if (effects.value === null) return { value: null, pendingOn: effects.pendingOn }
     const limits = limitsOf.get(id)
-    if (!limits || evaluated.value === null) return evaluated
-    let value = evaluated.value
+    if (!limits) return { value: effects.value }
+    let value = effects.value
     const stages: LimitStage[] = []
     for (const bound of ['max', 'min'] as const) {
       const formula = limits[bound]
@@ -504,8 +587,7 @@ function summarize(
       stages.push({ stage: 'limit', value: limited - value, bound, limit, formula: formatFormula(rules, formula), origin: { kind: 'default', id } })
       value = limited
     }
-    if (!stages.length) return evaluated
-    cuts.set(id, stages)
+    if (stages.length) cuts.set(id, stages)
     return { value }
   }
   const leaf = (ref: string) => (ref.startsWith('grant:') ? grantValue(ref.slice('grant:'.length)).value : (scores.get(ref) ?? null))
@@ -519,14 +601,22 @@ function summarize(
     const { value = null, pendingOn } = values.get(characteristic.id) ?? {}
     const text = formula === undefined ? '' : formatFormula(rules, formula, ancestry?.id)
     const fromAncestry = origin && ancestry?.characteristics?.[characteristic.id] !== undefined
-    const pendingKey = pendingOn?.startsWith('grant:') ? grantValue(pendingOn.slice('grant:'.length)).key : undefined
+    // A pendência é uma vaga: a concessão, a `roll-effect` de um efeito, ou a de um atributo referenciado.
+    const pendingKey = pendingOn?.startsWith('grant:')
+      ? grantValue(pendingOn.slice('grant:'.length)).key
+      : pendingOn?.startsWith('attribute:')
+        ? attributePending.get(pendingOn)
+        : pendingOn?.includes('=')
+          ? pendingOn
+          : undefined
     const base: Stage = {
       stage: 'base',
       value: bases.get(characteristic.id) ?? null,
       formula: text,
       origin: fromAncestry ? origin : { kind: 'default', id: characteristic.id },
     }
-    const composition: Stage[] = formula === undefined ? [] : [base, ...(cuts.get(characteristic.id) ?? [])]
+    const composition: Stage[] =
+      formula === undefined ? [] : [base, ...(applied.get(characteristic.id) ?? []), ...(cuts.get(characteristic.id) ?? [])]
     const limits = (['max', 'min'] as const).flatMap((bound) => {
       const limit = characteristic.limits?.[bound]
       return limit === undefined ? [] : [{ bound, formula: formatFormula(rules, limit), limit: limitValue(limit) }]

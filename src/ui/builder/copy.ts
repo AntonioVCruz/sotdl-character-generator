@@ -96,6 +96,9 @@ export const sourceBadge = (provenance: { abbr: string; page?: number }) =>
 
 export const TYPE_LABEL = { core: 'Core', adds: 'Adds' } as const
 
+/** Faixa de uma entrada com travessão: a chave "4-7" vira "4–7" (ui-design da FEAT-009). */
+export const rangeText = (key: string) => key.replace('-', '–')
+
 /** Dado de um efeito, quantia somada: sempre com a contagem, como os livros ("1d6", "2d6+1"; ui-design da FEAT-009). */
 export const effectDice = (dice: NonNullable<OpenDecision['dice']>) => `${dice.count}d${dice.sides}${dice.modifier ? formatModifier(dice.modifier) : ''}`
 

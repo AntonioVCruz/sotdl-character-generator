@@ -3,7 +3,7 @@ import { ChevronDown, ChevronUp } from 'lucide-react'
 import { Button, Disclosure, DisclosurePanel } from 'react-aria-components'
 import { toOpenDecision, type CharacterView, type OpenDecision, type Stage, type StepView } from '../../engine'
 import { href } from '../router'
-import { decisionTitle, decisionWhere, formatModifier, formatValue, limitText } from './copy'
+import { decisionTitle, decisionWhere, formatModifier, formatValue, limitText, rangeText } from './copy'
 import { PillCounter } from '../parts'
 import { Eyebrow } from './parts'
 
@@ -123,6 +123,10 @@ export function Composition({ trigger, stages, total, name, pending }: {
 function stageLabel(stage: Stage, pending?: string): string {
   // A origem `slot` não tem nome: o rótulo vem do `kind` da vaga (D6 da FEAT-007).
   if (stage.stage === 'modifier') return decisionTitle({ kind: stage.origin.slotKind }, (id) => id)
+  // Efeito de resultado (ui-design da FEAT-009, Composição): "Dwarf Background: 1", e ", open" com o dado pendente.
+  if (stage.stage === 'define' || stage.stage === 'sum') {
+    return `${stage.origin.table.name}: ${rangeText(stage.origin.entry)}${stage.value === null ? ', open' : ''}`
+  }
   if (stage.stage === 'limit') {
     const limit = limitText(stage.formula, stage.limit)
     return stage.bound === 'max' ? `Capped at ${limit}` : `Raised to minimum ${limit}`
