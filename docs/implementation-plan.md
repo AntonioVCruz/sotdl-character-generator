@@ -1,7 +1,8 @@
 # Plano de implementação: Gerador de personagens SotDL
 
-> Status: Aprovado · Última atualização: 2026-11-12
-> Entradas: `docs/srs.md` v1.1 · `docs/use-cases.md` · `docs/architecture.md` (ADR-001 a 010) · `docs/ux-foundations.md` (com `docs/design.md`). Todas presentes.
+> Status: Aprovado · Última atualização: 2026-11-16
+> Entradas: `docs/srs.md` v1.2 · `docs/use-cases.md` · `docs/architecture.md` (ADR-001 a 010) · `docs/ux-foundations.md` (com `docs/design.md`). Todas presentes.
+> Emenda de 2026-11-16: emenda 4 da FEAT-009 (technical-design §2 e §8) e D40 (suspender e restaurar em vez de desfazer). Fatias alteradas: FEAT-002, 009, 010, 011, 012, 013, 016, 019, 020, 024, 029, 030. Ordem de construção sem mudança.
 
 ## 1. Visão geral
 
@@ -29,7 +30,7 @@ O caminho mínimo de ponta a ponta, publicado.
 | ID | Fatia | FRs | UCs | Telas | Blocos | Dados |
 | :- | :-- | :-- | :-- | :-- | :-- | :-- |
 | FEAT-001 | Home: listar, continuar e excluir personagens, com estado vazio e aviso de dados só no navegador | FR-CHAR-003, 004, 005, 006, 007, 011, 013, 014, 015, 016 | UC-001 (parcial) | SCR-WEB-001 | `app`, `storage`, `engine.evaluate` (contagem de decisões abertas), `engine.resolve` (`Rules.books`) | Personagem (metadados), documento |
-| FEAT-002 | Exportar e importar o arquivo do personagem | FR-CHAR-018, 019, 023 | UC-015 | SCR-WEB-001, SCR-WEB-014 | `app`, `content` (schema do personagem), `storage` | Documento do personagem, arquivo JSON |
+| FEAT-002 | Exportar e importar o arquivo do personagem. O arquivo leva as decisões suspensas (FR-CHG-019), e as do arquivo importado seguem a restauração da FEAT-011 (FR-CHG-018). | FR-CHAR-018, 019, 023 | UC-015 | SCR-WEB-001, SCR-WEB-014 | `app`, `content` (schema do personagem), `storage` | Documento do personagem, arquivo JSON |
 
 ### E2. Conteúdo e fontes (`content`, `engine.resolve`, `packs/`)
 
@@ -46,14 +47,14 @@ O caminho mínimo de ponta a ponta, publicado.
 | :- | :-- | :-- | :-- | :-- | :-- | :-- |
 | FEAT-007 | **Etapa Ancestry, mapa de etapas e resumo vivo** (Dwarf e Human do core) | FR-STEP-001, 002, 003; FR-FLOW-001 a 014, 018; FR-CALC-001; FR-DEC-011; FR-SRC-010; FR-CONT-006, 009; FR-CONT-003 (parcial) | UC-003 | SCR-WEB-003, SCR-WEB-016 | `engine.resolve`, `engine.evaluate`, `app`, `ui` | Ancestralidade, procedimento, fórmulas, `decisions` |
 | FEAT-008 | Etapa Attributes: ajuste ±1, características com fórmula e composição | FR-STEP-007, 009, 010, 011; FR-CALC-002, 003, 006, 007, 008; FR-CALC-005 (parcial); FR-CALC-009 (parcial) | UC-004 | SCR-WEB-005 | `engine.evaluate` | Fórmulas, limites |
-| FEAT-009 | Decidir uma tabela: Roll, Choose, Enter result (tabelas de história do Dwarf, Hated Creature). O detailed-design cria os tokens da caixa 72×72 do `roll-card` (`design.md` §9). | FR-DEC-001, 002, 004, 005, 007, 008, 012, 016, 019, 020, 024; FR-STEP-012, 013, 014; FR-CALC-010, 011; FR-CALC-005 (parcial); FR-CONT-008; FR-LOG-001, 002, 004, 010 | UC-005, UC-006 | SCR-WEB-009 | `dice`, `engine.evaluate`, `app` | Tabelas, decisões, log |
-| FEAT-010 | Write, subdecisões, tabelas aguardando e "Roll all undecided" | FR-DEC-003, 010, 014, 021, 023; FR-STEP-015; FR-LOG-003 | UC-005, UC-006 | SCR-WEB-009 | `engine.evaluate`, `app` | Decisões, concessões |
-| FEAT-011 | Mudança a montante: diálogo de impacto, rerrolagem, troca de modo, troca de ancestralidade, versão nova do pacote | FR-CHG-001 a 006, 008 a 014; FR-DEC-015, 017, 018; FR-STEP-005; FR-LOG-007; FR-CONT-015, 016 | UC-010 | SCR-WEB-007 | `engine.impact`, `app` | Decisões, ajustes ligados, log |
-| FEAT-012 | Profissões e idiomas, com nome digitado (D36) e troca por idioma | FR-STEP-016, 017, 019, 020, 021; FR-DEC-006, 009, 013 | UC-007 | SCR-WEB-010 | `dice` (encadeada), `engine.evaluate` | Tabelas de profissão, idiomas |
-| FEAT-013 | Riqueza e equipamento | FR-STEP-022, 023, 024; FR-CALC-012 | UC-008 | SCR-WEB-011 | `engine.evaluate` | Estilo de vida, pacotes de equipamento |
+| FEAT-009 | Decidir uma tabela: Roll, Choose, Enter result (tabelas de história do Dwarf, Hated Creature). Adianta no motor a validade de uma decisão de tabela na leitura (AC-17 do design); aviso, log e impacto ficam com a FEAT-011. | FR-DEC-001, 002, 004, 005, 007, 008, 012, 019, 020, 024; FR-DEC-016 (parcial: primeira rolagem); FR-STEP-012 (parcial: Roll e Choose), 013, 014; FR-CALC-010, 011; FR-CALC-005 (parcial); FR-CONT-008 (parcial: sem concessões nem ligações); FR-LOG-001, 002, 004, 010 | UC-005, UC-006 | SCR-WEB-009, SCR-WEB-003 ("Decide now" do Dwarf) | `dice`, `engine.evaluate`, `app`, `content`, `ui`, `packs/` | Tabelas, tipos de criatura, decisões, log |
+| FEAT-010 | Write, subdecisões, tabelas aguardando e "Roll all undecided" | FR-DEC-003, 010, 014, 021, 023; FR-STEP-012 (parcial: Write), 015; FR-CONT-008 (parcial: concessões); FR-LOG-003 | UC-005, UC-006 | SCR-WEB-009 | `engine.evaluate`, `app` | Decisões, concessões |
+| FEAT-011 | Mudança a montante: diálogo de impacto que suspende e restaura (D40), rerrolagem, troca de modo, troca de ancestralidade, versão nova do pacote; entradas de log de desfeito, de suspensão e de restauração | FR-CHG-001 a 006, 008 a 012, 014, 018 (parcial: sem ajuste ligado), 019; FR-DEC-015, 017, 018; FR-DEC-016 (parcial: Reroll); FR-STEP-005; FR-LOG-007; FR-CONT-015, 016 | UC-010 | SCR-WEB-007 | `engine.impact`, `app` | Decisões, decisões guardadas (`earlier`, marca `setAside`), log |
+| FEAT-012 | Profissões e idiomas, com nome digitado (D36) e troca por idioma. Inclui os efeitos das entradas 12 e 13 do Background do Dwarf (profissão e idioma concedidos), com o mecanismo de concessão da FEAT-010. | FR-STEP-016, 017, 019, 020, 021; FR-DEC-006, 009, 013; FR-CONT-008 (parcial: ligações entre tabelas) | UC-007 | SCR-WEB-010 | `dice` (encadeada), `engine.evaluate` | Tabelas de profissão, idiomas |
+| FEAT-013 | Riqueza e equipamento. Inclui os efeitos das entradas 14 e 20 do Background do Dwarf (item e dinheiro). | FR-STEP-022, 023, 024; FR-CALC-012 | UC-008 | SCR-WEB-011 | `engine.evaluate` | Estilo de vida, pacotes de equipamento |
 | FEAT-014 | Coisa interessante | FR-STEP-026, 027 | UC-009 | SCR-WEB-008 | `dice`, `engine.evaluate` | Tabelas de coisa interessante |
 | FEAT-015 | Roleplaying e Review | FR-STEP-029, 030, 031; FR-FLOW-015, 016, 017; FR-CHAR-012; FR-LOG-008 | UC-011 | SCR-WEB-017, SCR-WEB-018 | `app`, `ui` | `text`, decisões abertas |
-| FEAT-016 | Human do core completo: +1 em atributo, idioma ou profissão aleatória | FR-STEP-008, 018; FR-CONT-003 (parcial) | UC-003, UC-004, UC-007 | SCR-WEB-005, SCR-WEB-010 | `packs/`, `engine.evaluate` | Pacote do core |
+| FEAT-016 | Human do core completo: +1 em atributo, idioma ou profissão aleatória, tabelas de história do Human (impressas 12 e 13) | FR-STEP-008, 018; FR-CONT-003 (parcial) | UC-003, UC-004, UC-005, UC-007 | SCR-WEB-005, SCR-WEB-009, SCR-WEB-010 | `packs/`, `engine.evaluate` | Pacote do core |
 | FEAT-017 | Clockwork: Defense própria, Purpose e Form | FR-STEP-004; FR-CALC-004; FR-CONT-003 (parcial) | UC-003, UC-005 | SCR-WEB-003, SCR-WEB-005 | `packs/`, `engine.evaluate` | Pacote do core |
 
 ### E4. Ficha, ajuste e log (`ui`, `engine.evaluate`, `app`)
@@ -61,8 +62,8 @@ O caminho mínimo de ponta a ponta, publicado.
 | ID | Fatia | FRs | UCs | Telas | Blocos | Dados |
 | :- | :-- | :-- | :-- | :-- | :-- | :-- |
 | FEAT-018 | Ficha final em leitura, também no celular | FR-SHEET-001 a 008, 010, 011, 012, 014; FR-CHAR-008; FR-CALC-009 (parcial) | UC-012 | SCR-WEB-014, SCR-WEB-021 | `engine.evaluate`, `ui` | Visão do personagem |
-| FEAT-019 | Ajuste manual (modificador, substituição, campos fixos, itens) | FR-ADJ-001 a 016; FR-SHEET-009; FR-DEC-022; FR-LOG-005; FR-CONT-014; FR-CALC-005 (parcial) | UC-013 | SCR-WEB-014, SCR-WEB-009 | `engine.evaluate`, `app` | `adjustments`, log |
-| FEAT-020 | Log com filtros e entradas desfeitas | FR-LOG-009, 011, 012, 013, 014, 015 | UC-014 | SCR-WEB-015 | `app`, `ui` | Log |
+| FEAT-019 | Ajuste manual (modificador, substituição, campos fixos, itens) e ajuste ligado a um resultado escrito, suspenso e restaurado com a decisão. O design detalhado desta fatia decide a forma do vínculo (ADR-004 §3). | FR-ADJ-001 a 016; FR-SHEET-009; FR-DEC-022; FR-CHG-013; FR-CHG-018 (parcial: ajuste ligado); FR-LOG-005; FR-CONT-014; FR-CALC-005 (parcial) | UC-013, UC-010 | SCR-WEB-014, SCR-WEB-009, SCR-WEB-007 | `engine.evaluate`, `engine.impact`, `app` | `adjustments`, log |
+| FEAT-020 | Log só de consulta, com filtros, entradas desfeitas e entradas de suspensão e de restauração | FR-LOG-009, 011, 012, 013, 014, 015 | UC-014 | SCR-WEB-015 | `app`, `ui` | Log |
 | FEAT-021 | Impressão da ficha. O detailed-design cria os tokens do corpo 9.5pt, dos títulos 12pt e da margem 12mm do `print-sheet` (`design.md` §9). | FR-SHEET-013 | UC-012 | SCR-WEB-020 | `ui` (`@media print`) | Visão do personagem |
 
 ### E5. Ajuda e erros (`ui`, `app`)
@@ -76,13 +77,13 @@ O caminho mínimo de ponta a ponta, publicado.
 | ID | Fatia | FRs | Telas |
 | :- | :-- | :-- | :-- |
 | FEAT-023 | Componentes por livro, regras opcionais, atributos aleatórios, pacote da casa embarcado, documentação do formato | FR-SRC-016, 017, 018; FR-CONT-017 | SCR-WEB-002, SCR-WEB-005 |
-| FEAT-024 | Revisão de procedimento e substituição de tabela: Development do *Only Human*, *Oddities* | FR-FLOW-019; FR-SRC-021, 025; FR-CHG-015; FR-STEP-028 | SCR-WEB-006, SCR-WEB-008 |
+| FEAT-024 | Revisão de procedimento e substituição de tabela: Development do *Only Human*, *Oddities*; a troca de fonte de uma tabela suspende e restaura os resultados (D40) | FR-FLOW-019; FR-SRC-021, 025; FR-CHG-015; FR-STEP-028 | SCR-WEB-006, SCR-WEB-008 |
 | FEAT-025 | Versão no cartão e comparação | FR-SRC-019, 020 | SCR-WEB-003, SCR-WEB-004 |
 | FEAT-026 | Motivos de indisponível, resumo das fontes, lista navegável, busca de ancestralidade | FR-SRC-022, 023, 024; FR-STEP-006 | SCR-WEB-002, SCR-WEB-003 |
 | FEAT-027 | Concessões e decisões do mestre | FR-DEC-025 | SCR-WEB-011, SCR-WEB-014 |
 | FEAT-028 | Gatilhos de regra na criação | FR-DEC-026 | SCR-WEB-009 |
-| FEAT-029 | Demais ancestralidades do core, mudar escolha pelo log, exportar o log e a ficha em PDF | FR-CHG-016; FR-LOG-016; FR-SHEET-015 | SCR-WEB-003, SCR-WEB-015 |
-| FEAT-030 | Subida de nível 1 a 10 com paths e magia (sem FR detalhado no SRS: item 8 dos Should) e armadura | FR-CALC-013 | SCR-WEB-012, SCR-WEB-013 |
+| FEAT-029 | Demais ancestralidades do core; mudar escolha de nível anterior no construtor, sem "Change" no log (a FR-CHG-016 depende da FEAT-030); descartar as decisões suspensas; exportar o log e a ficha em PDF. Item 7 dos Should do SRS. | FR-CHG-016, 020; FR-LOG-016; FR-SHEET-015 | SCR-WEB-003, SCR-WEB-012, SCR-WEB-013, SCR-WEB-015, SCR-WEB-018 |
+| FEAT-030 | Subida de nível 1 a 10 com paths e magia (sem FR detalhado no SRS: item 8 dos Should) e armadura; decisão inelegível pela regra fica suspensa (D39) | FR-CALC-013; FR-CHG-021 | SCR-WEB-012, SCR-WEB-013 |
 | FEAT-031 | Offline e aviso entre abas | FR-CHAR-017; NFR-REL-003 | — |
 
 ## 4. Ordem de construção
@@ -169,6 +170,9 @@ graph LR
     f12 --> f16
     f8 --> f17
     f9 --> f17
+    f9 --> f16
+    f11 --> f19
+    f11 --> f2
     f4 --> f5
     f16 --> f5
     f4 --> f6
@@ -226,7 +230,7 @@ Montadas junto com o esqueleto e mantidas por todas as fatias.
 
 **Requisitos absorvidos pelo esqueleto e pelas fundações:** FR-CHAR-001, 009, 010; FR-CONT-001, 002, 004, 005.
 
-**NFRs:** NFR-PERF-001, NFR-REL-001, NFR-REL-002, NFR-SEC-001, NFR-PRIV-001, NFR-ACC-001, NFR-USE-001, NFR-USE-002, NFR-COMP-001, NFR-COMP-002, NFR-MAINT-002, NFR-COST-001, NFR-L10N-001 e NFR-OBS-001 ficam nas fundações. Elas são verificadas em cada fatia, com "(partial)" no Test ref do RTM, e fecham no aceite da FEAT-006 (última do MVP), que as verifica no produto inteiro. As demais são verificadas em fatias: NFR-PERF-002 (FEAT-008), NFR-PERF-003 (FEAT-011), NFR-CAP-001 (FEAT-001), NFR-CAP-002 (FEAT-003), NFR-SEC-002 (FEAT-002 para o arquivo do personagem, FEAT-003 para o pacote), NFR-COMP-003 (FEAT-021), NFR-MAINT-001 (FEAT-005, FEAT-006).
+**NFRs:** NFR-PERF-001, NFR-REL-001, NFR-REL-002, NFR-SEC-001, NFR-PRIV-001, NFR-ACC-001, NFR-USE-001, NFR-USE-002, NFR-COMP-001, NFR-COMP-002, NFR-MAINT-002, NFR-COST-001, NFR-L10N-001 e NFR-OBS-001 ficam nas fundações. Elas são verificadas em cada fatia, com "(partial)" no Test ref do RTM, e fecham no aceite da FEAT-006 (última do MVP), que as verifica no produto inteiro. As demais são verificadas em fatias: NFR-PERF-002 (FEAT-008), NFR-PERF-003 (FEAT-011, com um caso de decisões suspensas acumuladas, ADR-004), NFR-CAP-001 (FEAT-001), NFR-CAP-002 (FEAT-003), NFR-SEC-002 (FEAT-002 para o arquivo do personagem, FEAT-003 para o pacote), NFR-COMP-003 (FEAT-021), NFR-MAINT-001 (FEAT-005, FEAT-006).
 
 ## 7. Riscos e premissas
 
