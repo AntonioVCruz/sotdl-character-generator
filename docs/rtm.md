@@ -1,6 +1,6 @@
 # Matriz de rastreabilidade de requisitos (RTM)
 
-> Fonte: `docs/srs.md` (v1.2), `docs/use-cases.md` · Última atualização: 2026-11-15
+> Fonte: `docs/srs.md` (v1.2), `docs/use-cases.md` · Última atualização: 2026-11-16
 > As colunas Design, Plan e Test são preenchidas pelas etapas seguintes, cada uma só na sua coluna: arquitetura e design detalhado (Design), planejamento (Plan), verificação (Test). Sempre acrescentar, nunca sobrescrever.
 
 | Req ID | Requisito (curto) | Prioridade | Status | Origem | Caso(s) de uso | Design ref | Plan ref | Test ref |
@@ -88,7 +88,7 @@
 | FR-DEC-013 | Exibi-la desabilitada, como "already yours", onde ela reaparecer para escolha | Must | Active | SCR-10 | UC-005 | _TBD_ | FEAT-012 | _TBD_ |
 | FR-DEC-014 | Exibi-la como aguardando, com o motivo | Must | Active | Entrevista de requisitos | UC-005 | ADR-004 | FEAT-010 | _TBD_ |
 | FR-DEC-015 | Substituir o resultado e registrar o anterior no log como desfeito | Must | Active | P8 | UC-005, UC-010 | ADR-004 | FEAT-011 | _TBD_ |
-| FR-DEC-016 | Registrar quantas vezes ela já foi rolada | Must | Active | P8 | UC-005 | ADR-004, features/FEAT-009-decide-a-table/technical-design.md | FEAT-009 | _TBD_ |
+| FR-DEC-016 | Registrar quantas vezes ela já foi rolada | Must | Active | P8 | UC-005 | ADR-004, features/FEAT-009-decide-a-table/technical-design.md | FEAT-009, FEAT-011 | _TBD_ |
 | FR-DEC-017 | Submetê-la à confirmação de dependentes antes de aplicar | Must | Active | P6 | UC-005, UC-010 | ADR-004 | FEAT-011 | _TBD_ |
 | FR-DEC-018 | Tratar o novo resultado como substituição do anterior | Must | Active | Entrevista de requisitos | UC-005, UC-010 | ADR-004 | FEAT-011 | _TBD_ |
 | FR-DEC-019 | Aceitar o valor de cada expressão de dado ou etapa da rolagem | Must | Active | D30 | UC-005 | ADR-009, features/FEAT-009-decide-a-table/technical-design.md | FEAT-009 | _TBD_ |
@@ -110,7 +110,7 @@
 | FR-STEP-009 | Reduzir em 1 um atributo e aumentar em 1 outro atributo | Must | Active | D24 | UC-004 | features/FEAT-008-attributes-step/technical-design.md, features/FEAT-008-attributes-step/ui-design.md | FEAT-008 | features/FEAT-008-attributes-step/acceptance-report.md |
 | FR-STEP-010 | Impedir e oferecer desfazer o ajuste atual | Must | Active | Entrevista de requisitos | UC-004 | features/FEAT-008-attributes-step/technical-design.md, features/FEAT-008-attributes-step/ui-design.md | FEAT-008 | features/FEAT-008-attributes-step/acceptance-report.md |
 | FR-STEP-011 | Restaurar os dois atributos afetados | Must | Active | Entrevista de requisitos | UC-004 | features/FEAT-008-attributes-step/technical-design.md, features/FEAT-008-attributes-step/ui-design.md | FEAT-008 | features/FEAT-008-attributes-step/acceptance-report.md |
-| FR-STEP-012 | Exibir um cartão para cada tabela de história da ancestralidade, com Roll, Choose e Write | Must | Active | SCR-09 | UC-006 | features/FEAT-009-decide-a-table/technical-design.md | FEAT-009 | _TBD_ |
+| FR-STEP-012 | Exibir um cartão para cada tabela de história da ancestralidade, com Roll, Choose e Write | Must | Active | SCR-09 | UC-006 | features/FEAT-009-decide-a-table/technical-design.md | FEAT-009, FEAT-010 | _TBD_ |
 | FR-STEP-013 | Oferecer na etapa Story a escolha da Hated Creature em grade, com as faixas do d20 | Must | Active | SCR-09 | UC-006 | features/FEAT-009-decide-a-table/technical-design.md | FEAT-009 | _TBD_ |
 | FR-STEP-014 | Oferecer a rolagem desse efeito no próprio cartão, com Roll e "Enter result" | Must | Active | Entrevista de requisitos | UC-006, UC-008 | features/FEAT-009-decide-a-table/technical-design.md | FEAT-009 | _TBD_ |
 | FR-STEP-015 | Adicioná-la ao personagem com a origem do resultado | Must | Active | P28 | UC-006 | _TBD_ | FEAT-010 | _TBD_ |
@@ -156,15 +156,15 @@
 | FR-CHG-010 | Registrar o valor recusado no log como desfeito | Must | Active | SCR-15 | UC-010 | ADR-004 | FEAT-011 | _TBD_ |
 | FR-CHG-011 | Registrar no log a suspensão ou a restauração, com o motivo | Must | Active | P8, D40 | UC-010 | ADR-004 | FEAT-011 | _TBD_ |
 | FR-CHG-012 | Reabrir a vaga como decisão aberta | Must | Active | D40 | UC-010 | ADR-004 | FEAT-011 | _TBD_ |
-| FR-CHG-013 | Suspendê-lo junto, listá-lo entre os suspensos e restaurá-lo com ela | Must | Active | D40 | UC-010, UC-013 | ADR-004 | FEAT-011 | _TBD_ |
+| FR-CHG-013 | Suspendê-lo junto, listá-lo entre os suspensos e restaurá-lo com ela | Must | Active | D40 | UC-010, UC-013 | ADR-004 | FEAT-019 | _TBD_ |
 | FR-CHG-014 | Mantê-lo e listá-lo entre os recalculados | Must | Active | P12 | UC-010, UC-013 | ADR-004 | FEAT-011 | _TBD_ |
 | FR-CHG-015 | Suspender os resultados obtidos com a fonte anterior, reabrir a tabela e restaurá-los… | Should | Active | P6b, D21, D40 | — | ADR-004 | FEAT-024 | _TBD_ |
 | FR-CHG-016 | Reabri-la no construtor, na etapa do nível dela, com a confirmação de dependentes | Should | Active | D32, D40 | — | ADR-004 | FEAT-029 | _TBD_ |
 | FR-CHG-017 | Reverter a última mudança confirmada | Could | Active | Entrevista de requisitos | — | _TBD_ | _TBD_ | _TBD_ |
-| FR-CHG-018 | Restaurar a decisão suspensa quando o contexto dela voltar, com dependentes e ajustes… | Must | Active | D40, P6, P6b | UC-010, UC-015 | ADR-004 | _TBD_ | _TBD_ |
-| FR-CHG-019 | Guardar a decisão suspensa no personagem, fora da ficha e do cálculo, até ser… | Must | Active | D40 | UC-010, UC-015 | ADR-004 | _TBD_ | _TBD_ |
-| FR-CHG-020 | Descartar as decisões suspensas, com confirmação, e registrar o descarte no log | Should | Active | D40 | — | ADR-004 | _TBD_ | _TBD_ |
-| FR-CHG-021 | Suspender a decisão inelegível pela regra e reabrir a vaga | Should | Active | D39, D40 | — | ADR-004 | _TBD_ | _TBD_ |
+| FR-CHG-018 | Restaurar a decisão suspensa quando o contexto dela voltar, com dependentes e ajustes… | Must | Active | D40, P6, P6b | UC-010, UC-015 | ADR-004 | FEAT-011, FEAT-019 | _TBD_ |
+| FR-CHG-019 | Guardar a decisão suspensa no personagem, fora da ficha e do cálculo, até ser… | Must | Active | D40 | UC-010, UC-015 | ADR-004 | FEAT-011 | _TBD_ |
+| FR-CHG-020 | Descartar as decisões suspensas, com confirmação, e registrar o descarte no log | Should | Active | D40 | — | ADR-004 | FEAT-029 | _TBD_ |
+| FR-CHG-021 | Suspender a decisão inelegível pela regra e reabrir a vaga | Should | Active | D39, D40 | — | ADR-004 | FEAT-030 | _TBD_ |
 | FR-LOG-001 | Adicionar ao log uma entrada com o tipo, a descrição, a fonte e o modo (rolado,… | Must | Active | P8, SCR-15 | UC-005 | ADR-004, features/FEAT-009-decide-a-table/technical-design.md | FEAT-009 | _TBD_ |
 | FR-LOG-002 | Registrar o valor de cada dado, cada modificador aplicado, o total e o número de… | Must | Active | P8 | UC-005 | ADR-009, features/FEAT-009-decide-a-table/technical-design.md | FEAT-009 | _TBD_ |
 | FR-LOG-003 | Registrar o texto digitado | Must | Active | Entrevista de requisitos | UC-005 | _TBD_ | FEAT-010 | _TBD_ |
@@ -224,7 +224,7 @@
 | FR-CONT-005 | Incluir um nome curto que seja o conteúdo inteiro de uma entrada só quando outra regra… | Must | Active | D36, D38 | — | ADR-005 | Foundations | _TBD_ |
 | FR-CONT-006 | Identificar cada entidade por um ID estável, independente do nome exibido e do livro | Must | Active | P18 | — | ADR-003, features/FEAT-007-ancestry-step-map-live-summary/technical-design.md | FEAT-007 | features/FEAT-007-ancestry-step-map-live-summary/acceptance-report.md |
 | FR-CONT-007 | Usar o ID que a versão declara substituir e herdar os campos que ela não sobrescreve | Must | Active | P18, P19 | — | ADR-003 | FEAT-005 | _TBD_ |
-| FR-CONT-008 | Representar fórmulas, efeitos (alvo e operação) e tabelas (dado, faixas, entradas,… | Must | Active | P11a, P14a, P28 | — | ADR-003, ADR-005, features/FEAT-009-decide-a-table/technical-design.md | FEAT-009 | _TBD_ |
+| FR-CONT-008 | Representar fórmulas, efeitos (alvo e operação) e tabelas (dado, faixas, entradas,… | Must | Active | P11a, P14a, P28 | — | ADR-003, ADR-005, features/FEAT-009-decide-a-table/technical-design.md | FEAT-009, FEAT-010, FEAT-012 | _TBD_ |
 | FR-CONT-009 | Gerar a linha de mecânica a partir dos dados | Must | Active | P9 | UC-003 | features/FEAT-007-ancestry-step-map-live-summary/technical-design.md, features/FEAT-007-ancestry-step-map-live-summary/ui-design.md | FEAT-007 | features/FEAT-007-ancestry-step-map-live-summary/acceptance-report.md |
 | FR-CONT-010 | Recusá-lo | Must | Active | D37 | — | ADR-005 | FEAT-003 | _TBD_ |
 | FR-CONT-011 | Recusar o pacote | Must | Active | P22 | — | ADR-005 | FEAT-003 | _TBD_ |
