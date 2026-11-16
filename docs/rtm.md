@@ -161,10 +161,10 @@
 | FR-CHG-015 | Suspender os resultados obtidos com a fonte anterior, reabrir a tabela e restaurá-los… | Should | Active | P6b, D21, D40 | — | ADR-004 | FEAT-024 | _TBD_ |
 | FR-CHG-016 | Reabri-la no construtor, na etapa do nível dela, com a confirmação de dependentes | Should | Active | D32, D40 | — | ADR-004 | FEAT-029 | _TBD_ |
 | FR-CHG-017 | Reverter a última mudança confirmada | Could | Active | Entrevista de requisitos | — | _TBD_ | _TBD_ | _TBD_ |
-| FR-CHG-018 | Restaurar a decisão suspensa quando o contexto dela voltar, com dependentes e ajustes… | Must | Active | D40, P6, P6b | UC-010, UC-015 | _TBD_ | _TBD_ | _TBD_ |
-| FR-CHG-019 | Guardar a decisão suspensa no personagem, fora da ficha e do cálculo, até ser… | Must | Active | D40 | UC-010, UC-015 | _TBD_ | _TBD_ | _TBD_ |
-| FR-CHG-020 | Descartar as decisões suspensas, com confirmação, e registrar o descarte no log | Should | Active | D40 | — | _TBD_ | _TBD_ | _TBD_ |
-| FR-CHG-021 | Suspender a decisão inelegível pela regra e reabrir a vaga | Should | Active | D39, D40 | — | _TBD_ | _TBD_ | _TBD_ |
+| FR-CHG-018 | Restaurar a decisão suspensa quando o contexto dela voltar, com dependentes e ajustes… | Must | Active | D40, P6, P6b | UC-010, UC-015 | ADR-004 | _TBD_ | _TBD_ |
+| FR-CHG-019 | Guardar a decisão suspensa no personagem, fora da ficha e do cálculo, até ser… | Must | Active | D40 | UC-010, UC-015 | ADR-004 | _TBD_ | _TBD_ |
+| FR-CHG-020 | Descartar as decisões suspensas, com confirmação, e registrar o descarte no log | Should | Active | D40 | — | ADR-004 | _TBD_ | _TBD_ |
+| FR-CHG-021 | Suspender a decisão inelegível pela regra e reabrir a vaga | Should | Active | D39, D40 | — | ADR-004 | _TBD_ | _TBD_ |
 | FR-LOG-001 | Adicionar ao log uma entrada com o tipo, a descrição, a fonte e o modo (rolado,… | Must | Active | P8, SCR-15 | UC-005 | ADR-004, features/FEAT-009-decide-a-table/technical-design.md | FEAT-009 | _TBD_ |
 | FR-LOG-002 | Registrar o valor de cada dado, cada modificador aplicado, o total e o número de… | Must | Active | P8 | UC-005 | ADR-009, features/FEAT-009-decide-a-table/technical-design.md | FEAT-009 | _TBD_ |
 | FR-LOG-003 | Registrar o texto digitado | Must | Active | Entrevista de requisitos | UC-005 | _TBD_ | FEAT-010 | _TBD_ |
