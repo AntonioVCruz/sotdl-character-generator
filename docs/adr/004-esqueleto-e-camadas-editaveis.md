@@ -2,7 +2,7 @@
 
 **Status:** Aceita
 **Data:** 2026-11-11
-**Revisão:** 2026-11-16, emenda 2 da FEAT-009 (§1, §3) e D40 com o SRS v1.2 (§1, §3, §4, §5, §6): mudança a montante suspende em vez de desfazer.
+**Revisão:** 2026-11-16, emenda 2 da FEAT-009 (§1, §3) e D40 com o SRS v1.2 (§1, §3, §4, §5, §6): mudança a montante suspende em vez de desfazer. 2026-11-16: §3, o vínculo do ajuste ligado é do design da FEAT-019, para onde o plano levou a FR-CHG-013.
 **Requisitos atendidos:** FR-CALC-001 a FR-CALC-014, FR-CHG-001 a FR-CHG-016, FR-CHG-018 a FR-CHG-021, FR-DEC-010, FR-DEC-011, FR-DEC-014, FR-DEC-015, FR-DEC-016, FR-DEC-017, FR-DEC-018, FR-DEC-022, FR-DEC-023, FR-DEC-024, FR-DEC-025, FR-ADJ-005, FR-ADJ-006, FR-ADJ-008, FR-ADJ-009, FR-ADJ-010, FR-ADJ-011, FR-ADJ-012, FR-ADJ-013, FR-ADJ-016, FR-LOG-001, FR-LOG-005, FR-LOG-007, FR-LOG-009, FR-LOG-013, FR-LOG-014, FR-CONT-014, FR-CONT-015, FR-CONT-016, FR-FLOW-001, FR-FLOW-003, FR-FLOW-004, FR-FLOW-005, FR-FLOW-010, FR-FLOW-013, FR-SRC-014, FR-CHAR-005, FR-CHAR-006, FR-CHAR-018, FR-CHAR-019, NFR-PERF-002, NFR-PERF-003, NFR-MAINT-002; UC-004, UC-005, UC-010, UC-013. Princípios: D2, D6, D40, P4, P6, P6a, P6b, P8, P11, P11a–P11d, P12, P16, P23, P28, P30.
 
 ## Contexto
@@ -69,7 +69,7 @@ Cada decisão de tabela grava o livro da tabela usada (FEAT-009 D3). Se outro li
 - **Substituir na própria vaga** (Reroll, Choose → Choose, troca de modo; D40 (4)): sai só a decisão ativa, que vai ao log como desfeita (FR-DEC-015, FR-LOG-007). A nova ocupa `decisions[chave]`; se a ativa estava em `earlier`, a que ocupava `decisions[chave]` passa à frente de `earlier`. As outras suspensas da vaga não mudam. As decisões que dependiam do valor antigo ficam suspensas.
 - **Limpar** (`clear`): sai só a ativa, que vai ao log como desfeita, e a mais recente que sobrar ocupa `decisions[chave]`. Se uma suspensa da mesma vaga passar a ser a ativa, é uma restauração, e o impacto a mostra (§4).
 
-Um ajuste ligado (FR-DEC-022) aponta para a decisão, não só para a vaga, para ser suspenso e restaurado com ela (FR-CHG-013). A forma do vínculo é do design detalhado da feature que implementar a FR-CHG-013 (hoje a FEAT-011; a sessão de planejamento pode levá-la para a FEAT-019, que cria o ajuste ligado da FR-DEC-022), sem usar o log nem a posição em `earlier`.
+Um ajuste ligado (FR-DEC-022) aponta para a decisão, não só para a vaga, para ser suspenso e restaurado com ela (FR-CHG-013). A forma do vínculo é do design detalhado da FEAT-019, que implementa a FR-CHG-013 e cria o ajuste ligado da FR-DEC-022 (plano, `21c6b87`), sem usar o log nem a posição em `earlier`.
 
 **4. Mudança a montante é uma simulação.** `impact(regras, personagem, mudança)` avalia o personagem antes e depois de aplicar a mudança e compara:
 - **suspenso:** decisões ativas antes e não depois, já com os dependentes transitivos (FR-CHG-005) e os ajustes ligados a elas (FR-CHG-013);
