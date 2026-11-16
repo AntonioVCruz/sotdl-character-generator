@@ -2,8 +2,8 @@
 
 > Feature de: `docs/implementation-plan.md` §3 (E3) e §4 (posição 4) · Épico: E3 Construtor de nível 0
 > Implementa: FR-DEC-001, 002, 004, 005, 007, 008, 012, 019, 020, 024; FR-DEC-016 (parcial: contador na primeira rolagem); FR-STEP-012 (parcial: Roll e Choose, sem Write), 013, 014; FR-CALC-010, 011; FR-CALC-005 (parcial: estágios `define` e `sum`); FR-CONT-008 (parcial: tabela sem concessões nem ligações); FR-LOG-001, 002, 004, 010
-> Realiza: UC-005 (fluxo principal; 2a, 2c, 3a, 2f) · UC-006 (1, 2, 4; 1a) · Telas: SCR-WEB-009 (desenhada pelo ui-design)
-> Status: Verified · Data: 2026-11-15 · Emenda: 2026-11-15, com as decisões do usuário (D2, D3 e D4 reescritas, D13, AC-17, ordem das entradas) · Emenda D40: 2026-11-15 (D2, D3, D9, AC-17 (v), §8)
+> Realiza: UC-005 (fluxo principal; 2a, 2c, 3a, 2f) · UC-006 (1, 2, 4; 1a) · Telas: SCR-WEB-009 e SCR-WEB-003 ("Decide now" do Dwarf), desenhadas pelo ui-design
+> Status: Verified · Data: 2026-11-15 · Emenda: 2026-11-15, com as decisões do usuário (D2, D3 e D4 reescritas, D13, AC-17, ordem das entradas) · Emenda D40: 2026-11-15 (D2, D3, D9, AC-17 (v), §8); 2026-11-16 (D3: vaga reaberta e abertura sem gravação, `4dfff6f`) · Emenda de 2026-11-16: §2 e §8 com as emendas escaladas aplicadas; citações e atribuições atualizadas
 
 ## 1. Intenção
 
@@ -24,25 +24,24 @@ Levantado no `c8b95ab`, nas FEAT-007, 008 e 001 (technical-design, ui-design, ac
 - **`dice`:** só a fonte `cryptoRandomSource`; o sorteio de faces é desta feature (`scaffold-notes`, "Stubs").
 - **Interface:** o `Builder` escolhe o corpo pelo `kind` da vaga raiz; Story não tem vaga raiz e cai no `FallbackStep`. O `DecideNow` da `AncestryStep` lista as concessões da ancestralidade escolhida em outras etapas.
 - **Regra de tela em vigor** (D11 da FEAT-007; lição C2; DEF-003 a DEF-012): estado visual entra pela mudança do snapshot, nunca pelo retorno do comando; a continuação depois do `await` só desfaz a marca do clique numa recusa.
-- **Divergências do plano** (para a emenda da implementation-planning, C11; §8):
-  1. **FRs parciais.** O plano dá à FEAT-009 a FR-STEP-012, a FR-DEC-016 e a FR-CONT-008 inteiras. Aqui:
+- **Divergências do plano** (resolvidas pela emenda 4 do plano, `21c6b87`, e pelo RTM, `4eaa019`; §8):
+  1. **FRs parciais.** O plano dava à FEAT-009 a FR-STEP-012, a FR-DEC-016 e a FR-CONT-008 inteiras. Aqui:
      - FR-STEP-012: Roll e Choose; o Write é da FEAT-010 (FR-DEC-003, 021);
      - FR-DEC-016: o contador grava 1 na primeira rolagem; contar outras rolagens exige o Reroll, da FEAT-011 (FR-DEC-015);
      - FR-CONT-008: dado, faixas, entradas, efeitos, regime e campo de destino; concessões e ligações entre tabelas entram com a semântica delas (FEAT-010, FEAT-012).
-  2. **Telas.** O plano lista só a SCR-WEB-009. A SCR-WEB-003 também muda: com as tabelas concedidas pelo Dwarf, o bloco "Decide now" do Dwarf passa a existir (ui-design da FEAT-007, "Dwarf: sem concessões nesta feature").
-  3. **Blocos.** O plano lista `dice`, `engine.evaluate` e `app`. Também mudam `content` (schemas da tabela, do tipo de criatura e do log), `ui` (corpo da etapa) e `packs/`.
-  4. **Tabelas do Human.** Nenhuma fatia nomeia as tabelas de história do Human do core (impressas 12 e 13). Decisão do usuário: entram na FEAT-016 ("Human do core completo"), por emenda do plano. Até lá, a Story do Human continua no `FallbackStep`.
-- **Adiantamento da FEAT-011:** o AC-17 adianta a parte do motor da FR-CONT-015 e 016 e da FR-CHG-015 revista (escalação 1): a validade de uma decisão de tabela na leitura (D3). Aviso ao abrir, entrada no log e diálogo de impacto continuam na FEAT-011. Vai para a emenda do plano (§8, item 4d).
-- **Divergências entre documentos** (registradas; as emendas são das sessões do §8, nesta ordem):
-  1. **Registro do `clear`.** A FEAT-008 §8 diz que "o registro do ajuste e do `clear` entra com a FEAT-009". O registro do ajuste entra; o do `clear` não, porque é uma entrada de desfeito (FR-LOG-007, FEAT-011). Ver D9. A FEAT-008 §8 ganha a remissão.
-  2. **Enter result (D4).** A D4 informa a soma dos dados de cada expressão, sem modificador. Isso segue o exemplo da FR-DEC-020 ("3–18 para 3d6") e a validação do `design.md` §4 ("Enter a value from 3 to 18"), mas contraria:
-     - a FR-DEC-019 ("o valor de cada dado ou etapa da rolagem");
-     - o UC-005 2c ("o jogador informa o valor de cada dado");
-     - a ADR-009, quarto item da Decisão ("com as faces informadas pelo usuário");
-     - o estado "informado" do `roll-card` (`design.md` §4, l.251: "um campo por dado").
-     Escalações 1, 2 e 3.
-  3. **Troca de fonte de uma tabela (D2, D3).** A decisão gravada com outro livro fica suspensa (D40), e a tabela volta como decisão aberta, de acordo com o P6b revisto; a divergência que sobra é com a FR-CHG-015 ("manter os resultados já obtidos… e usar a nova fonte só nas próximas rolagens") e a ADR-004 §3 ("Se só a fonte da tabela mudar, o resultado fica…"), que as sessões 1 e 2 emendam. Escalações 1 e 2.
-  4. **Errata do pacote (D3).** Faces, modificador, total e entrada gravados ficam como obtidos; só página e efeitos seguem a versão nova. Isso precisa de nota na FR-CONT-015 ("recalcular os personagens pela versão atual") e no P6a ("derivados se recalculam sozinhos"), e contraria a ADR-004 §1 ("Nada derivado é gravado"). Escalações 1 e 2.
+  2. **Telas.** O plano listava só a SCR-WEB-009. A SCR-WEB-003 também muda: com as tabelas concedidas pelo Dwarf, o bloco "Decide now" do Dwarf passa a existir (ui-design da FEAT-007, "Dwarf: sem concessões nesta feature").
+  3. **Blocos.** O plano listava `dice`, `engine.evaluate` e `app`. Também mudam `content` (schemas da tabela, do tipo de criatura e do log), `ui` (corpo da etapa) e `packs/`.
+  4. **Tabelas do Human.** Nenhuma fatia nomeava as tabelas de história do Human do core (impressas 12 e 13). Decisão do usuário: entram na FEAT-016 ("Human do core completo"), por emenda do plano. Até lá, a Story do Human continua no `FallbackStep`.
+- **Adiantamento no motor:** o AC-17 adianta a parte do motor da FR-CONT-015 e 016 (FEAT-011) e da FR-CHG-015 revista (FEAT-024): a validade de uma decisão de tabela na leitura (D3). Aviso ao abrir, entrada no log e diálogo de impacto continuam na FEAT-011 (FR-CONT-015, 016); a troca de fonte de uma tabela, na FEAT-024 (FR-CHG-015). Registrado na linha da FEAT-009 do plano (`21c6b87`).
+- **Divergências entre documentos** (as quatro resolvidas pelas emendas do §8):
+  1. **Registro do `clear`.** A FEAT-008 §8 dizia que "o registro do ajuste e do `clear` entra com a FEAT-009". O registro do ajuste entra; o do `clear` não, porque é uma entrada de desfeito (FR-LOG-007, FEAT-011). Ver D9. Resolvida: a FEAT-008 §8 tem a remissão (`c1ddedc`).
+  2. **Enter result (D4).** A D4 informa a soma dos dados de cada expressão, sem modificador, como o exemplo da FR-DEC-020 ("3–18 para 3d6") e a validação do `design.md` §4 ("Enter a value from 3 to 18"). Resolvida: os documentos que pediam o valor de cada dado acompanham a D4:
+     - FR-DEC-019, "o valor de cada expressão de dado ou etapa da rolagem" (SRS v1.2, `8c77325`; RTM, `531ff84`);
+     - UC-005 2c (`8bed161`);
+     - ADR-009, quarto item da Decisão: "um valor por expressão de dado" (`c955ae9`);
+     - estado "informado" do `roll-card` (`design.md` §4, "Componentes do domínio": "um campo por expressão de dado", `a008fba`).
+  3. **Troca de fonte de uma tabela (D2, D3).** A decisão gravada com outro livro fica suspensa (D40), e a tabela volta como decisão aberta, de acordo com o P6b revisto. Resolvida: a FR-CHG-015 foi reescrita no mesmo sentido (SRS v1.2, `8c77325`; RTM, `531ff84`), e a ADR-004 §3 diz que a decisão deixa de passar na regra (a), fica suspensa e é restaurada se o livro anterior voltar (`4023657`). Nada sobra.
+  4. **Errata do pacote (D3).** Faces, modificador, total e entrada gravados ficam como obtidos; só página e efeitos seguem a versão nova. Resolvida: nota na FR-CONT-015 (SRS v1.2, `8c77325`); ADR-004 §1, "o que se grava de uma rolagem é o fato da rolagem" (`4023657`); P6a, "resultados de tabela ficam como obtidos" (`f3eb350`).
 
 ## 3. Contratos
 
@@ -131,9 +130,9 @@ Nos três comandos, `modifier` é o `dice.modifier` da versão vigente da tabela
 
 **Pontos de entrada da FEAT-011** (não antecipados aqui):
 - `already-decided` de `roll`, `enter` e `decide` em tabela decidida → Reroll (FR-DEC-015), troca de modo (FR-DEC-018) e contador `rolls` acima de 1 (FR-DEC-016);
-- `has-dependents` em Choose → Choose e na troca de ancestralidade com tabelas decididas → diálogo de impacto (FR-DEC-017, FR-CHG-001 a 014, FR-STEP-005);
-- entradas de desfeito no log, com o motivo (FR-LOG-007, FR-CHG-010, 011), inclusive para `clear` e substituição;
-- decisão de tabela que deixa de valer na leitura (D3; AC-17): aviso ao abrir, log e impacto (FR-CONT-015, 016; FR-CHG-015 revista).
+- `has-dependents` em Choose → Choose e na troca de ancestralidade com tabelas decididas → diálogo de impacto (FR-DEC-017, FR-CHG-001 a 006, 008 a 012 e 014, FR-STEP-005);
+- entradas de desfeito no log, com o motivo (FR-LOG-007, FR-CHG-010), inclusive para `clear` e substituição; entradas de suspensão e de restauração, com o motivo (FR-CHG-011);
+- decisão de tabela que deixa de valer na leitura (D3; AC-17): aviso ao abrir, log e impacto (FR-CONT-015, 016). A troca de fonte de uma tabela (FR-CHG-015 revista) é da FEAT-024.
 
 ### 3.3 `engine`
 
@@ -301,7 +300,7 @@ log: LogEntry[]                                                                 
 - O `regime` de cada tabela é declarado nela; o de `step:story` só rotula o cabeçalho da etapa.
 - Nenhum texto de entrada entra no pacote (P22). As entradas de Age, Build, Appearance, Background e Personality só têm faixa e página (D36).
 - **Efeitos do Background que ficam de fora** (D12), conferidos na p.19:
-  - 12 (profissão Artisan) e 13 (um idioma a mais): o plano dá o mecanismo da concessão à FEAT-010 (FR-STEP-015, FR-DEC-010) e os dados de profissão e idioma à FEAT-012, que vem depois. A emenda do plano diz em qual entram (§8, item 4b);
+  - 12 (profissão Artisan) e 13 (um idioma a mais): o plano dá o mecanismo da concessão à FEAT-010 (FR-STEP-015, FR-DEC-010) e os dados de profissão e idioma à FEAT-012, que vem depois. O plano os pôs na FEAT-012 (`21c6b87`);
   - 14 (battleaxe ou warhammer) e 20 (2d6 cp): FEAT-013;
   - a 7 ("2d6 years") é duração narrativa, sem alvo na ficha.
 - **Sem campo de destino:** Dwarf Age e Dwarf Build não têm campo na lista da FR-SHEET-006 e ficam sem `field` até a FEAT-018 (decisão do usuário; P28). Dwarf Hatred é a escolha do talento.
@@ -393,12 +392,12 @@ sequenceDiagram
     - Faces, modificador e total exibidos são os gravados, nunca recalculados pelo dado atual. Página e efeitos vêm da versão vigente: os efeitos são regra, e uma errata que os muda vale para o personagem (o total e a entrada, não). A conferência "a entrada contém o total" só existe no comando.
   - Motivo: o cartão e o log mostram o cálculo original mesmo depois de uma errata do dado (FR-DEC-007, FR-LOG-002).
   - Alternativas rejeitadas: só faces (total e entrada mudariam com uma errata do dado); faces e entrada sem modificador e total (o cartão não poderia mostrar o cálculo original depois de uma errata).
-  - Consequência: a troca de fonte de uma tabela suspende o resultado obtido com a fonte anterior (D40), e a regra (a) é a definitiva, não provisória. Isso revê o P6b e a FR-CHG-015 e emenda a ADR-004 §1 e §3 (§2, divergências 3 e 4; §8, escalações 1 e 2).
+  - Consequência: a troca de fonte de uma tabela suspende o resultado obtido com a fonte anterior (D40), e a regra (a) é a definitiva, não provisória. O P6b, a FR-CHG-015 e a ADR-004 §1 e §3 foram revistos no mesmo sentido (§2, divergências 3 e 4; §8, emendas 1 e 2, aplicadas).
 - **D4. Enter result é um valor por expressão de dado: a soma que os dados mostram, sem modificador nenhum.** Decisão do usuário.
   - Faixa: `count` a `count × sides` (3d6: 3 a 18; d6+1: 1 a 6). Fora dela: `out-of-range` com `range: [count, count × sides]`.
   - Todo modificador, o da própria expressão e o de outro efeito (nenhum no MVP), é somado pelo sistema, e o cartão mostra o cálculo (FR-DEC-007).
   - Numa rolagem encadeada (FEAT-012), um valor por etapa.
-  - Motivo: o exemplo da FR-DEC-020 ("3–18 para 3d6") e a validação do `design.md` §4 ("Enter a value from 3 to 18"). Contraria a FR-DEC-019 ("cada dado"), o UC-005 2c, a ADR-009 (quarto item da Decisão, "faces informadas") e o estado "informado" do `roll-card` (`design.md` l.251, "um campo por dado"): §2, divergência 2; §8, escalações 1 a 3.
+  - Motivo: o exemplo da FR-DEC-020 ("3–18 para 3d6") e a validação do `design.md` §4 ("Enter a value from 3 to 18"). A FR-DEC-019, o UC-005 2c, a ADR-009 (quarto item da Decisão) e o estado "informado" do `roll-card` (`design.md` §4, "Componentes do domínio") foram emendados no mesmo sentido: §2, divergência 2; §8, emendas 1 a 3, aplicadas.
   - Alternativa rejeitada: um campo por face (três campos no 3d6; quem já somou tem de lembrar cada dado).
   - Consequência: o log do Enter result tem a soma, sem faces.
 - **D5. Tabela decidida não muda por Roll, Enter result ou troca de modo até a FEAT-011** (confirmada pelo usuário). O comando devolve `already-decided`. Choose → Choose substitui, como o Size, com a recusa de dependentes da D8 da FEAT-007. Motivo: Reroll, troca de modo e o desfeito no log são da FEAT-011 (FR-DEC-015, 018, FR-LOG-007). Alternativas: (a) travar também o Choose → Choose; (b) Reroll já aqui, sem desfeito no log.
@@ -408,7 +407,7 @@ sequenceDiagram
 - **D9. Só entradas `decision` no log nesta feature** (confirmada pelo usuário). `clear` e a substituição não escrevem entrada de desfeito; a FEAT-011 traz o `kind: 'undone'` com o `id` da original e o motivo (FR-LOG-007). Motivo: plano (FR-LOG-007 na FEAT-011) e o cuidado de não antecipar a suspensão e a restauração por mudança a montante (D40), entregues pela FEAT-011 com as entradas delas no log. Alternativa: escrever já o desfeito do `clear` e da substituição, como sugere a FEAT-008 §8, e deixar o log sempre coerente. Consequência: até a FEAT-011, o log de um ajuste desfeito ou de um Size trocado tem a entrada antiga sem marca (o log só aparece na FEAT-020).
 - **D10. Tipos de criatura são itens `creature-type:`, com a página da tabela Hatred** (confirmada pelo usuário). Motivo: D38. Alternativa: a página de cada criatura no bestiário, a conferir criatura por criatura. Consequência: a página pode ser corrigida depois sem mudar o id.
 - **D11. Etapa sem vaga raiz escolhe o corpo pelos `kind` das vagas concedidas** (`table` → `TablesStep`). Motivo: ADR-003 §6, "a interface renderiza por tipo de vaga".
-- **D12. Efeitos sem modelo ainda ficam fora dos dados**, sem marca (confirmada pelo usuário): profissão e idioma nas entradas 12 e 13 do Background (FEAT-010 ou FEAT-012, pela emenda do plano, §8 item 4b); item e dinheiro nas entradas 14 e 20 (FEAT-013). Motivo: cada um precisa do alvo da feature dele. Alternativa: um alvo `money` já aqui para o "2d6 cp", único caso de efeito com dado no Dwarf. Consequência: a FR-STEP-014 é verificada com pacote fictício, e até lá essas entradas aparecem só com faixa e página.
+- **D12. Efeitos sem modelo ainda ficam fora dos dados**, sem marca (confirmada pelo usuário): profissão e idioma nas entradas 12 e 13 do Background (FEAT-012, pela emenda do plano, `21c6b87`); item e dinheiro nas entradas 14 e 20 (FEAT-013). Motivo: cada um precisa do alvo da feature dele. Alternativa: um alvo `money` já aqui para o "2d6 cp", único caso de efeito com dado no Dwarf. Consequência: a FR-STEP-014 é verificada com pacote fictício, e até lá essas entradas aparecem só com faixa e página.
 - **D13. `decide` com o valor já decidido não grava** (decisão do usuário). Ancestralidade, Size e Choose devolvem `{ ok: true }` sem `commit`, sem gravação e sem entrada de log. Motivo: uma entrada de log sem mudança registraria uma decisão que não houve (FR-LOG-001), e a gravação não mudaria nada. O ajuste continua `already-decided` (FEAT-008 D3).
 
 **Contratos e testes existentes que mudam** (C7), num commit de documentação anterior à mudança no teste:
@@ -432,27 +431,26 @@ sequenceDiagram
 ## 8. Escalações e pendências
 
 - **Escalações de arquitetura:** nenhuma entidade nem fronteira nova. `table` e tipo de criatura são itens da ADR-003 §1; vaga, efeito com origem e estágios estão na ADR-004 §2 e §3; a entrada de log é a forma física da camada `log` (ADR-004 §1, §6); o `kind` novo de vaga é a consequência prevista na ADR-003. As emendas de texto da ADR-004 e da ADR-009 estão no item 2 abaixo.
-- **Emendas escaladas**, cada uma numa sessão própria, nesta ordem, depois deste design. Este design não edita esses documentos.
-  1. **requirements-engineering**, uma sessão:
+- **Emendas escaladas**, as quatro aplicadas, cada uma na sessão da skill dona do documento:
+  1. **requirements-engineering**, aplicada (SRS v1.2, `8c77325`; casos de uso, `8bed161`; RTM, `531ff84`; a nota no P6a, `f3eb350`):
      - FR-DEC-019: "o valor de cada expressão de dado ou etapa da rolagem", com nota: a soma que os dados mostram, sem modificador (3d6: 3 a 18); o UC-005 2c no mesmo sentido; o texto curto da FR-DEC-019 no RTM;
      - FR-CHG-015 reescrita: quando a fonte de uma tabela mudar, os resultados obtidos com a fonte anterior ficam suspensos, a tabela volta como decisão aberta e, se a fonte anterior voltar, os resultados são restaurados (FR-SRC-014, FR-CHG-012). Prioridade com a requirements-engineering. O P6b já foi revisto pela D40;
      - FR-CONT-015, nota: recalculam-se os derivados (efeitos, fórmulas, itens); resultados de tabela ficam como obtidos e só reabrem se a entrada deixar de existir ou o livro da tabela mudar (FR-CONT-016). Nota no P6a.
-  2. **software-architecture**, uma sessão:
+  2. **software-architecture**, aplicada (ADR-009, `c955ae9`; ADR-004, `4023657`):
      - ADR-009, quarto item: o Enter result informa a soma dos dados de cada expressão, validada contra `count` a `count × sides`; o sistema soma os modificadores; grava-se a soma, os modificadores, o total e a entrada. O terceiro item fica como está;
      - ADR-004 §1: a linha `decisions` com "valor de cada dado ou soma informada, modificadores e total da rolagem", e a frase: o que se grava de uma rolagem é o fato da rolagem, não um derivado das regras; os derivados seguem a versão atual;
-     - ADR-004 §3: "é lida nessa versão. Se só a fonte da tabela mudar, o resultado fica…" passa a dizer que a decisão gravada com outro livro deixa de valer e fica suspensa, e que, numa errata do mesmo livro, o resultado fica enquanto a entrada existir;
-     - ADR-004 (D40): onde fica a decisão suspensa quando a vaga reaberta é decidida de novo (limite da D3).
-  3. **ux-foundations**, uma sessão:
-     - **E8**: token `size.roll-value` = `72px` (`$type: dimension`), "roll-card value box, width and height", para a caixa de valor do `roll-card`, no `tokens.json` e no `design.md`; a lacuna do `design.md` §9 (l.345) é reescrita sem a caixa 72×72;
-     - **E9**: o estado "informado" do `roll-card` (`design.md` §4, l.251) passa a "um campo por expressão de dado, com a faixa válida na ajuda".
-  4. **implementation-planning**, a emenda do plano:
+     - ADR-004 §3: a decisão gravada com outro livro deixa de passar na regra (a), fica suspensa e é restaurada se o livro anterior voltar; numa errata do mesmo livro, o resultado fica enquanto a entrada existir;
+     - ADR-004 §3 (D40): onde fica a decisão suspensa quando a vaga reaberta é decidida de novo (limite da D3): em `earlier[chave]`, com a marca `setAside`.
+  3. **ux-foundations**, aplicada (`design.md`, `a008fba`; `tokens.json`, `755be9c`):
+     - **E8**: token `size.roll-value` = `72px` (`$type: dimension`), "roll-card value box, width and height", para a caixa de valor do `roll-card`, no `tokens.json` e no `design.md`; a lacuna da caixa de valor (`design.md` §9, "Proveniência e lacunas") foi reescrita sem a caixa 72×72;
+     - **E9**: o estado "informado" do `roll-card` (`design.md` §4, "Componentes do domínio") passou a "um campo por expressão de dado, com a faixa válida na ajuda".
+  4. **implementation-planning**, aplicada (plano, `21c6b87`; RTM, `4eaa019`):
      - as quatro divergências do §2 (FRs parciais, SCR-WEB-003, blocos, tabelas do Human);
      - (a) a linha da FEAT-009 no plano §3: "O detailed-design cria os tokens da caixa 72×72 do `roll-card`" passa à E8, pela ux-foundations;
-     - (b) em que feature entram os efeitos 12, 13, 14 e 20 do Background do Dwarf. Conferido no plano §3: 14 e 20 (item e dinheiro) cabem na FEAT-013. Para 12 (profissão Artisan) e 13 (um idioma a mais), o plano não decide sozinho: o mecanismo de conceder uma entidade com a origem é da FEAT-010 (FR-STEP-015, FR-DEC-010), mas os dados de profissão e idioma são da FEAT-012 ("Tabelas de profissão, idiomas"), posterior (posição 7, depois da FEAT-010 na 6). Os dois dependem da FEAT-012;
+     - (b) em que feature entram os efeitos 12, 13, 14 e 20 do Background do Dwarf: 14 e 20 (item e dinheiro) na FEAT-013; 12 (profissão Artisan) e 13 (um idioma a mais) na FEAT-012, com o mecanismo de concessão da FEAT-010 (FR-STEP-015, FR-DEC-010);
      - (c) as tabelas de história do Human na FEAT-016;
-     - (d) a FEAT-009 adianta a validade de decisão de tabela no motor (AC-17), e a FEAT-011 fica com aviso, log e impacto (FR-CONT-015, 016; FR-CHG-015 revista).
-- **D40 nas sessões 1 a 4:** além dos itens acima, cada sessão aplica a D40 nos próprios documentos: na mudança a montante, suspender e restaurar em vez de desfazer, e o log fica só como registro.
-- **Ordem com as tarefas:** as emendas 1, 2 e 3 vêm antes da T1; a 4, antes do aceite (tasks.md, "Pré-requisitos").
+     - (d) a FEAT-009 adianta a validade de decisão de tabela no motor (AC-17); a FEAT-011 fica com aviso, log e impacto (FR-CONT-015, 016), e a FEAT-024 com a troca de fonte de uma tabela (FR-CHG-015 revista).
+- **D40 nas sessões 1 a 4:** cada sessão aplicou a D40 nos próprios documentos: na mudança a montante, suspender e restaurar em vez de desfazer, e o log fica só como registro.
 - **Decisões do usuário (2026-11-15)**, que substituem as alternativas da versão anterior deste §8:
   - D2, D3 e D4: como no §7;
   - D5, D9, D10 e D12: como propostas;
