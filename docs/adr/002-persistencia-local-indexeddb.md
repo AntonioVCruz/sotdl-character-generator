@@ -2,7 +2,8 @@
 
 **Status:** Aceita
 **Data:** 2026-11-11
-**Requisitos atendidos:** FR-CHAR-009, FR-CHAR-010, FR-CHAR-014, FR-CHAR-016, FR-CHAR-017, FR-CHAR-018, FR-CHAR-019, NFR-REL-001, NFR-CAP-001, NFR-PRIV-001; UC-001, UC-015.
+**Revisão:** 2026-11-16, D40 com o SRS v1.2 (suspensas no documento e no arquivo exportado).
+**Requisitos atendidos:** FR-CHAR-009, FR-CHAR-010, FR-CHAR-014, FR-CHAR-016, FR-CHAR-017, FR-CHAR-018, FR-CHAR-019, FR-CHG-019, NFR-REL-001, NFR-CAP-001, NFR-PRIV-001; UC-001, UC-015.
 
 ## Contexto
 
@@ -10,7 +11,7 @@ O personagem salva sozinho a cada mudança (FR-CHAR-009), e nenhuma decisão con
 
 ## Decisão
 
-- **IndexedDB**, com um registro por personagem (documento inteiro: camadas e log) e um registro de metadados para a lista inicial (nome, ancestralidade, estado com a contagem de decisões abertas, fontes, data e a versão do conteúdo da última gravação, para detectar a desatualização quando o conteúdo mudar). Acesso por um wrapper fino sobre a API nativa (biblioteca `idb` ou equivalente, escolhida no scaffolding).
+- **IndexedDB**, com um registro por personagem (documento inteiro: camadas e log) e um registro de metadados para a lista inicial (nome, ancestralidade, estado com a contagem de decisões abertas, fontes, data e a versão do conteúdo da última gravação). O que mudou com o conteúdo se detecta ao abrir o personagem, pela comparação com a marca de registro (ADR-004 §1, §4). Acesso por um wrapper fino sobre a API nativa (biblioteca `idb` ou equivalente, escolhida no scaffolding).
 - **Gravação imediata a cada comando**, sem debounce, numa transação que grava o documento e as entradas novas do log juntos. Falha de gravação mantém o estado na tela e avisa (FR-CHAR-010).
 - **Interface de repositório** (`list`, `get`, `save`, `delete`) entre a aplicação e o IndexedDB, para que um adaptador de servidor possa entrar depois (ADR-001).
 - **Versão do documento** (`schema`) com migrações puras e testadas, aplicadas na leitura.
@@ -25,6 +26,6 @@ O personagem salva sozinho a cada mudança (FR-CHAR-009), e nenhuma decisão con
 
 ## Consequências
 
-- **Risco mitigado:** o Safari apaga o armazenamento de sites sem interação do usuário por 7 dias, e `persist()` não garante proteção fora de apps na Tela de Início. Por isso exportar e importar o arquivo do personagem entrou no MVP (SRS v1.1: FR-CHAR-018, 019, 023; UC-015). O arquivo é o próprio documento do personagem (ADR-005).
+- **Risco mitigado:** o Safari apaga o armazenamento de sites sem interação do usuário por 7 dias, e `persist()` não garante proteção fora de apps na Tela de Início. Por isso exportar e importar o arquivo do personagem entrou no MVP (SRS v1.1: FR-CHAR-018, 019, 023; UC-015). O arquivo é o próprio documento do personagem (ADR-005), com as decisões suspensas e a marca de registro (FR-CHG-019, FR-CHAR-018; ADR-004 §1).
 - O aviso da FR-CHAR-016 passa a mencionar que limpar os dados do navegador apaga os personagens.
 - Excluir um personagem remove o registro inteiro, log incluído (FR-CHAR-014).
