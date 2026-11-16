@@ -1,7 +1,7 @@
 # Arquitetura: Gerador de personagens SotDL
 
-> Status: Aprovada · Última atualização: 2026-11-11 · Autor: Antônio Cruz
-> Requisitos: `docs/srs.md` v1.1 · Casos de uso: `docs/use-cases.md` · Decisões: `docs/adr/`
+> Status: Aprovada · Última atualização: 2026-11-16 (D40: suspender em vez de desfazer) · Autor: Antônio Cruz
+> Requisitos: `docs/srs.md` v1.2 · Casos de uso: `docs/use-cases.md` · Decisões: `docs/adr/`
 
 ## 1. Introdução e metas
 
@@ -141,7 +141,7 @@ sequenceDiagram
     APP->>D: faces de 3d6
     D-->>APP: [3, 5, 2]
     APP->>E: impact(regras, personagem, decisão nova)
-    E-->>APP: sem removidos
+    E-->>APP: nada suspenso nem restaurado
     APP->>S: save(documento + entrada do log)
     S-->>APP: ok
     APP->>E: evaluate(regras, documento)
@@ -162,12 +162,12 @@ sequenceDiagram
     J->>UI: trocar ancestralidade
     UI->>APP: pedir mudança
     APP->>E: impact(antes, depois)
-    E-->>APP: removidos, recalculados, reabertos, ficam
+    E-->>APP: suspensos, restaurados, recalculados, reabertos, ficam
     APP-->>UI: diálogo de impacto (SCR-07)
     alt Aplicar
         J->>UI: Apply
         UI->>APP: confirmar
-        APP->>S: save(documento sem órfãs + entradas "desfeito")
+        APP->>S: save(documento sem apagar nada, marca + entradas de suspensão e restauração)
         APP->>E: evaluate
         E-->>UI: visão atualizada
     else Manter
@@ -179,12 +179,12 @@ sequenceDiagram
 
 Mudança de fontes [UC-002, 5a] usa o mesmo caminho, com o impacto agrupado por livro.
 
-### 6.3 Abrir um personagem [FR-CHAR-007, FR-CONT-015, FR-CONT-016, FR-HELP-004]
+### 6.3 Abrir um personagem [FR-CHAR-007, FR-CHAR-019, FR-CHG-018, FR-CONT-015, FR-CONT-016, FR-HELP-004]
 
 1. A tela inicial lista os personagens a partir dos metadados no IndexedDB, sem carregar pacotes.
 2. Ao abrir um personagem, o app carrega os livros ligados nele e chama `resolve`.
 3. Se um pacote não carregar, o app mostra a mensagem e não grava nada no personagem.
-4. Com os pacotes carregados, `impact` compara o documento com as regras atuais. Decisões que deixaram de existir voltam a ficar abertas; o app avisa e registra no log.
+4. Com os pacotes carregados, o app compara o estado derivado com a marca de registro (ADR-004 §1, §4). Decisões que deixaram de existir ficam suspensas e as vagas exigidas reabrem; decisões cujo contexto voltou são restauradas. O app avisa e registra no log, numa gravação com a marca. Sem diferença, abrir não grava.
 
 ## 7. Implantação
 
@@ -204,7 +204,7 @@ graph LR
 
 **Segurança.** Sem login, sem segredos, sem API. HTTPS do Pages (NFR-SEC-001). CSP por `<meta>` só com recursos do próprio site. Nada importado é executado: arquivos são JSON validado e fórmulas são árvores, nunca `eval` (NFR-SEC-002).
 
-**Dados.** Um documento por personagem no IndexedDB, com camadas e log (ADR-002, ADR-004). Versão de schema com migração na leitura. A cópia de segurança é o arquivo do personagem, exportado e importado pelo usuário (FR-CHAR-018, 019, 023; UC-015). A última etapa visitada fica no `localStorage`, fora do documento e do arquivo exportado, e é apagada na exclusão.
+**Dados.** Um documento por personagem no IndexedDB, com camadas, decisões suspensas e log (ADR-002, ADR-004; FR-CHG-019). Versão de schema com migração na leitura. A cópia de segurança é o arquivo do personagem, exportado e importado pelo usuário (FR-CHAR-018, 019, 023; UC-015). A última etapa visitada fica no `localStorage`, fora do documento e do arquivo exportado, e é apagada na exclusão.
 
 **Conteúdo e propriedade intelectual.** O pacote oficial mora em `packs/`, escrito à mão a partir do PDF, com página em toda entidade, tabela e entrada. O CI valida schema, integridade, ausência de texto descritivo (M3) e ids removidos entre versões. Dados vindos de memória ou de `content/extracted/` entram marcados como não verificados e não são publicados até a conferência.
 
@@ -212,7 +212,7 @@ graph LR
 
 **Observabilidade.** Nenhuma telemetria nem analytics (NFR-OBS-001, NFR-PRIV-001). O erro aparece só para o usuário.
 
-**Desempenho.** A tela inicial não carrega o construtor nem os pacotes (NFR-PERF-001). `resolve` é memoizado por configuração de fontes; `evaluate` roda a cada mudança, dentro dos 100 ms (NFR-PERF-002), e `impact` são duas avaliações (NFR-PERF-003). Livros carregados sob demanda (NFR-CAP-002).
+**Desempenho.** A tela inicial não carrega o construtor nem os pacotes (NFR-PERF-001). `resolve` é memoizado por configuração de fontes; `evaluate` roda a cada mudança, dentro dos 100 ms (NFR-PERF-002), e `impact` são duas avaliações (NFR-PERF-003). Suspensas de vagas não geradas não são visitadas; o que cresce com elas é o tamanho do documento (ADR-004, Consequências). Livros carregados sob demanda (NFR-CAP-002).
 
 **Offline (Should).** Service worker com pré-cache do app e dos pacotes, quando a NFR-REL-003 entrar. Nada na arquitetura impede.
 
@@ -241,14 +241,14 @@ graph LR
 |---|---|---|
 | NFR-MAINT-001 | O Halfling e o Human revisado entram só com arquivos em `packs/`, sem mudança em `engine`. | Revisão do diff no plano; teste com pacote sintético de cada padrão. |
 | NFR-PERF-002 | Personagem de nível 0 completo: decisão → visão nova em até 100 ms (p95) no notebook e 200 ms no celular. | Teste de tempo do `evaluate` com o pacote real e com um pacote fictício do porte de um nível 0 completo (guarda unitária); E2E da decisão até a atualização da etapa e do resumo, no perfil `chromium` para o notebook e no `mobile-chrome` com a CPU emulada a 4× para o celular (FEAT-008 technical-design §5 e §8). |
-| NFR-PERF-003 | Trocar a ancestralidade de um personagem completo abre o diálogo em até 300 ms. | Teste de tempo do `impact`. |
+| NFR-PERF-003 | Trocar a ancestralidade de um personagem completo abre o diálogo em até 300 ms. | Teste de tempo do `impact`, também com suspensas acumuladas (ADR-004). |
 | NFR-REL-001 | Decidir e fechar a aba logo em seguida: a decisão está lá ao reabrir. | E2E: decidir, fechar o contexto, reabrir. |
 | NFR-CAP-001 | 100 personagens salvos: a lista inicial abre dentro do LCP. | E2E com 100 personagens semeados + Lighthouse. |
 
 ## 11. Riscos e dívida técnica
 
 - **Safari apaga dados sem uso por 7 dias.** No Safari e no iOS, personagens de quem não volta ao site em 7 dias podem sumir; `persist()` não garante proteção fora de apps na Tela de Início. Mitigação: exportar e importar o arquivo do personagem, trazido para o MVP na v1.1 do SRS (FR-CHAR-018, 019, 023). Quem não exportar ainda pode perder personagens; o aviso da FR-CHAR-016 diz isso.
-- **Estabilidade dos ids.** Decisões salvas dependem dos ids de concessão e de entrada (ADR-004). Renomear um id no pacote desfaz decisões. Mitigação: regra de nunca renomear e comparação no CI.
+- **Estabilidade dos ids.** Decisões salvas dependem dos ids de concessão e de entrada (ADR-004). Renomear um id no pacote suspende decisões, que só voltam se o id voltar. Mitigação: regra de nunca renomear e comparação no CI.
 - **Tipos de vaga.** O procedimento é dado, mas cada tipo de vaga novo exige código. Suplementos com procedimentos muito diferentes (ex.: Development do *Only Human*) podem pedir tipos novos.
 - **Autoria do pacote oficial.** Escrever e conferir no PDF é o trabalho mais longo do projeto; as páginas do SRS são aproximadas (página impressa = página do PDF − 1 no core).
 - **GitHub Pages sem cabeçalhos.** CSP só por meta, sem `frame-ancestors`; rotas por hash.
@@ -261,7 +261,7 @@ graph LR
 |---|---|
 | Regras vigentes | Resultado do `resolve`: a versão de cada item para a configuração de fontes de um personagem. |
 | Vaga | Ponto de decisão gerado pelo procedimento ou por uma concessão; tem chave estável que inclui a vaga mãe e o valor escolhido nela. |
-| Decisão órfã | Decisão cuja vaga deixou de ser gerada depois de uma mudança; é removida (com confirmação) e vai ao log como desfeita. |
+| Decisão suspensa | Decisão guardada que não é a ativa da vaga: a vaga deixou de ser gerada, a decisão não passa na validade ou outra mais recente da mesma vaga passa (D40). Continua no documento e volta com o contexto; só "descartar guardadas" a apaga. O estado é derivado; a marca de registro só guarda o que o log já registrou (ADR-004 §1). |
 | Visão do personagem | Resultado do `evaluate`: etapas, vagas abertas, valores com composição, campos da ficha. |
 | Patch | Correção de campos de um item por outro livro ou componente, pelas regras do JSON Merge Patch (RFC 7386). |
 
