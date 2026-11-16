@@ -2,7 +2,7 @@
 
 > Fonte da verdade para toda implementação de interface, junto com `docs/tokens.json`.
 > Gerado por ux-foundations · Modo: design file (wireframe v1 ingerido) + identidade A escolhida pelo usuário
-> Última atualização: 2026-11-14 (emenda E7 do aceite da FEAT-001)
+> Última atualização: 2026-11-16 (emendas E8 e E9 da FEAT-009; D40 no `impact-dialog`, no `log-entry` e no `live-summary`)
 
 ## 1. Tema visual e atmosfera
 
@@ -179,6 +179,7 @@ Números de atributo, característica e dado usam `font-variant-numeric: tabular
   --size-pill: 24px;
   --size-icon-sm: 16px;
   --size-icon-md: 20px;
+  --size-roll-value: 72px;
 
   --opacity-disabled: 0.45;
   --icon-stroke: 1.5;
@@ -245,23 +246,32 @@ Base: React Aria Components (ADR-006) para todo controle interativo. Os estilos 
 - **`option-card`:** card clicável (role radio). Nome `title-sm`, linha de mecânica em `meta` (P9), selos. Selecionado (prévia: a opção marcada no radiogroup que ainda não é a escolha): borda 2px `strong`. Escolha atual (`current`): rótulo "Your choice" em `caption` semibold com fundo `sunken`, raio `sm`, padding `--space-0-5` `--space-1-5`, no canto superior do cartão; borda padrão, nunca a de seleção; nome acessível "{Nome}, your choice". Quando a escolha atual é também a opção marcada, vale só o tratamento `current`; ao comparar, o cartão em prévia tem a borda e o atual tem o rótulo, nunca o mesmo tratamento. Estado nunca só por cor. Inelegível (Should): opacidade 0.6, borda tracejada, "Not available: motivo".
 - **`roll-card`:** card de uma tabela. Cabeçalho: nome `title` + dado em `badge` + `segmented-control` de modos. Corpo por estado:
   - **a decidir:** `button-primary` "Roll 3d6" + `button-secondary` "Enter result" (prescrita) e frase do que espera ("Not decided yet. Nothing else waits for it.");
-  - **rolado:** caixa de valor 72×72 (fundo `subtle`, borda `control`, valor `stat`, rótulo "rolled" em `caption`) + resultado + `effect-chip`s + "Reroll";
+  - **rolado:** caixa de valor quadrada de `--size-roll-value` (fundo `subtle`, borda `control`, valor `stat-lg`, rótulo "rolled" em `caption`) + resultado + `effect-chip`s + "Reroll";
   - **escolhido:** grade de faixas (`range-grid`);
   - **escrito:** `textarea` + checkbox "This result has a rules effect" (abre ajuste manual, FR-DEC-022);
-  - **informado:** um campo por dado, com a faixa válida na ajuda;
+  - **informado:** um campo por expressão de dado (ex.: um para 3d6), com a faixa válida na ajuda ("3 to 18"). Informa-se a soma que os dados mostram, sem modificador; o sistema soma os modificadores (ADR-009). Fora da faixa: regra de Validação (§4);
   - **aguardando:** fundo `sunken`, borda tracejada, motivo em `meta` ("Waits for Purpose");
   - **sem texto:** "No text added for this entry · " + `source-badge` (sem botão "Add text" no MVP).
 - **`effect-chip`:** `caption`, fundo `sunken`, raio `sm`, padding 2px 6px: "Corruption +1", "Language +1 (choose)".
 - **`range-grid`:** grade de botões (2 a 5 colunas conforme a largura), cada um com a faixa em `badge` e o nome quando o pacote o traz ("3–4 Troglodytes"). Sem nome no pacote (D36): só faixa e página, e ao selecionar abre um `text-input` "Name" logo abaixo da grade. Já possuído: desabilitado com "already yours".
 - **`subdecision`:** caixa com borda 1px tracejada `control`, raio `md`, padding 12px 16px: pergunta em `label`, controle pequeno e "or decide later: it stays in Open decisions" em `meta`.
-- **`live-summary`:** card com `eyebrow` "LIVE SUMMARY"; quatro mini-cartões de atributo (rótulo `caption`, valor `stat-sm`, modificador `caption`) e a lista de características em duas colunas (nome `meta`, valor semibold tabular).
+- **`live-summary`:** card com `eyebrow` "LIVE SUMMARY"; quatro mini-cartões de atributo (rótulo `caption`, valor `stat-sm`, modificador `caption`) e a lista de características em duas colunas (nome `meta`, valor semibold tabular). Com decisões suspensas (D40), uma linha final "N set aside · " + `link` "See Review", em `meta` `text-secondary`, separada por divisor: informação, não pendência (sem caixa tracejada, sem `pill-counter`, fora da contagem de Open decisions, FR-CHG-012). Só aparece com N > 0. No celular, dentro do resumo aberto.
 - **`open-decisions`:** card com `eyebrow` "OPEN DECISIONS · N"; cada pendência é um link em caixa tracejada: título `label` + onde se resolve em `meta`. Ação leva ao ponto exato (FR-FLOW-011).
 - **`value-composition`:** caixa `sunken`, raio `md`, padding 12px: `eyebrow` "HOW THIS IS CALCULATED"; linhas origem/valor (valor em mono tabular, alinhado à direita); corte por limite como linha "Capped at 25"; substituição como "Calculated 10 · overridden to 12"; total em semibold com divisor acima.
 - **`characteristic-row`:** nome `label` · fórmula legível `meta` `secondary` · valor `stat` à direita. Expande para `value-composition`.
-- **`impact-dialog`:** `dialog` com duas colunas "Current" × "New" no topo e três listas: "Will be removed" (ícone de remoção, texto `danger`), "Will be recalculated" ("Corruption 1 → 0"), "Stays as it is" (recolhida por padrão). Nota em `meta`: "Removed results stay in the log as undone." Ações: "Keep current …" à esquerda, "Apply …" à direita. Em mudança de fontes, as listas são agrupadas por livro.
+- **`impact-dialog`:** `dialog` com duas colunas "Current" × "New" no topo (empilhadas no celular) e quatro listas, nesta ordem, cada uma só quando tem itens (D40, FR-CHG-004):
+  - "Will be set aside": ícone Lucide `archive` + texto `default`. Não usa `danger`: nada se perde. Inclui os dependentes transitivos (FR-CHG-005), cada um com "depends on {decisão}" em `caption`, e os ajustes ligados, sob a decisão deles (FR-CHG-013);
+  - "Will be restored": ícone `archive-restore` + texto `default`, com o valor original ("Age 42 · rolled");
+  - "Will be recalculated": "Corruption 1 → 0", com os ajustes livres afetados (FR-CHG-014);
+  - "Stays as it is": recolhida por padrão.
+  Aparece também quando a mudança só restaura (FR-CHG-001). Nota em `meta`, quando há suspensas: "Set-aside decisions stay with this character, off the sheet, and come back on their own if what they depend on returns." Na rerrolagem, o valor que sai fica só no log como desfeito (D40 (4); FR-CHG-010): a nota diz isso, e esse valor não entra em "Will be set aside". Ações: "Keep current …" à esquerda (`button-secondary`), "Apply …" à direita (`button-primary`, nunca `button-danger`). Em mudança de fontes, as listas são agrupadas por livro (FR-CHG-007).
 - **`sheet-field`:** card com título `title-sm`, botão "+" (só em Edit sheet), entradas em `body` com a origem em `caption` `muted` ("Story · rolled", "Added by player"). Vazio: frase de estado vazio em `meta` ("None · set by your GM").
 - **`adjustment-form`:** formulário no lugar (sem modal): alvo, tipo (Modifier / Override, `segmented-control`), valor inteiro, nome obrigatório. Prévia do valor final antes de salvar.
-- **`log-entry`:** linha com tipo em `type-badge` (Sources, Choice, Roll, Edit), descrição `body`, fonte em `source-badge`. Desfeita: texto riscado em `muted` + motivo em `caption`.
+- **`log-entry`:** linha com tipo em `type-badge` (Sources, Choice, Roll, Edit), descrição `body`, fonte em `source-badge`. Só leitura: nenhuma ação de mudar ou editar (D40, FR-LOG-009, FR-CHG-016). Variantes:
+  - **desfeita** (substituída na própria vaga: Reroll, Choose → Choose, troca de modo, limpar): texto riscado em `muted` + motivo em `caption` ("Rerolled");
+  - **suspensão** e **restauração** (D40, FR-LOG-007): entrada própria, com o `type-badge` da decisão a que se refere (vale para os filtros), marcador "Set aside" ou "Restored" em `caption` semibold com fundo `sunken`, raio `sm`, a decisão e o valor em `body` e o motivo em `caption` ("Ancestry changed to Human", "Ancestry changed back to Dwarf"). A entrada original da decisão fica como foi registrada, sem riscado: suspensa não é desfeita;
+  - **descarte** (Should, FR-CHG-020): marcador "Discarded", com quantas e quais decisões; visível com o interruptor desligado.
+  O interruptor "Show undone and set-aside entries" (ligado por padrão) mostra ou oculta juntas as desfeitas e as entradas de suspensão e de restauração (FR-LOG-013, 014).
 - **`book-row`** (Sources): alça de arrastar + botões "Move up" / "Move down" (alternativa de teclado obrigatória) + posição + nome + interruptor ligado/desligado. Core: cadeado, "Always active", sem alça.
 - **`character-card`** (Home): nome `title`, "Ancestry · Level 0", estado em `pill-counter` ("Creating · 3 open" tracejado / "Complete" preenchido), resumo das fontes em `meta`, data em `caption`. Ação principal "Continue" ou "Open sheet"; menu "···" com Preview sheet, Export character file, Delete.
 - **`print-sheet`:** folha `@media print` sem cabeçalho do app, sem botões. Preto sobre branco, `--color-accent-*` impresso como #000. Fontes: corpo 9.5pt, títulos 12pt Spectral. Página A4 e Letter, margem 12mm, até 2 páginas (NFR-COMP-003). Decisões abertas marcadas com "☐ Open:" em negrito. `source-badge` mantido. Rodapé em toda página: nome do personagem, fontes ("Sources: Only Human › Core"), "Generated with SotDL Generator · not affiliated with Schwalb Entertainment".
@@ -297,8 +307,11 @@ Inglês simples, termos do jogo como nos livros (Strength, Health, novice path).
 | "This file isn't a character from this generator. Your saved characters weren't changed." | "Import failed: schema validation error." |
 | "Not decided yet. Nothing else waits for it." | "Pending slot (optional)." |
 | "Characters are saved in this browser only. Clearing your browser's data for this site deletes them." | "Data persisted in IndexedDB." |
+| "Will be set aside" · "Restored" (D40) | "Will be removed", "Deleted", "Suspended", "Invalidated" |
 
 Aviso "só neste navegador": com a exportação do arquivo do personagem (FEAT-002), acrescenta-se ao fim a frase "Export a character file to keep a copy."
+
+Termos da D40: "set aside" (verbo e adjetivo: "set-aside decisions") para a decisão que deixa de valer e fica guardada; "restored" para a que volta. "Removed" sugere perda, que não há; "suspended" soa como punição ou estado técnico. "Undone" fica só para o valor substituído na própria vaga. Descartar as guardadas (Should, FR-CHG-020): "Discard set-aside decisions", confirmação "Discard permanently" / "Keep them", dizendo que é irreversível e que o log guarda as entradas.
 
 Erros dizem: o que aconteceu, o que ficou a salvo, o que fazer. Confirmações destrutivas nomeiam a consequência no botão ("Delete permanently").
 
@@ -328,7 +341,7 @@ Erros dizem: o que aconteceu, o que ficou a salvo, o que fazer. Confirmações d
 
 ## 9. Proveniência e lacunas
 
-**Proveniência.** Estrutura, componentes, medidas (raios 4/6/8/999, espaços 2–24, Inter e IBM Plex Mono, cinzas quentes) ingeridos do wireframe v1 (`docs/reference/wireframe/`, código `.dc.html` e telas). Identidade visual (pergaminho, vermelho-sangue, Spectral) escolhida pelo usuário entre duas propostas (direção A), dentro do P33 e da D28. Ajustes exigidos pela NFR-ACC-001: o cinza `#A8A8A2` do wireframe (2,4:1 sobre branco) foi substituído por `#85847E` em bordas de controle e por `#65645E` em texto apagado; corpo subiu de 13 para 14px; campos de formulário em 16px; alvos de 44px em ponteiro grosso; anel de foco definido (o wireframe não tinha). Emenda de 2026-11-12, do ui-design da FEAT-007 (E1–E4): estado bloqueado do `step-map` sem tooltip; estado `current` do `option-card`; ícones Lucide; tokens `size.pill`, `size.icon-sm`, `size.icon-md`, `icon.stroke`, `opacity.disabled`, `border-width.alert` e `typography.stat-sm`; padding do `button-primary` em `--space-4`. Emenda de 2026-11-12, do ui-design da FEAT-008 (E5): regra de quebra do `segmented-control` em grade de 2 colunas, sem token novo. Emenda de 2026-11-13, do ui-design da FEAT-001 (E6): texto do aviso "só neste navegador" no §6. Emenda de 2026-11-14, do aceite da FEAT-001 (M1) (E7): o estado `loading` de botão passa a ser o `isPending` do React Aria (`aria-disabled`, foco mantido, anúncio do rótulo), sem `aria-busy`, que o `Button` do `react-aria-components` 1.22.1 não repassa ao DOM; sem token novo.
+**Proveniência.** Estrutura, componentes, medidas (raios 4/6/8/999, espaços 2–24, Inter e IBM Plex Mono, cinzas quentes) ingeridos do wireframe v1 (`docs/reference/wireframe/`, código `.dc.html` e telas). Identidade visual (pergaminho, vermelho-sangue, Spectral) escolhida pelo usuário entre duas propostas (direção A), dentro do P33 e da D28. Ajustes exigidos pela NFR-ACC-001: o cinza `#A8A8A2` do wireframe (2,4:1 sobre branco) foi substituído por `#85847E` em bordas de controle e por `#65645E` em texto apagado; corpo subiu de 13 para 14px; campos de formulário em 16px; alvos de 44px em ponteiro grosso; anel de foco definido (o wireframe não tinha). Emenda de 2026-11-12, do ui-design da FEAT-007 (E1–E4): estado bloqueado do `step-map` sem tooltip; estado `current` do `option-card`; ícones Lucide; tokens `size.pill`, `size.icon-sm`, `size.icon-md`, `icon.stroke`, `opacity.disabled`, `border-width.alert` e `typography.stat-sm`; padding do `button-primary` em `--space-4`. Emenda de 2026-11-12, do ui-design da FEAT-008 (E5): regra de quebra do `segmented-control` em grade de 2 colunas, sem token novo. Emenda de 2026-11-13, do ui-design da FEAT-001 (E6): texto do aviso "só neste navegador" no §6. Emenda de 2026-11-14, do aceite da FEAT-001 (M1) (E7): o estado `loading` de botão passa a ser o `isPending` do React Aria (`aria-disabled`, foco mantido, anúncio do rótulo), sem `aria-busy`, que o `Button` do `react-aria-components` 1.22.1 não repassa ao DOM; sem token novo. Emenda de 2026-11-16, da emenda 3 do §8 da FEAT-009: token `size.roll-value` (E8), que substitui a caixa 72×72 sem token, com o valor em `stat-lg`, como já dizia a tipografia; estado "informado" do `roll-card` com um campo por expressão de dado (E9). Emenda de 2026-11-16, da D40 (SRS v1.2): `impact-dialog` com "Will be set aside" e "Will be restored", sem cor de perigo; `log-entry` sem ação de mudança, com entradas de suspensão, restauração e descarte e o interruptor "Show undone and set-aside entries"; linha "N set aside" no `live-summary`; termos no §6. Sem token novo.
 
 ```json
 { "design_provenance": {
@@ -342,6 +355,7 @@ Erros dizem: o que aconteceu, o que ficou a salvo, o que fazer. Confirmações d
 **Lacunas conhecidas.**
 - Breakpoint intermediário (768–1279) não desenhado no wireframe; layout assumido.
 - Ficha no celular, etapas Roleplaying e Review, About, estados vazio, erro e carregamento: especificados aqui e em `ux-foundations.md`, sem desenho.
-- Valores ainda sem token, a tokenizar no detailed-design da primeira feature que os usa, nunca como número solto no código: caixa de valor 72×72 do `roll-card` e corpo 9.5pt, títulos 12pt e margem 12mm do `print-sheet`. A feature responsável por cada um está no plano de implementação.
+- Valores ainda sem token, a tokenizar no detailed-design da primeira feature que os usa, nunca como número solto no código: corpo 9.5pt, títulos 12pt e margem 12mm do `print-sheet`. A feature responsável por cada um está no plano de implementação.
+- Encaixe vertical da caixa de valor do `roll-card`, a conferir no ui-design da FEAT-009: o valor em `stat-lg` ocupa 48px de altura de linha e o rótulo "rolled" em `caption`, o resto dos 72px, com pouca folga. Se não couber com o padding, ajusta-se a altura de linha do valor dentro da caixa, sem trocar o token.
 - Modo escuro fora do escopo; os tokens por papel permitem acrescentá-lo.
 - Componentes fora do MVP só com a especificação do wireframe.
