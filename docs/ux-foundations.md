@@ -1,6 +1,6 @@
 # UX Foundations: Gerador de personagens SotDL
 
-> Status: Revisado (aprovado em 2026-11-16) · Última atualização: 2026-11-16 (D40; emenda 3 da FEAT-009)
+> Status: Revisado (aprovado em 2026-11-16) · Última atualização: 2026-11-16 (D40; emenda 3 da FEAT-009; E10 e E11 do ui-design da FEAT-009)
 > Fontes: `docs/srs.md` v1.2 · `docs/architecture.md` · `docs/use-cases.md` · princípios · wireframe v1 (`docs/reference/wireframe/`, `docs/reference/screens/`)
 > Design system: **`docs/design.md` + `docs/tokens.json`** (fonte única de todos os valores de design; este documento referencia, não repete)
 
@@ -31,7 +31,7 @@ Neutros quentes, cartões planos com borda, ação principal em preto, vermelho 
 WCAG 2.2 AA em construtor, ficha e log, com tudo operável por teclado (NFR-ACC-001). Regras mecânicas: `design.md` §5.
 
 ### A5. Princípios de interação do produto
-1. **Registrar, não fiscalizar** (P7): toda tabela aceita rolar, escolher, escrever ou informar; o regime da regra aparece como indicação.
+1. **Registrar, não fiscalizar** (P7): toda tabela aceita rolar e escolher (FR-DEC-001); as de rolagem com escolha permitida aceitam também Write (FR-DEC-003), e as de rolagem prescrita, Enter result (FR-DEC-004, D30). O regime da regra aparece como indicação, sem restringir (FR-DEC-002).
 2. **Pendência não bloqueia** (P4, D5): só a dependência real bloqueia; o resto vira contagem em Open decisions.
 3. **Nada some sem aviso, nada se perde** (P6, D40): o que deixa de valer fica guardado no personagem (*set aside*) e volta sozinho com o contexto (*restored*). Mudança que deixa de lado ou restaura decisões abre o diálogo de impacto; o resto aplica direto.
 4. **Tudo se explica** (P1, P11): toda opção mostra livro, página e tipo; todo valor mostra a composição.
@@ -117,15 +117,15 @@ flowchart LR
     card["Cartão da tabela"] --> mode{"Modo"}
     mode -->|"Roll"| roll["Rola os dados"]
     mode -->|"Choose"| choose["Escolhe a faixa"]
-    mode -->|"Write"| write["Escreve o resultado"]
-    mode -->|"Enter result"| enter["Informa cada<br/>expressão de dado"]
+    mode -->|"Write<br/>(rolagem com escolha)"| write["Escreve o resultado"]
+    mode -->|"Enter result<br/>(rolagem prescrita)"| enter["Informa cada<br/>expressão de dado"]
     enter --> valid{"Na faixa?"}
     valid -->|"não"| err["Mostra a faixa válida"]
     valid -->|"sim"| result
     roll --> result["Resultado + efeitos<br/>+ subdecisões"]
-    choose --> name{"Nome no pacote?"}
-    name -->|"não (D36)"| typename["Digita o nome"]
-    name -->|"sim"| result
+    choose --> name{"Entrada é nome<br/>fora do pacote?"}
+    name -->|"sim (D36)"| typename["Digita o nome"]
+    name -->|"não"| result
     typename --> result
     write --> result
     result --> again{"Reroll ou troca?"}
@@ -134,6 +134,8 @@ flowchart LR
     dlg -->|"Apply"| result
     dlg -->|"Keep current"| card
 ```
+
+Os modos de cada tabela seguem a A5.1. O nome a digitar só aparece quando a entrada é um nome curto deixado fora do pacote (D36; ex.: profissões, SCR-WEB-010). Nas tabelas cujas entradas são descrições fora do pacote (P22; as de história: Age, Build, Appearance, Background, Personality), a grade mostra só faixa e página, e o resultado segue o estado "sem texto" do `roll-card`; texto próprio do jogador é o Write (FEAT-010). Como o pacote marca uma tabela de nomes fica para o detailed-design da FEAT-012.
 
 Na troca dentro da própria vaga (Reroll, Choose → Choose, troca de modo), o valor que sai vai só para o log como desfeito; o que dependia dele fica *set aside* (D40 (4)). Voltar a uma escolha anterior (Human → Dwarf) mostra como *restored* as decisões dela, com os valores originais (UC-010 1b).
 
