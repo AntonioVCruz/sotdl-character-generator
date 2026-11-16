@@ -2,7 +2,8 @@
 
 **Status:** Aceita
 **Data:** 2026-11-11
-**Requisitos atendidos:** FR-CONT-001, FR-CONT-002, FR-CONT-004, FR-CONT-005, FR-CONT-008, FR-CONT-010, FR-CONT-011, FR-CONT-012, FR-CONT-017, FR-CHAR-018, FR-CHAR-019, FR-CHAR-023, NFR-SEC-002, NFR-CAP-002. Princípios: P21, P21a, P21b, P22.
+**Revisão:** 2026-11-16, D40 com o SRS v1.2 (suspensas no arquivo do personagem).
+**Requisitos atendidos:** FR-CONT-001, FR-CONT-002, FR-CONT-004, FR-CONT-005, FR-CONT-008, FR-CONT-010, FR-CONT-011, FR-CONT-012, FR-CONT-017, FR-CHAR-018, FR-CHAR-019, FR-CHAR-023, FR-CHG-019, NFR-SEC-002, NFR-CAP-002. Princípios: P21, P21a, P21b, P22.
 
 ## Contexto
 
@@ -10,7 +11,7 @@ O conteúdo oficial e o da casa usam o mesmo formato documentado (P21a), e a imp
 
 ## Decisão
 
-- **JSON** para pacotes de conteúdo, pacotes de texto (Could) e arquivo do personagem (o documento da ADR-004 com camadas e log, mais a lista de livros e versões usados).
+- **JSON** para pacotes de conteúdo, pacotes de texto (Could) e arquivo do personagem (o documento da ADR-004 com camadas, decisões suspensas e log, mais a lista de livros e versões usados).
 - **Fonte única de tipos e validação:** os schemas são escritos em TypeScript com Zod 4; o JSON Schema (draft 2020-12) é gerado deles (`z.toJSONSchema`) e publicado no site e no repositório. O mesmo schema valida em tempo de execução, autocompleta no editor (`"$schema"` no arquivo) e documenta o formato.
 - **Validação em camadas:** schema → regras do formato (data de publicação, página obrigatória em fonte com páginas, ids sem colisão, ciclo de fórmula) → integridade referencial (ADR-003). Erros saem com caminho no arquivo e texto legível (P21b).
 - **Pacote oficial só com mecânica (P22):** o schema do pacote oficial não tem campos de texto livre além de nomes de entidade e de nomes curtos referenciados (D36, D38). Texto descritivo só existe no tipo "pacote de textos", que o pacote oficial não usa. O CI barra o pacote oficial que tenha campo de texto (M3).
@@ -27,4 +28,5 @@ O conteúdo oficial e o da casa usam o mesmo formato documentado (P21a), e a imp
 
 - O formato documentado (FR-CONT-017, Should) parte do JSON Schema gerado, com exemplos tirados do próprio pacote oficial (P21a).
 - Importar um arquivo nunca executa nada: JSON é lido, validado e recusado com mensagem se inválido (NFR-SEC-002). Fórmulas são árvores JSON (ADR-004).
+- Campos opcionais novos alargam a versão do formato sem migração; só uma mudança que invalide arquivos gravados pede versão nova. Assim entraram as decisões anteriores de uma vaga e a marca de registro da D40 (ADR-004 §1), e o arquivo exportado leva as suspensas, que continuam suspensas ao importar (FR-CHG-019, FR-CHAR-019).
 - A pasta `packs/` é pública e só tem mecânica; `content/` continua local e fora do Git.
