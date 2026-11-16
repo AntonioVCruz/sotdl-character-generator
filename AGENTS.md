@@ -74,7 +74,7 @@ A tentativa anterior falhou por escopo inflado e excesso de processo (ver `docs/
 ## Pontos críticos do domínio
 
 - **Fontes:** o conteúdo inclui o livro básico e todos os suplementos, que expandem, substituem ou revisam o core em sete padrões (seção 2.2 dos princípios). Os princípios já decidem o mecanismo: livros com componentes, ordem de prioridade, exceção no cartão e por rolagem.
-- **Esqueleto vs. camada editável:** derivados sempre calculados (D2), ajuste manual como camada nomeada (P12), concessões do mestre como camada própria (P23), mudança a montante desfaz dependentes com confirmação (P6).
+- **Esqueleto vs. camada editável:** derivados sempre calculados (D2), ajuste manual como camada nomeada (P12), concessões do mestre como camada própria (P23), mudança a montante suspende os dependentes com confirmação e os restaura se o contexto voltar; o log é só registro (P6, D40).
 - **Escolha vs. rolagem:** quatro regimes de decisão (seção 1.1). O gerador registra, não fiscaliza (P7). Respeitar a distribuição publicada: 3d6 são três dados, não um número uniforme de 3 a 18.
 - **Demonstrabilidade (decidida, D35):** o app traz a mecânica oficial sem texto, nos termos do P22. Um visitante sem os livros percorre o fluxo inteiro; entradas sem texto mostram faixa, página e efeitos. O risco de licença foi aceito: o site é aberto ao público (Q1 do SRS).
 - **Aplicação web (decidida):** SPA estática, sem backend nem contas no MVP, com o acesso a personagens atrás de uma interface de repositório para não impedir contas depois (ADR-001). Personagens no IndexedDB do navegador (ADR-002). Hospedagem no GitHub Pages, com deploy por GitHub Actions (ADR-007).
