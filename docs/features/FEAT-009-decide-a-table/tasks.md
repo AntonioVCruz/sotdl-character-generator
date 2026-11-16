@@ -15,7 +15,7 @@ Todo "pronto quando" inclui `npm run typecheck`, `npm run lint` e os testes exis
     - uma volta completa de resíduos abaixo do limite dá cada face o mesmo número de vezes (d6 e d20).
     - Nenhum teste estatístico com o `crypto` real (C13).
 
-- [ ] **T2. Schemas: tabela, tipo de criatura, concessão `table`, decisões e log** (design §3.1, §4; FR-CONT-008 parcial; D1, D2, D3, D10)
+- [x] **T2. Schemas: tabela, tipo de criatura, concessão `table`, decisões e log** (design §3.1, §4; FR-CONT-008 parcial; D1, D2, D3, D10)
   - Em `src/content/schemas.ts`:
     - itens `table` e `creature-type`; `Dice`, `EntryKey`, `Entry`, `Effect`, `SheetField`;
     - `GrantedSlot` com `kind: 'table'`;

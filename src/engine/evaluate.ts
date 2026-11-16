@@ -48,7 +48,8 @@ interface SlotBase {
 
 export type SlotView =
   | (SlotBase & { kind: 'choose-entity'; options: EntityOption[] } & Omit<Extract<SlotDef, { kind: 'choose-entity' }>, 'kind'>)
-  | (SlotBase & { grant: string } & GrantedSlot)
+  // A concessão `table` ganha vaga própria na FEAT-009 (T3).
+  | (SlotBase & { grant: string } & Exclude<GrantedSlot, { kind: 'table' }>)
   // Ajuste de scores (FEAT-008 §3.3): as opções são os atributos vigentes.
   | (Omit<SlotBase, 'value'> &
       Extract<SlotDef, { kind: 'attribute-shift' }> & { options: { id: string; name: string }[]; value?: AttributeShift })
@@ -210,13 +211,19 @@ function modifiers(slots: SlotView[]): Map<string, ModifierStage[]> {
   return byAttribute
 }
 
+/** Valor de uma decisão `chosen`; os outros modos não têm `value` (FEAT-009 §4). */
+function chosenValue(character: CharacterDocument, key: string): DecisionValue | undefined {
+  const decision = character.decisions[key]
+  return decision?.mode === 'chosen' ? decision.value : undefined
+}
+
 /** Raízes: as vagas de cada etapa. Uma escolha em `choose-entity` abre as concessões da entidade como filhas. */
 function slotTree(rules: Rules, character: CharacterDocument): SlotView[] {
   const slots: SlotView[] = []
   for (const step of rules.steps) {
     for (const [key, def] of Object.entries(step.slots ?? {})) {
       if (def.kind === 'attribute-shift') {
-        slots.push(shiftSlot(rules, key, step.id, def, character.decisions[key]?.value))
+        slots.push(shiftSlot(rules, key, step.id, def, chosenValue(character, key)))
         continue
       }
       const options = rules.ancestries.map((ancestry) => ({
@@ -225,7 +232,7 @@ function slotTree(rules: Rules, character: CharacterDocument): SlotView[] {
         provenance: ancestry.provenance,
         mechanics: mechanics(rules, ancestry).map((line) => line.text),
       }))
-      const value = character.decisions[key]?.value
+      const value = chosenValue(character, key)
       // Decisão sem opção viva (id que sumiu) é ignorada: a vaga fica em aberto.
       const decided = typeof value === 'string' && options.some((option) => option.id === value)
       slots.push({ key, stepId: step.id, source: null, decided, ...(decided && { value }), ...def, options })
@@ -255,12 +262,13 @@ function shiftSlot(
 }
 
 function grantedSlots(parent: string, entity: AncestryItem, character: CharacterDocument): SlotView[] {
-  return Object.entries(entity.grants ?? {}).map(([grant, def]): SlotView => {
+  return Object.entries(entity.grants ?? {}).flatMap(([grant, def]): SlotView[] => {
+    if (def.kind === 'table') return []
     const key = childKey(parent, entity.id, grant)
-    const value = character.decisions[key]?.value
+    const value = chosenValue(character, key)
     // `attribute-increase` e `language-or-profession` não têm resolvedor até a FEAT-016 (D9).
     const decided = def.kind === 'choose-value' && typeof value === 'number' && def.options.includes(value)
-    return { key, stepId: def.step, source: { id: entity.id, name: entity.name }, decided, ...(decided && { value }), grant, ...def }
+    return [{ key, stepId: def.step, source: { id: entity.id, name: entity.name }, decided, ...(decided && { value }), grant, ...def }]
   })
 }
 

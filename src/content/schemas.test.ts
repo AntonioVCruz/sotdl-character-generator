@@ -188,3 +188,194 @@ describe('character document v1', () => {
     expect(characterDocumentSchema.safeParse(skeleton).success).toBe(false)
   })
 })
+
+describe('pack schema: tables and creature types', () => {
+  // Itens novos no fim do componente: 12 é a tabela, 13 o tipo de criatura.
+  const tableBook = (entries: Record<string, unknown>, dice: Record<string, number> = { count: 3, sides: 6 }) => {
+    const book = testBook()
+    items(book).push(
+      { id: 'table:gnome-past', name: 'Gnome Past', page: 7, dice, regime: 'roll-or-choose', field: 'background', entries },
+      { id: 'creature-type:wolf', name: 'Wolves', page: 7 },
+    )
+    ;(items(book)[10] as { grants: Record<string, unknown> }).grants.past = { kind: 'table', step: 'step:traits', table: 'table:gnome-past' }
+    return book
+  }
+  const at = (key: string) => `components.0.items.12.entries.${key}`
+  const whole = 'components.0.items.12.entries'
+
+  it('FR-CONT-008: accepts a table with dice, regime, field, entries with page, entity and effects, and a table grant', () => {
+    const book = tableBook({
+      '3-10': { entity: 'creature-type:wolf' },
+      '11-17': { page: 8, effects: { vigor: { target: 'characteristic:vigor', add: 1 }, size: { target: 'characteristic:stature', set: 1 } } },
+      '18': { effects: { might: { target: 'attribute:might', add: { dice: { count: 1, sides: 6 } } } } },
+    })
+    expect(issues(book)).toEqual([])
+  })
+
+  it('FR-CONT-008: accepts keys "3", "4", "5-6", "7-16", "17", "18" whatever the object order, and rejects the table without "5-6" by the gap (AC-15)', () => {
+    const entries: Record<string, unknown> = { '3': {}, '4': {}, '5-6': {}, '7-16': {}, '17': {}, '18': {} }
+    // O objeto põe as chaves inteiras antes das outras.
+    expect(Object.keys(entries)).toEqual(['3', '4', '17', '18', '5-6', '7-16'])
+    expect(issues(tableBook(entries))).toEqual([])
+    delete entries['5-6']
+    expect(issues(tableBook(entries))).toEqual([{ path: at('7-16'), message: 'gap: no entry covers 5-6' }])
+  })
+
+  it('FR-CONT-008: rejects a gap, an overlap, an entry outside the dice and an invalid key, with the path', () => {
+    expect(issues(tableBook({ '3-10': {}, '12-18': {} }))).toEqual([{ path: at('12-18'), message: 'gap: no entry covers 11' }])
+    expect(issues(tableBook({ '3-10': {}, '11-17': {} }))).toEqual([{ path: whole, message: 'gap: no entry covers 18' }])
+    expect(issues(tableBook({ '3-10': {}, '10-18': {} }))).toEqual([{ path: at('10-18'), message: expect.stringMatching(/overlaps/) }])
+    expect(issues(tableBook({ '2-10': {}, '11-18': {} }))).toEqual([
+      { path: at('2-10'), message: expect.stringMatching(/outside the dice range 3-18/) },
+      { path: at('11-18'), message: 'gap: no entry covers 3-10' },
+    ])
+    expect(issues(tableBook({ '3-18': {}, '19': {} }))).toEqual([{ path: at('19'), message: expect.stringMatching(/outside/) }])
+    expect(issues(tableBook({ '3-18': {}, low: {} }))).toEqual([{ path: at('low'), message: expect.stringMatching(/"n" or "n-m"/) }])
+    expect(issues(tableBook({ '3-18': {}, '9-4': {} }))).toEqual([{ path: at('9-4'), message: expect.stringMatching(/starts after it ends/) }])
+  })
+
+  it('FR-CONT-008: the range of a die with a modifier moves with it', () => {
+    expect(issues(tableBook({ '2-7': {} }, { count: 1, sides: 6, modifier: 1 }))).toEqual([])
+    expect(issues(tableBook({ '1-6': {} }, { count: 1, sides: 6, modifier: 1 }))).toEqual([
+      { path: at('1-6'), message: expect.stringMatching(/outside the dice range 2-7/) },
+      { path: whole, message: 'gap: no entry covers 2-7' },
+    ])
+  })
+
+  it('FR-CONT-008: rejects an unknown entity, an unknown effect target and a malformed effect die, with the path', () => {
+    expect(issues(tableBook({ '3-18': { entity: 'creature-type:bear' } }))).toEqual([
+      { path: at('3-18.entity'), message: 'unknown entity creature-type:bear' },
+    ])
+    expect(issues(tableBook({ '3-18': { effects: { luck: { target: 'attribute:luck', add: 1 } } } }))).toEqual([
+      { path: at('3-18.effects.luck.target'), message: expect.stringMatching(/attribute:luck/) },
+    ])
+    const badDice = issues(tableBook({ '3-18': { effects: { might: { target: 'attribute:might', add: { dice: { count: 0, sides: 6 } } } } } }))
+    expect(badDice).toEqual([expect.objectContaining({ path: expect.stringMatching(/^components\.0\.items\.12\.entries\.3-18\.effects\.might/) })])
+  })
+
+  it('FR-CONT-008: rejects a table grant for a missing table, and a text field in a table entry', () => {
+    const book = tableBook({ '3-18': {} })
+    ;(items(book)[10] as { grants: Record<string, { table: string }> }).grants.past.table = 'table:gnome-future'
+    expect(issues(book)).toEqual([{ path: 'components.0.items.10.grants.past.table', message: 'unknown table table:gnome-future' }])
+    expect(issues(tableBook({ '3-18': { text: 'Prose from a book' } }))).toEqual([expect.objectContaining({ path: at('3-18') })])
+  })
+})
+
+describe('character document v1: table decisions and log', () => {
+  const base = {
+    schema: 1,
+    id: 'c1',
+    contentVersion: '0.0.0',
+    revision: 1,
+    createdAt: '2026-01-01T00:00:00.000Z',
+    updatedAt: '2026-01-01T00:00:00.000Z',
+    sources: { order: ['test.book'] },
+    decisions: { origin: { mode: 'chosen', value: 'ancestry:gnome' } },
+    text: {},
+    log: [] as unknown[],
+  }
+  const withDecisions = (decisions: Record<string, unknown>) => ({ ...base, decisions: { ...base.decisions, ...decisions } })
+
+  it('FR-DEC-024, FR-DEC-005, FR-DEC-019: accepts chosen with an entry, rolled and entered in the D3 shapes (table and roll-effect)', () => {
+    const document = withDecisions({
+      'origin=gnome/past': { mode: 'chosen', value: '11-17', book: 'test.book' },
+      'origin=gnome/age': { mode: 'rolled', dice: [3, 5, 2], modifier: 0, total: 10, entry: '8-12', rolls: 1, book: 'test.book' },
+      'origin=gnome/build': { mode: 'entered', sum: 11, modifier: 1, total: 12, entry: '9-12', book: 'test.book' },
+      'origin=gnome/past=18/might': { mode: 'rolled', dice: [4], modifier: 0, total: 4 },
+      'origin=gnome/build=9-12/vigor': { mode: 'entered', sum: 3, modifier: 0, total: 3 },
+    })
+    expect(characterDocumentSchema.parse(document)).toEqual(document)
+  })
+
+  it('FR-DEC-024, FR-DEC-005, FR-DEC-019: rejects a decision with an extra field', () => {
+    for (const decision of [
+      { mode: 'chosen', value: '11-17', book: 'test.book', faces: [3] },
+      { mode: 'rolled', dice: [3, 5, 2], modifier: 0, total: 10, entry: '8-12', rolls: 1, book: 'test.book', effects: {} },
+      { mode: 'entered', sum: 11, modifier: 0, total: 11, dice: [11] },
+    ]) {
+      expect(characterDocumentSchema.safeParse(withDecisions({ 'origin=gnome/age': decision })).success).toBe(false)
+    }
+  })
+
+  const entry = {
+    id: 1,
+    at: '2026-01-01T00:00:00.000Z',
+    kind: 'decision',
+    slot: 'origin',
+    slotKind: 'choose-entity',
+    step: { id: 'step:origin', name: 'Origin' },
+    origin: null,
+    mode: 'chosen',
+    subject: null,
+    source: { book: 'test.book', abbr: 'TB', page: 5 },
+    result: { entity: { id: 'ancestry:gnome', name: 'Gnome' } } as object,
+  }
+  const rolled = {
+    ...entry,
+    id: 4,
+    slot: 'origin=gnome/age',
+    slotKind: 'table',
+    mode: 'rolled',
+    origin: { id: 'ancestry:gnome', name: 'Gnome' },
+    subject: { id: 'table:gnome-age', name: 'Gnome Age' },
+    result: { entry: '8-12' },
+    roll: { count: 3, sides: 6, modifier: 0, total: 10, rolls: 1, faces: [3, 5, 2] },
+  }
+  const logEntries = [
+    entry,
+    {
+      ...entry,
+      id: 2,
+      slot: 'origin=gnome/stature',
+      slotKind: 'choose-value',
+      origin: { id: 'ancestry:gnome', name: 'Gnome' },
+      subject: { id: 'characteristic:stature', name: 'Stature' },
+      result: { value: 0.5 },
+    },
+    {
+      ...entry,
+      id: 3,
+      slot: 'adjust',
+      slotKind: 'attribute-shift',
+      step: { id: 'step:traits', name: 'Traits' },
+      source: { book: 'test.book', abbr: 'TB', page: 2 },
+      result: { shift: { decrease: { id: 'attribute:might', name: 'Might' }, increase: { id: 'attribute:wits', name: 'Wits' } } },
+    },
+    rolled,
+    {
+      ...rolled,
+      id: 5,
+      slot: 'origin=gnome/past',
+      mode: 'entered',
+      subject: { id: 'table:gnome-past', name: 'Gnome Past' },
+      result: { entry: '3-10', entity: { id: 'creature-type:wolf', name: 'Wolves' } },
+      roll: { count: 3, sides: 6, modifier: 0, total: 7, sum: 7 },
+    },
+    {
+      ...rolled,
+      id: 6,
+      slot: 'origin=gnome/past=18/might',
+      slotKind: 'roll-effect',
+      origin: { id: 'table:gnome-past', name: 'Gnome Past' },
+      subject: { id: 'attribute:might', name: 'Might' },
+      result: { value: 4 },
+      roll: { count: 1, sides: 6, modifier: 0, total: 4, faces: [4] },
+    },
+  ]
+
+  it('FR-LOG-001: accepts a log entry of each mode and result shape, and log: [] stays valid', () => {
+    const document = { ...base, log: logEntries }
+    expect(characterDocumentSchema.parse(document)).toEqual(document)
+    expect(characterDocumentSchema.parse(base)).toEqual(base)
+  })
+
+  it('FR-LOG-001: rejects a log entry with an extra field, also inside the result or the roll', () => {
+    for (const extra of [
+      { ...entry, note: 'x' },
+      { ...entry, result: { entity: { id: 'ancestry:gnome', name: 'Gnome' }, page: 5 } },
+      { ...rolled, roll: { ...rolled.roll, sum: 10 } },
+    ]) {
+      expect(characterDocumentSchema.safeParse({ ...base, log: [extra] }).success).toBe(false)
+    }
+  })
+})

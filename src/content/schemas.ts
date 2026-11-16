@@ -27,6 +27,47 @@ const name = z.string().min(1)
 const abbr = z.string().regex(/^[A-Z0-9]{2,8}$/, 'abbreviation of 2 to 8 capitals or digits')
 const layer = z.enum(['core', 'supplement', 'house'])
 const page = z.number().int().positive()
+const tableId = prefixedId('table')
+
+/** Expressão de dado (FEAT-009 §3.1; ADR-009). */
+export const diceSchema = z.strictObject({
+  count: z.number().int().min(1),
+  sides: z.number().int().min(2),
+  modifier: z.number().int().optional(),
+})
+
+/** Chave de entrada de tabela: a faixa, "n" ou "n-m" (FEAT-009 D2). `n ≤ m` é regra de formato do livro. */
+export const entryKey = z.string().regex(/^\d+(-\d+)?$/, 'entry key like "3" or "4-7"')
+
+/** Efeito de resultado (FEAT-009 §3.1): `add` no estágio `sum`, `set` no `define`; `add.dice` abre a vaga `roll-effect`. */
+const effectTarget = z.union([attributeId, characteristicId])
+const effectSchema = z.union([
+  z.strictObject({ target: effectTarget, add: z.union([z.number(), z.strictObject({ dice: diceSchema })]) }),
+  z.strictObject({ target: effectTarget, set: z.number() }),
+])
+
+const entrySchema = z.strictObject({
+  // Ausente: a página da tabela.
+  page: page.optional(),
+  entity: entityId.optional(),
+  effects: z.record(localName, effectSchema).optional(),
+})
+
+/** Campo da ficha que recebe o resultado (P28; FR-SHEET-006). */
+const sheetField = z.enum([
+  'appearance',
+  'background',
+  'personality',
+  'religion',
+  'languages',
+  'professions',
+  'interesting-things',
+  'companions',
+  'other-possessions',
+  'marks-of-darkness',
+  'quirks',
+  'objective',
+])
 
 /** Fórmula como árvore JSON (ADR-004 §2), nunca texto avaliado. `grant:<id>` lê a vaga concedida pela própria entidade. */
 export type Formula =
@@ -81,6 +122,8 @@ const grantedSlotSchema = z.discriminatedUnion('kind', [
   // Sem resolvedor até a FEAT-016 (D9).
   z.strictObject({ kind: z.literal('attribute-increase'), step: stepId, amount: z.number().int() }),
   z.strictObject({ kind: z.literal('language-or-profession'), step: stepId }),
+  // FEAT-009 D1: tabela concedida pela ancestralidade numa etapa (ADR-003 §6).
+  z.strictObject({ kind: z.literal('table'), step: stepId, table: tableId }),
 ])
 
 const itemSchemas = {
@@ -118,6 +161,18 @@ const itemSchemas = {
   }),
   talent: z.strictObject({ id: talentId, name, page }),
   language: z.strictObject({ id: languageId, name, page }),
+  // FEAT-009 §3.1: cada tabela declara o próprio regime (princípios §1.1); as entradas são objeto com chave (ADR-003).
+  table: z.strictObject({
+    id: tableId,
+    name,
+    page,
+    dice: diceSchema,
+    regime: z.enum(['choice', 'roll-or-choose', 'roll']),
+    field: sheetField.optional(),
+    entries: z.record(z.string(), entrySchema),
+  }),
+  // D38, FEAT-009 D10: só nome e página.
+  'creature-type': z.strictObject({ id: prefixedId('creature-type'), name, page }),
 }
 
 export type ItemKind = keyof typeof itemSchemas
@@ -130,6 +185,14 @@ export type CharacteristicItem = ItemOf<'characteristic'>
 export type AncestryItem = ItemOf<'ancestry'>
 export type TalentItem = ItemOf<'talent'>
 export type LanguageItem = ItemOf<'language'>
+export type TableItem = ItemOf<'table'>
+export type CreatureTypeItem = ItemOf<'creature-type'>
+export type Dice = z.infer<typeof diceSchema>
+export type EntryKey = z.infer<typeof entryKey>
+export type Entry = z.infer<typeof entrySchema>
+export type Effect = z.infer<typeof effectSchema>
+export type SheetField = z.infer<typeof sheetField>
+export type TableRegime = TableItem['regime']
 export type SlotDef = z.infer<typeof slotDefSchema>
 export type Limits = z.infer<typeof limitsSchema>
 export type GrantedSlot = z.infer<typeof grantedSlotSchema>
@@ -197,6 +260,80 @@ export const slotKey = z
 const attributeShiftSchema = z.strictObject({ decrease: attributeId, increase: attributeId })
 export type AttributeShift = z.infer<typeof attributeShiftSchema>
 
+/**
+ * Decisão (FEAT-009 §4, D3). `chosen` grava o valor; numa vaga `table`, a entrada e o livro. `rolled` e `entered`
+ * gravam o fato da rolagem: faces (ou a soma informada), modificador e total e, na vaga `table`, a entrada, o livro e,
+ * na rolada, o contador. A forma certa por vaga é do comando; a validade na leitura, do motor.
+ */
+const decisionSchema = z.discriminatedUnion('mode', [
+  z.strictObject({
+    mode: z.literal('chosen'),
+    value: z.union([entityId, z.number(), attributeShiftSchema, entryKey]),
+    book: bookId.optional(),
+  }),
+  z.strictObject({
+    mode: z.literal('rolled'),
+    dice: z.array(z.number().int()).min(1),
+    modifier: z.number().int(),
+    total: z.number().int(),
+    entry: entryKey.optional(),
+    rolls: z.number().int().min(1).optional(),
+    book: bookId.optional(),
+  }),
+  z.strictObject({
+    mode: z.literal('entered'),
+    sum: z.number().int(),
+    modifier: z.number().int(),
+    total: z.number().int(),
+    entry: entryKey.optional(),
+    book: bookId.optional(),
+  }),
+])
+
+const named = z.strictObject({ id: z.string().min(1), name })
+
+/** `kind` de vaga, como o motor os nomeia (FEAT-007, FEAT-008, FEAT-009). */
+export const slotKind = z.enum([
+  'choose-entity',
+  'choose-value',
+  'attribute-increase',
+  'language-or-profession',
+  'attribute-shift',
+  'table',
+  'roll-effect',
+])
+
+const rollBase = { count: z.number().int().min(1), sides: z.number().int().min(2), modifier: z.number().int(), total: z.number().int(), rolls: z.number().int().min(1).optional() }
+
+/**
+ * Entrada de log (FEAT-009 §3.3; FR-LOG-001, 002, 004, 010): montada pelo `app` no `commit`, com os nomes congelados.
+ * O motor nunca a lê (ADR-004 §6).
+ */
+export const logEntrySchema = z.strictObject({
+  id: z.number().int().min(1),
+  at: z.iso.datetime(),
+  kind: z.literal('decision'),
+  slot: slotKey,
+  slotKind,
+  step: z.strictObject({ id: stepId, name }),
+  origin: named.nullable(),
+  mode: z.enum(['chosen', 'rolled', 'entered']),
+  subject: named.nullable(),
+  source: z.strictObject({ book: bookId, abbr, page: page.optional() }),
+  result: z.union([
+    z.strictObject({ entity: named }),
+    z.strictObject({ value: z.number() }),
+    z.strictObject({ shift: z.strictObject({ decrease: named, increase: named }) }),
+    z.strictObject({ entry: entryKey, entity: named.optional() }),
+  ]),
+  roll: z
+    .union([
+      z.strictObject({ ...rollBase, faces: z.array(z.number().int()).min(1) }),
+      z.strictObject({ ...rollBase, sum: z.number().int() }),
+    ])
+    .optional(),
+})
+
 /** Documento do personagem v1 (ADR-004 §1; technical-design §4): só entradas, nada derivado (FR-CALC-001). */
 export const characterDocumentSchema = z.strictObject({
   schema: z.literal(1),
@@ -206,16 +343,18 @@ export const characterDocumentSchema = z.strictObject({
   createdAt: z.iso.datetime(),
   updatedAt: z.iso.datetime(),
   sources: z.strictObject({ order: z.array(bookId).min(1) }),
-  decisions: z.record(slotKey, z.strictObject({ mode: z.literal('chosen'), value: z.union([entityId, z.number(), attributeShiftSchema]) })),
+  decisions: z.record(slotKey, decisionSchema),
   // Fora do log (FR-LOG-008).
   text: z.strictObject({ name: z.string().optional() }),
-  // Forma na FEAT-009 e na FEAT-020.
-  log: z.array(z.unknown()),
+  log: z.array(logEntrySchema),
 })
 
 export type CharacterDocument = z.infer<typeof characterDocumentSchema>
-export type Decision = CharacterDocument['decisions'][string]
-export type DecisionValue = Decision['value']
+export type Decision = z.infer<typeof decisionSchema>
+export type ChosenDecision = Extract<Decision, { mode: 'chosen' }>
+export type DecisionValue = ChosenDecision['value']
+export type LogEntry = z.infer<typeof logEntrySchema>
+export type SlotKindName = z.infer<typeof slotKind>
 
 // Versão do conteúdo gravada no personagem (ADR-004). O versionamento dos pacotes é do design detalhado.
 export const CONTENT_VERSION = '0.0.0'
@@ -321,8 +460,11 @@ function checkFormatRules(book: { components: Component[] }, ctx: z.RefinementCt
       if (grant.kind === 'choose-value' && !has(grant.target, 'characteristic')) {
         issue([...path, 'grants', grantId, 'target'], `unknown characteristic ${grant.target}`)
       }
+      if (grant.kind === 'table' && !has(grant.table, 'table')) issue([...path, 'grants', grantId, 'table'], `unknown table ${grant.table}`)
     }
   }
+
+  for (const { item: table, path } of ofKind('table')) checkTable(table, path, issue, (id) => byId.has(id))
 
   // ADR-004 §2: nenhum ciclo entre fórmulas. Um grafo por ancestralidade (o padrão com as fórmulas que ela
   // substitui), para que duas ancestralidades com fórmulas cruzadas não acusem ciclo falso. Os limites são
@@ -359,6 +501,50 @@ function checkFormatRules(book: { components: Component[] }, ctx: z.RefinementCt
     if (!reported.has(key)) issue(closing, message)
     reported.add(key)
   }
+}
+
+/** Faixa de uma chave de entrada ("3" → [3, 3], "4-7" → [4, 7]); `null` se a chave não é faixa. */
+export function entryRange(key: string): [number, number] | null {
+  const match = /^(\d+)(?:-(\d+))?$/.exec(key)
+  if (!match) return null
+  const start = Number(match[1])
+  return [start, match[2] === undefined ? start : Number(match[2])]
+}
+
+/**
+ * Regras de formato de uma tabela (FEAT-009 §3.1): chave `n` ou `n-m` com `n ≤ m`; as faixas, ordenadas pelo início
+ * (nunca pela ordem das chaves do objeto), cobrem exatamente o total do dado, sem buraco nem sobreposição; `entity` e
+ * `target` existem no livro.
+ */
+function checkTable(table: ItemOf<'table'>, path: Path, issue: (path: Path, message: string) => void, exists: (id: string) => boolean) {
+  const at = (key: string, ...rest: Path) => [...path, 'entries', key, ...rest]
+  const ranges: { key: string; start: number; end: number }[] = []
+  for (const [key, entry] of Object.entries(table.entries)) {
+    const range = entryRange(key)
+    if (!range) issue(at(key), `entry key "${key}" must be "n" or "n-m"`)
+    else if (range[0] > range[1]) issue(at(key), `entry key "${key}" starts after it ends`)
+    else ranges.push({ key, start: range[0], end: range[1] })
+    if (entry.entity !== undefined && !exists(entry.entity)) issue(at(key, 'entity'), `unknown entity ${entry.entity}`)
+    for (const [effectId, effect] of Object.entries(entry.effects ?? {})) {
+      if (!exists(effect.target)) issue(at(key, 'effects', effectId, 'target'), `unknown attribute or characteristic ${effect.target}`)
+    }
+  }
+
+  const modifier = table.dice.modifier ?? 0
+  const min = table.dice.count + modifier
+  const max = table.dice.count * table.dice.sides + modifier
+  ranges.sort((a, b) => a.start - b.start || a.end - b.end)
+  let next = min
+  for (const { key, start, end } of ranges) {
+    if (start < min || end > max) {
+      issue(at(key), `entry ${key} is outside the dice range ${min}-${max}`)
+      continue
+    }
+    if (start > next) issue(at(key), `gap: no entry covers ${next === start - 1 ? next : `${next}-${start - 1}`}`)
+    else if (start < next) issue(at(key), `entry ${key} overlaps the entry before it`)
+    next = Math.max(next, end + 1)
+  }
+  if (next <= max) issue([...path, 'entries'], `gap: no entry covers ${next === max ? next : `${next}-${max}`}`)
 }
 
 /** Primeiro ciclo entre características, como a lista dos nós do ciclo. */
