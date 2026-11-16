@@ -4,14 +4,17 @@ import {
   PackLoadError,
   type Book,
   type CharacterDocument,
+  type Decision,
   type DecisionValue,
+  type LogEntry,
   type PackSource,
 } from '../content'
-import { EngineError, evaluate, resolve, type CharacterView, type Rules, type SlotView } from '../engine'
+import { cryptoRandomSource, rollDice, type RandomSource } from '../dice'
+import { EngineError, evaluate, resolve, type CharacterView, type Provenance, type Rules, type SlotView } from '../engine'
 import type { CharacterRepository, LastStepStore } from '../storage'
 
 // Sessão do personagem (technical-design §3.2): store externo lido pelo React com `useSyncExternalStore`
-// (ADR-006). Os comandos são os únicos que escrevem (ADR-004 §5); o log de decisões entra na FEAT-009.
+// (ADR-006). Os comandos são os únicos que escrevem (ADR-004 §5), e cada decisão registrada vai ao log (FEAT-009 §3.3).
 
 /**
  * Projeção do documento para a lista inicial (ADR-002; FEAT-001 §3.1). Derivada a cada gravação, nunca entrada
@@ -55,6 +58,8 @@ export type DecideResult =
   | { ok: false; reason: 'unknown-slot' | 'invalid-value' | 'already-decided' | 'not-decided' }
   // D8: mudança com dependentes é recusada até a FEAT-011.
   | { ok: false; reason: 'has-dependents'; dependents: string[] }
+  // FEAT-009 D4: a soma informada fora de `[count, count × sides]`, com essa faixa (FR-DEC-020).
+  | { ok: false; reason: 'out-of-range'; range: [min: number, max: number] }
   | { ok: false; reason: 'save-failed' }
 
 export type Repository = CharacterRepository<CharacterDocument, CharacterSummary>
@@ -66,6 +71,8 @@ export interface SessionDeps {
   now?: () => Date
   /** Padrão: um store que não guarda nada (FEAT-001 §3.4). */
   lastStep?: LastStepStore
+  /** Padrão: o `crypto` do navegador (ADR-009). Os testes injetam uma sequência fixa. */
+  random?: RandomSource
 }
 
 const NO_LAST_STEP: LastStepStore = { get: () => undefined, set: () => undefined, forget: () => undefined }
@@ -148,7 +155,7 @@ export function createRulesLoader(packs: PackSource = {}): LoadRules {
   }
 }
 
-/** O valor cabe na vaga: uma opção viva, ou, no ajuste, dois atributos vigentes e diferentes. */
+/** O valor cabe na vaga: uma opção viva, ou, no ajuste, dois atributos vigentes e diferentes; na tabela, uma entrada dela. */
 function isValid(slot: SlotView, value: DecisionValue): boolean {
   switch (slot.kind) {
     case 'choose-entity':
@@ -163,14 +170,83 @@ function isValid(slot: SlotView, value: DecisionValue): boolean {
     case 'attribute-increase':
     case 'language-or-profession':
       return false
-    // Comandos da tabela e do efeito com dado: FEAT-009 T5.
     case 'table':
+      return typeof value === 'string' && slot.table.entries.some((entry) => entry.key === value)
+    // O efeito com dado só tem Roll e Enter result (FR-STEP-014).
     case 'roll-effect':
       return false
   }
 }
 
-export function createCharacterSession({ repository, loadRules, now = () => new Date(), lastStep = NO_LAST_STEP }: SessionDeps) {
+type DiceSlot = Extract<SlotView, { kind: 'table' | 'roll-effect' }>
+type LogDraft = Omit<LogEntry, 'id' | 'at'>
+
+const named = (rules: Rules, id: string) => {
+  const item = rules.items.get(id)
+  return { id, name: item && 'name' in item ? item.name : id }
+}
+const sourceOf = ({ book, abbr, page }: Provenance) => ({ book, abbr, ...(page !== undefined && { page }) })
+
+/**
+ * Entrada de log de uma decisão (FEAT-009 §3.3), com os nomes congelados, montada da vista e das regras de antes do
+ * comando e da decisão gravada. A fonte é a da entrada (tabela), a da entidade escolhida, ou a do item que declara a
+ * vaga (a etapa, ou quem a concedeu).
+ */
+function logDraft(rules: Rules, slot: SlotView, decision: Decision): LogDraft {
+  const step = named(rules, slot.stepId)
+  const declaring = rules.items.get(slot.source?.id ?? slot.stepId)?.provenance
+  const base = { kind: 'decision' as const, slot: slot.key, slotKind: slot.kind, step, origin: slot.source, mode: decision.mode }
+  const roll = (dice: { count: number; sides: number }) => {
+    if (decision.mode === 'chosen') return {}
+    const fact = { count: dice.count, sides: dice.sides, modifier: decision.modifier, total: decision.total }
+    if (decision.mode === 'entered') return { roll: { ...fact, sum: decision.sum } }
+    return { roll: { ...fact, ...(decision.rolls !== undefined && { rolls: decision.rolls }), faces: decision.dice } }
+  }
+  switch (slot.kind) {
+    case 'table': {
+      const key = decision.mode === 'chosen' ? (decision.value as string) : decision.entry!
+      const entry = slot.table.entries.find((candidate) => candidate.key === key)!
+      return {
+        ...base,
+        subject: { id: slot.table.id, name: slot.table.name },
+        source: sourceOf(entry.provenance),
+        result: { entry: key, ...(entry.entity && { entity: entry.entity }) },
+        ...roll(slot.table.dice),
+      }
+    }
+    case 'roll-effect':
+      return {
+        ...base,
+        subject: slot.target,
+        source: sourceOf(declaring!),
+        // Rolada ou informada: o efeito com dado não tem Choose (FR-STEP-014).
+        result: { value: (decision as Exclude<Decision, { mode: 'chosen' }>).total },
+        ...roll(slot.dice),
+      }
+    case 'choose-entity': {
+      const option = slot.options.find((candidate) => decision.mode === 'chosen' && candidate.id === decision.value)!
+      return { ...base, subject: null, source: sourceOf(option.provenance), result: { entity: { id: option.id, name: option.name } } }
+    }
+    case 'attribute-shift': {
+      const shift = (decision as Extract<Decision, { mode: 'chosen' }>).value as { decrease: string; increase: string }
+      const result = { shift: { decrease: named(rules, shift.decrease), increase: named(rules, shift.increase) } }
+      return { ...base, subject: null, source: sourceOf(declaring!), result }
+    }
+    default: {
+      const value = (decision as Extract<Decision, { mode: 'chosen' }>).value as number
+      const subject = slot.kind === 'choose-value' ? named(rules, slot.target) : null
+      return { ...base, subject, source: sourceOf(declaring!), result: { value } }
+    }
+  }
+}
+
+export function createCharacterSession({
+  repository,
+  loadRules,
+  now = () => new Date(),
+  lastStep = NO_LAST_STEP,
+  random = cryptoRandomSource,
+}: SessionDeps) {
   let snapshot: Snapshot = { status: 'loading', id: '' }
   const listeners = new Set<() => void>()
   const set = (next: Snapshot) => {
@@ -198,13 +274,24 @@ export function createCharacterSession({ repository, loadRules, now = () => new 
     })
   }
 
-  /** Aplica as decisões novas, comum a `decide` e `clear`: documento novo, `evaluate`, dependentes, tela e gravação. */
-  function commit(before: Extract<Snapshot, { status: 'ready' }>, decisions: CharacterDocument['decisions']): Promise<DecideResult> {
+  /**
+   * Aplica as decisões novas, comum aos comandos: documento novo, `evaluate`, dependentes, tela e gravação. A entrada de
+   * log, quando o comando registra uma decisão, entra no mesmo documento e na mesma gravação (ADR-002; FR-LOG-001).
+   */
+  function commit(
+    before: Extract<Snapshot, { status: 'ready' }>,
+    decisions: CharacterDocument['decisions'],
+    draft?: LogDraft,
+  ): Promise<DecideResult> {
+    const at = now().toISOString()
+    const log = before.document.log
+    const id = log.reduce((last, entry) => Math.max(last, entry.id), 0) + 1
     const document: CharacterDocument = {
       ...before.document,
       revision: before.document.revision + 1,
-      updatedAt: now().toISOString(),
+      updatedAt: at,
       decisions,
+      log: draft ? [...log, { id, at, ...draft }] : log,
     }
     const view = evaluate(before.rules, document)
 
@@ -220,6 +307,40 @@ export function createCharacterSession({ repository, loadRules, now = () => new 
   }
 
   const liveSlot = (key: string) => (snapshot.status === 'ready' ? snapshot.view.slots.find((slot) => slot.key === key) : undefined)
+
+  /** Grava a decisão nova de uma vaga, com a entrada de log dela. */
+  function record(before: Extract<Snapshot, { status: 'ready' }>, slot: SlotView, decision: Decision): Promise<DecideResult> {
+    return commit(before, { ...before.document.decisions, [slot.key]: decision }, logDraft(before.rules, slot, decision))
+  }
+
+  /**
+   * O fato de uma rolagem ou de uma soma informada (D3): `modifier` é o da versão vigente da tabela (0 se ausente), e, na
+   * vaga `table`, a entrada é a que contém o total e `book` o livro dessa versão; na `roll-effect`, sem entrada nem livro.
+   */
+  function diceDecision(slot: DiceSlot, fact: { dice: number[] } | { sum: number }): Decision | null {
+    const dice = slot.kind === 'table' ? slot.table.dice : slot.dice
+    const modifier = dice.modifier ?? 0
+    const shown = 'sum' in fact ? fact.sum : fact.dice.reduce((sum, face) => sum + face, 0)
+    const total = shown + modifier
+    const recorded = 'sum' in fact ? { mode: 'entered' as const, sum: fact.sum } : { mode: 'rolled' as const, dice: fact.dice }
+    if (slot.kind === 'roll-effect') return { ...recorded, modifier, total }
+    const entry = slot.table.entries.find(({ range: [start, end] }) => start <= total && total <= end)
+    if (!entry) return null
+    const book = slot.table.provenance.book
+    return recorded.mode === 'rolled'
+      ? { ...recorded, modifier, total, entry: entry.key, rolls: 1, book }
+      : { ...recorded, modifier, total, entry: entry.key, book }
+  }
+
+  /** Vaga viva com dado (`table` ou `roll-effect`) ainda sem decisão, ou a recusa (§3.2, passos 1 e 2). */
+  function diceSlot(key: string): DiceSlot | Extract<DecideResult, { ok: false }> {
+    const slot = liveSlot(key)
+    if (snapshot.status !== 'ready' || !slot) return { ok: false, reason: 'unknown-slot' }
+    if (slot.kind !== 'table' && slot.kind !== 'roll-effect') return { ok: false, reason: 'invalid-value' }
+    // D5: Reroll e troca de modo são da FEAT-011.
+    if (slot.decided) return { ok: false, reason: 'already-decided' }
+    return slot
+  }
 
   return {
     subscribe(listener: () => void) {
@@ -265,15 +386,40 @@ export function createCharacterSession({ repository, loadRules, now = () => new 
     },
 
     /**
-     * Confirma uma decisão: ancestralidade, Size ou o par do ajuste. Decidir de novo substitui, salvo no
-     * `attribute-shift`, que é uma vez só (FR-STEP-010; FEAT-008 D3). A tela muda antes da gravação (NFR-PERF-002).
+     * Confirma uma decisão: ancestralidade, Size, o par do ajuste ou a entrada de uma tabela (Choose, FR-DEC-024).
+     * Decidir de novo substitui, salvo no `attribute-shift`, que é uma vez só (FR-STEP-010; FEAT-008 D3), e na tabela
+     * rolada ou informada (D5). O mesmo valor devolve `ok` sem gravar (D13). A tela muda antes da gravação (NFR-PERF-002).
      */
     async decide(key: string, value: DecisionValue): Promise<DecideResult> {
       const slot = liveSlot(key)
       if (snapshot.status !== 'ready' || !slot) return { ok: false, reason: 'unknown-slot' }
       if (slot.kind === 'attribute-shift' && slot.decided) return { ok: false, reason: 'already-decided' }
       if (!isValid(slot, value)) return { ok: false, reason: 'invalid-value' }
-      return commit(snapshot, { ...snapshot.document.decisions, [key]: { mode: 'chosen', value } })
+      if (slot.kind === 'table' && slot.result && slot.result.mode !== 'chosen') return { ok: false, reason: 'already-decided' }
+      if (slot.decided && slot.value === value) return { ok: true }
+      const book = slot.kind === 'table' ? { book: slot.table.provenance.book } : {}
+      return record(snapshot, slot, { mode: 'chosen', value, ...book })
+    },
+
+    /** Rola o dado de uma tabela ou de um efeito com dado (FR-DEC-005, 007; FR-STEP-014): o único passo impuro (ADR-004 §5). */
+    async roll(key: string): Promise<DecideResult> {
+      const slot = diceSlot(key)
+      if ('ok' in slot) return slot
+      const before = snapshot as Extract<Snapshot, { status: 'ready' }>
+      const decision = diceDecision(slot, { dice: rollDice(slot.kind === 'table' ? slot.table.dice : slot.dice, random) })
+      if (!decision) return { ok: false, reason: 'invalid-value' }
+      return record(before, slot, decision)
+    },
+
+    /** Enter result (FR-DEC-019, 020; D4): a soma que os dados mostram, sem modificador, em `[count, count × sides]`. */
+    async enter(key: string, sum: number): Promise<DecideResult> {
+      const slot = diceSlot(key)
+      if ('ok' in slot) return slot
+      const range = slot.kind === 'table' ? slot.table.enterRange : slot.enterRange
+      if (!Number.isInteger(sum) || sum < range[0] || sum > range[1]) return { ok: false, reason: 'out-of-range', range }
+      const decision = diceDecision(slot, { sum })
+      if (!decision) return { ok: false, reason: 'invalid-value' }
+      return record(snapshot as Extract<Snapshot, { status: 'ready' }>, slot, decision)
     },
 
     /** Limpa a decisão de uma vaga (FR-STEP-011; FEAT-008 D4): o valor sai de novo do `evaluate`, sem ela. */

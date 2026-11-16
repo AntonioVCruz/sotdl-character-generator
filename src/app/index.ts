@@ -1,4 +1,5 @@
 import { CONTENT_VERSION, characterDocumentSchema, loadBookIndex, PackLoadError, type CharacterDocument, type PackSource } from '../content'
+import type { RandomSource } from '../dice'
 import { EngineError, type Rules } from '../engine'
 import { createIndexedDbRepository, createLastStepStore, openCharacterDatabase, type LastStepStore } from '../storage'
 import { byRecentEdit, createCharacterSession, createRulesLoader, readSummary, summarize, type CharacterSummary, type Repository } from './session'
@@ -20,6 +21,8 @@ export interface AppDeps {
   newId?: () => string
   /** Padrão: o `localStorage` do navegador (FEAT-001 §3.3). Os testes injetam um store em memória. */
   lastStep?: LastStepStore
+  /** Padrão: o `crypto` do navegador (ADR-009); repassado às sessões. */
+  random?: RandomSource
 }
 
 export function createApp({
@@ -28,6 +31,7 @@ export function createApp({
   now = () => new Date(),
   newId = () => globalThis.crypto.randomUUID(),
   lastStep = createLastStepStore(),
+  random,
 }: AppDeps) {
   const loadRules = createRulesLoader(packs)
   return {
@@ -104,7 +108,7 @@ export function createApp({
     },
 
     /** Uma sessão por construtor aberto (technical-design §3.2). */
-    createSession: () => createCharacterSession({ repository, loadRules, now, lastStep }),
+    createSession: () => createCharacterSession({ repository, loadRules, now, lastStep, ...(random && { random }) }),
   }
 }
 

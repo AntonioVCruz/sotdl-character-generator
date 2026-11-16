@@ -60,7 +60,7 @@ Todo "pronto quando" inclui `npm run typecheck`, `npm run lint` e os testes exis
     - `FR-STEP-014`: com a `roll-effect` aberta, o alvo fica `null` com `pendingOn`; decidida, soma o total gravado (AC-8, valor);
     - `FR-CONT-015`: (i) decisão rolada com modificador +2 e uma versão do mesmo livro com +4: faces, modificador, total e entrada exibidos são os gravados; (ii) uma versão em que o efeito da entrada gravada muda: o valor afetado segue a versão nova (AC-17).
 
-- [ ] **T5. Sessão: Roll, Enter result, Choose em tabela e log** (design §3.2, §3.3 "Entrada de log"; FR-DEC-005, 016, 019, 020, 024, FR-LOG-001, 002, 004, 010, FR-STEP-014; D3, D4, D5, D9, D13)
+- [x] **T5. Sessão: Roll, Enter result, Choose em tabela e log** (design §3.2, §3.3 "Entrada de log"; FR-DEC-005, 016, 019, 020, 024, FR-LOG-001, 002, 004, 010, FR-STEP-014; D3, D4, D5, D9, D13)
   - Em `src/app/session.ts`: `random` nas dependências (padrão `cryptoRandomSource`); `roll`, `enter(key, sum)`, `decide` com entrada; a gravação da D3 (faces ou soma, modificador da versão vigente, total, entrada, e `rolls` e `book` na tabela); a D4 (`sum` em `[count, count × sides]`, `out-of-range` com essa faixa); `already-decided`; `isValid` dos `kind` novos; `decide` com o mesmo valor sem `commit` (D13); a `LogEntry` montada e acrescentada no `commit` de todo comando que registra decisão, nunca numa recusa, no `clear`, no `retrySave` nem no `decide` com o mesmo valor.
   - Em `src/app/index.ts`: `createApp` repassa `random`.
   - **Pronto quando:** `session.test.ts` (pacote fictício, sorteio fixo) passa para:

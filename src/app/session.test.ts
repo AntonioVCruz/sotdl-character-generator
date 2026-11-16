@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import type { CharacterDocument } from '../content'
+import type { CharacterDocument, Decision } from '../content'
 import { createApp, type CharacterSummary, type Repository } from '.'
 
 // Pacotes fictícios servidos por um fetch falso; repositório em memória.
@@ -229,6 +229,22 @@ describe('character session: decide', () => {
         ancestry: { mode: 'chosen', value: 'ancestry:gnome' },
         'ancestry=gnome/stature': { mode: 'chosen', value: 0.5 },
       },
+      // FEAT-009 §7: o log, registro e não valor derivado, ganha a entrada da decisão.
+      log: [
+        {
+          id: 1,
+          at: '2026-01-02T00:00:00.000Z',
+          kind: 'decision',
+          slot: 'ancestry=gnome/stature',
+          slotKind: 'choose-value',
+          step: { id: 'step:origin', name: 'Origin' },
+          origin: { id: 'ancestry:gnome', name: 'Gnome' },
+          mode: 'chosen',
+          subject: { id: 'characteristic:stature', name: 'Stature' },
+          source: { book: 'test.core', abbr: 'TB', page: 5 },
+          result: { value: 0.5 },
+        },
+      ],
     })
   })
 
@@ -360,6 +376,22 @@ describe('character session: score adjustment and clear', () => {
       revision: 2,
       updatedAt: '2026-01-02T00:00:00.000Z',
       decisions: { ancestry: { mode: 'chosen', value: 'ancestry:troll' }, adjust: { mode: 'chosen', value: pair } },
+      // FEAT-009 §7: com a entrada de log da decisão.
+      log: [
+        {
+          id: 1,
+          at: '2026-01-02T00:00:00.000Z',
+          kind: 'decision',
+          slot: 'adjust',
+          slotKind: 'attribute-shift',
+          step: { id: 'step:traits', name: 'Traits' },
+          origin: null,
+          mode: 'chosen',
+          subject: null,
+          source: { book: 'test.adjust', abbr: 'TB', page: 2 },
+          result: { shift: { decrease: { id: 'attribute:might', name: 'Might' }, increase: { id: 'attribute:wits', name: 'Wits' } } },
+        },
+      ],
     })
   })
 
@@ -438,5 +470,343 @@ describe('character session: score adjustment and clear', () => {
     await expect(session.retrySave()).resolves.toEqual({ ok: true })
     expect(docs.get('id-1')).toMatchObject({ revision: 2 })
     expect(Object.keys((docs.get('id-1') as CharacterDocument).decisions)).toEqual(['ancestry'])
+  })
+})
+
+// Pacote fictício com tabelas (FEAT-009): o Gnome concede o Size e cinco tabelas na Story. Age: 3d6 com uma entrada de
+// página própria; Fate: 3d6 de regime `roll`; Omen: 3d6+1; Past: d6 com efeito de dado na entrada 4; Foe: d20 com
+// entidades.
+files['/packs/test.tables.json'] = book('test.tables', [
+  { id: 'procedure:test', steps: ['step:origin', 'step:story'] },
+  { id: 'step:origin', name: 'Origin', page: 1, slots: { ancestry: { kind: 'choose-entity', of: 'ancestry' } } },
+  { id: 'step:story', name: 'Story', page: 2, requires: ['step:origin'] },
+  { id: 'attribute:might', name: 'Might', page: 3, modifier: { add: [{ ref: 'self' }, -10] } },
+  { id: 'characteristic:stature', name: 'Stature', page: 3 },
+  { id: 'characteristic:madness', name: 'Madness', page: 3, formula: 0 },
+  { id: 'creature-type:wolf', name: 'Wolves', page: 7 },
+  { id: 'creature-type:bear', name: 'Bears', page: 7 },
+  { id: 'table:gnome-age', name: 'Gnome Age', page: 7, dice: { count: 3, sides: 6 }, regime: 'roll-or-choose', entries: { '3-7': {}, '8-12': { page: 8 }, '13-18': {} } },
+  { id: 'table:gnome-fate', name: 'Gnome Fate', page: 7, dice: { count: 3, sides: 6 }, regime: 'roll', entries: { '3-10': {}, '11-18': {} } },
+  { id: 'table:gnome-omen', name: 'Gnome Omen', page: 7, dice: { count: 3, sides: 6, modifier: 1 }, regime: 'roll', entries: { '4-11': {}, '12-19': {} } },
+  {
+    id: 'table:gnome-past',
+    name: 'Gnome Past',
+    page: 7,
+    dice: { count: 1, sides: 6 },
+    regime: 'roll-or-choose',
+    entries: { '1-3': {}, '4': { effects: { madness: { target: 'characteristic:madness', add: { dice: { count: 1, sides: 6 } } } } }, '5-6': {} },
+  },
+  {
+    id: 'table:gnome-foe',
+    name: 'Gnome Foe',
+    page: 7,
+    dice: { count: 1, sides: 20 },
+    regime: 'choice',
+    entries: { '1-10': { entity: 'creature-type:wolf' }, '11-20': { entity: 'creature-type:bear' } },
+  },
+  {
+    id: 'ancestry:gnome',
+    name: 'Gnome',
+    page: 5,
+    attributes: { 'attribute:might': 8 },
+    characteristics: { 'characteristic:stature': { ref: 'grant:stature' } },
+    grants: {
+      stature: { kind: 'choose-value', step: 'step:origin', target: 'characteristic:stature', options: [0.5, 1] },
+      age: { kind: 'table', step: 'step:story', table: 'table:gnome-age' },
+      fate: { kind: 'table', step: 'step:story', table: 'table:gnome-fate' },
+      omen: { kind: 'table', step: 'step:story', table: 'table:gnome-omen' },
+      past: { kind: 'table', step: 'step:story', table: 'table:gnome-past' },
+      foe: { kind: 'table', step: 'step:story', table: 'table:gnome-foe' },
+    },
+  },
+  { id: 'ancestry:troll', name: 'Troll', page: 6, attributes: { 'attribute:might': 12 } },
+])
+const AGE = 'ancestry=gnome/age'
+const FATE = 'ancestry=gnome/fate'
+const OMEN = 'ancestry=gnome/omen'
+const PAST = 'ancestry=gnome/past'
+const FOE = 'ancestry=gnome/foe'
+const MADNESS = 'ancestry=gnome/past=4/madness'
+const TABLES = 'test.tables'
+const AT = '2026-01-02T00:00:00.000Z'
+
+/** Sorteio fixo: devolve os valores na ordem e falha se pedirem mais (ADR-009). Face de um dN = valor % N + 1. */
+const sequence = (values: number[]) =>
+  vi.fn(() => {
+    if (!values.length) throw new Error('the random source was called')
+    return values.shift()!
+  })
+
+async function withTables(decisions: Record<string, Decision> = {}, random = sequence([])) {
+  const memory = memoryRepository()
+  memory.docs.set('id-1', { ...stored({}, [TABLES]), decisions: { ancestry: { mode: 'chosen', value: 'ancestry:gnome' }, ...decisions } })
+  const session = createApp({ repository: memory.repository, ...deps, random, lastStep: memoryLastStep() }).createSession()
+  await session.open('id-1')
+  vi.mocked(memory.repository.save).mockClear()
+  return { ...memory, session, random }
+}
+const slotIn = (session: Awaited<ReturnType<typeof opened>>['session'], key: string) => ready(session).view.slots.find((slot) => slot.key === key)
+const savedDocument = (docs: Map<string, unknown>) => docs.get('id-1') as CharacterDocument
+const chosenEntry = (value: string): Decision => ({ mode: 'chosen', value, book: TABLES })
+const rolledEntry = (entry: string, dice: number[], total: number): Decision => ({ mode: 'rolled', dice, modifier: 0, total, entry, rolls: 1, book: TABLES })
+
+describe('character session: tables (Roll, Enter result, Choose)', () => {
+  it('FR-DEC-005, FR-DEC-016: roll records the faces, the modifier, the total, the entry, rolls 1 and the book, and the view changes before the save (AC-4)', async () => {
+    const { session, docs, random } = await withTables({}, sequence([2, 4, 1]))
+    const result = session.roll(AGE)
+    expect(ready(session).save).toBe('saving')
+    expect(slotIn(session, AGE)).toMatchObject({
+      decided: true,
+      result: { mode: 'rolled', entry: '8-12', faces: [3, 5, 2], modifier: 0, total: 10, rolls: 1 },
+    })
+    expect(savedDocument(docs).decisions[AGE]).toBeUndefined()
+    await expect(result).resolves.toEqual({ ok: true })
+    // 3d6 são três sorteios (FR-DEC-005).
+    expect(random).toHaveBeenCalledTimes(3)
+    expect(savedDocument(docs).decisions[AGE]).toEqual({ mode: 'rolled', dice: [3, 5, 2], modifier: 0, total: 10, entry: '8-12', rolls: 1, book: TABLES })
+  })
+
+  it('FR-DEC-005: the modifier of the current version of the table is added to the faces', async () => {
+    const { session, docs } = await withTables({}, sequence([2, 4, 1]))
+    await expect(session.roll(OMEN)).resolves.toEqual({ ok: true })
+    expect(savedDocument(docs).decisions[OMEN]).toEqual({ mode: 'rolled', dice: [3, 5, 2], modifier: 1, total: 11, entry: '4-11', rolls: 1, book: TABLES })
+  })
+
+  it('FR-DEC-019, FR-DEC-020: Enter result records the sum, the modifier, the total, the entry and the book (AC-7)', async () => {
+    const { session, docs } = await withTables()
+    const result = session.enter(FATE, 11)
+    expect(slotIn(session, FATE)).toMatchObject({ decided: true, result: { mode: 'entered', entry: '11-18', sum: 11, modifier: 0, total: 11 } })
+    await expect(result).resolves.toEqual({ ok: true })
+    expect(savedDocument(docs).decisions[FATE]).toEqual({ mode: 'entered', sum: 11, modifier: 0, total: 11, entry: '11-18', book: TABLES })
+  })
+
+  it('FR-DEC-019, FR-DEC-020: a sum outside [count, count × sides] gives out-of-range with that range, changing and saving nothing (AC-7)', async () => {
+    const { session, repository } = await withTables()
+    const before = ready(session)
+    for (const sum of [2, 19, 10.5]) {
+      await expect(session.enter(FATE, sum)).resolves.toEqual({ ok: false, reason: 'out-of-range', range: [3, 18] })
+    }
+    // 3d6+1: a faixa continua a da soma dos dados (D4).
+    await expect(session.enter(OMEN, 19)).resolves.toEqual({ ok: false, reason: 'out-of-range', range: [3, 18] })
+    expect(session.getSnapshot()).toBe(before)
+    expect(repository.save).not.toHaveBeenCalled()
+  })
+
+  it('FR-DEC-019, FR-DEC-020: with 3d6+1, entering 11 gives total 12 with the modifier recorded (AC-7)', async () => {
+    const { session, docs } = await withTables()
+    await expect(session.enter(OMEN, 11)).resolves.toEqual({ ok: true })
+    expect(savedDocument(docs).decisions[OMEN]).toEqual({ mode: 'entered', sum: 11, modifier: 1, total: 12, entry: '12-19', book: TABLES })
+  })
+
+  it('FR-STEP-014: the roll-effect, rolled or entered, records the dice (or the sum), the modifier and the total, without entry or book (AC-8)', async () => {
+    const rolled = await withTables({ [PAST]: chosenEntry('4') }, sequence([3]))
+    await expect(rolled.session.roll(MADNESS)).resolves.toEqual({ ok: true })
+    expect(savedDocument(rolled.docs).decisions[MADNESS]).toEqual({ mode: 'rolled', dice: [4], modifier: 0, total: 4 })
+    expect(ready(rolled.session).view.summary.characteristics.find((c) => c.name === 'Madness')?.value).toBe(4)
+
+    const entered = await withTables({ [PAST]: chosenEntry('4') })
+    await expect(entered.session.enter(MADNESS, 7)).resolves.toEqual({ ok: false, reason: 'out-of-range', range: [1, 6] })
+    await expect(entered.session.enter(MADNESS, 5)).resolves.toEqual({ ok: true })
+    expect(savedDocument(entered.docs).decisions[MADNESS]).toEqual({ mode: 'entered', sum: 5, modifier: 0, total: 5 })
+  })
+
+  it('FR-DEC-024: Choose records the entry and the book, without dice; Choose → Choose replaces it (AC-6)', async () => {
+    const { session, docs } = await withTables()
+    await expect(session.decide(AGE, '3-7')).resolves.toEqual({ ok: true })
+    expect(savedDocument(docs).decisions[AGE]).toEqual({ mode: 'chosen', value: '3-7', book: TABLES })
+    await expect(session.decide(AGE, '13-18')).resolves.toEqual({ ok: true })
+    expect(savedDocument(docs).decisions[AGE]).toEqual({ mode: 'chosen', value: '13-18', book: TABLES })
+    expect(slotIn(session, AGE)).toMatchObject({ decided: true, value: '13-18', result: { mode: 'chosen', entry: '13-18' } })
+  })
+
+  it('FR-DEC-024: Choose → Choose with the roll-effect of the current entry decided gives has-dependents, and nothing changes (AC-8)', async () => {
+    const { session, repository } = await withTables({ [PAST]: chosenEntry('4'), [MADNESS]: { mode: 'rolled', dice: [4], modifier: 0, total: 4 } })
+    const before = ready(session)
+    await expect(session.decide(PAST, '5-6')).resolves.toEqual({ ok: false, reason: 'has-dependents', dependents: [MADNESS] })
+    expect(session.getSnapshot()).toBe(before)
+    expect(repository.save).not.toHaveBeenCalled()
+  })
+
+  it('FEAT-009 D5: roll and enter on a decided table, and Choose on a rolled or entered one, give already-decided; roll on a slot without dice and decide on a roll-effect give invalid-value (AC-11)', async () => {
+    const { session, repository, random } = await withTables({
+      [AGE]: rolledEntry('8-12', [3, 5, 2], 10),
+      [FATE]: { mode: 'entered', sum: 11, modifier: 0, total: 11, entry: '11-18', book: TABLES },
+      [FOE]: chosenEntry('1-10'),
+      [PAST]: chosenEntry('4'),
+    })
+    const before = ready(session)
+    const alreadyDecided = { ok: false, reason: 'already-decided' }
+    await expect(session.roll(AGE)).resolves.toEqual(alreadyDecided)
+    await expect(session.enter(AGE, 10)).resolves.toEqual(alreadyDecided)
+    await expect(session.roll(FOE)).resolves.toEqual(alreadyDecided)
+    await expect(session.decide(AGE, '3-7')).resolves.toEqual(alreadyDecided)
+    await expect(session.decide(FATE, '3-10')).resolves.toEqual(alreadyDecided)
+
+    const invalid = { ok: false, reason: 'invalid-value' }
+    await expect(session.roll('ancestry')).resolves.toEqual(invalid)
+    await expect(session.roll('ancestry=gnome/stature')).resolves.toEqual(invalid)
+    await expect(session.enter('ancestry=gnome/stature', 1)).resolves.toEqual(invalid)
+    await expect(session.decide(MADNESS, 4)).resolves.toEqual(invalid)
+    await expect(session.decide(OMEN, '20')).resolves.toEqual(invalid)
+    await expect(session.roll('ancestry=gnome/nowhere')).resolves.toEqual({ ok: false, reason: 'unknown-slot' })
+
+    expect(session.getSnapshot()).toBe(before)
+    expect(repository.save).not.toHaveBeenCalled()
+    expect(random).not.toHaveBeenCalled()
+  })
+
+  it('FEAT-009 D8 (FEAT-007): switching the ancestry with a decided table gives has-dependents (AC-11)', async () => {
+    const { session } = await withTables({ [AGE]: chosenEntry('3-7') })
+    await expect(session.decide('ancestry', 'ancestry:troll')).resolves.toEqual({ ok: false, reason: 'has-dependents', dependents: [AGE] })
+  })
+
+  it('NFR-REL-001: reopening a rolled character gives the same faces, modifier, total and entry without drawing (AC-13)', async () => {
+    const { session, repository } = await withTables({}, sequence([2, 4, 1]))
+    await session.roll(OMEN)
+    const recorded = slotIn(session, OMEN)
+
+    const random = sequence([])
+    const reopened = createApp({ ...deps, repository, random, lastStep: memoryLastStep() }).createSession()
+    await reopened.open('id-1')
+    expect(slotIn(reopened, OMEN)).toEqual(recorded)
+    expect(slotIn(reopened, OMEN)).toMatchObject({ result: { mode: 'rolled', faces: [3, 5, 2], modifier: 1, total: 11, entry: '4-11' } })
+    expect(random).not.toHaveBeenCalled()
+  })
+})
+
+describe('character session: decision log', () => {
+  it('FR-LOG-001, FR-LOG-002, FR-LOG-004, FR-LOG-010: each decide, roll and enter adds one entry with the frozen names (AC-10)', async () => {
+    const { session, docs } = await withTables({}, sequence([2, 4, 1, 3]))
+    await session.decide('ancestry=gnome/stature', 1)
+    await session.decide(FOE, '11-20')
+    await session.roll(AGE)
+    await session.enter(FATE, 11)
+    await session.decide(PAST, '4')
+    await session.roll(MADNESS)
+    const gnome = { id: 'ancestry:gnome', name: 'Gnome' }
+    const story = { id: 'step:story', name: 'Story' }
+    const tableEntry = { at: AT, kind: 'decision', step: story, origin: gnome, slotKind: 'table' }
+    expect(savedDocument(docs).log).toEqual([
+      {
+        id: 1,
+        at: AT,
+        kind: 'decision',
+        slot: 'ancestry=gnome/stature',
+        slotKind: 'choose-value',
+        step: { id: 'step:origin', name: 'Origin' },
+        origin: gnome,
+        mode: 'chosen',
+        subject: { id: 'characteristic:stature', name: 'Stature' },
+        source: { book: TABLES, abbr: 'TB', page: 5 },
+        result: { value: 1 },
+      },
+      {
+        ...tableEntry,
+        id: 2,
+        slot: FOE,
+        mode: 'chosen',
+        subject: { id: 'table:gnome-foe', name: 'Gnome Foe' },
+        source: { book: TABLES, abbr: 'TB', page: 7 },
+        result: { entry: '11-20', entity: { id: 'creature-type:bear', name: 'Bears' } },
+      },
+      {
+        ...tableEntry,
+        id: 3,
+        slot: AGE,
+        mode: 'rolled',
+        subject: { id: 'table:gnome-age', name: 'Gnome Age' },
+        // A página da entrada 8-12, não a da tabela.
+        source: { book: TABLES, abbr: 'TB', page: 8 },
+        result: { entry: '8-12' },
+        roll: { count: 3, sides: 6, modifier: 0, total: 10, rolls: 1, faces: [3, 5, 2] },
+      },
+      {
+        ...tableEntry,
+        id: 4,
+        slot: FATE,
+        mode: 'entered',
+        subject: { id: 'table:gnome-fate', name: 'Gnome Fate' },
+        source: { book: TABLES, abbr: 'TB', page: 7 },
+        result: { entry: '11-18' },
+        roll: { count: 3, sides: 6, modifier: 0, total: 11, sum: 11 },
+      },
+      {
+        ...tableEntry,
+        id: 5,
+        slot: PAST,
+        mode: 'chosen',
+        subject: { id: 'table:gnome-past', name: 'Gnome Past' },
+        source: { book: TABLES, abbr: 'TB', page: 7 },
+        result: { entry: '4' },
+      },
+      {
+        id: 6,
+        at: AT,
+        kind: 'decision',
+        slot: MADNESS,
+        slotKind: 'roll-effect',
+        step: story,
+        origin: { id: 'table:gnome-past', name: 'Gnome Past' },
+        mode: 'rolled',
+        subject: { id: 'characteristic:madness', name: 'Madness' },
+        source: { book: TABLES, abbr: 'TB', page: 7 },
+        result: { value: 4 },
+        roll: { count: 1, sides: 6, modifier: 0, total: 4, faces: [4] },
+      },
+    ])
+  })
+
+  it('FR-LOG-001: choosing an ancestry logs the entity with the source of the entity', async () => {
+    const { session, docs } = await opened()
+    await session.decide('ancestry', 'ancestry:troll')
+    expect(savedDocument(docs).log).toEqual([
+      {
+        id: 1,
+        at: AT,
+        kind: 'decision',
+        slot: 'ancestry',
+        slotKind: 'choose-entity',
+        step: { id: 'step:origin', name: 'Origin' },
+        origin: null,
+        mode: 'chosen',
+        subject: null,
+        source: { book: 'test.core', abbr: 'TB', page: 6 },
+        result: { entity: { id: 'ancestry:troll', name: 'Troll' } },
+      },
+    ])
+  })
+
+  it('FR-LOG-001: refusals, clear and retrySave write no entry (AC-10)', async () => {
+    const { session, docs, control } = await withTables({ [PAST]: chosenEntry('4'), [MADNESS]: { mode: 'rolled', dice: [4], modifier: 0, total: 4 } })
+    await session.decide(AGE, '3-7')
+    expect(savedDocument(docs).log.map((entry) => entry.slot)).toEqual([AGE])
+
+    await session.decide(PAST, '5-6')
+    await session.enter(FATE, 30)
+    await session.roll(AGE)
+    expect(ready(session).document.log).toHaveLength(1)
+
+    await expect(session.clear(AGE)).resolves.toEqual({ ok: true })
+    expect(savedDocument(docs).log.map((entry) => entry.slot)).toEqual([AGE])
+
+    control.failSave = true
+    await expect(session.decide(FOE, '1-10')).resolves.toEqual({ ok: false, reason: 'save-failed' })
+    control.failSave = false
+    await expect(session.retrySave()).resolves.toEqual({ ok: true })
+    expect(savedDocument(docs).log.map((entry) => [entry.id, entry.slot])).toEqual([
+      [1, AGE],
+      [2, FOE],
+    ])
+  })
+
+  it('FEAT-009 D13: decide with the value already decided (ancestry, Size, Choose) gives ok without saving or logging (AC-10)', async () => {
+    const { session, repository } = await withTables({ 'ancestry=gnome/stature': { mode: 'chosen', value: 1 }, [AGE]: chosenEntry('3-7') })
+    const before = ready(session)
+    await expect(session.decide('ancestry', 'ancestry:gnome')).resolves.toEqual({ ok: true })
+    await expect(session.decide('ancestry=gnome/stature', 1)).resolves.toEqual({ ok: true })
+    await expect(session.decide(AGE, '3-7')).resolves.toEqual({ ok: true })
+    expect(session.getSnapshot()).toBe(before)
+    expect(repository.save).not.toHaveBeenCalled()
+    expect(before.document.log).toEqual([])
   })
 })
