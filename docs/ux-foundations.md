@@ -1,6 +1,6 @@
 # UX Foundations: Gerador de personagens SotDL
 
-> Status: Rascunho · Última atualização: 2026-11-16 (D40; emenda 3 da FEAT-009)
+> Status: Revisado (aprovado em 2026-11-16) · Última atualização: 2026-11-16 (D40; emenda 3 da FEAT-009)
 > Fontes: `docs/srs.md` v1.2 · `docs/architecture.md` · `docs/use-cases.md` · princípios · wireframe v1 (`docs/reference/wireframe/`, `docs/reference/screens/`)
 > Design system: **`docs/design.md` + `docs/tokens.json`** (fonte única de todos os valores de design; este documento referencia, não repete)
 
