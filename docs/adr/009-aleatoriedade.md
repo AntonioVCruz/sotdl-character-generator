@@ -2,6 +2,7 @@
 
 **Status:** Aceita
 **Data:** 2026-11-11
+**Revisão:** 2026-11-16, emenda 2 da FEAT-009 (quarto item da Decisão; SRS v1.2, FR-DEC-019).
 **Requisitos atendidos:** FR-DEC-005, FR-DEC-006, FR-DEC-019, FR-DEC-020, FR-LOG-002.
 
 ## Contexto
@@ -13,7 +14,7 @@ Rolar deve sortear cada dado da expressão de forma independente e uniforme e co
 - Expressão de dado como dado (`{ "count": 3, "sides": 6, "modifier": 0 }`), validada no pacote.
 - Cada face sorteada com `crypto.getRandomValues`, por rejeição para não enviesar (uniforme em 1..lados).
 - A rolagem acontece só dentro de um comando (ADR-004). O resultado grava as faces, o total, os modificadores e a entrada; o log guarda o mesmo (FR-LOG-002).
-- "Enter result" passa pelo mesmo caminho, com as faces informadas pelo usuário e validadas contra a faixa (FR-DEC-019/020).
+- "Enter result" passa pelo mesmo caminho, com um valor por expressão de dado: a soma que os dados mostram, sem modificador, validada contra `count` a `count × sides` (3d6: 3 a 18). O sistema soma os modificadores, e grava-se a soma informada, os modificadores, o total e a entrada, sem faces (FR-DEC-019, 020; FEAT-009 D4).
 - O gerador é injetado no comando; nos testes, uma sequência fixa substitui o sorteio.
 
 ## Opções consideradas
