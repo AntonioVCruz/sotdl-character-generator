@@ -388,8 +388,8 @@ sequenceDiagram
     - vaga `roll-effect`: `{ mode: 'rolled', dice, modifier, total }` ou `{ mode: 'entered', sum, modifier, total }`, sem `entry` nem `book`.
   - No comando (gravação): faces válidas para o dado, ou `sum` na faixa; `total` = soma das faces (ou `sum`) + modificador da versão vigente; `entry` = a entrada que contém o total.
   - Na leitura: a decisão vale se (a) `book` é o livro da versão vigente da tabela (FR-SRC-009) e (b) a entrada gravada existe nessa versão. Se não, o cálculo a ignora, mas ela continua no documento (suspensa, D40), e a vaga reabre; se (a) e (b) voltarem a valer, ela volta sem nova gravação.
-    - Nenhuma gravação desta feature apaga uma decisão que não vale: o `commit` mantém as decisões de vagas que não estão vivas (`session.ts:207–212`), o `clear` recusa a vaga reaberta com `not-decided`, e abrir e avaliar não gravam.
-    - Limite conhecido (decisão do usuário): decidir de novo a vaga reaberta (Roll, Enter result, Choose) grava na mesma chave e substitui a decisão suspensa. Onde a suspensa fica nesse caso é decisão da sessão 2 (ADR-004) e entra com a FEAT-011 (§8). No MVP não dá para chegar a esse caso, porque só existe o core.
+    - Nenhuma gravação desta feature apaga uma decisão que não vale: o `commit` mantém as decisões de vagas que não estão vivas (`session.ts:207–212`), o `clear` recusa a vaga reaberta com `not-decided`, e abrir e avaliar não gravam. A partir da FEAT-011, abrir grava só quando a comparação do estado derivado com a marca de registro encontra diferença (pacote novo ou arquivo importado), com as entradas de suspensão e de restauração e o aviso da FR-CONT-016; sem diferença, abrir continua sem gravar (ADR-004 §1, §4).
+    - Limite conhecido (decisão do usuário): nesta feature, decidir de novo a vaga reaberta (Roll, Enter result, Choose) grava na mesma chave e substitui a decisão suspensa. Regra da ADR-004 §3 (2026-11-16), que a FEAT-011 entrega: a decisão nova ocupa `decisions[chave]`, e a suspensa passa à frente de `earlier[chave]`, guardada com a marca `setAside`; a ativa é a mais recente que passar em (a) e (b) (FR-CHG-018). No MVP não dá para chegar a esse caso, porque só existe o core.
     - Faces, modificador e total exibidos são os gravados, nunca recalculados pelo dado atual. Página e efeitos vêm da versão vigente: os efeitos são regra, e uma errata que os muda vale para o personagem (o total e a entrada, não). A conferência "a entrada contém o total" só existe no comando.
   - Motivo: o cartão e o log mostram o cálculo original mesmo depois de uma errata do dado (FR-DEC-007, FR-LOG-002).
   - Alternativas rejeitadas: só faces (total e entrada mudariam com uma errata do dado); faces e entrada sem modificador e total (o cartão não poderia mostrar o cálculo original depois de uma errata).
@@ -461,7 +461,7 @@ sequenceDiagram
   - tabelas de história do Human: FEAT-016, por emenda do plano;
   - identidade: o Human do *Only Human* continua `revises` do mesmo `ancestry:human` (ADR-003 §2); nada muda no modelo;
   - troca de fonte de uma tabela: desfaz o resultado obtido com a fonte anterior, e a regra (a) é a definitiva. *Revista pela D40 (2026-11-15): o resultado fica suspenso e volta se a fonte voltar; a regra (a) continua definitiva;*
-  - decidir de novo uma vaga reaberta substitui a decisão suspensa, como limite conhecido até a sessão 2 e a FEAT-011 (D3; 2026-11-15).
+  - decidir de novo uma vaga reaberta substitui a decisão suspensa, como limite conhecido até a FEAT-011 (D3; 2026-11-15). *A sessão 2 decidiu onde a suspensa fica (ADR-004 §3, 2026-11-16): em `earlier[chave]`; a FEAT-011 entrega.*
 - **Pendências do ui-design:** a lista da §3.4.
 - **RTM:** Design ref acrescentado nesta emenda nas FRs do cabeçalho e nas que a feature estende (FR-DEC-011, FR-CALC-001, FR-FLOW-001, 010, 011, FR-CHAR-005, 006).
 - **Texto do app:** rascunhos da §3.4; o ui-design fecha (NFR-USE-001).
