@@ -26,7 +26,7 @@ const cards = (page: Page) => list(page).getByRole('article')
 const card = (page: Page, context: string) => cards(page).filter({ hasText: context })
 
 /**
- * Dwarf (Complete) e depois Human com Size adiado (Creating · 3 open), na Home. Entre um e outro, a volta é pela
+ * Dwarf (Creating · 6 open, as tabelas da Story) e depois Human com Size adiado (Creating · 3 open), na Home. Entre um e outro, a volta é pela
  * interface: um `page.goto` logo depois da escolha descarregaria a página com a gravação ainda em curso (FEAT-007 D11).
  */
 async function dwarfThenHuman(page: Page, testInfo: TestInfo) {
@@ -90,7 +90,8 @@ test.describe('Home flow', () => {
     expect(csp).toEqual([])
   })
 
-  test('FR-CHAR-004, FR-CHAR-005, FR-CHAR-006: Dwarf is "Complete", Human with Size deferred is "Creating · 3 open" and on top; only navigating keeps the order', async ({
+  // FEAT-009 §7: com as seis tabelas, o Dwarf recém-escolhido fica "Creating · 6 open"; o "Complete" está no story.spec.ts.
+  test('FR-CHAR-004, FR-CHAR-005: Dwarf is "Creating · 6 open", Human with Size deferred is "Creating · 3 open" and on top; only navigating keeps the order', async ({
     page,
   }, testInfo) => {
     const csp = await watchCsp(page)
@@ -99,7 +100,7 @@ test.describe('Home flow', () => {
     await expect(cards(page).nth(0)).toContainText('Human · Level 0')
     await expect(cards(page).nth(0).getByText('Creating · 3 open', { exact: true })).toBeVisible()
     await expect(cards(page).nth(1)).toContainText('Dwarf · Level 0')
-    await expect(cards(page).nth(1).getByText('Complete', { exact: true })).toBeVisible()
+    await expect(cards(page).nth(1).getByText('Creating · 6 open', { exact: true })).toBeVisible()
 
     // Só navegar (Continue, Next) não grava: o Dwarf, abaixo, continua abaixo.
     await card(page, 'Dwarf · Level 0').getByRole('link', { name: 'Continue Unnamed character' }).click()

@@ -73,7 +73,7 @@ Todo "pronto quando" inclui `npm run typecheck`, `npm run lint` e os testes exis
     - `NFR-REL-001`: reabrir um personagem rolado dá as mesmas faces, o mesmo modificador, o mesmo total e a mesma entrada, sem chamar o sorteio (AC-13);
     - as duas expectativas de documento inteiro que mudam (design §7): `FR-CALC-001: the saved document holds only inputs…` e `FR-STEP-009: applying saves only the pair…`, agora com a entrada de log.
 
-- [ ] **T6. Pacote: tabelas do Dwarf e tipos de criatura** (design §4; FR-STEP-012 parcial, 013, FR-CALC-010; D10, D12)
+- [x] **T6. Pacote: tabelas do Dwarf e tipos de criatura** (design §4; FR-STEP-012 parcial, 013, FR-CALC-010; D10, D12)
   - Em `packs/sotdl.core.json`: `regime` de `step:story`; as seis tabelas, cada uma com o seu `regime`, os dez `creature-type` e as concessões do Dwarf, como na tabela da §4. Antes do commit, cada faixa e a página conferidas de novo no PDF (plano §6, "Conteúdo oficial").
   - Em `e2e/home.spec.ts`: a expectativa que muda (design §7), com o Dwarf em "Creating · 6 open". O "Complete" com dados reais continua no `story.spec.ts` da T9.
   - **Pronto quando:**

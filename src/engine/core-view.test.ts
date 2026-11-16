@@ -82,6 +82,8 @@ describe('evaluate: live summary with the core pack', () => {
     expect(changes.steps.map((s) => [s.name, s.from, s.to])).toEqual([
       ['Ancestry', 'done', 'open'],
       ['Attributes', 'done', 'open'],
+      // FEAT-009 §7: o Human não tem tabelas, e a Story do Dwarf deixa de estar aberta.
+      ['Story', 'open', 'not-started'],
       ['Professions & languages', 'not-started', 'open'],
     ])
     expect(JSON.stringify(document)).toBe(before)
@@ -93,7 +95,8 @@ describe('evaluate: live summary with the core pack', () => {
       ['Ancestry', 'not-started', 'done'],
       // Só com a vaga opcional do ajuste, a etapa fica `done` (FEAT-008 §3.3 e §7).
       ['Attributes', 'locked', 'done'],
-      ['Story', 'locked', 'not-started'],
+      // FEAT-009 §7: as seis tabelas do Dwarf abrem a Story.
+      ['Story', 'locked', 'open'],
       ['Professions & languages', 'locked', 'not-started'],
       ['Wealth & equipment', 'locked', 'not-started'],
       ['Interesting thing', 'locked', 'not-started'],
@@ -150,7 +153,10 @@ describe('Attributes step with the core pack', () => {
     ]
     for (const document of [character({ ancestry: 'ancestry:dwarf' }), adjusted('ancestry:dwarf')]) {
       const view = evaluate(rules, document)
-      expect(states(view)).toEqual(expect.arrayContaining([['Attributes', 'done'], ['Professions & languages', 'not-started'], ...others]))
+      // FEAT-009 §7: com Dwarf, a Story fica aberta pelas tabelas; com Human, não muda.
+      expect(states(view)).toEqual(
+        expect.arrayContaining([['Attributes', 'done'], ['Story', 'open'], ['Professions & languages', 'not-started'], ...others.slice(1)]),
+      )
       expect(view.steps[1]).toMatchObject({ decided: 0, open: 0, total: 0 })
     }
     const human = evaluate(rules, character({ ancestry: 'ancestry:human' }))
@@ -227,7 +233,21 @@ describe('ancestry options and detail with the core pack', () => {
 
   it('FR-STEP-002: the detail lists attributes, characteristics, languages, talents, level 4 and pending grants', () => {
     const dwarf = ancestryDetail(rules, 'ancestry:dwarf')
-    expect(dwarf).toMatchObject({ name: 'Dwarf', page: 17, level4: 'Health +6; one spell or Shake it Off', grants: [] })
+    // FEAT-009 §7: as seis concessões `table`, na ordem do pacote, com etapa Story.
+    const story = { kind: 'table', step: 'step:story', stepId: 'step:story', stepName: 'Story' }
+    expect(dwarf).toMatchObject({
+      name: 'Dwarf',
+      page: 17,
+      level4: 'Health +6; one spell or Shake it Off',
+      grants: [
+        { id: 'hated-creature', ...story, table: 'table:dwarf-hatred' },
+        { id: 'age', ...story, table: 'table:dwarf-age' },
+        { id: 'build', ...story, table: 'table:dwarf-build' },
+        { id: 'appearance', ...story, table: 'table:dwarf-appearance' },
+        { id: 'background', ...story, table: 'table:dwarf-background' },
+        { id: 'personality', ...story, table: 'table:dwarf-personality' },
+      ],
+    })
     expect(dwarf.attributes.map((a) => a.score)).toEqual([10, 9, 10, 10])
     expect(dwarf.characteristics.map((c) => c.text)).toEqual(['Perception = Intellect + 1', 'Health = Strength + 4', 'Size 1/2', 'Speed 8'])
     expect(dwarf.talents.map((t) => [t.name, t.provenance.page])).toEqual([
@@ -253,5 +273,69 @@ describe('ancestry options and detail with the core pack', () => {
     expect(view.ancestry).toBe('ancestry:dwarf')
     expect(view.summary.attributes[0].composition[0].origin).toMatchObject({ name: 'Mountain Folk' })
     expect(values(view).Health).toBe(14)
+  })
+})
+
+describe('Story step with the core pack', () => {
+  const TABLES = ['hated-creature', 'age', 'build', 'appearance', 'background', 'personality'].map((grant) => `ancestry=dwarf/${grant}`)
+  const chosen = (value: string) => ({ mode: 'chosen' as const, value, book: 'sotdl.core' })
+  const dwarf = (decisions: Record<string, ReturnType<typeof chosen>> = {}) => {
+    const document = character({ ancestry: 'ancestry:dwarf' })
+    Object.assign(document.decisions, decisions)
+    return document
+  }
+  // Uma entrada válida por tabela, na ordem das vagas.
+  const allDecided = () =>
+    dwarf(Object.fromEntries(TABLES.map((key, i) => [key, chosen(['1-2', '3', '3', '3-4', '2', '3'][i])])))
+
+  it('FR-STEP-012: Dwarf has the six table slots in Story, in pack order, and Human has none', () => {
+    const view = evaluate(rules, dwarf())
+    const tables = view.slots.filter((slot) => slot.kind === 'table')
+    expect(tables.map((slot) => [slot.key, slot.stepId, slot.source, slot.decided])).toEqual(
+      TABLES.map((key) => [key, 'step:story', { id: 'ancestry:dwarf', name: 'Dwarf' }, false]),
+    )
+    expect(tables.map((slot) => slot.kind === 'table' && [slot.table.name, slot.table.regime, slot.table.provenance.page])).toEqual([
+      ['Dwarf Hatred', 'choice', 18],
+      ['Dwarf Age', 'roll-or-choose', 18],
+      ['Dwarf Build', 'roll-or-choose', 18],
+      ['Dwarf Appearance', 'roll-or-choose', 18],
+      ['Dwarf Background', 'roll-or-choose', 19],
+      ['Dwarf Personality', 'roll-or-choose', 19],
+    ])
+    expect(view.steps.find((step) => step.id === 'step:story')).toMatchObject({ regime: 'roll-or-choose', page: 11 })
+    expect(evaluate(rules, character({ ancestry: 'ancestry:human' })).slots.filter((slot) => slot.kind === 'table')).toEqual([])
+  })
+
+  it('FR-CALC-010: Dwarf Background 1 gives Corruption 1 with a part whose origin is the table (AC-9)', () => {
+    const view = evaluate(rules, dwarf({ 'ancestry=dwarf/background': chosen('1') }))
+    const corruption = view.summary.characteristics.find((c) => c.name === 'Corruption')!
+    expect(corruption.value).toBe(1)
+    expect(corruption.composition).toEqual([
+      { stage: 'base', value: 0, formula: '0', origin: { kind: 'default', id: 'characteristic:corruption' } },
+      {
+        stage: 'sum',
+        value: 1,
+        origin: {
+          kind: 'table',
+          key: 'ancestry=dwarf/background',
+          stepId: 'step:story',
+          table: { id: 'table:dwarf-background', name: 'Dwarf Background' },
+          entry: '1',
+        },
+      },
+    ])
+    expect(values(evaluate(rules, dwarf({ 'ancestry=dwarf/background': chosen('2') }))).Corruption).toBe(0)
+  })
+
+  it('FR-CHAR-005, FR-CHAR-006: Story is open with 6 and done with the six decided (AC-12, engine)', () => {
+    const open = evaluate(rules, dwarf())
+    expect(open.steps.find((step) => step.id === 'step:story')).toMatchObject({ status: 'open', decided: 0, open: 6, total: 6 })
+    expect(open.openDecisions.map((decision) => [decision.key, decision.table?.name])).toEqual(
+      TABLES.map((key, i) => [key, ['Dwarf Hatred', 'Dwarf Age', 'Dwarf Build', 'Dwarf Appearance', 'Dwarf Background', 'Dwarf Personality'][i]]),
+    )
+
+    const done = evaluate(rules, allDecided())
+    expect(done.steps.find((step) => step.id === 'step:story')).toMatchObject({ status: 'done', decided: 6, open: 0, total: 6 })
+    expect(done.openDecisions).toEqual([])
   })
 })

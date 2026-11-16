@@ -33,7 +33,7 @@
           "requires": ["step:ancestry"],
           "slots": { "adjustment": { "kind": "attribute-shift", "amount": 1, "optional": true } }
         },
-        { "id": "step:story", "name": "Story", "page": 11, "requires": ["step:ancestry"] },
+        { "id": "step:story", "name": "Story", "page": 11, "regime": "roll-or-choose", "requires": ["step:ancestry"] },
         { "id": "step:professions-languages", "name": "Professions & languages", "page": 23, "requires": ["step:ancestry"] },
         { "id": "step:wealth-equipment", "name": "Wealth & equipment", "page": 25, "requires": ["step:ancestry"] },
         { "id": "step:interesting-thing", "name": "Interesting thing", "page": 26, "requires": ["step:ancestry"] },
@@ -71,6 +71,80 @@
         { "id": "talent:robust-constitution", "name": "Robust Constitution", "page": 17 },
         { "id": "talent:shake-it-off", "name": "Shake it Off", "page": 17 },
 
+        { "id": "creature-type:ogre", "name": "Ogres", "page": 18 },
+        { "id": "creature-type:troglodyte", "name": "Troglodytes", "page": 18 },
+        { "id": "creature-type:beastman", "name": "Beastmen", "page": 18 },
+        { "id": "creature-type:orc", "name": "Orcs", "page": 18 },
+        { "id": "creature-type:goblin", "name": "Goblins", "page": 18 },
+        { "id": "creature-type:elf", "name": "Elves", "page": 18 },
+        { "id": "creature-type:troll", "name": "Trolls", "page": 18 },
+        { "id": "creature-type:giant", "name": "Giants", "page": 18 },
+        { "id": "creature-type:dragon", "name": "Dragons", "page": 18 },
+        { "id": "creature-type:demon", "name": "Demons", "page": 18 },
+
+        {
+          "id": "table:dwarf-hatred",
+          "name": "Dwarf Hatred",
+          "page": 18,
+          "dice": { "count": 1, "sides": 20 },
+          "regime": "choice",
+          "entries": {
+            "1-2": { "entity": "creature-type:ogre" },
+            "3-4": { "entity": "creature-type:troglodyte" },
+            "5-6": { "entity": "creature-type:beastman" },
+            "7-8": { "entity": "creature-type:orc" },
+            "9-10": { "entity": "creature-type:goblin" },
+            "11-12": { "entity": "creature-type:elf" },
+            "13-14": { "entity": "creature-type:troll" },
+            "15-16": { "entity": "creature-type:giant" },
+            "17-18": { "entity": "creature-type:dragon" },
+            "19-20": { "entity": "creature-type:demon" }
+          }
+        },
+        {
+          "id": "table:dwarf-age",
+          "name": "Dwarf Age",
+          "page": 18,
+          "dice": { "count": 3, "sides": 6 },
+          "regime": "roll-or-choose",
+          "entries": { "3": {}, "4-7": {}, "8-12": {}, "13-15": {}, "16-17": {}, "18": {} }
+        },
+        {
+          "id": "table:dwarf-build",
+          "name": "Dwarf Build",
+          "page": 18,
+          "dice": { "count": 3, "sides": 6 },
+          "regime": "roll-or-choose",
+          "entries": { "3": {}, "4-6": {}, "7-8": {}, "9-12": {}, "13-15": {}, "16-17": {}, "18": {} }
+        },
+        {
+          "id": "table:dwarf-appearance",
+          "name": "Dwarf Appearance",
+          "page": 18,
+          "dice": { "count": 3, "sides": 6 },
+          "regime": "roll-or-choose",
+          "field": "appearance",
+          "entries": { "3-4": {}, "5-6": {}, "7-8": {}, "9-11": {}, "12-15": {}, "16-18": {} }
+        },
+        {
+          "id": "table:dwarf-background",
+          "name": "Dwarf Background",
+          "page": 19,
+          "dice": { "count": 1, "sides": 20 },
+          "regime": "roll-or-choose",
+          "field": "background",
+          "entries": { "1": { "effects": { "corruption": { "target": "characteristic:corruption", "add": 1 } } }, "2": {}, "3": {}, "4": {}, "5": {}, "6": {}, "7": {}, "8": {}, "9": {}, "10": {}, "11": {}, "12": {}, "13": {}, "14": {}, "15": {}, "16": {}, "17": {}, "18": {}, "19": {}, "20": {} }
+        },
+        {
+          "id": "table:dwarf-personality",
+          "name": "Dwarf Personality",
+          "page": 19,
+          "dice": { "count": 3, "sides": 6 },
+          "regime": "roll-or-choose",
+          "field": "personality",
+          "entries": { "3": {}, "4": {}, "5-6": {}, "7-8": {}, "9-12": {}, "13-14": {}, "15-16": {}, "17": {}, "18": {} }
+        },
+
         {
           "id": "ancestry:human",
           "name": "Human",
@@ -98,7 +172,15 @@
           },
           "languages": { "language:common-tongue": ["speak"], "language:dwarfish": ["speak", "read", "write"] },
           "talents": ["talent:darksight", "talent:hated-creature", "talent:robust-constitution"],
-          "level4": { "characteristics": { "characteristic:health": 6 }, "oneOf": [{ "spells": 1 }, { "talent": "talent:shake-it-off" }] }
+          "level4": { "characteristics": { "characteristic:health": 6 }, "oneOf": [{ "spells": 1 }, { "talent": "talent:shake-it-off" }] },
+          "grants": {
+            "hated-creature": { "kind": "table", "step": "step:story", "table": "table:dwarf-hatred" },
+            "age": { "kind": "table", "step": "step:story", "table": "table:dwarf-age" },
+            "build": { "kind": "table", "step": "step:story", "table": "table:dwarf-build" },
+            "appearance": { "kind": "table", "step": "step:story", "table": "table:dwarf-appearance" },
+            "background": { "kind": "table", "step": "step:story", "table": "table:dwarf-background" },
+            "personality": { "kind": "table", "step": "step:story", "table": "table:dwarf-personality" }
+          }
         }
       ]
     }
