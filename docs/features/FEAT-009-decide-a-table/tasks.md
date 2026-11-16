@@ -7,7 +7,7 @@
 
 Todo "pronto quando" inclui `npm run typecheck`, `npm run lint` e os testes existentes verdes, salvo as expectativas que o design §7 lista como mudadas (C8).
 
-- [ ] **T1. Dados: sorteio de faces por rejeição** (design §5, "Sorteio por rejeição"; FR-DEC-005; ADR-009)
+- [x] **T1. Dados: sorteio de faces por rejeição** (design §5, "Sorteio por rejeição"; FR-DEC-005; ADR-009)
   - Em `src/dice/index.ts`: tipo `Dice` próprio (`count`, `sides`, `modifier?`), `rollDie(sides, random)` e `rollDice(dice, random)` com uma face por dado. Sem importar `content`.
   - **Pronto quando:** `src/dice/index.test.ts` passa para `FR-DEC-005`:
     - 3d6 faz três sorteios e devolve três faces de 1 a 6; d20 faz um;
