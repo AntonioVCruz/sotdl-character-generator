@@ -1,7 +1,7 @@
 # UX Foundations: Gerador de personagens SotDL
 
-> Status: Rascunho · Última atualização: 2026-11-11
-> Fontes: `docs/srs.md` v1.1 · `docs/architecture.md` · `docs/use-cases.md` · princípios · wireframe v1 (`docs/reference/wireframe/`, `docs/reference/screens/`)
+> Status: Rascunho · Última atualização: 2026-11-16 (D40; emenda 3 da FEAT-009)
+> Fontes: `docs/srs.md` v1.2 · `docs/architecture.md` · `docs/use-cases.md` · princípios · wireframe v1 (`docs/reference/wireframe/`, `docs/reference/screens/`)
 > Design system: **`docs/design.md` + `docs/tokens.json`** (fonte única de todos os valores de design; este documento referencia, não repete)
 
 ## 1. Visão geral
@@ -33,7 +33,7 @@ WCAG 2.2 AA em construtor, ficha e log, com tudo operável por teclado (NFR-ACC-
 ### A5. Princípios de interação do produto
 1. **Registrar, não fiscalizar** (P7): toda tabela aceita rolar, escolher, escrever ou informar; o regime da regra aparece como indicação.
 2. **Pendência não bloqueia** (P4, D5): só a dependência real bloqueia; o resto vira contagem em Open decisions.
-3. **Nada some sem aviso** (P6): mudança com dependentes abre o diálogo de impacto; sem dependentes, aplica direto.
+3. **Nada some sem aviso, nada se perde** (P6, D40): o que deixa de valer fica guardado no personagem (*set aside*) e volta sozinho com o contexto (*restored*). Mudança que deixa de lado ou restaura decisões abre o diálogo de impacto; o resto aplica direto.
 4. **Tudo se explica** (P1, P11): toda opção mostra livro, página e tipo; todo valor mostra a composição.
 5. **Salvar é automático** (FR-CHAR-009): não há botão Save; falha de gravação aparece e o estado fica na tela.
 6. **Destruição confirmada** pelo nome da consequência ("Delete permanently"); nada destrutivo em um clique.
@@ -118,7 +118,7 @@ flowchart LR
     mode -->|"Roll"| roll["Rola os dados"]
     mode -->|"Choose"| choose["Escolhe a faixa"]
     mode -->|"Write"| write["Escreve o resultado"]
-    mode -->|"Enter result"| enter["Informa cada dado"]
+    mode -->|"Enter result"| enter["Informa cada<br/>expressão de dado"]
     enter --> valid{"Na faixa?"}
     valid -->|"não"| err["Mostra a faixa válida"]
     valid -->|"sim"| result
@@ -129,11 +129,13 @@ flowchart LR
     typename --> result
     write --> result
     result --> again{"Reroll ou troca?"}
-    again -->|"sem dependentes"| result
-    again -->|"com dependentes"| dlg["Impact dialog<br/>removed / recalculated / stays"]
+    again -->|"nada deixado de lado<br/>nem restaurado"| result
+    again -->|"deixa de lado ou restaura"| dlg["Impact dialog<br/>set aside / restored /<br/>recalculated / stays"]
     dlg -->|"Apply"| result
     dlg -->|"Keep current"| card
 ```
+
+Na troca dentro da própria vaga (Reroll, Choose → Choose, troca de modo), o valor que sai vai só para o log como desfeito; o que dependia dele fica *set aside* (D40 (4)). Voltar a uma escolha anterior (Human → Dwarf) mostra como *restored* as decisões dela, com os valores originais (UC-010 1b).
 
 **F3. Concluir, ajustar e imprimir [UC-011, UC-012, UC-013]**
 
@@ -160,7 +162,7 @@ flowchart LR
     check -->|"não"| reject["Alerta: não é um personagem;<br/>nada foi alterado"]
     check -->|"sim"| created["Personagem novo na Home"]
     created --> stale{"Decisões que não existem<br/>no pacote atual?"}
-    stale -->|"sim"| reopened["Reabertas, avisadas<br/>e registradas no log"]
+    stale -->|"sim"| reopened["Set aside, vagas reabertas,<br/>avisadas e registradas no log"]
 ```
 
 #### Inventário de telas
@@ -171,8 +173,8 @@ IDs estáveis. `SCR-WEB-001` a `016` correspondem a `SCR-01` a `SCR-16` do wiref
 
 | ID | Wireframe | Tela | Propósito | Estados-chave | Prioridade |
 | :-- | :-- | :-- | :-- | :-- | :-- |
-| SCR-WEB-001 | SCR-01 | Home · My characters | Listar, criar, continuar, excluir, exportar e importar personagens. MVP: cartões, New character, Import character file, aviso "só neste navegador", menu do cartão (Preview sheet, Export character file, Delete). | vazio (FR-CHAR-015), carregando, populado, confirmação de exclusão, importação recusada (FR-CHAR-023), importação com decisões reabertas | Must |
-| SCR-WEB-002 | SCR-02 | Sources & rules | Ligar, desligar e ordenar os livros do personagem. MVP: só a aba Books, livros só com o nome, core travado no fim, coluna "What these settings mean", Apply and continue. | sem alterações, alterações pendentes, descartar alterações (FR-SRC-013), mudança com dependentes → 007 | Must (abas Optional rules, House rules, Rule texts: Should/Could) |
+| SCR-WEB-001 | SCR-01 | Home · My characters | Listar, criar, continuar, excluir, exportar e importar personagens. MVP: cartões, New character, Import character file, aviso "só neste navegador", menu do cartão (Preview sheet, Export character file, Delete). | vazio (FR-CHAR-015), carregando, populado, confirmação de exclusão, importação recusada (FR-CHAR-023), importação com decisões deixadas de lado (FR-CONT-016) | Must |
+| SCR-WEB-002 | SCR-02 | Sources & rules | Ligar, desligar e ordenar os livros do personagem. MVP: só a aba Books, livros só com o nome, core travado no fim, coluna "What these settings mean", Apply and continue. | sem alterações, alterações pendentes, descartar alterações (FR-SRC-013), mudança que deixa de lado ou restaura decisões → 007 | Must (abas Optional rules, House rules, Rule texts: Should/Could) |
 | SCR-WEB-019 | — | About | Aviso de não afiliação, onde está o texto das regras, onde comprar os livros (FR-HELP-001 a 003). | — | Must |
 
 **Construtor (nível 0)**
@@ -183,13 +185,13 @@ IDs estáveis. `SCR-WEB-001` a `016` correspondem a `SCR-01` a `SCR-16` do wiref
 | SCR-WEB-004 | SCR-04 | Compare versions | Comparar versões de uma entidade (P2d). | — | Should |
 | SCR-WEB-005 | SCR-05 | 2 Attributes | Atributos com composição, +1 à escolha, ajuste ±1 único, características com fórmula. MVP: sem dado de atributos aleatórios. | aumento pendente, ajuste usado, segunda tentativa de ajuste | Must |
 | SCR-WEB-006 | SCR-06 | Development (*Only Human*) | Cadeia de tabelas do *Only Human*. | — | Should |
-| SCR-WEB-007 | SCR-07 | Impact dialog | Mostrar o que uma mudança remove, recalcula e mantém, antes de aplicar. | por decisão, por fontes (agrupado por livro), por rerrolagem | Must |
+| SCR-WEB-007 | SCR-07 | Impact dialog | Mostrar, antes de aplicar, o que uma mudança deixa de lado, restaura, recalcula e mantém (D40). Seções "Will be set aside", "Will be restored", "Will be recalculated", "Stays as it is". Ver notas abaixo. | por decisão, por fontes (agrupado por livro), por rerrolagem, só restauração | Must |
 | SCR-WEB-008 | SCR-08 | 6 Interesting thing | Rolar tipo e item (d6 + d20), Reroll item, Reroll type and item, Enter result. MVP: sem troca de tabela por rolagem. | a rolar, rolado (faixa + página), informado | Must |
 | SCR-WEB-009 | SCR-09 | 3 Story | Tabelas de história da ancestralidade com Roll / Choose / Write; Hated Creature em grade com nomes (D38); Roll all undecided. | por cartão: a decidir, rolado, escolhido, escrito, aguardando, sem texto, com subdecisão | Must |
 | SCR-WEB-010 | SCR-10 | 4 Professions & languages | Duas vagas de profissão (Roll d6 + d20 / Choose / Trade for a language), idiomas com fala, leitura, escrita e origem. **Ajuste da D36:** Choose mostra faixas e página sem nomes e pede o nome ao selecionar; Roll mostra faixa, página e campo do nome; nome em branco conta como decisão aberta. | vaga vazia, rolada sem nome, nomeada, renomeada com aval do mestre, trocada por idioma, idioma pendente de outra etapa | Must |
 | SCR-WEB-011 | SCR-11 | 5 Wealth & equipment | Riqueza 3d6 com Enter result, pacote do estilo de vida, escolhas internas, moedas. MVP: magia do pergaminho por Write ou aberta (aparece como "GM's choice" na ficha); sem Buy equipment nem GM grant. | a rolar, rolado, escolha interna aberta | Must |
 | SCR-WEB-017 | — | 7 Roleplaying | Nome em texto livre, dois traços positivos e um negativo (tabela ou texto, nomes conforme D36), notas com a página das perguntas do livro. Opcional, sem pendências (FR-FLOW-017). | vazio, preenchido | Must |
-| SCR-WEB-018 | — | 8 Review | Listar decisões abertas com atalho para cada uma e abrir a ficha (FR-FLOW-015, 016). | sem pendências, com pendências | Must |
+| SCR-WEB-018 | — | 8 Review | Listar decisões abertas com atalho para cada uma e abrir a ficha (FR-FLOW-015, 016). Seção "Set aside" com o descarte (Should, FR-CHG-020; notas abaixo). | sem pendências, com pendências; com decisões deixadas de lado e confirmação de descarte (Should) | Must (descarte: Should) |
 | SCR-WEB-016 | SCR-16 | Builder · layout de celular | Variante de layout de todas as etapas abaixo do breakpoint `md` (`design.md` §3): seletor de etapa no topo, barra de resumo recolhível, Back e Next fixos. | resumo recolhido, resumo aberto, seletor aberto | Must |
 
 **Ficha e log**
@@ -199,7 +201,7 @@ IDs estáveis. `SCR-WEB-001` a `016` correspondem a `SCR-01` a `SCR-16` do wiref
 | SCR-WEB-014 | SCR-14 | Sheet | MVP: ficha final de nível 0: cabeçalho, atributos, características com composição, talentos com origem e página, equipamento e dinheiro, campos fixos com origem; Edit sheet com ajustes; Export (Print, Character file). Sem gatilhos, efeitos, ataques, recursos e retrato (ficha de jogo, Could). | leitura, em criação (pendências e "GM's choice"), Edit sheet, ajuste com valor acima do máximo | Must (ficha de jogo: Could) |
 | SCR-WEB-020 | — | Sheet · print layout | Layout de impressão sem controles, preto e branco, até 2 páginas A4 ou Letter, pendências marcadas, páginas e rodapé de fontes (FR-SHEET-013). | com e sem pendências | Must |
 | SCR-WEB-021 | — | Sheet · layout de celular | Coluna única com os ajustes acessíveis (FR-SHEET-014). Ordem em `design.md` §3. | leitura, Edit sheet | Must |
-| SCR-WEB-015 | SCR-15 | Log | Entradas em ordem cronológica, agrupadas por fase, filtros All / Choices / Rolls / Edits, "Show undone entries". MVP: sem Change nem painel de exportação. | vazio (só a entrada Sources), com desfeitas, filtrado | Must (Change, exportar o log: Should) |
+| SCR-WEB-015 | SCR-15 | Log | Entradas em ordem cronológica, agrupadas por fase, filtros All / Choices / Rolls / Edits, interruptor "Show undone and set-aside entries". Só consulta: sem "Change" em nenhuma versão (D40, FR-CHG-016). MVP: sem painel de exportação. Ver notas abaixo. | vazio (só a entrada Sources), com desfeitas, com entradas de suspensão e de restauração, filtrado, interruptor desligado | Must (exportar o log: Should) |
 
 **Subida de nível (fora do MVP)**
 
@@ -207,6 +209,14 @@ IDs estáveis. `SCR-WEB-001` a `016` correspondem a `SCR-01` a `SCR-16` do wiref
 | :-- | :-- | :-- | :-- | :-- |
 | SCR-WEB-012 | SCR-12 | Level up · Expert path | Escolher o path e ver os benefícios do nível. | Should |
 | SCR-WEB-013 | SCR-13 | Level up · Magic | Descobrir tradição ou aprender magia. | Should |
+
+Mudar uma escolha de nível anterior acontece no construtor, que reabre a decisão na etapa do nível dela (D32 revista pela D40, FR-CHG-016); o log não oferece "Change". As telas de subida de nível precisam, portanto, de navegação entre níveis no construtor. Não detalhado (Should).
+
+**Notas da D40 por tela**
+
+- **SCR-WEB-007:** listas e textos em `design.md` §4 (`impact-dialog`). O diálogo aparece quando a mudança deixa de lado ou restaura ao menos uma decisão, inclusive quando só restaura (FR-CHG-001); se só recalcula, aplica direto (FR-CHG-002). Na rerrolagem, o valor que sai não vai para "Will be set aside": fica só no log como desfeito.
+- **SCR-WEB-015:** o log só se consulta (FR-LOG-009). Entradas de suspensão e de restauração, com o motivo, ao lado das originais, que não ficam riscadas (`design.md` §4, `log-entry`). O interruptor passa de "Show undone entries" a "Show undone and set-aside entries", porque agora cobre também as suspensas; a restauração vai junto, por só fazer sentido ao lado da suspensão (FR-LOG-013, 014).
+- **SCR-WEB-018 (Should, FR-CHG-020):** com N > 0 decisões deixadas de lado, seção "Set aside · N" depois das pendências, com cada decisão (nome, valor, motivo em `meta`) e o `button-secondary` "Discard set-aside decisions". A confirmação é um `dialog` desta tela: diz que o descarte é irreversível e que o log guarda as entradas; ações "Keep them" e "Discard permanently" (`button-danger`). De qualquer etapa, a linha "N set aside · See Review" do `live-summary` leva a esta seção, sem contar como decisão aberta (FR-CHG-012).
 
 **Estados globais (sem tela própria):** erro inesperado (FR-HELP-005) e falha ao carregar o pacote (FR-HELP-004), como `inline-alert` no topo da tela atual, com os personagens preservados; falha de gravação (FR-CHAR-010), como alerta que mantém o estado na tela.
 
