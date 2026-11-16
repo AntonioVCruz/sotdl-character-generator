@@ -1,7 +1,7 @@
 # Tasks: FEAT-009 — Decidir uma tabela: Roll, Choose, Enter result
 
 > Executa: `docs/features/FEAT-009-decide-a-table/technical-design.md`
-> Status: pending · Última atualização: 2026-11-16 (pré-requisitos cumpridos)
+> Status: pending · Última atualização: 2026-11-16 (pré-requisitos cumpridos; emenda da implementação: T3 (iv) no nível do motor, T6 com o `FR-STEP-002`)
 > Tela (SCR-WEB-009, e o "Decide now" da SCR-WEB-003): do ui-design, pelo `docs/design-manifest.json`. As tarefas de ui aqui são só integração.
 > Pré-requisitos (design §8), cumpridos: emenda 1, requirements-engineering (`8c77325`, `8bed161`, `531ff84`; P6a, `f3eb350`); emenda 2, software-architecture (`c955ae9`, `4023657`); emenda 3, ux-foundations, E8 `size.roll-value` e E9 (`a008fba`, `755be9c`); emenda 4, implementation-planning (`21c6b87`, `4eaa019`).
 
@@ -46,7 +46,7 @@ Todo "pronto quando" inclui `npm run typecheck`, `npm run lint` e os testes exis
     - `FR-DEC-007`, `FR-DEC-016`: rolado com faces, modificador, total, entrada e `rolls` gravados (AC-4, sem o pacote real);
     - `FR-DEC-008`, `FR-DEC-012`: toda entrada com faixa e página, e a entidade quando houver, na ordem do início da faixa (AC-5, AC-6);
     - `FR-DEC-024`: escolhido com a entrada e sem faces; decisão sem `book` ou sem `entry`, ou com chave inexistente, ignorada;
-    - `FR-CONT-016`, `FR-SRC-009`: (iii) uma versão sem a entrada gravada reabre a vaga; (iv) um segundo livro, acima, com `replaces` da tabela faz a decisão deixar de valer e reabre a vaga; (v) voltando à versão ou ao livro anterior, a mesma decisão gravada volta a valer, sem nova gravação nem entrada de log (AC-17);
+    - `FR-CONT-016`, `FR-SRC-009`: (iii) uma versão sem a entrada gravada reabre a vaga; (iv) uma decisão cujo `book` difere do livro da versão vigente da tabela deixa de valer e reabre a vaga (no motor; com `replaces`, na FEAT-005); (v) voltando à versão ou ao livro anterior, a mesma decisão gravada volta a valer, sem nova gravação nem entrada de log (AC-17);
     - `FR-STEP-014`, `FR-DEC-011`: a `roll-effect` aparece com a entrada, conta em `open` e `openDecisions`, e some ao trocar a entrada (AC-8, parte do motor);
     - `FR-FLOW-001`: etapa com tabelas concedidas fica `open` e, com todas decididas, `done`.
 
@@ -83,7 +83,7 @@ Todo "pronto quando" inclui `npm run typecheck`, `npm run lint` e os testes exis
       - `FR-STEP-012`: Dwarf com as seis vagas `table` na Story, na ordem, e Human sem nenhuma;
       - `FR-CALC-010`: Background 1 dá Corruption 1 com a parcela de origem da tabela (AC-9);
       - `FR-CHAR-005`, `FR-CHAR-006`: Story `open` com 6 e `done` com as seis decididas (AC-12, motor);
-      - as três expectativas da FEAT-007 e da FEAT-008 que mudam (design §7): as duas `FR-FLOW-014: preview…` e `FR-FLOW-001: Attributes is done with Dwarf…`;
+      - as quatro expectativas da FEAT-007 e da FEAT-008 que mudam (design §7): as duas `FR-FLOW-014: preview…`, `FR-FLOW-001: Attributes is done with Dwarf…` e `FR-STEP-002: the detail lists … pending grants`;
     - `npm run e2e` passa nos 5 projetos, com o `home.spec.ts` emendado.
 
 - [ ] **T7. Desempenho: guarda unitária com tabelas** (design §5, "NFR-PERF-002, guarda unitária"; NFR-PERF-002)
