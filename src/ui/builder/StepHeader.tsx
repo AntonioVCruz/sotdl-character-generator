@@ -1,6 +1,6 @@
 import type { Ref } from 'react'
 import type { Rules, SlotView, StepView } from '../../engine'
-import { REGIME_LABEL, stepQuestion, stepRule } from './copy'
+import { isTablesStep, REGIME_LABEL, stepQuestion, stepRule } from './copy'
 import { PillCounter } from '../parts'
 import { SourceBadge } from './parts'
 
@@ -13,10 +13,12 @@ export function StepHeader({ step, steps, slots, rules, titleRef }: {
   /** Alvo do foco ao chegar à etapa por navegação dentro do app (ui-design da FEAT-001, Builder frame focus). */
   titleRef?: Ref<HTMLHeadingElement>
 }) {
-  const rule = stepRule(step)
+  const rule = stepRule(step, slots)
   const provenance = rules.items.get(step.id)?.provenance
   // O ajuste não usado não ganha pílula: ele não é pendência (D2 da FEAT-008).
   const adjusted = slots.some((slot) => slot.stepId === step.id && slot.kind === 'attribute-shift' && slot.decided)
+  // Numa etapa de tabelas, rolar não é escolher: "{d} of {t} decided" (ui-design da FEAT-009, Cabeçalho da etapa).
+  const counter = isTablesStep(step, slots) ? `${step.decided} of ${step.total} decided` : `Chosen ${step.decided} of ${step.total}`
   return (
     <div className="step-header">
       <p className="typography-eyebrow step-header__eyebrow">
@@ -34,7 +36,7 @@ export function StepHeader({ step, steps, slots, rules, titleRef }: {
       {(step.total > 0 || step.status === 'done') && (
         <p className="step-header__counters">
           {step.total > 0 ? (
-            <PillCounter done={step.open === 0}>{`Chosen ${step.decided} of ${step.total}`}</PillCounter>
+            <PillCounter done={step.open === 0}>{counter}</PillCounter>
           ) : (
             // Etapa `done` só com vaga opcional (ui-design da FEAT-008, Contadores).
             <PillCounter done>Nothing required</PillCounter>

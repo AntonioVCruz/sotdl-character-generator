@@ -90,7 +90,7 @@ Todo "pronto quando" inclui `npm run typecheck`, `npm run lint` e os testes exis
   - Em `src/engine/evaluate.perf.test.ts`: os dois casos novos da §5; os da FEAT-008 continuam sem mudança.
   - **Pronto quando:** os dois casos passam com p95 ≤ 20 ms em 200 execuções, e o caso fictício confere o próprio porte (6 tabelas decididas, 10 `add`, 4 `set`, 2 `add.dice`).
 
-- [ ] **T8. Interface: corpo da etapa e integração** (design §3.4; ui-design da FEAT-009; FR-STEP-012 parcial, 013, 014, FR-DEC-001, 002, 004, 007, 008, 012, 019, 020; D4, D11; E9)
+- [x] **T8. Interface: corpo da etapa e integração** (design §3.4; ui-design da FEAT-009; FR-STEP-012 parcial, 013, 014, FR-DEC-001, 002, 004, 007, 008, 012, 019, 020; D4, D11; E9)
   - Em `src/ui/screens/Builder.tsx`: o despacho da §3.4.
   - Em `src/ui/builder/TablesStep.tsx` (novo): os cartões e estados da SCR-WEB-009 como o ui-design define, com os dados da tabela da §3.4.
   - Em `src/ui/builder/AncestryStep.tsx`: o "Decide now" do Dwarf com as tabelas, como o ui-design define.

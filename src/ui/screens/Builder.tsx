@@ -6,8 +6,9 @@ import type { CharacterView, StepView } from '../../engine'
 import { AppHeader, PageFooter } from '../AppHeader'
 import { AncestryStep } from '../builder/AncestryStep'
 import { AttributesStep } from '../builder/AttributesStep'
-import { formatValue, lockReason, OPEN_MESSAGE, SAVE_FAILED, slotElementId, statusLabel } from '../builder/copy'
+import { formatValue, isTablesStep, lockReason, OPEN_MESSAGE, SAVE_FAILED, slotElementId, statusLabel } from '../builder/copy'
 import { FallbackStep } from '../builder/FallbackStep'
+import { TablesStep } from '../builder/TablesStep'
 import { LiveSummary, OpenDecisions } from '../builder/LiveSummary'
 import { StepHeader } from '../builder/StepHeader'
 import { StepMap } from '../builder/StepMap'
@@ -179,6 +180,9 @@ function BuilderReady({ session, snapshot, route }: {
             <AncestryStep session={session} snapshot={snapshot} slot={stepRoot} nameOf={nameOf} />
           ) : stepRoot?.kind === 'attribute-shift' ? (
             <AttributesStep session={session} snapshot={snapshot} slot={stepRoot} nameOf={nameOf} />
+          ) : isTablesStep(current, view.slots) ? (
+            // Sem vaga raiz e com vagas `table` (technical-design da FEAT-009 §3.4); o motor não sabe que é a Story.
+            <TablesStep session={session} snapshot={snapshot} step={current} nameOf={nameOf} />
           ) : (
             <FallbackStep step={current} slots={view.slots} nameOf={nameOf} />
           )}

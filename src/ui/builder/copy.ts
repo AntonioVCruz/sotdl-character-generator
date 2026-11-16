@@ -1,10 +1,15 @@
 import {
   formatNumber,
   type CharacteristicSummary,
+  type DiceResult,
+  type EffectView,
   type OpenDecision,
+  type SlotKind,
   type SlotView,
   type StepStatus,
   type StepView,
+  type TableResult,
+  type TableView,
 } from '../../engine'
 import { STORAGE_UNAVAILABLE } from '../copy'
 
@@ -13,7 +18,8 @@ import { STORAGE_UNAVAILABLE } from '../copy'
 
 export const REGIME_LABEL: Record<NonNullable<StepView['regime']>, string> = {
   choice: 'Choice',
-  'roll-or-choose': 'Roll, choose or write your own',
+  // ui-design da FEAT-009, Rótulo de regime: sem Write até a FEAT-010.
+  'roll-or-choose': 'Roll or choose',
   roll: 'Roll',
   derived: 'Calculated',
   free: 'Write your own',
@@ -46,16 +52,36 @@ const STEP_TEXT: Record<string, { question: string; rule: string; lockReason?: s
   },
 }
 
+/** Texto próprio de uma etapa de tabelas, só quando ela tem vagas `table` (ui-design da FEAT-009, Etapa Story). */
+const TABLES_STEP_TEXT: Record<string, { question: string; rule: string }> = {
+  'step:story': {
+    question: "What is your character's story?",
+    rule: "Roll on each of your ancestry's tables, or choose the result you want. Some results change your scores: you'll see them under the result.",
+  },
+}
+
+/** Etapa de tabelas (technical-design da FEAT-009 §3.4): sem vaga raiz e com vagas `table`. */
+export const isTablesStep = (step: Pick<StepView, 'id'>, slots: SlotView[]) =>
+  !slots.some((slot) => slot.stepId === step.id && slot.source === null) &&
+  slots.some((slot) => slot.stepId === step.id && slot.kind === 'table')
+
+/** Pendências de uma etapa sem decisão. A vaga opcional nunca é pendência (FEAT-008 D2). */
+export const pendingIn = (step: Pick<StepView, 'id'>, slots: SlotView[]) =>
+  slots.filter((slot) => slot.stepId === step.id && !slot.decided && !('optional' in slot && slot.optional))
+
+const ownText = (step: StepView, slots: SlotView[]) =>
+  (isTablesStep(step, slots) ? TABLES_STEP_TEXT[step.id] : undefined) ?? STEP_TEXT[step.id]
+
 export function stepQuestion(step: StepView, slots: SlotView[]): string {
-  const own = STEP_TEXT[step.id]?.question
+  const own = ownText(step, slots)?.question
   if (own) return own
   const root = slots.find((slot) => slot.stepId === step.id && slot.source === null)
   if (root?.kind === 'choose-entity') return `Choose your ${ENTITY_LABEL[root.of] ?? root.of}`
   return step.name
 }
 
-export function stepRule(step: StepView): string | null {
-  return STEP_TEXT[step.id]?.rule ?? (step.page === undefined ? null : 'The rules for this step are in your book.')
+export function stepRule(step: StepView, slots: SlotView[]): string | null {
+  return ownText(step, slots)?.rule ?? (step.page === undefined ? null : 'The rules for this step are in your book.')
 }
 
 /** Motivo de bloqueio pela etapa que falta (FR-FLOW-005). */
@@ -102,6 +128,47 @@ export const rangeText = (key: string) => key.replace('-', '–')
 /** Dado de um efeito, quantia somada: sempre com a contagem, como os livros ("1d6", "2d6+1"; ui-design da FEAT-009). */
 export const effectDice = (dice: NonNullable<OpenDecision['dice']>) => `${dice.count}d${dice.sides}${dice.modifier ? formatModifier(dice.modifier) : ''}`
 
+/** Dado de uma tabela, que se rola: sem o "1" ("d20", "3d6", "d6+1"; ui-design da FEAT-009). */
+export const tableDice = (dice: NonNullable<OpenDecision['dice']>) =>
+  `${dice.count === 1 ? '' : dice.count}d${dice.sides}${dice.modifier ? formatModifier(dice.modifier) : ''}`
+
+// ui-design da FEAT-009, Textos (Roll-card).
+
+/** Linha do regime (FR-DEC-002): o que o livro prevê, sem restringir. */
+export const REGIME_PHRASE: Record<TableView['regime'], string> = {
+  choice: 'The book says to choose.',
+  'roll-or-choose': 'The book says to roll or choose.',
+  roll: 'The book says to roll.',
+}
+
+export const NOT_DECIDED = 'Not decided yet. Nothing else waits for it.'
+export const CHOOSE_A_RESULT = 'Choose a result.'
+export const LATER = 'Or decide later: it stays in Open decisions.'
+export const NO_TEXT = 'No text added for this entry · '
+export const LOCKED_ROLLED = "Rerolling or changing this result isn't available yet."
+export const LOCKED_CHOSEN = "You can choose another result. Rolling instead isn't available yet."
+
+export const enterLabel = (dice: string) => `Your ${dice} roll`
+export const enterHelp = ([min, max]: [number, number]) =>
+  `Add up what the dice show, without any modifier. From ${min} to ${max}.`
+export const outOfRange = ([min, max]: [number, number]) => `Enter a value from ${min} to ${max}.`
+
+/** Cálculo de um resultado (FR-DEC-007): sempre com o modificador, mesmo +0. */
+export function resultCalc(dice: string, result: TableResult | DiceResult): string {
+  if (result.mode === 'chosen') return ''
+  const shown = result.mode === 'rolled' ? `Rolled ${dice}: ${result.faces.join(' + ')}` : `Entered for ${dice}: ${result.sum}`
+  return `${shown} · Modifier ${formatModifier(result.modifier)} · Total ${result.total}`
+}
+
+/** Efeito de uma entrada: "Corruption +1", "Size 1/2", "Insanity +1d6"; decidido, "Insanity +4". */
+export function effectText(effect: EffectView, decided?: number): string {
+  if ('dice' in effect) return `${effect.target.name} ${decided === undefined ? `+${effectDice(effect.dice)}` : formatModifier(decided)}`
+  return `${effect.target.name} ${effect.op === 'set' ? formatNumber(effect.amount) : formatModifier(effect.amount)}`
+}
+
+/** Linha agrupada do Decide now (SCR-WEB-003): "6 tables in Story". */
+export const tablesIn = (count: number, step: string) => `${count} ${count === 1 ? 'table' : 'tables'} in ${step}`
+
 /** Título de uma pendência pelo `kind` da vaga. */
 export function decisionTitle(
   decision: Pick<OpenDecision, 'kind' | 'target' | 'table' | 'dice'>,
@@ -143,14 +210,36 @@ export const OPEN_MESSAGE = {
 
 export const SAVE_FAILED = "Your last choice wasn't saved. It's still on screen, but it will be lost if you close this page."
 
-/** D8: nomeia as escolhas que impedem a troca ("your Size choice for Human depends on…"). */
-export function hasDependentsMessage(next: string, current: string, titles: string[]): string {
-  const choices =
-    titles.length === 1
-      ? `your ${titles[0]} choice`
-      : `your ${titles.slice(0, -1).join(', ')} and ${titles[titles.length - 1]} choices`
-  const verb = titles.length === 1 ? 'depends' : 'depend'
-  return `You can't switch to ${next} yet: ${choices} for ${current} ${verb} on your current ancestry. Changing a choice that others depend on isn't available yet.`
+/** Um dependente nomeado na mensagem de `has-dependents`: o título e o `kind` da vaga, que dá o substantivo. */
+export type Dependent = { title: string; kind: SlotKind }
+
+/**
+ * Regra do `{decisões}` (ui-design da FEAT-009, Mensagens): "result" para `table` e `roll-effect`, "choice" para os
+ * demais; agrupa por substantivo, "choice" antes de "result", e o verbo concorda com o total.
+ */
+function dependentsPhrase(dependents: Dependent[]): { phrase: string; verb: string } {
+  const isResult = (kind: SlotKind) => kind === 'table' || kind === 'roll-effect'
+  const groups = (['choice', 'result'] as const)
+    .map((noun) => ({ noun, titles: dependents.filter((d) => isResult(d.kind) === (noun === 'result')).map((d) => d.title) }))
+    .filter(({ titles }) => titles.length > 0)
+    .map(({ noun, titles }) =>
+      titles.length === 1 ? `your ${titles[0]} ${noun}` : `your ${titles.slice(0, -1).join(', ')} and ${titles[titles.length - 1]} ${noun}s`,
+    )
+  return { phrase: groups.join(' and '), verb: dependents.length === 1 ? 'depends' : 'depend' }
+}
+
+const CHANGING_LATER = "Changing a choice that others depend on isn't available yet."
+
+/** D8: nomeia as decisões que impedem a troca ("your Size choice for Human depends on…"). */
+export function hasDependentsMessage(next: string, current: string, dependents: Dependent[]): string {
+  const { phrase, verb } = dependentsPhrase(dependents)
+  return `You can't switch to ${next} yet: ${phrase} for ${current} ${verb} on your current ancestry. ${CHANGING_LATER}`
+}
+
+/** `has-dependents` no Choose → Choose de uma tabela (ui-design da FEAT-009, Mensagens). */
+export function tableDependentsMessage(table: string, next: string, current: string, dependents: Dependent[]): string {
+  const { phrase, verb } = dependentsPhrase(dependents)
+  return `You can't change ${table} to ${next} yet: ${phrase} ${verb} on the current result, ${current}. ${CHANGING_LATER}`
 }
 
 /** Id de elemento da vaga, para o atalho `?slot=` (FR-FLOW-011). */

@@ -869,3 +869,251 @@ a.step-map__item--current:hover {
     width: 100%;
   }
 }
+
+/* Etapa de tabelas (SCR-WEB-009; ui-design da FEAT-009): roll-card, caixa de valor, effect-chip, range-grid e Enter result. */
+.builder__step > .roll-cards {
+  max-width: none;
+}
+
+.roll-cards {
+  display: grid;
+  gap: var(--space-3);
+}
+
+/* Linha do regime --space-1 abaixo do título; alerta e corpo --space-4 abaixo (gap + margem). */
+.roll-card {
+  gap: var(--space-1);
+}
+
+.roll-card > .inline-alert,
+.roll-card__body {
+  margin-top: var(--space-3);
+}
+
+.roll-card__body {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.roll-card__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-3);
+}
+
+.roll-card__title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+.roll-card__dice,
+.roll-card__regime,
+.roll-result__calc,
+.roll-result__note,
+.enter-form__help {
+  color: var(--color-text-secondary);
+}
+
+.roll-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+/* Caixa de valor à esquerda, alinhada ao topo; coluna de resultado ao lado, também no celular. */
+.roll-result {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+
+.roll-result__column {
+  flex: 1;
+  display: grid;
+  align-content: start;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.roll-result__calc {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Caixa de valor (design.md §4, roll-card): o valor com altura de linha igual ao tamanho, para caber com o rótulo. */
+.roll-value {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: var(--size-roll-value);
+  height: var(--size-roll-value);
+  padding: var(--space-1-5);
+  background: var(--color-background-subtle);
+  border: var(--border-width-default) solid var(--color-border-control);
+  border-radius: var(--radius-md);
+  font-variant-numeric: tabular-nums;
+}
+
+.roll-value__total {
+  line-height: var(--font-size-4xl);
+}
+
+.effect-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1-5);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.effect-chip {
+  padding: var(--space-0-5) var(--space-1-5);
+  background: var(--color-background-sunken);
+  border-radius: var(--radius-sm);
+}
+
+/* A vaga roll-effect --space-3 abaixo dos efeitos (gap da coluna + margem). */
+.roll-effect {
+  margin-top: var(--space-2);
+}
+
+/* range-grid (design.md §4): 2 colunas no celular, 3 no intermediário, 4 no desktop, no máximo 3 em ponteiro grosso. */
+.range-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-2);
+  outline: none;
+}
+
+@media (--bp-md) {
+  .range-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (--bp-xl) {
+  .range-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  @media (pointer: coarse) {
+    .range-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+}
+
+.range-grid__entry {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1-5);
+  min-height: var(--size-control);
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-background-surface);
+  border: var(--border-width-default) solid var(--color-border-control);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-variant-numeric: tabular-nums;
+  transition: background-color var(--duration-fast) ease-out;
+}
+
+.range-grid__entry[data-hovered] {
+  background: var(--color-background-subtle);
+}
+
+/* Marcada (a decisão): borda de seleção, sem mudar o tamanho. */
+.range-grid__entry[data-selected] {
+  padding: calc(var(--space-2) - var(--border-width-default)) calc(var(--space-3) - var(--border-width-default));
+  border: var(--border-width-selected) solid var(--color-border-strong);
+}
+
+.range-grid__entry[data-focus-visible] {
+  outline: var(--border-width-focus) solid var(--color-focus);
+  outline-offset: var(--space-0-5);
+}
+
+@media (pointer: coarse) {
+  .range-grid__entry {
+    min-height: var(--size-touch-target);
+  }
+}
+
+/* Enter result (design.md §4, text-input e Validação): rótulo acima, ações à direita do campo, ajuda e erro abaixo. */
+.enter-form {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: var(--space-1) var(--space-3);
+}
+
+.enter-form__field {
+  display: contents;
+}
+
+.enter-form__field > label,
+.enter-form__help,
+.field-error {
+  grid-column: 1 / -1;
+}
+
+.text-input {
+  grid-column: 1;
+  width: calc(var(--size-roll-value) + 2 * var(--space-3));
+  height: var(--size-control);
+  padding: 0 var(--space-3);
+  background: var(--color-background-surface);
+  border: var(--border-width-default) solid var(--color-border-control);
+  border-radius: var(--radius-md);
+  color: var(--color-text-default);
+  font-variant-numeric: tabular-nums;
+}
+
+.text-input[data-invalid] {
+  border-color: var(--color-state-danger);
+}
+
+.enter-form__actions {
+  grid-row: 2;
+  grid-column: 2;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.field-error {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--color-state-danger);
+}
+
+@media (pointer: coarse) {
+  .text-input {
+    height: var(--size-touch-target);
+  }
+}
+
+@media (--bp-below-md) {
+  .enter-form {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .text-input {
+    width: 100%;
+  }
+
+  .enter-form__actions {
+    grid-row: auto;
+    grid-column: 1;
+    display: grid;
+  }
+}

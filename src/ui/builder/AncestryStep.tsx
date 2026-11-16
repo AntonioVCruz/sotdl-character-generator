@@ -2,9 +2,9 @@ import { useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } 
 import { Check } from 'lucide-react'
 import { Button, Label, Radio, RadioGroup } from 'react-aria-components'
 import type { CharacterSession, Snapshot } from '../../app'
-import { ancestryDetail, formatNumber, preview, toOpenDecision, type CharacterView, type SlotView } from '../../engine'
+import { ancestryDetail, formatNumber, preview, toOpenDecision, type CharacterView, type SlotView, type StepView } from '../../engine'
 import { href } from '../router'
-import { decisionTitle, formatValue, hasDependentsMessage, lockReason, slotElementId, statusLabel } from './copy'
+import { decisionTitle, formatValue, hasDependentsMessage, lockReason, slotElementId, statusLabel, tablesIn } from './copy'
 import { InlineAlert } from '../parts'
 import { Eyebrow, SourceBadge, TypeBadge } from './parts'
 
@@ -55,11 +55,12 @@ export function AncestryStep({ session, snapshot, slot, nameOf }: {
     // Recusada, a escolha não chega à tela e o foco fica onde está. Falha ao gravar mantém a escolha na tela (D11).
     if (!result.ok && result.reason !== 'save-failed') focusOnChoice.current = null
     if (!result.ok && result.reason === 'has-dependents') {
-      const titles = result.dependents.map((key) => {
+      // Resultado de tabela é "result", não "choice" (ui-design da FEAT-009, Mensagens).
+      const dependents = result.dependents.map((key) => {
         const dependent = snapshot.view.slots.find((candidate) => candidate.key === key)
-        return dependent ? decisionTitle(toOpenDecision(dependent), nameOf) : ''
+        return { title: dependent ? decisionTitle(toOpenDecision(dependent), nameOf) : '', kind: dependent?.kind ?? 'choose-value' }
       })
-      onNotice(hasDependentsMessage(nameOf(id), current ? nameOf(current) : '', titles))
+      onNotice(hasDependentsMessage(nameOf(id), current ? nameOf(current) : '', dependents))
       clearPreview()
       return
     }
@@ -257,7 +258,15 @@ function DecideNow({ snapshot, session, ancestryId, nameOf }: {
   const granted = view.slots.filter((slot) => slot.source?.id === ancestryId)
   if (granted.length === 0) return null
   const here = granted.filter((slot) => slot.stepId === ancestryStep?.id)
-  const elsewhere = granted.filter((slot) => slot.stepId !== ancestryStep?.id)
+  const stepOf = (slot: SlotView) => view.steps.find((candidate) => candidate.id === slot.stepId)!
+  // As vagas `table` de uma mesma etapa viram uma linha só; as de outro `kind`, uma linha cada; na ordem das etapas
+  // (ui-design da FEAT-009, decide-now-tables).
+  const elsewhere = granted
+    .filter((slot) => slot.stepId !== ancestryStep?.id)
+    .filter((slot, index, all) => slot.kind !== 'table' || all.findIndex((other) => other.kind === 'table' && other.stepId === slot.stepId) === index)
+    .sort((a, b) => stepOf(a).index - stepOf(b).index)
+  const link = (step: StepView, slot?: string) =>
+    step.status === 'locked' ? lockReason(view.steps, step) : <a className="link" href={href.builder(id, step.slug, slot)}>{`Go to ${step.name}`}</a>
 
   return (
     <div className="decide-now">
@@ -292,7 +301,23 @@ function DecideNow({ snapshot, session, ancestryId, nameOf }: {
           ),
       )}
       {elsewhere.map((slot) => {
-        const step = view.steps.find((candidate) => candidate.id === slot.stepId)!
+        const step = stepOf(slot)
+        if (slot.kind === 'table') {
+          const tables = granted.filter(
+            (candidate): candidate is Extract<SlotView, { kind: 'table' }> => candidate.kind === 'table' && candidate.stepId === slot.stepId,
+          )
+          const open = tables.find((candidate) => !candidate.decided)
+          return (
+            <div key={`tables-${step.id}`} className="decide-now__elsewhere">
+              <p className="typography-label">{tablesIn(tables.length, step.name)}</p>
+              <p className="typography-meta">{tables.map((table) => table.table.name).join(', ')}</p>
+              <p className="typography-meta">
+                {`${tables.filter((table) => table.decided).length} of ${tables.length} decided. `}
+                {link(step, open?.key)}
+              </p>
+            </div>
+          )
+        }
         return (
           <div key={slot.key} className="decide-now__elsewhere">
             <p className="typography-label">
@@ -300,11 +325,7 @@ function DecideNow({ snapshot, session, ancestryId, nameOf }: {
             </p>
             <p className="typography-meta">
               {`Chosen in ${step.name}. `}
-              {step.status === 'locked' ? (
-                lockReason(view.steps, step)
-              ) : (
-                <a className="link" href={href.builder(id, step.slug, slot.key)}>{`Go to ${step.name}`}</a>
-              )}
+              {link(step, slot.key)}
             </p>
           </div>
         )
