@@ -113,7 +113,8 @@
           "Re-verificado em 2026-11-12 contra o design.md emendado (E1–E4): step-map bloqueado sem tooltip; option-card current distinto da seleção; ícones Lucide; tokens size.pill, opacity.disabled, border-width.alert, typography.stat-sm, size.icon-sm/md, icon.stroke; button-primary com padding --space-4; About no rodapé da página",
           "Re-verificado em 2026-11-14 contra o design.md emendado (E7, a4693d2; 46c1168): \"Try again\" do save-failed segue o loading do isPending, sem mudança de texto; nenhum componente nem token muda",
           "Emenda de 2026-11-14 (d8020bc, d3f1925): save-failed, foco depois da nova tentativa; no sucesso, vai para o h1 da etapa só se estava no alerta, senão fica onde a pessoa o pôs (C2, DEF-008); na falha, fica em \"Try again\"; sem texto, token nem componente novo",
-          "FEAT-009 (2026-11-16): Decide now com as vagas table agrupadas numa linha por etapa; mensagem de has-dependents com \"result\" para resultados de tabela; sem token nem componente novo"
+          "FEAT-009 (2026-11-16): Decide now com as vagas table agrupadas numa linha por etapa; mensagem de has-dependents com \"result\" para resultados de tabela; sem token nem componente novo",
+          "Re-verificado em 2026-11-16 contra o design.md e a ux-foundations emendados (E10, E11 e caixa de valor; 9c5db16, 095362b): nada muda na tela; linha agrupada do Decide now passa a \"{d} of {n} decided.\" (C1 conferida: o getByText('Decided.') de ancestry.spec.ts:193 roda com Human, sem vaga table)"
         ],
         "escalations": []
       },
@@ -209,16 +210,13 @@
         "ui routes #/characters/:id/:step?slot= e slotElementId (FEAT-007 technical-design §3.4)"
       ],
       "conformance": {
-        "result": "escalation-pending",
+        "result": "pass",
         "corrections": [
-          "Caixa de valor (--size-roll-value, E8): valor stat-lg com altura de linha --font-size-4xl em vez de 1.2 para caber com o rótulo caption e padding --space-1-5 (medido: 57,4 de 58 px); sem token novo"
+          "Re-verificado em 2026-11-16 contra o design.md e a ux-foundations emendados (E10, E11 e caixa de valor; 9c5db16, 095362b): caixa de valor com altura de linha --font-size-4xl, agora como o design.md §4, não mais correção; grade das tabelas de história só com faixa e página, sem o campo Name (E10), sem tratamento provisório; A5.1 (E11) sem efeito na tela; nome acessível da grade composto pelo h2 e pelo rótulo (\"Dwarf Age Choose a result.\", C9); sem token nem componente novo"
         ],
-        "escalations": [
-          "E10: range-grid sem o campo \"Name\" nas tabelas de história (design.md §4 range-grid; ux-foundations F2); tratamento provisório: grade sem o campo",
-          "E11: ux-foundations A5.1 alinhado ao SRS (FR-DEC-001, 002, 003, 004); a tela não muda"
-        ]
+        "escalations": []
       },
-      "status": "escalation-pending",
+      "status": "designed",
       "designed_at": "2026-11-16"
     },
     "SCR-WEB-016": {
