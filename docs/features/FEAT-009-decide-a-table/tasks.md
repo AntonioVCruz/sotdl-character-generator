@@ -112,7 +112,7 @@ Todo "pronto quando" inclui `npm run typecheck`, `npm run lint` e os testes exis
   - `e2e/builder-dock.spec.ts`: a Story do Dwarf, se o ui-design usar `data-focus-ring` (C18).
   - **Pronto quando:** `npm run e2e` passa nos 5 projetos, sem violação de CSP, e os localizadores novos conferem com a lista de nomes do ui-design (C1).
 
-- [ ] **T10. Verificação** (design §6, com a NFR-PERF-001)
+- [x] **T10. Verificação** (design §6, com a NFR-PERF-001)
   - Todos os critérios AC-1 a AC-17 passam, cada um pelo teste que o cita; os FR-DEC e FR-CALC desta feature têm teste com o FR no nome (NFR-MAINT-002).
   - NFR-PERF-001: a mediana do Lighthouse CI da Home vazia no celular, com o elemento LCP (C6), contra a base de 2,62 s e a meta de 4 s (design §6).
   - `npm run typecheck`, `npm run lint`, `npm test`, `npm run packs:check`, `npm run build` e `npm run e2e` verdes; o CI do push verde.
