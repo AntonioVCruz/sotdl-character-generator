@@ -317,3 +317,51 @@ for (const width of [320, 412]) {
     await expect(human).toBeChecked()
   })
 }
+
+// FEAT-009 (C18): a Story do Dwarf tem segmentos e uma grade de faixas (`range-grid`) que desenham o anel de foco num
+// contêiner (`data-focus-ring`). Mesmas medidas da Ancestry e da Attributes.
+
+async function toDwarfStory(page: Page) {
+  await createCharacter(page)
+  await page.locator('label.option-card').filter({ hasText: 'Dwarf' }).click()
+  await page.getByRole('button', { name: 'Choose Dwarf' }).click()
+  await expect(page.getByRole('radio', { name: 'Dwarf, your choice' })).toBeChecked()
+  // Ao confirmar, o foco vai ao título do detalhe (ui-design da FEAT-007); só depois o teclado é do teste.
+  await expect(page.getByRole('heading', { level: 2, name: 'Dwarf' })).toBeFocused()
+  await page.getByRole('button', { name: 'Next: Attributes' }).click()
+  await expect(page).toHaveURL(/\/attributes$/)
+  await page.getByRole('button', { name: 'Next: Story' }).click()
+  await expect(page).toHaveURL(/\/story$/)
+  await expect(page.getByRole('heading', { level: 1, name: "What is your character's story?" })).toBeVisible()
+}
+
+for (const width of [320, 412]) {
+  test(`NFR-ACC-001: at ${width} px, tabbing through the Dwarf Story step never leaves the focused control under the fixed builder dock`, async ({
+    page,
+  }, testInfo) => {
+    test.skip(!testInfo.project.name.startsWith('mobile'), 'A região fixa só existe abaixo de --bp-md (projetos de celular).')
+    await page.setViewportSize({ width, height: testInfo.project.use.viewport?.height ?? 800 })
+
+    await toDwarfStory(page)
+    await page.getByRole('radiogroup', { name: 'Dwarf Background', exact: true }).getByText('Choose', { exact: true }).click()
+    await expect(page.getByRole('radiogroup', { name: 'Dwarf Background Choose a result.' })).toBeVisible()
+    await expectFocusNotObscured(page, 'Story, Dwarf')
+    await expectDockFits(page, 'Story, Dwarf')
+  })
+
+  test(`NFR-ACC-001 (DEF-002): at ${width} px, tabbing into a range-grid entry or a segment of the Story partly under the fixed builder dock brings it entirely above the dock`, async ({
+    page,
+  }, testInfo) => {
+    test.skip(!testInfo.project.name.startsWith('mobile'), 'A região fixa só existe abaixo de --bp-md (projetos de celular).')
+    await page.setViewportSize({ width, height: 568 })
+
+    await toDwarfStory(page)
+    const ogres = page.getByRole('region', { name: 'Dwarf Hatred' }).getByRole('radio', { name: '1–2 Ogres', exact: true })
+    const entry = await tabIntoPartlyCovered(page, ogres)
+    expect.soft(entry.bottom, 'Story: entrada "1–2 Ogres" acima da região fixa').toBeLessThanOrEqual(entry.dockTop)
+
+    const roll = page.getByRole('radiogroup', { name: 'Dwarf Age', exact: true }).getByRole('radio', { name: 'Roll', exact: true })
+    const segment = await tabIntoPartlyCovered(page, roll)
+    expect.soft(segment.bottom, 'Story: segmento "Roll" da Dwarf Age acima da região fixa').toBeLessThanOrEqual(segment.dockTop)
+  })
+}

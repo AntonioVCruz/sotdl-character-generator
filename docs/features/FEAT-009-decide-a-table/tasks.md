@@ -105,7 +105,7 @@ Todo "pronto quando" inclui `npm run typecheck`, `npm run lint` e os testes exis
     - `FR-FLOW-011`: o atalho `?slot=` de uma tabela foca o cartão (AC-12);
     - a etapa sem tabela continua no `FallbackStep`, e a tela confere com o `design-manifest.json` (SCR-WEB-009).
 
-- [ ] **T9. E2E: fluxo crítico 1 até o UC-006** (design §6, AC-1, AC-16, §7; UC-005, UC-006; ADR-008 fluxo 1)
+- [x] **T9. E2E: fluxo crítico 1 até o UC-006** (design §6, AC-1, AC-16, §7; UC-005, UC-006; ADR-008 fluxo 1)
   - `e2e/story.spec.ts` (novo), nos 5 projetos, a partir de "New character" com Dwarf:
     - confere o AC-1 com dados reais: seis cartões na ordem (Hatred, Age, Build, Appearance, Background, Personality), selos `CORE p.18` e `p.19`, sem Write;
     - escolhe a Hatred na grade; rola uma tabela e confere faces, modificador, total e entrada coerentes com as faixas; escolhe o Background 1 e vê Corruption 1 no resumo; recarrega e vê o mesmo resultado; decide as seis e vê "Complete" na Home; axe sem violação grave na Story.

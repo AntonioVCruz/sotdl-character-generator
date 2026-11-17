@@ -100,7 +100,11 @@ O documento v1 foi redefinido sem migração (technical-design D1): camadas `sou
 - **CSP e Zod 4:** o Zod testa `Function('')` para ligar o JIT, o que gera uma violação de `script-src`. `z.config({ jitless: true })` em `src/content/schemas.ts`.
 - **CSP e React Aria:** o `usePress` injeta um `<style>` (`touch-action` em `[data-react-aria-pressable]`). Liberado só o hash SHA-256 desse bloco no `style-src`. Se uma versão nova mudar o texto, o E2E acusa.
 - **axe e React Aria:** depois de `isPending`, o anunciador (`[data-live-announcer]`) guarda por 7 s um nó `role="img"` com `aria-labelledby` para o botão. Quando o app navega, o botão some e o axe acusa `role-img-alt`. É um nó oculto e transitório de terceiros, por isso fica excluído da análise.
-- **Firefox do Playwright no Windows:** duas análises do axe na mesma página derrubam o navegador ("Page crashed"). Cada análise roda num teste próprio.
+- **Firefox do Playwright no Windows:** duas análises do axe na mesma página derrubam o navegador ("Page crashed"). Cada análise roda num teste próprio. Provavelmente é o mesmo mecanismo da nota abaixo (o axe lê o `ariaLabelledByElements` nos dois mundos); não verificado.
+- **Firefox do Playwright 1.65 e `ariaLabelledByElements` (FEAT-009 T9):** no firefox-1572, o processo de conteúdo morre (SIGSEGV, "Page crashed") quando o getter `element.ariaLabelledByElements` do mesmo elemento é lido no mundo isolado do Playwright e depois no mundo da página, ou ao contrário. O `getByRole(…, { name })` lê no mundo isolado; o axe, no da página. Corrigido no firefox-1578 (Playwright 1.66, hoje só alpha, com o qual o `story.spec.ts` passou 15 de 15). Nós novos (página nova, ou `innerHTML` recriado) não caem.
+  - Reprodução mínima, sem CSS: `<section aria-labelledby="t"><h2 id="t">Title</h2></section>`; `await expect(page.getByRole('region', { name: 'Title' })).toBeVisible()`; depois `page.evaluate(() => document.querySelector('section').ariaLabelledByElements)` dá "Page crashed".
+  - **Regra para testes novos:** no Firefox, o axe não roda na mesma página depois de um `getByRole` com `name` sobre elemento com `aria-labelledby`. O contorno, só no projeto `firefox`, é o do caso do axe do `e2e/story.spec.ts`: página nova no mesmo contexto (`context.newPage()`), o mesmo personagem, o estado esperado sem localizador por nome sobre esses elementos, e o axe nela.
+  - **Pendente:** atualizar para o Playwright 1.66 estável e tirar o contorno do `story.spec.ts`.
 
 ## CI, configuração e deploy
 
