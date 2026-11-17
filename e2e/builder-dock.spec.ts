@@ -336,7 +336,7 @@ async function toDwarfStory(page: Page) {
 }
 
 for (const width of [320, 412]) {
-  test(`NFR-ACC-001: at ${width} px, tabbing through the Dwarf Story step never leaves the focused control under the fixed builder dock`, async ({
+  test(`NFR-ACC-001: at ${width} px, tabbing through the Dwarf Story step never leaves the focused control under the fixed builder dock (AC-16)`, async ({
     page,
   }, testInfo) => {
     test.skip(!testInfo.project.name.startsWith('mobile'), 'A região fixa só existe abaixo de --bp-md (projetos de celular).')
@@ -349,7 +349,7 @@ for (const width of [320, 412]) {
     await expectDockFits(page, 'Story, Dwarf')
   })
 
-  test(`NFR-ACC-001 (DEF-002): at ${width} px, tabbing into a range-grid entry or a segment of the Story partly under the fixed builder dock brings it entirely above the dock`, async ({
+  test(`NFR-ACC-001 (DEF-002): at ${width} px, tabbing into a range-grid entry or a segment of the Story partly under the fixed builder dock brings it entirely above the dock (AC-16)`, async ({
     page,
   }, testInfo) => {
     test.skip(!testInfo.project.name.startsWith('mobile'), 'A região fixa só existe abaixo de --bp-md (projetos de celular).')

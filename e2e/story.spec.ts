@@ -92,7 +92,7 @@ async function saved(page: Page, keys: string[]) {
 
 const checked = (radio: Locator) => expect(radio).toBeChecked()
 
-test('FR-STEP-012, FR-STEP-013, FR-DEC-001, FR-DEC-002, FR-FLOW-011: with Dwarf, Story shows the six tables in order with their page and regime, Roll and Choose, no Write, and the shortcut focuses a card', async ({
+test('FR-STEP-012, FR-STEP-013, FR-DEC-001, FR-DEC-002, FR-FLOW-011: with Dwarf, Story shows the six tables in order with their page and regime, Roll and Choose, no Write, and the shortcut focuses a card (AC-1, AC-16)', async ({
   page,
 }, testInfo) => {
   const csp = await watchCsp(page)
@@ -132,7 +132,7 @@ test('FR-STEP-012, FR-STEP-013, FR-DEC-001, FR-DEC-002, FR-FLOW-011: with Dwarf,
   expect(csp).toEqual([])
 })
 
-test('FR-CHAR-006, FR-DEC-005, FR-DEC-007, FR-DEC-024, FR-CALC-010, NFR-REL-001: choose the Hatred, roll a table, choose Background 1 (Corruption 1), reload, decide the six and see "Complete" on the Home', async ({
+test('FR-CHAR-006, FR-DEC-005, FR-DEC-007, FR-DEC-024, FR-CALC-010, NFR-REL-001: choose the Hatred, roll a table, choose Background 1 (Corruption 1), reload, decide the six and see "Complete" on the Home (AC-16)', async ({
   page,
 }, testInfo) => {
   const csp = await watchCsp(page)
@@ -191,7 +191,7 @@ test('FR-CHAR-006, FR-DEC-005, FR-DEC-007, FR-DEC-024, FR-CALC-010, NFR-REL-001:
 })
 
 // Sem vigiar a CSP: o axe injeta script e estilo. Uma análise por teste (scaffold-notes).
-test('NFR-ACC-001: the Story step with rolled and chosen tables has no serious axe violations', async ({ page, context }, testInfo) => {
+test('NFR-ACC-001: the Story step with rolled and chosen tables has no serious axe violations (AC-16)', async ({ page, context }, testInfo) => {
   await toStory(page)
   await grid(page, 'Dwarf Hatred').getByText('Troglodytes', { exact: true }).click()
   const age = await roll3d6(page, 'Dwarf Age')
