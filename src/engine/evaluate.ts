@@ -57,6 +57,8 @@ interface SlotBase {
   stepId: string
   decided: boolean
   value?: string | number
+  /** Na vaga decidida: o índice da ativa entre os candidatos (FEAT-011 §3.1); 0 é `decisions[key]`. */
+  candidate?: number
   /** Entidade que concedeu a vaga; `null` na vaga raiz da etapa. */
   source: SlotSource | null
 }
@@ -211,6 +213,23 @@ export interface Summary {
   }
 }
 
+/**
+ * Uma decisão guardada e onde está (FEAT-011 §3.1): `index` 0 é `decisions[key]`, e i ≥ 1 é `earlier[key][i − 1]`.
+ * `decision` vem sem a marca `setAside`; `parent` é a vaga mãe (`parentKey`).
+ */
+export interface StoredRef {
+  key: string
+  index: number
+  decision: Decision
+  parent: string | null
+}
+
+/** Por que uma guardada não é a ativa (ADR-004 §1): vaga não gerada, validade, ou outra mais recente que passa (FR-CHG-018). */
+export type SetAsideReason = 'not-generated' | 'invalid' | 'superseded'
+
+/** Suspensa (D40): `slot` vem quando a vaga é gerada. */
+export type SetAsideRef = StoredRef & { reason: SetAsideReason; slot?: SlotView }
+
 export interface CharacterView {
   level: 0
   ancestry: string | null
@@ -220,6 +239,11 @@ export interface CharacterView {
   openDecisions: OpenDecision[]
   /** Resumo vivo (FR-FLOW-012): calculado a cada avaliação, nunca gravado (FR-CALC-001). */
   summary: Summary
+  /**
+   * Guardadas e não ativas (D40; FR-CHG-019), na ordem das vagas e, no fim, as de vagas não geradas por chave. Não
+   * contam como decisão aberta (FR-CHG-012).
+   */
+  setAside: SetAsideRef[]
 }
 
 /** Chave de vaga filha: `<mãe>=<parte local do valor>/<grantId>` (ex.: `ancestry=human/size`). */
@@ -229,8 +253,77 @@ export function childKey(parent: string, value: string, grant: string): string {
 
 export const isRootKey = (key: string) => !key.includes('=')
 
+/** A vaga mãe (FEAT-011 §3.1): `ancestry=dwarf/background=2/insanity` → `ancestry=dwarf/background`; raiz → `null`. */
+export function parentKey(key: string): string | null {
+  const at = key.lastIndexOf('=')
+  return at < 0 ? null : key.slice(0, at)
+}
+
+/** Candidatos de uma vaga (ADR-004 §3): `decisions[key]` e depois `earlier[key]`, da mais recente para a mais antiga. */
+function candidatesOf(character: CharacterDocument, key: string): Decision[] {
+  const latest = character.decisions[key]
+  return latest === undefined ? [] : [latest, ...(character.earlier?.[key] ?? [])]
+}
+
+/** A decisão como a visão a mostra: sem a marca, que o motor nunca lê (ADR-004 §1, cuidado 3). */
+function unmarked(decision: Decision): Decision {
+  const copy = { ...decision }
+  delete copy.setAside
+  return copy
+}
+
+/** Quais candidatos de cada vaga gerada passam na validade dela, por chave. */
+type Checked = Map<string, boolean[]>
+
+/**
+ * A ativa de uma vaga gerada (ADR-004 §3): o primeiro candidato que passa na validade (`judge` devolve o valor dele).
+ * Registra em `checked` o resultado de cada candidato, para as suspensas da visão.
+ */
+function activeOf<T>(
+  character: CharacterDocument,
+  key: string,
+  checked: Checked,
+  judge: (decision: Decision) => T | undefined,
+): { index: number; value: T } | undefined {
+  const judged = candidatesOf(character, key).map(judge)
+  checked.set(
+    key,
+    judged.map((value) => value !== undefined),
+  )
+  const index = judged.findIndex((value) => value !== undefined)
+  return index < 0 ? undefined : { index, value: judged[index] as T }
+}
+
+/** As suspensas (FEAT-011 §3.1): por vaga gerada, as não ativas; no fim, as de vagas não geradas, por chave. */
+function setAsideOf(character: CharacterDocument, slots: SlotView[], checked: Checked): SetAsideRef[] {
+  const stored = (key: string, index: number, decision: Decision): StoredRef => ({
+    key,
+    index,
+    decision: unmarked(decision),
+    parent: parentKey(key),
+  })
+  const generated = slots.flatMap((slot) => {
+    const valid = checked.get(slot.key) ?? []
+    const active = slot.decided ? slot.candidate! : -1
+    return candidatesOf(character, slot.key).flatMap((decision, index): SetAsideRef[] => {
+      if (index === active) return []
+      const reason: SetAsideReason = valid[index] && active >= 0 && index > active ? 'superseded' : 'invalid'
+      return [{ ...stored(slot.key, index, decision), reason, slot }]
+    })
+  })
+  const live = new Set(slots.map((slot) => slot.key))
+  const orphans = Object.keys(character.decisions)
+    .filter((key) => !live.has(key))
+    .sort()
+    .flatMap((key) =>
+      candidatesOf(character, key).map((decision, index): SetAsideRef => ({ ...stored(key, index, decision), reason: 'not-generated' })),
+    )
+  return [...generated, ...orphans]
+}
+
 export function evaluate(rules: Rules, character: CharacterDocument): CharacterView {
-  const slots = slotTree(rules, character)
+  const checked: Checked = new Map()
+  const slots = slotTree(rules, character, checked)
   const root = slots.find((slot) => slot.kind === 'choose-entity' && slot.of === 'ancestry' && slot.decided)
   const ancestry = root ? (rules.items.get(root.value as string) as AncestryItem) : null
 
@@ -286,7 +379,8 @@ export function evaluate(rules: Rules, character: CharacterDocument): CharacterV
     modifiers(slots),
     resultEffects(slots),
   )
-  return { level: 0, ancestry: ancestry?.id ?? null, steps, slots, openDecisions, summary }
+  const setAside = setAsideOf(character, slots, checked)
+  return { level: 0, ancestry: ancestry?.id ?? null, steps, slots, openDecisions, summary, setAside }
 }
 
 const isOptional = (slot: SlotView) => 'optional' in slot && slot.optional === true
@@ -305,10 +399,16 @@ function modifiers(slots: SlotView[]): Map<string, ModifierStage[]> {
 }
 
 /** Valor de uma decisão `chosen`; os outros modos não têm `value` (FEAT-009 §4). */
-function chosenValue(character: CharacterDocument, key: string): DecisionValue | undefined {
-  const decision = character.decisions[key]
-  return decision?.mode === 'chosen' ? decision.value : undefined
+const chosenValue = (decision: Decision): DecisionValue | undefined => (decision.mode === 'chosen' ? decision.value : undefined)
+
+/** Os campos da vaga decidida pela ativa: `decided`, `value` e `candidate` (FEAT-011 §3.1). */
+function decidedBy<T, R extends object>(
+  active: { index: number; value: T } | undefined,
+  fields: (picked: T) => R,
+): ({ decided: true; candidate: number } & R) | { decided: false } {
+  return active ? { decided: true, ...fields(active.value), candidate: active.index } : { decided: false }
 }
+const asValue = <T>(picked: T) => ({ value: picked })
 
 /**
  * Efeitos das entradas vigentes das vagas `table` decididas, em ordem de vagas, por alvo (FR-CALC-010, 011). Um efeito
@@ -363,13 +463,16 @@ function applyResults(start: number, effects: readonly ResultEffect[]): { stages
   return { stages, value, ...(pendingOn && { pendingOn }) }
 }
 
-/** Raízes: as vagas de cada etapa. Uma escolha em `choose-entity` abre as concessões da entidade como filhas. */
-function slotTree(rules: Rules, character: CharacterDocument): SlotView[] {
+/**
+ * Raízes: as vagas de cada etapa. Uma escolha em `choose-entity` abre as concessões da entidade como filhas. Cada vaga
+ * vale pela ativa, o primeiro candidato válido (ADR-004 §3); sem ativa, fica aberta.
+ */
+function slotTree(rules: Rules, character: CharacterDocument, checked: Checked): SlotView[] {
   const slots: SlotView[] = []
   for (const step of rules.steps) {
     for (const [key, def] of Object.entries(step.slots ?? {})) {
       if (def.kind === 'attribute-shift') {
-        slots.push(shiftSlot(rules, key, step.id, def, chosenValue(character, key)))
+        slots.push(shiftSlot(rules, key, step.id, def, character, checked))
         continue
       }
       const options = rules.ancestries.map((ancestry) => ({
@@ -378,48 +481,57 @@ function slotTree(rules: Rules, character: CharacterDocument): SlotView[] {
         provenance: ancestry.provenance,
         mechanics: mechanics(rules, ancestry).map((line) => line.text),
       }))
-      const value = chosenValue(character, key)
-      // Decisão sem opção viva (id que sumiu) é ignorada: a vaga fica em aberto.
-      const decided = typeof value === 'string' && options.some((option) => option.id === value)
-      slots.push({ key, stepId: step.id, source: null, decided, ...(decided && { value }), ...def, options })
-      if (!decided) continue
+      // Decisão sem opção viva (id que sumiu) não passa: a vaga fica em aberto.
+      const active = activeOf(character, key, checked, (decision) => {
+        const value = chosenValue(decision)
+        return typeof value === 'string' && options.some((option) => option.id === value) ? value : undefined
+      })
+      slots.push({ key, stepId: step.id, source: null, ...decidedBy(active, asValue), ...def, options })
+      if (!active) continue
 
-      const entity = rules.items.get(value)
+      const entity = rules.items.get(active.value)
       if (!entity || !isKind(entity, 'ancestry')) continue
-      slots.push(...grantedSlots(rules, key, entity, character))
+      slots.push(...grantedSlots(rules, key, entity, character, checked))
     }
   }
   return slots
 }
 
-/** Decisão válida: dois atributos vigentes e diferentes. Inválida é ignorada, e a vaga fica sem decisão. */
+/** Decisão válida: dois atributos vigentes e diferentes. Sem candidato válido, a vaga fica sem decisão. */
 function shiftSlot(
   rules: Rules,
   key: string,
   stepId: string,
   def: Extract<SlotDef, { kind: 'attribute-shift' }>,
-  value: DecisionValue | undefined,
+  character: CharacterDocument,
+  checked: Checked,
 ): SlotView {
   const options = rules.attributes.map((attribute) => ({ id: attribute.id, name: attribute.name }))
   const isAttribute = (id: string) => options.some((option) => option.id === id)
-  const decided =
-    typeof value === 'object' && value.decrease !== value.increase && isAttribute(value.decrease) && isAttribute(value.increase)
-  return { key, stepId, source: null, decided, ...(decided && { value }), ...def, options }
+  const active = activeOf(character, key, checked, (decision) => {
+    const value = chosenValue(decision)
+    return typeof value === 'object' && value.decrease !== value.increase && isAttribute(value.decrease) && isAttribute(value.increase)
+      ? value
+      : undefined
+  })
+  return { key, stepId, source: null, ...decidedBy(active, asValue), ...def, options }
 }
 
-function grantedSlots(rules: Rules, parent: string, entity: AncestryItem, character: CharacterDocument): SlotView[] {
+function grantedSlots(rules: Rules, parent: string, entity: AncestryItem, character: CharacterDocument, checked: Checked): SlotView[] {
   return Object.entries(entity.grants ?? {}).flatMap(([grant, def]): SlotView[] => {
     const key = childKey(parent, entity.id, grant)
     if (def.kind === 'table') {
       const table = rules.items.get(def.table)
       if (!table || !isKind(table, 'table')) return []
       const source = { id: entity.id, name: entity.name }
-      return tableSlots(rules, { key, stepId: def.step, source, grant }, table as Resolved<TableItem>, character)
+      return tableSlots(rules, { key, stepId: def.step, source, grant }, table as Resolved<TableItem>, character, checked)
     }
-    const value = chosenValue(character, key)
     // `attribute-increase` e `language-or-profession` não têm resolvedor até a FEAT-016 (D9).
-    const decided = def.kind === 'choose-value' && typeof value === 'number' && def.options.includes(value)
-    return [{ key, stepId: def.step, source: { id: entity.id, name: entity.name }, decided, ...(decided && { value }), grant, ...def }]
+    const active = activeOf(character, key, checked, (decision) => {
+      const value = chosenValue(decision)
+      return def.kind === 'choose-value' && typeof value === 'number' && def.options.includes(value) ? value : undefined
+    })
+    return [{ key, stepId: def.step, source: { id: entity.id, name: entity.name }, ...decidedBy(active, asValue), grant, ...def }]
   })
 }
 
@@ -486,20 +598,22 @@ function diceResult(decision: Decision | undefined): DiceResult | undefined {
   return undefined
 }
 
-/** A vaga `table` e, com a decisão válida, uma vaga `roll-effect` por efeito com dado da entrada vigente. */
+/** A vaga `table` e, com uma ativa, uma vaga `roll-effect` por efeito com dado da entrada vigente. */
 function tableSlots(
   rules: Rules,
   base: { key: string; stepId: string; source: SlotSource; grant: string },
   table: Resolved<TableItem>,
   character: CharacterDocument,
+  checked: Checked,
 ): SlotView[] {
   const view = tableView(rules, table, base.key)
-  const result = tableResult(character.decisions[base.key], view)
-  const slot: SlotView = { ...base, kind: 'table', table: view, decided: result !== undefined, ...(result && { value: result.entry, result }) }
+  const active = activeOf(character, base.key, checked, (decision) => tableResult(decision, view))
+  const result = active?.value
+  const slot: SlotView = { ...base, kind: 'table', table: view, ...decidedBy(active, (picked) => ({ value: picked.entry, result: picked })) }
   const entry = result && view.entries.find((candidate) => candidate.key === result.entry)
   const effects = (entry?.effects ?? []).flatMap((effect): SlotView[] => {
     if (!('dice' in effect)) return []
-    const decided = diceResult(character.decisions[effect.slot])
+    const decided = activeOf(character, effect.slot, checked, diceResult)
     return [
       {
         key: effect.slot,
@@ -509,8 +623,7 @@ function tableSlots(
         dice: effect.dice,
         enterRange: span(effect.dice),
         target: effect.target,
-        decided: decided !== undefined,
-        ...(decided && { result: decided }),
+        ...decidedBy(decided, (picked) => ({ result: picked })),
       },
     ]
   })

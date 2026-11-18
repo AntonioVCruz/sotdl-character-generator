@@ -8,7 +8,7 @@
       `setAside`, `logged`, `rolls` em `chosen` e `entered`, `earlier` com a regra "toda chave de `earlier` tem `decisions[k]`", e a união do `LogEntry` com `undone`, `set-aside` e `restored`, em `src/content/schemas.ts`.
       Pronto quando: os testes do AC-1 passam no `schemas.test.ts`, inclusive com os documentos e logs gravados até a FEAT-009.
 
-- [ ] T2 — Motor: candidatos, ativa e suspensas na visão (design §3.1; FR-CHG-012, 018, 019)
+- [x] T2 — Motor: candidatos, ativa e suspensas na visão (design §3.1; FR-CHG-012, 018, 019)
       Em `evaluate.ts`: candidatos por vaga, a ativa pela validade de cada `kind`, `candidate` na vaga decidida, `CharacterView.setAside` com o motivo e a vaga, e `parentKey`. Nenhuma leitura de `setAside`.
       Pronto quando: os testes do AC-2 passam no `evaluate.test.ts` com pacote fictício, e o `evaluate.test.ts` e o `core-view.test.ts` existentes passam sem mudança.
 

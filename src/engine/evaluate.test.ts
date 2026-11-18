@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { Book, CharacterDocument, Decision, DecisionValue } from '../content'
 import { evaluate, preview, resolve, type Resolved, type Rules, type SlotView } from '.'
+import { parentKey, type CharacterView } from './evaluate'
 
 // Pacote fictício: três etapas, uma ancestralidade com concessões (como o Human) e uma sem (como o Dwarf).
 const book: Book = {
@@ -797,5 +798,122 @@ describe('evaluate: result effects (define and sum)', () => {
     const view = evaluate(errata, document)
     expect(characteristic(view, 'Taint').value).toBe(2)
     expect(tableAt(view, PAST).result).toEqual({ mode: 'rolled', entry: '3', faces: [1, 1, 1], modifier: 0, total: 3, rolls: 1 })
+  })
+})
+
+// FEAT-011 §3.1 e AC-2: candidatos de uma vaga, a ativa e as suspensas, com o pacote fictício das tabelas.
+const OTHER = 'other.book'
+const fromOther = (decision: Decision): Decision => ({ ...decision, book: OTHER })
+const withEarlier = (document: CharacterDocument, earlier: Record<string, Decision[]>): CharacterDocument => ({ ...document, earlier })
+const asideRows = (view: CharacterView) => view.setAside.map((item) => [item.key, item.index, item.reason, item.parent, item.slot?.key])
+const madnessRolled: Decision = { mode: 'rolled', dice: [4], modifier: 0, total: 4 }
+
+describe('evaluate: candidates, active decision and set-aside decisions (FEAT-011)', () => {
+  it('FR-CHG-018: the active decision is the first candidate that passes; the others are set aside as invalid or superseded (AC-2)', () => {
+    const document = withEarlier(tabled({ [PAST]: fromOther(rolled('7-16')) }), {
+      [PAST]: [chosen('5-6'), chosen('4'), chosen('5-7')],
+    })
+    const view = evaluate(tableRules, document)
+    expect(tableAt(view, PAST)).toMatchObject({ decided: true, value: '5-6', candidate: 1, result: { mode: 'chosen', entry: '5-6' } })
+    expect(asideRows(view)).toEqual([
+      [PAST, 0, 'invalid', 'ancestry', PAST],
+      [PAST, 2, 'superseded', 'ancestry', PAST],
+      [PAST, 3, 'invalid', 'ancestry', PAST],
+    ])
+    expect(view.setAside.map((item) => item.decision)).toEqual([fromOther(rolled('7-16')), chosen('4'), chosen('5-7')])
+    expect(view.setAside[0].slot).toBe(tableAt(view, PAST))
+  })
+
+  it('FR-CHG-018: with two valid candidates the most recent wins, decisions[k] before earlier (UC-010 2b) (AC-2)', () => {
+    const view = evaluate(tableRules, withEarlier(tabled({ [PAST]: chosen('4') }), { [PAST]: [chosen('5-6')] }))
+    expect(tableAt(view, PAST)).toMatchObject({ decided: true, value: '4', candidate: 0 })
+    expect(asideRows(view)).toEqual([[PAST, 1, 'superseded', 'ancestry', PAST]])
+    // Sem `earlier`, a vaga decidida tem a ativa no índice 0 e nada suspenso.
+    const single = evaluate(tableRules, tabled({ [PAST]: chosen('4') }))
+    expect(tableAt(single, PAST).candidate).toBe(0)
+    expect(single.setAside).toEqual([])
+  })
+
+  it('FR-CHG-018: every slot kind takes its active decision by its own validity (AC-2)', () => {
+    // choose-entity: a opção que sumiu não passa; vale a Gnome de `earlier`, que abre as concessões.
+    const ghost = tabled({ ancestry: { mode: 'chosen', value: 'ancestry:ghost' } })
+    const ancestry = evaluate(tableRules, withEarlier(ghost, { ancestry: [{ mode: 'chosen', value: 'ancestry:gnome' }] }))
+    expect(slotAt(ancestry, 'ancestry')).toMatchObject({ decided: true, value: 'ancestry:gnome', candidate: 1 })
+    expect(ancestry.ancestry).toBe('ancestry:gnome')
+    expect(slotAt(ancestry, PAST)).toBeDefined()
+    // choose-value: o valor fora das opções não passa.
+    const STATURE = 'ancestry=gnome/stature'
+    const stature = evaluate(rules, withEarlier(character({ ancestry: 'ancestry:gnome', [STATURE]: 2 }), { [STATURE]: [{ mode: 'chosen', value: 1 }] }))
+    expect(slotAt(stature, STATURE)).toMatchObject({ decided: true, value: 1, candidate: 1 })
+    // attribute-shift: o par com o mesmo atributo não passa.
+    const same = { decrease: 'attribute:might', increase: 'attribute:might' }
+    const valid = { decrease: 'attribute:will', increase: 'attribute:might' }
+    const adjust = evaluate(tableRules, withEarlier(tabled({ adjust: { mode: 'chosen', value: same } }), { adjust: [{ mode: 'chosen', value: valid }] }))
+    expect(slotAt(adjust, 'adjust')).toMatchObject({ decided: true, value: valid, candidate: 1 })
+    expect(attributeAt(adjust, 'Might').score).toBe(9)
+    // roll-effect: só `rolled` ou `entered` passam.
+    const madness = evaluate(tableRules, withEarlier(tabled({ [PAST]: chosen('17'), [MADNESS]: chosen('3') }), { [MADNESS]: [madnessRolled] }))
+    expect(slotAt(madness, MADNESS)).toMatchObject({ decided: true, candidate: 1, result: { mode: 'rolled', total: 4 } })
+    expect(asideRows(madness)).toEqual([[MADNESS, 0, 'invalid', PAST, MADNESS]])
+  })
+
+  it('FR-CHG-012: a generated slot with no active decision stays open, with its candidates kept; none of them counts (AC-2)', () => {
+    const document = withEarlier(tabled({ [PAST]: chosen('5-7') }), { [PAST]: [fromOther(chosen('4')), rolled('7-15')] })
+    const view = evaluate(tableRules, document)
+    const empty = evaluate(tableRules, tabled())
+    const slot = tableAt(view, PAST)
+    expect(slot.decided).toBe(false)
+    expect(slot).not.toHaveProperty('value')
+    expect(slot).not.toHaveProperty('candidate')
+    expect(asideRows(view)).toEqual([
+      [PAST, 0, 'invalid', 'ancestry', PAST],
+      [PAST, 1, 'invalid', 'ancestry', PAST],
+      [PAST, 2, 'invalid', 'ancestry', PAST],
+    ])
+    expect(view.openDecisions).toEqual(empty.openDecisions)
+    expect(view.steps).toEqual(empty.steps)
+  })
+
+  it('FR-CHG-019: decisions of slots that are not generated are set aside by key at the end, with parent and no slot; they are not counted (AC-2)', () => {
+    const gnome = { [FOE]: chosen('1-10'), [PAST]: chosen('17'), [MADNESS]: madnessRolled }
+    const document = withEarlier(tabled({ ...gnome, ancestry: { mode: 'chosen', value: 'ancestry:troll' } }), { [PAST]: [chosen('4')] })
+    const view = evaluate(tableRules, document)
+    expect(asideRows(view)).toEqual([
+      [FOE, 0, 'not-generated', 'ancestry', undefined],
+      [PAST, 0, 'not-generated', 'ancestry', undefined],
+      [PAST, 1, 'not-generated', 'ancestry', undefined],
+      [MADNESS, 0, 'not-generated', PAST, undefined],
+    ])
+    const troll = evaluate(tableRules, tabled({ ancestry: { mode: 'chosen', value: 'ancestry:troll' } }))
+    expect(view.openDecisions).toEqual(troll.openDecisions)
+    expect(view.steps).toEqual(troll.steps)
+    expect(view.summary).toEqual(troll.summary)
+
+    // A neta de uma vaga gerada cuja ativa não abre a entrada dela também não é gerada.
+    const other = evaluate(tableRules, tabled({ [PAST]: chosen('18'), [MADNESS]: madnessRolled }))
+    expect(asideRows(other)).toEqual([[MADNESS, 0, 'not-generated', PAST, undefined]])
+    expect(other.openDecisions.map((decision) => decision.key)).not.toContain(MADNESS)
+  })
+
+  it('ADR-004 §1: the same decisions with and without the setAside mark give the same view; the view carries no mark (AC-2)', () => {
+    const decisions = { [FOE]: chosen('1-10'), [PAST]: fromOther(rolled('7-16')), [FATE]: chosen('2-4'), [MADNESS]: madnessRolled }
+    const earlier = { [PAST]: [chosen('17'), chosen('4')] }
+    const plain = withEarlier(tabled(decisions), earlier)
+    const mark = (decision: Decision): Decision => ({ ...decision, setAside: true })
+    const markAll = (record: Record<string, Decision>) => Object.fromEntries(Object.entries(record).map(([key, decision]) => [key, mark(decision)]))
+    // A marca em todas, inclusive nas ativas, e em nenhuma: a visão é a mesma.
+    const marked: CharacterDocument = { ...plain, decisions: markAll(plain.decisions), earlier: { [PAST]: earlier[PAST].map(mark) } }
+    const view = evaluate(tableRules, plain)
+    expect(evaluate(tableRules, marked)).toEqual(view)
+    expect(tableAt(view, PAST)).toMatchObject({ decided: true, value: '17', candidate: 1 })
+    expect(slotAt(view, MADNESS)).toMatchObject({ decided: true, candidate: 0 })
+    expect(view.setAside.length).toBeGreaterThan(0)
+    expect(view.setAside.every((item) => !('setAside' in item.decision))).toBe(true)
+  })
+
+  it('FR-CHG-005: parentKey gives the parent slot of a key, and null for a root slot', () => {
+    expect(parentKey('ancestry=dwarf/background=2/insanity')).toBe('ancestry=dwarf/background')
+    expect(parentKey('ancestry=dwarf/age')).toBe('ancestry')
+    expect(parentKey('ancestry')).toBeNull()
   })
 })
