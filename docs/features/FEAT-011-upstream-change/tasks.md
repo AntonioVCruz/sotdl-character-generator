@@ -12,7 +12,7 @@
       Em `evaluate.ts`: candidatos por vaga, a ativa pela validade de cada `kind`, `candidate` na vaga decidida, `CharacterView.setAside` com o motivo e a vaga, e `parentKey`. Nenhuma leitura de `setAside`.
       Pronto quando: os testes do AC-2 passam no `evaluate.test.ts` com pacote fictício, e o `evaluate.test.ts` e o `core-view.test.ts` existentes passam sem mudança.
 
-- [ ] T3 — Motor: `impact` e `settle` (design §3.1; FR-CHG-001 a 006, 012, 018)
+- [x] T3 — Motor: `impact` e `settle` (design §3.1; FR-CHG-001 a 006, 012, 018)
       `src/engine/impact.ts` (novo), exportado pelo `engine`.
       Pronto quando: os testes do AC-3 e do AC-4 passam (novo `impact.test.ts`), com troca de ancestralidade, neta `roll-effect`, só restauração, recalculados antigo → novo, reabertas, igualdade de `settle` e `impact` no candidato, e documento assentado sem mudança.
 

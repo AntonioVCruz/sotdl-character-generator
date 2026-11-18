@@ -2,3 +2,4 @@
 export * from './formula'
 export * from './resolve'
 export * from './evaluate'
+export * from './impact'

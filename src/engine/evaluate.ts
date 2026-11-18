@@ -260,13 +260,13 @@ export function parentKey(key: string): string | null {
 }
 
 /** Candidatos de uma vaga (ADR-004 §3): `decisions[key]` e depois `earlier[key]`, da mais recente para a mais antiga. */
-function candidatesOf(character: CharacterDocument, key: string): Decision[] {
+export function candidatesOf(character: CharacterDocument, key: string): Decision[] {
   const latest = character.decisions[key]
   return latest === undefined ? [] : [latest, ...(character.earlier?.[key] ?? [])]
 }
 
 /** A decisão como a visão a mostra: sem a marca, que o motor nunca lê (ADR-004 §1, cuidado 3). */
-function unmarked(decision: Decision): Decision {
+export function unmarked(decision: Decision): Decision {
   const copy = { ...decision }
   delete copy.setAside
   return copy
