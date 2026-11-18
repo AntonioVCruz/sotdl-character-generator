@@ -1,6 +1,6 @@
 # Especificação de Requisitos de Software: Gerador de personagens SotDL
 
-> Versão: 1.2 · Status: Finalizado · Última atualização: 2026-11-15
+> Versão: 1.2.1 · Status: Finalizado · Última atualização: 2026-11-17
 > Sintaxe dos requisitos: EARS, em português — "Quando ⟨evento⟩, o sistema deve ⟨resposta⟩"; "Enquanto ⟨estado⟩, o sistema deve …"; "Onde ⟨recurso⟩, o sistema deve …"; "Se ⟨situação indesejada⟩, então o sistema deve …"; ubíquo: "O sistema deve …"
 
 ## Histórico de revisões
@@ -11,6 +11,7 @@
 | 1.0.1 | 2026-11-11 | Antônio Cruz | Q2 resolvida na etapa de arquitetura (empilhamento conferido no core); nota da FR-CALC-011 atualizada. Nenhum requisito mudou. |
 | 1.1 | 2026-11-11 | Antônio Cruz | Exportar e importar o arquivo do personagem passa para o MVP (Must), contra a limpeza de dados do Safari (ADR-002): FR-CHAR-018 e 019 viram Must, FR-CHAR-023 entra, NFR-SEC-002 vira Must, UC-015 entra. 231 FR. |
 | 1.2 | 2026-11-15 | Antônio Cruz | Emenda 1 da FEAT-009 e D40 (mudança a montante não destrutiva; log só como registro). Alteradas: FR-DEC-019 (Enter result por expressão de dado); FR-CHG-001, 002, 004, 005, 008, 011, 012, 013 (remover passa a suspender); FR-CHG-015 (reescrita, Should); FR-CHG-016 (no construtor, sem "Change" no log, Should); FR-LOG-007, 013, 014 (suspensão e restauração); FR-CONT-016 (suspende e restaura); notas em FR-CHAR-018, 019, FR-DEC-015, FR-LOG-009, FR-CONT-015. Novas: FR-CHG-018 (restauração, Must), FR-CHG-019 (suspensas guardadas no personagem, Must), FR-CHG-020 (descartar suspensas, Should), FR-CHG-021 (inelegível pela regra, Should). Restrição nova em 2.5: log só como registro. 235 FR. |
+| 1.2.1 | 2026-11-17 | Antônio Cruz | Notas da FEAT-011 em FR-CHG-009 e FR-DEC-016; nenhum requisito muda. |
 
 ## 1. Introdução
 
@@ -234,7 +235,7 @@ Navegador moderno, em computador e celular (largura a partir de 390px, SCR-16). 
 | FR-DEC-013 | Enquanto o personagem já possuir uma opção, o sistema deve exibi-la desabilitada, como "already yours", onde ela reaparecer para escolha. | Must | Active | SCR-10. |
 | FR-DEC-014 | Enquanto uma tabela depender do resultado de outra ainda não decidida, o sistema deve exibi-la como aguardando, com o motivo. | Must | Active | Wireframe 3.4. |
 | FR-DEC-015 | Quando o usuário acionar Reroll, o sistema deve substituir o resultado e registrar o anterior no log como desfeito. | Must | Active | P8. O anterior não fica suspenso: fica só no log; os dependentes dele seguem a FR-CHG (D40). Nota da v1.2. |
-| FR-DEC-016 | Quando o usuário rolar uma tabela, o sistema deve registrar quantas vezes ela já foi rolada. | Must | Active | P8. |
+| FR-DEC-016 | Quando o usuário rolar uma tabela, o sistema deve registrar quantas vezes ela já foi rolada. | Must | Active | P8. O contador é da tabela, atravessa a troca de modo e conta as rerrolagens recusadas (ADR-004 §1). Nota da v1.2.1. |
 | FR-DEC-017 | Quando a substituição de um resultado afetar decisões dependentes, o sistema deve submetê-la à confirmação de dependentes antes de aplicar. | Must | Active | P6; ver FR-CHG. |
 | FR-DEC-018 | Quando o usuário trocar o modo de uma tabela já decidida, o sistema deve tratar o novo resultado como substituição do anterior. | Must | Active | Ex.: de Roll para Write. Aplica-se FR-DEC-015 e FR-DEC-017. |
 | FR-DEC-019 | Quando o usuário acionar "Enter result", o sistema deve aceitar o valor de cada expressão de dado ou etapa da rolagem. | Must | Active | D30. O valor é a soma que os dados mostram, sem modificador (3d6: 3 a 18); o sistema soma os modificadores e mostra o cálculo (FR-DEC-007). FEAT-009 D4. Revisto na v1.2. |
@@ -319,7 +320,7 @@ Decisão **suspensa** (D40): deixou de valer por uma mudança a montante; sai da
 | FR-CHG-006 | Quando o sistema listar o que será recalculado, o sistema deve mostrar o valor antigo e o novo. | Must | Active | Ex.: "Corruption 1 → 0". |
 | FR-CHG-007 | Quando a mudança vier da configuração de fontes, o sistema deve agrupar o impacto por livro. | Must | Active | — |
 | FR-CHG-008 | Quando o usuário confirmar a mudança, o sistema deve suspender os dependentes, tirando-os da ficha e do cálculo, restaurar as decisões cujo contexto voltou, recalcular os derivados e deixar o personagem em estado válido. | Must | Active | P6, D40. Onde a suspensa fica: FR-CHG-019. Revisto na v1.2. |
-| FR-CHG-009 | Quando o usuário recusar a mudança, o sistema deve manter o personagem exatamente como estava. | Must | Active | — |
+| FR-CHG-009 | Quando o usuário recusar a mudança, o sistema deve manter o personagem exatamente como estava. | Must | Active | Na recusa de uma rerrolagem, o log recebe o valor recusado (FR-CHG-010) e o contador da tabela sobe (FR-DEC-016); valores, ficha e cálculo ficam como estavam. Nota da v1.2.1. |
 | FR-CHG-010 | Quando o usuário recusar uma rerrolagem no diálogo, o sistema deve registrar o valor recusado no log como desfeito. | Must | Active | SCR-15. |
 | FR-CHG-011 | Quando uma decisão ficar suspensa ou for restaurada, o sistema deve registrar no log a suspensão ou a restauração, com o motivo. | Must | Active | P8, D40; FR-LOG-007. Revisto na v1.2. |
 | FR-CHG-012 | Quando uma decisão suspensa ocupar uma vaga que a regra ainda exige, o sistema deve reabrir a vaga como decisão aberta. | Must | Active | D40. Ex.: entrada que sumiu do pacote (FR-CONT-016), tabela cuja fonte mudou (FR-CHG-015). A suspensa não conta como decisão aberta. Revisto na v1.2. |
