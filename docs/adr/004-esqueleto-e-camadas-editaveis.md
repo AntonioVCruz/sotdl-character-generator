@@ -2,7 +2,7 @@
 
 **Status:** Aceita
 **Data:** 2026-11-11
-**Revisão:** 2026-11-16, emenda 2 da FEAT-009 (§1, §3) e D40 com o SRS v1.2 (§1, §3, §4, §5, §6): mudança a montante suspende em vez de desfazer. 2026-11-16: §3, o vínculo do ajuste ligado é do design da FEAT-019, para onde o plano levou a FR-CHG-013.
+**Revisão:** 2026-11-16, emenda 2 da FEAT-009 (§1, §3) e D40 com o SRS v1.2 (§1, §3, §4, §5, §6): mudança a montante suspende em vez de desfazer. 2026-11-16: §3, o vínculo do ajuste ligado é do design da FEAT-019, para onde o plano levou a FR-CHG-013. 2026-11-17, emenda da FEAT-011 (§1, §4, §6): ponteiro do log e contador de rolagens.
 **Requisitos atendidos:** FR-CALC-001 a FR-CALC-014, FR-CHG-001 a FR-CHG-016, FR-CHG-018 a FR-CHG-021, FR-DEC-010, FR-DEC-011, FR-DEC-014, FR-DEC-015, FR-DEC-016, FR-DEC-017, FR-DEC-018, FR-DEC-022, FR-DEC-023, FR-DEC-024, FR-DEC-025, FR-ADJ-005, FR-ADJ-006, FR-ADJ-008, FR-ADJ-009, FR-ADJ-010, FR-ADJ-011, FR-ADJ-012, FR-ADJ-013, FR-ADJ-016, FR-LOG-001, FR-LOG-005, FR-LOG-007, FR-LOG-009, FR-LOG-013, FR-LOG-014, FR-CONT-014, FR-CONT-015, FR-CONT-016, FR-FLOW-001, FR-FLOW-003, FR-FLOW-004, FR-FLOW-005, FR-FLOW-010, FR-FLOW-013, FR-SRC-014, FR-CHAR-005, FR-CHAR-006, FR-CHAR-018, FR-CHAR-019, NFR-PERF-002, NFR-PERF-003, NFR-MAINT-002; UC-004, UC-005, UC-010, UC-013. Princípios: D2, D6, D40, P4, P6, P6a, P6b, P8, P11, P11a–P11d, P12, P16, P23, P28, P30.
 
 ## Contexto
@@ -20,7 +20,7 @@ O que se grava de uma rolagem é o fato da rolagem (faces ou soma informada, mod
 | Camada | Conteúdo | No log? |
 |---|---|---|
 | `sources` | Livros ligados, ordem e, depois, exceções de componente e de versão (Should). | Sim (FR-LOG-006) |
-| `decisions` | Mapa vaga → decisão mais recente da vaga: modo (rolado, escolhido, escrito, informado), entrada, valor de cada dado ou soma informada, modificadores e total da rolagem, texto, nome digitado (D36), livro da tabela, número de rolagens e marca de registro. | Sim |
+| `decisions` | Mapa vaga → decisão mais recente da vaga: modo (rolado, escolhido, escrito, informado), entrada, valor de cada dado ou soma informada, modificadores e total da rolagem, texto, nome digitado (D36), livro da tabela, contador de rolagens da vaga, id da entrada de log que a registrou (`logged`) e marca de registro. | Sim |
 | `earlier` | Mapa vaga → decisões anteriores da mesma vaga, ainda guardadas, da mais recente para a mais antiga (§3). Só existe para vagas com mais de uma decisão. | Sim (quando decididas) |
 | `grants` | Concessões do mestre, vinculadas ou avulsas (P23, Should). | Sim |
 | `adjustments` | Ajustes manuais: alvo, tipo (modificador, substituição, entrada de campo), valor, nome e, se houver, a decisão a que está ligado (FR-DEC-022). | Sim |
@@ -36,6 +36,10 @@ O que se grava de uma rolagem é o fato da rolagem (faces ou soma informada, mod
 3. O `evaluate` e a validade nunca leem a marca. Ela serve só para comparar e escrever as entradas de suspensão e de restauração e o aviso da FR-CONT-016.
 
 Depois de cada gravação, a marca coincide com o estado derivado.
+
+**Id da entrada de log (`logged`).** Cada decisão guarda o id da entrada `decision` que a registrou. O comando que cria a decisão grava esse id na mesma escrita, e ele nunca muda; acompanha a decisão quando ela passa a `earlier`. Como a marca, não decide nada: o `evaluate`, a validade e a comparação de abertura nunca o leem. É opcional: as entradas sobre uma decisão sem ele (gravada antes do campo) ficam sem ponteiro (§6).
+
+**Contador de rolagens.** O número de rolagens é o contador da tabela na vaga. Ele atravessa a substituição na própria vaga (Reroll, troca de modo, Choose → Choose) e conta a rolagem recusada (§4). A decisão nova herda o contador da prévia: a ativa, ou, na vaga reaberta, a que ocupa `decisions[chave]`. A rolada soma 1; a escolhida e a informada o levam como está.
 
 **2. Tudo o mais sai de uma função pura: `evaluate(regras vigentes, personagem) → visão do personagem`.** A partir do procedimento (ADR-003), a função percorre a árvore de vagas: cada decisão ativa preenche uma vaga e pode abrir vagas filhas (as concessões da entrada ou entidade escolhida, P30). Daí saem:
 - etapas e seus estados, vagas abertas, tabelas aguardando outra, contagem de decisões abertas (P4, FR-FLOW-001 a 005, FR-DEC-011, FR-DEC-014);
@@ -74,13 +78,13 @@ Um ajuste ligado (FR-DEC-022) aponta para a decisão, não só para a vaga, para
 **4. Mudança a montante é uma simulação.** `impact(regras, personagem, mudança)` avalia o personagem antes e depois de aplicar a mudança e compara:
 - **suspenso:** decisões ativas antes e não depois, já com os dependentes transitivos (FR-CHG-005) e os ajustes ligados a elas (FR-CHG-013);
 - **restaurado:** decisões guardadas que não eram ativas antes e são depois, com os dependentes e os ajustes ligados (FR-CHG-018);
-- **recalculado:** valores com total diferente, antigo → novo (FR-CHG-006), inclusive os que têm ajuste livre (FR-CHG-014);
+- **recalculado:** valores com total diferente, antigo → novo (FR-CHG-006), inclusive os que têm ajuste livre (FR-CHG-014, FEAT-019);
 - **reaberto:** vagas exigidas que voltaram a ficar abertas (FR-CHG-012);
 - **fica:** o resto.
 
 Como a marca coincide com o estado derivado depois de cada gravação (§1), "antes" é também o que a marca registra.
 
-O diálogo aparece quando há algo suspenso ou restaurado (FR-CHG-001); sem isso, a mudança se aplica sem diálogo, mesmo que recalcule valores (FR-CHG-002). Na confirmação, o novo documento é gravado sem apagar nenhuma decisão guardada, com a marca atualizada, e o log recebe uma entrada de suspensão por decisão suspensa e uma de restauração por decisão restaurada, com o motivo, na mesma escrita (FR-CHG-008, 011). A substituição na própria vaga acrescenta a entrada de desfeito do valor antigo (§3). Na recusa, nada muda, exceto o valor de rerrolagem recusado, que vai ao log como desfeito (FR-CHG-009, 010). Mudanças de fonte usam o mesmo cálculo, agrupado pela procedência de cada vaga (FR-CHG-007).
+O diálogo aparece quando há algo suspenso ou restaurado (FR-CHG-001); sem isso, a mudança se aplica sem diálogo, mesmo que recalcule valores (FR-CHG-002). Na confirmação, o novo documento é gravado sem apagar nenhuma decisão guardada, com a marca atualizada, e o log recebe uma entrada de suspensão por decisão suspensa e uma de restauração por decisão restaurada, com o motivo, na mesma escrita (FR-CHG-008, 011). A substituição na própria vaga acrescenta a entrada de desfeito do valor antigo (§3). Na recusa, nada muda (FR-CHG-009), exceto numa rerrolagem: a recusa grava o valor recusado no log como desfeito (FR-CHG-010) e sobe o contador da decisão ativa (FR-DEC-016), na mesma escrita. Valores, decisões guardadas, marca, ficha e cálculo não mudam. Mudanças de fonte usam o mesmo cálculo, agrupado pela procedência de cada vaga (FR-CHG-007).
 
 Ao abrir um personagem, o app compara o estado derivado com a marca. Com pacote novo ou arquivo importado, as diferenças viram o aviso da FR-CONT-016 (suspensas e restauradas) e as entradas de log, gravadas numa escrita com a marca atualizada (FR-CONT-015, 016). Sem diferença, abrir não grava. A importação grava o arquivo como veio, e a comparação acontece ao abrir (FR-CHAR-019).
 
@@ -88,7 +92,7 @@ Ao abrir um personagem, o app compara o estado derivado com a marca. Com pacote 
 
 **Descartar guardadas** (FR-CHG-020, Should) é o único caminho que apaga decisões suspensas: tira do documento, depois de confirmação, as decisões que não são ativas (em `decisions` e em `earlier`) e os ajustes ligados a elas, e registra o descarte no log; em cada vaga, a mais recente que sobrar ocupa `decisions[chave]`. As entradas de log das descartadas ficam (FR-LOG-009). Fora dele, só a substituição e o `clear` tiram uma decisão do documento, e só a ativa da vaga (§3).
 
-**6. Log só de acréscimo e só registro.** Entradas não se editam nem se apagam (FR-LOG-009). Desfeito, suspensão, restauração e descarte são entradas novas que apontam para a original, com o motivo; o estado riscado de cada entrada é derivado na leitura (FR-LOG-007, 013, 014). O log é só registro e auditoria: nunca é entrada do `evaluate`, da validade nem da comparação de abertura, e nenhuma decisão se muda por ele (SRS §2.5, FR-CHG-016).
+**6. Log só de acréscimo e só registro.** Entradas não se editam nem se apagam (FR-LOG-009). Desfeito, suspensão, restauração e descarte são entradas novas que apontam para a original pelo `logged` da decisão (§1), nunca por busca no log, com o motivo. Na rerrolagem recusada, a entrada do valor rolado e a de desfeito que aponta para ela nascem na mesma escrita. O estado riscado de cada entrada é derivado na leitura (FR-LOG-007, 013, 014). O log é só registro e auditoria: nunca é entrada do `evaluate`, da validade nem da comparação de abertura, e nenhuma decisão se muda por ele (SRS §2.5, FR-CHG-016).
 
 Esboço ilustrativo do documento do personagem (a Dwarf Background foi decidida com um livro B, depois desligado; a tabela reabriu e foi decidida de novo pelo core):
 
@@ -102,18 +106,18 @@ Esboço ilustrativo do documento do personagem (a Dwarf Background foi decidida 
     "ancestry": { "mode": "chosen", "value": "ancestry:dwarf" },
     "ancestry=dwarf/hated-creature": { "mode": "chosen", "value": "9-10", "book": "sotdl.core" },
     "ancestry=dwarf/age": { "mode": "rolled", "dice": [3, 5, 2], "modifier": 0, "total": 10, "entry": "8-12", "rolls": 1, "book": "sotdl.core" },
-    "ancestry=dwarf/background": { "mode": "chosen", "value": "1", "book": "sotdl.core" }
+    "ancestry=dwarf/background": { "mode": "chosen", "value": "1", "book": "sotdl.core", "rolls": 1, "logged": 6 }
   },
   "earlier": {
     "ancestry=dwarf/background": [
-      { "mode": "rolled", "dice": [7], "modifier": 0, "total": 7, "entry": "7", "rolls": 1, "book": "livro-b", "setAside": true }
+      { "mode": "rolled", "dice": [7], "modifier": 0, "total": 7, "entry": "7", "rolls": 1, "book": "livro-b", "logged": 4, "setAside": true }
     ]
   },
   "adjustments": [
     { "id": "a1", "target": "characteristic:defense", "kind": "modifier", "value": 1, "name": "Shield wielded" }
   ],
   "text": { "name": "Brokk" },
-  "log": []
+  "log": ["… entradas 1 a 6; a 4 registrou a rolagem com o livro B, a 5 a suspensão dela, a 6 a escolha pelo core …"]
 }
 ```
 
@@ -133,6 +137,15 @@ Esboço ilustrativo do documento do personagem (a Dwarf Background foi decidida 
 - **`decisions` com a mais recente + `earlier` (escolhida).** Prós: só alarga o `schema: 1`, sem migração; o caso comum (uma decisão por vaga) não muda de forma, nem o código das FEAT-007 a 009. Contras: dois lugares para ler os candidatos de uma vaga.
 - **`decisions` como lista por vaga.** Prós: um lugar só. Contras: muda a forma de todo documento gravado e todo leitor de `decisions`, por um caso que o MVP não alcança.
 - **Uma decisão por vaga, a nova sobrescreve a suspensa** (limite da FEAT-009). Contras: perde a suspensa, contra a FR-CHG-018 e a FR-CHG-019.
+
+**Ponteiro do log:**
+- **Id da entrada na decisão (`logged`, escolhida pelo usuário).** Prós: identidade explícita entre decisão e entrada; o log nunca é lido. Contras: um campo a mais no documento; decisões gravadas antes dele ficam sem ponteiro.
+- **Busca no log** (a entrada `decision` mais recente da vaga, com o mesmo fato e ainda não desfeita). Prós: nenhum campo novo. Contras: o log vira entrada de um comando, contra a SRS §2.5; a correspondência por conteúdo é frágil com valores repetidos.
+- **Sem ponteiro** (cada entrada leva a própria descrição). Prós: entradas independentes. Contras: a original não pode ser riscada (FR-LOG-013), e a descrição se repete.
+
+**Contador de rolagens:**
+- **Contador da tabela na vaga (escolhida pelo usuário).** Prós: o log numera as rolagens sem repetição, inclusive as recusadas e as que cruzam a troca de modo (FR-DEC-016, FR-LOG-002). Contras: a recusa de uma rerrolagem também escreve na decisão ativa.
+- **Só na decisão rolada.** Prós: a recusa não toca as decisões. Contras: a próxima rolagem repete o número da recusada, e Roll → Choose → Roll recomeça em 1.
 
 ## Consequências
 
