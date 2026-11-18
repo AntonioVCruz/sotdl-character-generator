@@ -2,7 +2,7 @@
 
 > Executa: `docs/features/FEAT-011-upstream-change/technical-design.md` (e o `ui-design.md`, nas tarefas de interface)
 > Status: pending em todas · Última atualização: 2026-11-17
-> Antes da T1: as emendas 1 e 2 do §8 aplicadas (C11). Todo "pronto quando" inclui `npm run typecheck` e `npm run lint` verdes, e as suítes das features anteriores verdes, salvo as expectativas do §7 que a própria tarefa muda (C8).
+> Antes da T1: as emendas 1 a 3 do §8 aplicadas (C11). Todo "pronto quando" inclui `npm run typecheck` e `npm run lint` verdes, e as suítes das features anteriores verdes, salvo as expectativas do §7 que a própria tarefa muda (C8).
 
 - [ ] T1 — Schema do documento e do log (design §4; FR-CHG-019)
       `setAside`, `logged`, `rolls` em `chosen` e `entered`, `earlier` com a regra "toda chave de `earlier` tem `decisions[k]`", e a união do `LogEntry` com `undone`, `set-aside` e `restored`, em `src/content/schemas.ts`.

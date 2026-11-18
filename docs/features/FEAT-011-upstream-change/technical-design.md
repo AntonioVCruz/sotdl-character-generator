@@ -345,12 +345,15 @@ Também conferidos:
   1. **software-architecture, ADR-004** (D2, escalação de campo novo):
      - §1, linha `decisions`: incluir "id da entrada de log que a registrou";
      - §6: "a entrada nova aponta para a original pelo id gravado na decisão; as decisões gravadas antes não têm ponteiro";
-     - §1, a mesma linha: "o número de rolagens é o contador da vaga, que atravessa a troca de modo e conta a rerrolagem recusada" (D5).
+     - §1, a mesma linha: "o número de rolagens é o contador da vaga, que atravessa a troca de modo e conta a rerrolagem recusada" (D5);
+     - §4, a frase "Na recusa, nada muda, exceto o valor de rerrolagem recusado, que vai ao log como desfeito" passa a incluir o contador: a recusa de uma rerrolagem também sobe o contador da decisão ativa, na mesma escrita (D5).
 
      Este design segue na premissa de que a emenda é aceita (decisão do usuário, 2026-11-17).
   2. **implementation-planning, plano e RTM** (§2, divergências 2 e 3; D9):
      - FR-CHG-014 sai da linha da FEAT-011 e entra na da FEAT-019; Plan ref da FR-CHG-014 no RTM;
      - na linha da FEAT-011, Blocos com `content`, `ui` e `e2e/`, e Telas com SCR-WEB-003 e SCR-WEB-009 além da SCR-WEB-007.
+  3. **requirements-engineering, SRS** (D5), só notas, sem mudar o texto de nenhum requisito: na FR-CHG-009 ("manter o personagem exatamente como estava") e na FR-DEC-016, para o Keep da rerrolagem, que sobe o `rolls` da ativa, não ser lido como violação no aceite.
+- **Pergunta para a FEAT-019:** o vínculo do ajuste ligado (FR-CHG-013, FR-DEC-022) aponta para a decisão, não só para a vaga (ADR-004 §3). O `logged` é uma identidade estável da decisão, que acompanha a decisão em `earlier` e nunca muda. Ele pode servir de vínculo? Fica para o design da FEAT-019 decidir; aqui não se decide.
 - **Pendências do ui-design:** as da §3.3. Se o aviso ao abrir ou o Reroll pedirem um componente que o `design.md` não tem, a escalação é do ui-design.
 - **Sem emenda:** a expectativa da FEAT-001 §8 de versionar os pacotes (§2, divergência 1), superada pela ADR-004 §1 e §4.
 - **Dados não verificados:** nenhum. Esta feature não muda o pacote.
