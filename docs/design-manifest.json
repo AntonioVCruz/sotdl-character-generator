@@ -67,12 +67,14 @@
           "chosen",
           "size-open",
           "size-decided",
-          "dependents-blocked",
           "save-failed",
           "loading",
           "error"
         ],
-        "gaps": [],
+        "gaps": [
+          "open-notice: aviso ao abrir com diferença, proposta em features/FEAT-011-upstream-change/ui-design.md#open-notice, pendente da escalação E12 (ux-foundations)",
+          "set-aside-line: linha \"N set aside\" do live-summary, proposta em features/FEAT-011-upstream-change/ui-design.md#set-aside-line, pendente da pergunta P1"
+        ],
         "supplements": [
           {
             "state": "builder-frame",
@@ -90,9 +92,24 @@
             "source": "features/FEAT-009-decide-a-table/ui-design.md#decide-now-tables"
           },
           {
-            "state": "dependents-blocked-tables",
+            "state": "switch-with-dependents",
             "strategy": "code-native",
-            "source": "features/FEAT-009-decide-a-table/ui-design.md#dependents-blocked-tables"
+            "source": "features/FEAT-011-upstream-change/ui-design.md#switch-with-dependents"
+          },
+          {
+            "state": "switch-kept",
+            "strategy": "code-native",
+            "source": "features/FEAT-011-upstream-change/ui-design.md#switch-kept"
+          },
+          {
+            "state": "switch-applied",
+            "strategy": "code-native",
+            "source": "features/FEAT-011-upstream-change/ui-design.md#switch-applied"
+          },
+          {
+            "state": "switch-back-restores",
+            "strategy": "code-native",
+            "source": "features/FEAT-011-upstream-change/ui-design.md#switch-back-restores"
           }
         ]
       },
@@ -105,7 +122,10 @@
         "engine.ancestryDetail (technical-design §3.3)",
         "ui routes #/characters/:id/:step?slot= (technical-design §3.4)",
         "engine.SlotView kind table concedida pela ancestralidade em outra etapa: stepId, decided (FEAT-009 technical-design §3.3)",
-        "app.session.decide → has-dependents com vagas table (FEAT-009 technical-design §3.2, AC-11)"
+        "app.session.decide('ancestry') → needs-confirmation com snapshot.pending (FEAT-011 technical-design §3.2, §3.3)",
+        "app.Snapshot.notice · app.session.dismissNotice() (FEAT-011 technical-design §3.2; proposta E12)",
+        "engine.CharacterView.setAside (FEAT-011 technical-design §3.1; proposta P1)",
+        "content.CharacterDocument.log, entrada decision por decision.logged, só para exibir (FEAT-011 technical-design §3.3)"
       ],
       "conformance": {
         "result": "pass",
@@ -114,11 +134,14 @@
           "Re-verificado em 2026-11-14 contra o design.md emendado (E7, a4693d2; 46c1168): \"Try again\" do save-failed segue o loading do isPending, sem mudança de texto; nenhum componente nem token muda",
           "Emenda de 2026-11-14 (d8020bc, d3f1925): save-failed, foco depois da nova tentativa; no sucesso, vai para o h1 da etapa só se estava no alerta, senão fica onde a pessoa o pôs (C2, DEF-008); na falha, fica em \"Try again\"; sem texto, token nem componente novo",
           "FEAT-009 (2026-11-16): Decide now com as vagas table agrupadas numa linha por etapa; mensagem de has-dependents com \"result\" para resultados de tabela; sem token nem componente novo",
-          "Re-verificado em 2026-11-16 contra o design.md e a ux-foundations emendados (E10, E11 e caixa de valor; 9c5db16, 095362b): nada muda na tela; linha agrupada do Decide now passa a \"{d} of {n} decided.\" (C1 conferida: o getByText('Decided.') de ancestry.spec.ts:193 roda com Human, sem vaga table)"
+          "Re-verificado em 2026-11-16 contra o design.md e a ux-foundations emendados (E10, E11 e caixa de valor; 9c5db16, 095362b): nada muda na tela; linha agrupada do Decide now passa a \"{d} of {n} decided.\" (C1 conferida: o getByText('Decided.') de ancestry.spec.ts:193 roda com Human, sem vaga table)",
+          "FEAT-011 (2026-11-17): dependents-blocked (FEAT-007) e dependents-blocked-tables (FEAT-009) saem; a troca com dependentes abre o impact-dialog (SCR-WEB-007), e o Keep mantém a prévia; sem token nem componente novo"
         ],
-        "escalations": []
+        "escalations": [
+          "E12 (FEAT-011 ui-design): aviso ao abrir com diferença no construtor, sem lugar na ux-foundations; proposta: inline-alert warning no topo da etapa"
+        ]
       },
-      "status": "designed",
+      "status": "escalation-pending",
       "designed_at": "2026-11-12"
     },
     "SCR-WEB-005": {
@@ -151,18 +174,59 @@
         "app.session.retrySave (FEAT-007 technical-design §3.2)",
         "engine.CharacterView: steps, slots (attribute-shift, attribute-increase), openDecisions, summary.attributes, summary.characteristics com limits e composition (technical-design §3.3)",
         "engine.preview com DecisionValue (technical-design §3.3)",
-        "ui routes #/characters/:id/:step?slot= (FEAT-007 technical-design §3.4)"
+        "ui routes #/characters/:id/:step?slot= (FEAT-007 technical-design §3.4)",
+        "app.session.clear grava a entrada undone (cleared) no log, sem mudar a tela (FEAT-011 technical-design §3.2)"
       ],
       "conformance": {
         "result": "pass",
         "corrections": [
           "Re-verificado em 2026-11-12 contra o design.md emendado (E5, b70733c): segmented-control de 4 segmentos em grade de 2 colunas quando não cabe numa linha (celular e reflow de 320 px), com alvos de 44 px em ponteiro grosso",
-          "Emenda de 2026-11-14 (779f7c6; DEF-008, DEF-009): applied e undone começam quando o snapshot mostra o ajuste aplicado ou desfeito, antes da gravação (D11 da FEAT-007), também com save-failed; recusa não entra no estado; foco e anúncio uma vez, na entrada; sem token nem componente novo"
+          "Emenda de 2026-11-14 (779f7c6; DEF-008, DEF-009): applied e undone começam quando o snapshot mostra o ajuste aplicado ou desfeito, antes da gravação (D11 da FEAT-007), também com save-failed; recusa não entra no estado; foco e anúncio uma vez, na entrada; sem token nem componente novo",
+          "FEAT-011 (2026-11-17): conferida, sem estado novo; o clear do ajuste nunca abre o diálogo no MVP"
         ],
         "escalations": []
       },
       "status": "designed",
       "designed_at": "2026-11-12"
+    },
+    "SCR-WEB-007": {
+      "name": "Impact dialog",
+      "surface": "WEB",
+      "feature": "FEAT-011",
+      "strategy": "code-native",
+      "source": {
+        "tool": null,
+        "locator": "features/FEAT-011-upstream-change/ui-design.md#scr-web-007--impact-dialog"
+      },
+      "states": {
+        "covered": [
+          "by-decision",
+          "by-reroll",
+          "restore-only",
+          "dialog-open",
+          "kept",
+          "applied"
+        ],
+        "gaps": [
+          "por fontes, agrupado por livro (FR-CHG-007, FEAT-004)",
+          "ajuste ligado em \"Will be set aside\" (FR-CHG-013, FEAT-019)",
+          "ajustes livres em \"Will be recalculated\" (FR-CHG-014, FEAT-019)"
+        ],
+        "supplements": []
+      },
+      "contract_bindings": [
+        "app.Snapshot.pending: kind, key, impact (FEAT-011 technical-design §3.2)",
+        "engine.Impact: change (from, to), undone, setAside, restored, recalculated, stays, needsDialog, before, after (FEAT-011 technical-design §3.1)",
+        "engine.ImpactItem / StoredRef: key, decision, parent, slot (FEAT-011 technical-design §3.1)",
+        "app.session.confirm() · app.session.keep() → DecideResult (FEAT-011 technical-design §3.2)"
+      ],
+      "conformance": {
+        "result": "pass",
+        "corrections": [],
+        "escalations": []
+      },
+      "status": "designed",
+      "designed_at": "2026-11-17"
     },
     "SCR-WEB-009": {
       "name": "Builder · 3 Story",
@@ -183,8 +247,6 @@
           "no-text",
           "effect-open",
           "effect-decided",
-          "decided-locked",
-          "dependents-blocked",
           "save-failed",
           "loading",
           "error"
@@ -192,27 +254,65 @@
         "gaps": [
           "written (Write, FEAT-010)",
           "waiting (FEAT-010)",
-          "with-subdecision de resultado (FEAT-010)",
-          "reroll e troca de modo com impacto (FEAT-011)"
+          "with-subdecision de resultado (FEAT-010)"
         ],
-        "supplements": []
+        "supplements": [
+          {
+            "state": "decided-roll",
+            "strategy": "code-native",
+            "source": "features/FEAT-011-upstream-change/ui-design.md#decided-roll"
+          },
+          {
+            "state": "decided-choose",
+            "strategy": "code-native",
+            "source": "features/FEAT-011-upstream-change/ui-design.md#decided-choose"
+          },
+          {
+            "state": "mode-switch",
+            "strategy": "code-native",
+            "source": "features/FEAT-011-upstream-change/ui-design.md#mode-switch"
+          },
+          {
+            "state": "replace-with-dependents",
+            "strategy": "code-native",
+            "source": "features/FEAT-011-upstream-change/ui-design.md#replace-with-dependents"
+          },
+          {
+            "state": "replace-kept",
+            "strategy": "code-native",
+            "source": "features/FEAT-011-upstream-change/ui-design.md#replace-kept"
+          },
+          {
+            "state": "replace-applied",
+            "strategy": "code-native",
+            "source": "features/FEAT-011-upstream-change/ui-design.md#replace-applied"
+          },
+          {
+            "state": "effect-reroll",
+            "strategy": "code-native",
+            "source": "features/FEAT-011-upstream-change/ui-design.md#effect-reroll"
+          }
+        ]
       },
       "contract_bindings": [
         "app.session.roll(key) → DecideResult (technical-design §3.2)",
         "app.session.enter(key, sum) → DecideResult com out-of-range e range (technical-design §3.2)",
-        "app.session.decide(key, entry) em vaga table, com has-dependents (technical-design §3.2)",
+        "app.session.decide(key, entry) em vaga table (technical-design §3.2)",
         "app.session.retrySave (FEAT-007 technical-design §3.2)",
         "engine.SlotView table: TableView (name, dice, regime, provenance, modes, enterRange, entries), value, result: TableResult (technical-design §3.3)",
         "engine.SlotView roll-effect: dice, enterRange, target, result: DiceResult (technical-design §3.3)",
         "engine.EntryView: key, range, provenance, entity, effects: EffectView (technical-design §3.3)",
         "engine.OpenDecision.table (technical-design §3.3)",
         "engine.Stage define e sum com ResultOrigin; AttributeSummary.pendingOn (technical-design §3.3)",
-        "ui routes #/characters/:id/:step?slot= e slotElementId (FEAT-007 technical-design §3.4)"
+        "ui routes #/characters/:id/:step?slot= e slotElementId (FEAT-007 technical-design §3.4)",
+        "app.session.roll, decide, enter em vaga decidida: Reroll e troca de modo, needs-confirmation com snapshot.pending (FEAT-011 technical-design §3.2, §3.3)",
+        "content.CharacterDocument.decisions[key].logged, para a marca do Reroll (FEAT-011 technical-design §4)"
       ],
       "conformance": {
         "result": "pass",
         "corrections": [
-          "Re-verificado em 2026-11-16 contra o design.md e a ux-foundations emendados (E10, E11 e caixa de valor; 9c5db16, 095362b): caixa de valor com altura de linha --font-size-4xl, agora como o design.md §4, não mais correção; grade das tabelas de história só com faixa e página, sem o campo Name (E10), sem tratamento provisório; A5.1 (E11) sem efeito na tela; nome acessível da grade composto pelo h2 e pelo rótulo (\"Dwarf Age Choose a result.\", C9); sem token nem componente novo"
+          "Re-verificado em 2026-11-16 contra o design.md e a ux-foundations emendados (E10, E11 e caixa de valor; 9c5db16, 095362b): caixa de valor com altura de linha --font-size-4xl, agora como o design.md §4, não mais correção; grade das tabelas de história só com faixa e página, sem o campo Name (E10), sem tratamento provisório; A5.1 (E11) sem efeito na tela; nome acessível da grade composto pelo h2 e pelo rótulo (\"Dwarf Age Choose a result.\", C9); sem token nem componente novo",
+          "FEAT-011 (2026-11-17): decided-locked e dependents-blocked saem; tabela decidida com Reroll (button-secondary, já no design.md §4) e troca de modo; sem token nem componente novo"
         ],
         "escalations": []
       },
