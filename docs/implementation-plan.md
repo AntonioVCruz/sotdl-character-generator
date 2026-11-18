@@ -1,8 +1,9 @@
 # Plano de implementação: Gerador de personagens SotDL
 
-> Status: Aprovado · Última atualização: 2026-11-16
+> Status: Aprovado · Última atualização: 2026-11-17
 > Entradas: `docs/srs.md` v1.2 · `docs/use-cases.md` · `docs/architecture.md` (ADR-001 a 010) · `docs/ux-foundations.md` (com `docs/design.md`). Todas presentes.
 > Emenda de 2026-11-16: emenda 4 da FEAT-009 (technical-design §2 e §8) e D40 (suspender e restaurar em vez de desfazer). Fatias alteradas: FEAT-002, 009, 010, 011, 012, 013, 016, 019, 020, 024, 029, 030. Ordem de construção sem mudança.
+> Emenda de 2026-11-17: pendências do aceite da FEAT-009 (`8b72dbc`), sem escopo novo. Fatias alteradas: FEAT-005, 016, 024. Ordem de construção, FRs e telas sem mudança.
 
 ## 1. Visão geral
 
@@ -38,7 +39,7 @@ O caminho mínimo de ponta a ponta, publicado.
 | :- | :-- | :-- | :-- | :-- | :-- | :-- |
 | FEAT-003 | Validação completa e carga do pacote por livro, com mensagem de falha | FR-CONT-010, 011, 012, 013; FR-HELP-004 | — | SCR-WEB-001 (estado de erro) | `content`, CI | Índice, pacotes |
 | FEAT-004 | Configurar fontes do personagem: ligar, desligar, ordenar, aplicar | FR-CHAR-002; FR-SRC-001 a 008, 011, 012, 013, 014; FR-CHG-007; FR-LOG-006 | UC-002 | SCR-WEB-002, SCR-WEB-007 | `engine.resolve`, `engine.impact`, `app` | `sources`, log |
-| FEAT-005 | Human revisado do *Only Human* (padrão 2): versões, herança, precedência, erratas | FR-SRC-009, 015; FR-CONT-007; FR-CONT-003 (parcial) | UC-002, UC-003 | SCR-WEB-002, SCR-WEB-003 | `engine.resolve`, `packs/` | Pacote *Only Human* |
+| FEAT-005 | Human revisado do *Only Human* (padrão 2): versões, herança, precedência, erratas. O design verifica o caminho com `replaces` do AC-17 (iv) da FEAT-009: com um segundo livro acima substituindo a tabela, a decisão gravada com o livro anterior deixa de valer e a vaga reabre; voltando a ordem, ela volta (FEAT-009: technical-design §8, acceptance-report). | FR-SRC-009, 015; FR-CONT-007; FR-CONT-003 (parcial) | UC-002, UC-003 | SCR-WEB-002, SCR-WEB-003 | `engine.resolve`, `packs/` | Pacote *Only Human* |
 | FEAT-006 | Halfling do *Demon Lord's Companion* (padrão 1) | FR-CONT-003 (parcial) | UC-003, UC-006 | SCR-WEB-003, SCR-WEB-009 | `packs/` | Pacote DLC |
 
 ### E3. Construtor de nível 0 (`engine.evaluate`, `engine.impact`, `dice`, `ui`)
@@ -54,7 +55,7 @@ O caminho mínimo de ponta a ponta, publicado.
 | FEAT-013 | Riqueza e equipamento. Inclui os efeitos das entradas 14 e 20 do Background do Dwarf (item e dinheiro). | FR-STEP-022, 023, 024; FR-CALC-012 | UC-008 | SCR-WEB-011 | `engine.evaluate` | Estilo de vida, pacotes de equipamento |
 | FEAT-014 | Coisa interessante | FR-STEP-026, 027 | UC-009 | SCR-WEB-008 | `dice`, `engine.evaluate` | Tabelas de coisa interessante |
 | FEAT-015 | Roleplaying e Review | FR-STEP-029, 030, 031; FR-FLOW-015, 016, 017; FR-CHAR-012; FR-LOG-008 | UC-011 | SCR-WEB-017, SCR-WEB-018 | `app`, `ui` | `text`, decisões abertas |
-| FEAT-016 | Human do core completo: +1 em atributo, idioma ou profissão aleatória, tabelas de história do Human (impressas 12 e 13) | FR-STEP-008, 018; FR-CONT-003 (parcial) | UC-003, UC-004, UC-005, UC-007 | SCR-WEB-005, SCR-WEB-009, SCR-WEB-010 | `packs/`, `engine.evaluate` | Pacote do core |
+| FEAT-016 | Human do core completo: +1 em atributo, idioma ou profissão aleatória, tabelas de história do Human (impressas 12 e 13). O design põe no §7 o escopo do `getByText('Decided.')` do `e2e/ancestry.spec.ts` (perto da linha 193): o teste roda com Human escolhido, e quando o Human ganhar vagas `table` a linha "{d} of {n} decided." do Decide now passa a casar com esse localizador (C1, C7). | FR-STEP-008, 018; FR-CONT-003 (parcial) | UC-003, UC-004, UC-005, UC-007 | SCR-WEB-005, SCR-WEB-009, SCR-WEB-010 | `packs/`, `engine.evaluate` | Pacote do core |
 | FEAT-017 | Clockwork: Defense própria, Purpose e Form | FR-STEP-004; FR-CALC-004; FR-CONT-003 (parcial) | UC-003, UC-005 | SCR-WEB-003, SCR-WEB-005 | `packs/`, `engine.evaluate` | Pacote do core |
 
 ### E4. Ficha, ajuste e log (`ui`, `engine.evaluate`, `app`)
@@ -77,7 +78,7 @@ O caminho mínimo de ponta a ponta, publicado.
 | ID | Fatia | FRs | Telas |
 | :- | :-- | :-- | :-- |
 | FEAT-023 | Componentes por livro, regras opcionais, atributos aleatórios, pacote da casa embarcado, documentação do formato | FR-SRC-016, 017, 018; FR-CONT-017 | SCR-WEB-002, SCR-WEB-005 |
-| FEAT-024 | Revisão de procedimento e substituição de tabela: Development do *Only Human*, *Oddities*; a troca de fonte de uma tabela suspende e restaura os resultados (D40) | FR-FLOW-019; FR-SRC-021, 025; FR-CHG-015; FR-STEP-028 | SCR-WEB-006, SCR-WEB-008 |
+| FEAT-024 | Revisão de procedimento e substituição de tabela: Development do *Only Human*, *Oddities*; a troca de fonte de uma tabela suspende e restaura os resultados (D40). O design verifica de ponta a ponta o AC-17 (iv) e (v) da FEAT-009 pela troca de fonte e pela substituição com `replaces`: a decisão gravada com o livro anterior deixa de valer e a vaga reabre; voltando a fonte, ela volta (FEAT-009: technical-design §8, acceptance-report). | FR-FLOW-019; FR-SRC-021, 025; FR-CHG-015; FR-STEP-028 | SCR-WEB-006, SCR-WEB-008 |
 | FEAT-025 | Versão no cartão e comparação | FR-SRC-019, 020 | SCR-WEB-003, SCR-WEB-004 |
 | FEAT-026 | Motivos de indisponível, resumo das fontes, lista navegável, busca de ancestralidade | FR-SRC-022, 023, 024; FR-STEP-006 | SCR-WEB-002, SCR-WEB-003 |
 | FEAT-027 | Concessões e decisões do mestre | FR-DEC-025 | SCR-WEB-011, SCR-WEB-014 |
