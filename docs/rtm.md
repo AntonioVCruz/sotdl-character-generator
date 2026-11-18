@@ -157,7 +157,7 @@
 | FR-CHG-011 | Registrar no log a suspensão ou a restauração, com o motivo | Must | Active | P8, D40 | UC-010 | ADR-004, features/FEAT-011-upstream-change/technical-design.md | FEAT-011 | _TBD_ |
 | FR-CHG-012 | Reabrir a vaga como decisão aberta | Must | Active | D40 | UC-010 | ADR-004, features/FEAT-011-upstream-change/technical-design.md | FEAT-011 | _TBD_ |
 | FR-CHG-013 | Suspendê-lo junto, listá-lo entre os suspensos e restaurá-lo com ela | Must | Active | D40 | UC-010, UC-013 | ADR-004 | FEAT-019 | _TBD_ |
-| FR-CHG-014 | Mantê-lo e listá-lo entre os recalculados | Must | Active | P12 | UC-010, UC-013 | ADR-004 | FEAT-011 | _TBD_ |
+| FR-CHG-014 | Mantê-lo e listá-lo entre os recalculados | Must | Active | P12 | UC-010, UC-013 | ADR-004 | FEAT-019 | _TBD_ |
 | FR-CHG-015 | Suspender os resultados obtidos com a fonte anterior, reabrir a tabela e restaurá-los… | Should | Active | P6b, D21, D40 | — | ADR-004 | FEAT-024 | _TBD_ |
 | FR-CHG-016 | Reabri-la no construtor, na etapa do nível dela, com a confirmação de dependentes | Should | Active | D32, D40 | — | ADR-004 | FEAT-029 | _TBD_ |
 | FR-CHG-017 | Reverter a última mudança confirmada | Could | Active | Entrevista de requisitos | — | _TBD_ | _TBD_ | _TBD_ |
