@@ -3,7 +3,7 @@
 > Feature de: `docs/implementation-plan.md` §3 (E3) e §4 (posição 5) · Épico: E3 Construtor de nível 0
 > Implementa: FR-CHG-001 a 006, 008 a 012; FR-CHG-018 (parcial: sem ajuste ligado), 019; FR-DEC-015, 017, 018; FR-DEC-016 (parcial: Reroll e troca de modo); FR-STEP-005; FR-LOG-007; FR-CONT-015, 016. FR-CHG-014 sai para a FEAT-019 (D9; emenda 2 do §8)
 > Realiza: UC-010 (fluxo principal; 1a, 1b, 2b, 3a, 4a) · Telas: SCR-WEB-007, e os pontos de entrada em SCR-WEB-003 e SCR-WEB-009, desenhados pelo ui-design
-> Status: Verified · Data: 2026-11-17 · Decisões do usuário de 2026-11-17: D2, D5 e D9 · Emendas 1 a 3 do §8 aplicadas em 2026-11-17
+> Status: Verified · Data: 2026-11-17 · Decisões do usuário de 2026-11-17: D2, D5 e D9 · Emendas 1 a 3 do §8 aplicadas em 2026-11-17 · Emenda M1 (ui-design) aplicada em 2026-11-17
 
 ## 1. Intenção
 
@@ -159,7 +159,7 @@ session.dismissNotice(): void               // novo: tira o aviso, sem gravar
 
 - **Contador** (D5): numa vaga `table`, `rolls` é o contador da vaga. A rolada grava `(prévia.rolls ?? 0) + 1`, sendo a prévia a ativa ou, na vaga reaberta, `decisions[k]`. A escolhida e a informada levam o `rolls` da prévia quando ele existe. Roll → Choose → Roll dá `rolls: 2` (FR-DEC-016).
 - **`confirm()`** com pendente: tira `pending`, põe no snapshot o documento e a visão do candidato, com `at` das entradas novas e `updatedAt` na hora da confirmação, e grava (FR-CHG-008, 011). O snapshot muda antes da gravação, e a falha mantém o estado com `save: 'failed'` (FR-CHAR-010).
-- **`keep()`** com pendente: tira `pending`, e o documento fica como estava (FR-CHG-009). Numa rerrolagem (pendente `roll` com `undone`), grava só o registro da recusa (FR-CHG-010): uma `decision` com o valor recusado, com `rolls` = contador + 1, e uma `undone` com `reason: 'declined'` e `ref` para ela; e a ativa passa a ter esse `rolls`. Valor, ficha e cálculo não mudam (D5).
+- **`keep()`** com pendente: tira `pending`, e o documento fica como estava (FR-CHG-009). Numa rerrolagem (pendente `roll` com `undone`), grava só o registro da recusa (FR-CHG-010): uma `decision` com o valor recusado, com `rolls` = contador + 1, e uma `undone` com `reason: 'declined'` e `ref` para ela; e a ativa passa a ter esse `rolls`. Valor, ficha e cálculo não mudam (D5). Como no `confirm` (D11), o snapshot muda antes da gravação, já sem `pending` e com o log e o contador novos; a falha mantém esse estado com `save: 'failed'` e `retrySave` (FR-CHAR-010). Emenda M1.
 - `retrySave` e `visit` seguem valendo com mudança pendente. `open` de outro personagem descarta a pendente.
 
 **Abrir** (FR-CONT-015, 016; ADR-004 §4; architecture.md §6.3):
@@ -326,18 +326,23 @@ sequenceDiagram
 `src/ui/screens/Builder.test.tsx` (os textos e estados novos são do ui-design da FEAT-011):
 
 10. l.202: `saved[0].decisions` ganha `logged: 1`. O mesmo vale para l.825, 854, 862, 907 e 971.
-11. `FR-FLOW-003: has-dependents shows a warning…` (l.322) e `FR-FLOW-003 (AC-11): has-dependents with a table result…` (l.1106): no lugar do aviso, o diálogo de impacto, com a Stature (e a Gnome Age) em "set aside". Keep current deixa tudo como as asserções de hoje, e nada é gravado.
-12. `FR-DEC-007, FR-DEC-008: Roll shows…` (l.800) e `FR-DEC-012…: Choose lists every entry…` (l.829): os textos `LOCKED_ROLLED` e `LOCKED_CHOSEN` e "Roll e Enter result saem" dão lugar à tabela decidida com Reroll e troca de modo, como o ui-design definir.
-13. `FR-STEP-014, FR-DEC-011: an entry with a dice effect…` (l.935): o `LOCKED_ROLLED` da `roll-effect` (l.966) sai. O `dependents-blocked` (l.973–988) passa a diálogo com a Madness em "set aside"; Keep deixa a grade na entrada 4 e nada gravado. O "aviso sai na próxima ação" é redefinido pelo ui-design.
+11. `FR-FLOW-003: has-dependents shows a warning…` (l.322) e `FR-FLOW-003 (AC-11): has-dependents with a table result…` (l.1106): no lugar do aviso, o diálogo de impacto, com a Stature (e a Gnome Age) em "set aside". Depois do Keep current (ui-design, switch-kept; emenda M1): a prévia continua aberta, com o Troll marcado em prévia; o Gnome continua "Gnome, your choice", sem estar marcado; "Choose Troll" está na tela e recebe o foco; a Stature continua decidida, e nada é gravado. Sai a asserção "a seleção volta para a escolha atual" (Troll desmarcado, Gnome marcado).
+12. `FR-DEC-007, FR-DEC-008: Roll shows…` (l.800) e `FR-DEC-012…: Choose lists every entry…` (l.829): os textos `LOCKED_ROLLED` e `LOCKED_CHOSEN` e "Roll e Enter result saem" dão lugar aos estados decided-roll (segmentos livres, "Reroll {dado}" e, com `enter`, "Enter result") e decided-choose (grade com a entrada decidida marcada e "Roll {dado}" no segmento Roll) do ui-design.
+13. `FR-STEP-014, FR-DEC-011: an entry with a dice effect…` (l.935): o `LOCKED_ROLLED` da `roll-effect` (l.966) sai, e entram "Reroll 1d6" e "Enter result" (ui-design, effect-reroll). O `dependents-blocked` (l.973–984) passa ao replace-with-dependents do ui-design: diálogo com a Madness em "set aside". Depois do Keep (replace-kept): a grade fica na entrada 4, a entrada acionada sem marca e com o foco, e nada gravado. O "aviso sai na próxima ação" (l.985–988) sai, sem substituto: o diálogo só fecha por Keep current, Esc ou Apply.
 
 `e2e/ancestry.spec.ts`:
 
-14. `FR-FLOW-003, D8: switching Human with Size decided to Dwarf is refused…` (l.188): "Choose Dwarf" abre o diálogo, com o Size em "set aside"; "Keep current" e o `unchanged()` como hoje, também depois de recarregar. Título passa a FR-STEP-005, FR-CHG-009.
+14. `FR-FLOW-003, D8: switching Human with Size decided to Dwarf is refused…` (l.189): "Choose Dwarf" abre o diálogo, com o Size em "set aside"; depois do "Keep current ancestry" (emenda M1), antes de recarregar: o Dwarf continua em prévia, "Human, your choice" está na tela sem `toBeChecked`, "Choose Dwarf" está na tela e com o foco, o Size continua decidido e o resumo é o do Human; nada é gravado. Depois de recarregar, o `unchanged()` como hoje (a prévia não é gravada). Título passa a FR-STEP-005, FR-CHG-009.
 
 Também conferidos:
 - **Sem mudança:** `evaluate.test.ts` e `core-view.test.ts`. As asserções são por `toMatchObject` ou por vaga, e a visão só ganha campos. O AC-17 da FEAT-009 continua: o motor não grava.
 - **E2E sem mudança:** `story.spec.ts`, `attributes.spec.ts` e `builder-dock.spec.ts`. Nenhum troca a ancestralidade com filha decidida, e o `saved()` do `story.spec.ts` só confere chaves.
-- **Nomes novos (C1):** "Reroll 3d6" contém "Roll 3d6", e o Playwright compara por substring, sem maiúsculas. Os localizadores atuais de "Roll 3d6" (`story.spec.ts:42` e `122`) estão no escopo de um cartão ainda não decidido. O ui-design repete a conferência com os nomes finais do diálogo e do Reroll.
+- **Nomes novos (C1),** conferidos pelo ui-design com os nomes finais (tabela "Nomes novos contra os localizadores do e2e/"; emenda M1). Nenhum localizador existente quebra, salvo os das expectativas 11 e 14 acima. Seletores para os testes novos:
+  - "Reroll 3d6" contém "Roll 3d6" (substring, sem maiúsculas). Os usos atuais (`story.spec.ts:42`, no `roll3d6`, e `:122`) estão em cartão ainda não decidido e não mudam. Nos testes novos, e no `roll3d6` se um dia rodar num cartão decidido: `{ name: 'Roll 3d6', exact: true }` e `{ name: 'Reroll 3d6', exact: true }`, dentro do cartão (`card(page, name)`);
+  - o título "Switch from Dwarf to Human?" (h2) contra `getByRole('heading', { level: 2, name: 'Human' })` (`builder-dock.spec.ts:229`, sem escopo): sem colisão, porque ali o diálogo não abre. Para o foco depois do Apply: `page.locator('section.ancestry-detail').getByRole('heading', { level: 2, name: 'Human', exact: true })`; o título pelo diálogo, `page.getByRole('dialog').getByRole('heading', { level: 2 })`;
+  - o diálogo por `page.getByRole('dialog')`, sem nome; dentro dele, as ações com `exact: true` ("Keep current ancestry", "Apply new ancestry", "Keep current result", "Apply new result"); as listas pelo `h3` e pelo texto dos itens, "Will be set aside" e "Will be restored" com `exact: true`;
+  - o resumo vivo só é lido com o diálogo fechado: com ele aberto, o `Modal` deixa o resto da página com `aria-hidden`;
+  - **Firefox 1572 e o axe do AC-15:** o nome do diálogo e o das listas vêm de `aria-labelledby`, então o caso do axe com o diálogo aberto segue o contorno do `docs/scaffold-notes.md` (FEAT-009 T9), só no projeto `firefox`: página nova no mesmo contexto (`context.newPage()`), o mesmo personagem (Dwarf com as tabelas gravadas), a prévia do Human por `page.locator('label.option-card').filter({ hasText: 'Human' })`, "Choose Human" por `getByRole('button', { name: 'Choose Human' })`, a espera do diálogo por `page.getByRole('dialog')` sem `name`, e o axe nessa página. A pendente não é gravada, e a página nova abre o diálogo de novo.
 
 ## 8. Escalações e pendências
 
@@ -353,6 +358,7 @@ Também conferidos:
      - FR-CHG-014 sai da linha da FEAT-011 e entra na da FEAT-019; Plan ref da FR-CHG-014 no RTM;
      - na linha da FEAT-011, Blocos com `content`, `ui` e `e2e/`, e Telas com SCR-WEB-003 e SCR-WEB-009 além da SCR-WEB-007.
   3. **requirements-engineering, SRS** (D5). Aplicada (SRS v1.2.1, `48b0c71`). Só notas, sem mudar o texto de nenhum requisito: na FR-CHG-009 ("manter o personagem exatamente como estava") e na FR-DEC-016, para o Keep da rerrolagem, que sobe o `rolls` da ativa, não ser lido como violação no aceite.
+- **Emenda M1, do ui-design desta feature** (`9b0e9cc`; decisão do usuário de 2026-11-17: a prévia continua aberta depois do "Keep current ancestry"). Aplicada em 2026-11-17, neste commit de documentação, antes de qualquer teste (C7): §3.2, `keep()` da rerrolagem com o snapshot antes da gravação; §7, expectativas 11 a 14 e os seletores dos nomes novos (C1), com o contorno do Firefox no axe do AC-15; tasks.md, T9 a T11.
 - **Pergunta para a FEAT-019:** o vínculo do ajuste ligado (FR-CHG-013, FR-DEC-022) aponta para a decisão, não só para a vaga (ADR-004 §3). O `logged` é uma identidade estável da decisão, que acompanha a decisão em `earlier` e nunca muda. Ele pode servir de vínculo? Fica para o design da FEAT-019 decidir; aqui não se decide.
 - **Pendências do ui-design:** as da §3.3. Se o aviso ao abrir ou o Reroll pedirem um componente que o `design.md` não tem, a escalação é do ui-design.
 - **Sem emenda:** a expectativa da FEAT-001 §8 de versionar os pacotes (§2, divergência 1), superada pela ADR-004 §1 e §4.

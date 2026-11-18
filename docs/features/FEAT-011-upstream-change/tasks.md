@@ -1,7 +1,7 @@
 # Tasks: FEAT-011 — Mudança a montante
 
 > Executa: `docs/features/FEAT-011-upstream-change/technical-design.md` (e o `ui-design.md`, nas tarefas de interface)
-> Status: pending em todas · Última atualização: 2026-11-17
+> Status: pending em todas · Última atualização: 2026-11-17 (emenda M1 do ui-design: T9 a T11)
 > Antes da T1: as emendas 1 a 3 do §8 aplicadas (C11). Todo "pronto quando" inclui `npm run typecheck` e `npm run lint` verdes, e as suítes das features anteriores verdes, salvo as expectativas do §7 que a própria tarefa muda (C8).
 
 - [ ] T1 — Schema do documento e do log (design §4; FR-CHG-019)
@@ -37,15 +37,15 @@
       Pronto quando: os casos da parte unitária do AC-16 passam, com os p95 no console.
 
 - [ ] T9 — UI: diálogo de impacto, troca de ancestralidade e aviso ao abrir (design §3.3; ui-design; SCR-WEB-007, SCR-WEB-003)
-      Só a integração: o diálogo pelo `snapshot.pending`, Apply e Keep current, o `AncestryStep` sem o aviso de `has-dependents`, o `notice` com `dismissNotice` e a linha "N set aside". As telas são do `design-manifest.json`. A expectativa 11 do §7 e o l.202 da expectativa 10 mudam aqui.
+      Só a integração: o diálogo pelo `snapshot.pending`, Apply e Keep current, o `AncestryStep` sem o aviso de `has-dependents`, o `notice` com `dismissNotice` e a linha "N set aside". As telas são do `design-manifest.json`. A expectativa 11 do §7 e o l.202 da expectativa 10 mudam aqui, como o §7 as emendou (emenda M1: depois do Keep, a prévia continua aberta, e "Choose {New}" recebe o foco).
       Pronto quando: os testes de componente do diálogo e da Ancestry passam no `Builder.test.tsx`, incluindo os estados do ui-design e a gravação retida do AC-17, e as telas conferem com o manifesto.
 
 - [ ] T10 — UI: tabela decidida com Reroll, troca de modo e dependentes (design §3.3; ui-design; SCR-WEB-009)
-      Só a integração: os modos da tabela e da `roll-effect` decididas, e o diálogo no lugar de `LOCKED_*` e do `dependents-blocked`. As expectativas 12, 13 e o resto da 10 do §7 mudam aqui.
+      Só a integração: os modos da tabela e da `roll-effect` decididas, e o diálogo no lugar de `LOCKED_*` e do `dependents-blocked`. As expectativas 12, 13 e o resto da 10 do §7 mudam aqui, como o §7 as emendou (emenda M1: decided-roll, decided-choose, replace-with-dependents e replace-kept do ui-design; sem o "aviso sai na próxima ação").
       Pronto quando: os testes de componente da Story passam no `Builder.test.tsx`, com sorteio fixo, e a tela confere com o manifesto.
 
 - [ ] T11 — E2E do fluxo crítico 2 e tempo do diálogo (design §6, AC-15 e AC-16; ADR-008 fluxo 2; UC-010)
-      `e2e/impact.spec.ts` (novo): Dwarf → Human → recarregar → Dwarf, Keep current e axe com o diálogo. Caso NFR-PERF-003 no `perf.spec.ts`. A expectativa 14 do §7 muda no `ancestry.spec.ts`.
+      `e2e/impact.spec.ts` (novo): Dwarf → Human → recarregar → Dwarf, Keep current e axe com o diálogo. Caso NFR-PERF-003 no `perf.spec.ts`. A expectativa 14 do §7 muda no `ancestry.spec.ts`, como o §7 a emendou (emenda M1). Localizadores pelos seletores do §7 (C1). No `firefox`, o caso do axe com o diálogo aberto segue o contorno do `docs/scaffold-notes.md` (regra do Firefox 1572 com o axe e `aria-labelledby`, FEAT-009 T9): página nova no mesmo contexto, o diálogo reaberto sem localizador por nome sobre elementos com `aria-labelledby`, e o axe nela.
       Pronto quando: `npm run e2e` passa nos 5 projetos com `--retries=0 --workers=1`, e o p95 do diálogo fica ≤ 300 ms em `chromium` e `mobile-chrome` 4×.
 
 - [ ] T12 — Verificação (design §6)
