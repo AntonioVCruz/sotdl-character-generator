@@ -1,6 +1,6 @@
 # UX Foundations: Gerador de personagens SotDL
 
-> Status: Revisado (aprovado em 2026-11-16) · Última atualização: 2026-11-16 (D40; emenda 3 da FEAT-009; E10 e E11 do ui-design da FEAT-009)
+> Status: Revisado (aprovado em 2026-11-16) · Última atualização: 2026-11-17 (emenda do ui-design da FEAT-011: E12, P1). Antes: 2026-11-16 (D40; emenda 3 da FEAT-009; E10 e E11 do ui-design da FEAT-009)
 > Fontes: `docs/srs.md` v1.2 · `docs/architecture.md` · `docs/use-cases.md` · princípios · wireframe v1 (`docs/reference/wireframe/`, `docs/reference/screens/`)
 > Design system: **`docs/design.md` + `docs/tokens.json`** (fonte única de todos os valores de design; este documento referencia, não repete)
 
@@ -167,6 +167,8 @@ flowchart LR
     stale -->|"sim"| reopened["Set aside, vagas reabertas,<br/>avisadas e registradas no log"]
 ```
 
+O aviso das decisões deixadas de lado é o mesmo da abertura com diferença (ver "Estados globais"), mostrado ao abrir o personagem importado. A importação em si, na SCR-WEB-001, é da FEAT-002.
+
 #### Inventário de telas
 
 IDs estáveis. `SCR-WEB-001` a `016` correspondem a `SCR-01` a `SCR-16` do wireframe (o SRS cita os IDs antigos). Telas novas a partir de 017.
@@ -220,7 +222,7 @@ Mudar uma escolha de nível anterior acontece no construtor, que reabre a decis�
 - **SCR-WEB-015:** o log só se consulta (FR-LOG-009). Entradas de suspensão e de restauração, com o motivo, ao lado das originais, que não ficam riscadas (`design.md` §4, `log-entry`). O interruptor passa de "Show undone entries" a "Show undone and set-aside entries", porque agora cobre também as suspensas; a restauração vai junto, por só fazer sentido ao lado da suspensão (FR-LOG-013, 014).
 - **SCR-WEB-018 (Should, FR-CHG-020):** com N > 0 decisões deixadas de lado, seção "Set aside · N" depois das pendências, com cada decisão (nome, valor, motivo em `meta`) e o `button-secondary` "Discard set-aside decisions". A confirmação é um `dialog` desta tela: diz que o descarte é irreversível e que o log guarda as entradas; ações "Keep them" e "Discard permanently" (`button-danger`). De qualquer etapa, a linha "N set aside · See Review" do `live-summary` leva a esta seção, sem contar como decisão aberta (FR-CHG-012).
 
-**Estados globais (sem tela própria):** erro inesperado (FR-HELP-005) e falha ao carregar o pacote (FR-HELP-004), como `inline-alert` no topo da tela atual, com os personagens preservados; falha de gravação (FR-CHAR-010), como alerta que mantém o estado na tela.
+**Estados globais (sem tela própria):** erro inesperado (FR-HELP-005) e falha ao carregar o pacote (FR-HELP-004), como `inline-alert` no topo da tela atual, com os personagens preservados; falha de gravação (FR-CHAR-010), como alerta que mantém o estado na tela; abertura de um personagem com decisões deixadas de lado ou restauradas pela versão nova do pacote (FR-CONT-016, FR-CHG-018), como `inline-alert` warning no topo do `main`, em qualquer etapa do construtor, depois do alerta de falha de gravação e antes do cabeçalho da etapa, com as decisões deixadas de lado, as restauradas e "Dismiss". Não some sozinho. O conteúdo é o do open-notice do ui-design da FEAT-011.
 
 #### Componentes específicos
 
