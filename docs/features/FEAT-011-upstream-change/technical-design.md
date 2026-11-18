@@ -3,7 +3,7 @@
 > Feature de: `docs/implementation-plan.md` §3 (E3) e §4 (posição 5) · Épico: E3 Construtor de nível 0
 > Implementa: FR-CHG-001 a 006, 008 a 012; FR-CHG-018 (parcial: sem ajuste ligado), 019; FR-DEC-015, 017, 018; FR-DEC-016 (parcial: Reroll e troca de modo); FR-STEP-005; FR-LOG-007; FR-CONT-015, 016. FR-CHG-014 sai para a FEAT-019 (D9; emenda 2 do §8)
 > Realiza: UC-010 (fluxo principal; 1a, 1b, 2b, 3a, 4a) · Telas: SCR-WEB-007, e os pontos de entrada em SCR-WEB-003 e SCR-WEB-009, desenhados pelo ui-design
-> Status: Verified · Data: 2026-11-17 · Decisões do usuário de 2026-11-17: D2, D5 e D9
+> Status: Verified · Data: 2026-11-17 · Decisões do usuário de 2026-11-17: D2, D5 e D9 · Emendas 1 a 3 do §8 aplicadas em 2026-11-17
 
 ## 1. Intenção
 
@@ -341,18 +341,18 @@ Também conferidos:
 
 ## 8. Escalações e pendências
 
-- **Escalações e emendas** (rodam logo depois deste design, C11; cada uma na skill dona do documento):
-  1. **software-architecture, ADR-004** (D2, escalação de campo novo):
+- **Escalações e emendas** (rodam logo depois deste design, C11; cada uma na skill dona do documento). As três foram aplicadas em 2026-11-17:
+  1. **software-architecture, ADR-004** (D2, escalação de campo novo). Aplicada (`ff9e2f9`):
      - §1, linha `decisions`: incluir "id da entrada de log que a registrou";
      - §6: "a entrada nova aponta para a original pelo id gravado na decisão; as decisões gravadas antes não têm ponteiro";
      - §1, a mesma linha: "o número de rolagens é o contador da vaga, que atravessa a troca de modo e conta a rerrolagem recusada" (D5);
      - §4, a frase "Na recusa, nada muda, exceto o valor de rerrolagem recusado, que vai ao log como desfeito" passa a incluir o contador: a recusa de uma rerrolagem também sobe o contador da decisão ativa, na mesma escrita (D5).
 
-     Este design segue na premissa de que a emenda é aceita (decisão do usuário, 2026-11-17).
-  2. **implementation-planning, plano e RTM** (§2, divergências 2 e 3; D9):
+     A premissa deste design, a emenda aceita (decisão do usuário), se confirmou.
+  2. **implementation-planning, plano e RTM** (§2, divergências 2 e 3; D9). Aplicada (`7a48842`):
      - FR-CHG-014 sai da linha da FEAT-011 e entra na da FEAT-019; Plan ref da FR-CHG-014 no RTM;
      - na linha da FEAT-011, Blocos com `content`, `ui` e `e2e/`, e Telas com SCR-WEB-003 e SCR-WEB-009 além da SCR-WEB-007.
-  3. **requirements-engineering, SRS** (D5), só notas, sem mudar o texto de nenhum requisito: na FR-CHG-009 ("manter o personagem exatamente como estava") e na FR-DEC-016, para o Keep da rerrolagem, que sobe o `rolls` da ativa, não ser lido como violação no aceite.
+  3. **requirements-engineering, SRS** (D5). Aplicada (SRS v1.2.1, `48b0c71`). Só notas, sem mudar o texto de nenhum requisito: na FR-CHG-009 ("manter o personagem exatamente como estava") e na FR-DEC-016, para o Keep da rerrolagem, que sobe o `rolls` da ativa, não ser lido como violação no aceite.
 - **Pergunta para a FEAT-019:** o vínculo do ajuste ligado (FR-CHG-013, FR-DEC-022) aponta para a decisão, não só para a vaga (ADR-004 §3). O `logged` é uma identidade estável da decisão, que acompanha a decisão em `earlier` e nunca muda. Ele pode servir de vínculo? Fica para o design da FEAT-019 decidir; aqui não se decide.
 - **Pendências do ui-design:** as da §3.3. Se o aviso ao abrir ou o Reroll pedirem um componente que o `design.md` não tem, a escalação é do ui-design.
 - **Sem emenda:** a expectativa da FEAT-001 §8 de versionar os pacotes (§2, divergência 1), superada pela ADR-004 §1 e §4.
