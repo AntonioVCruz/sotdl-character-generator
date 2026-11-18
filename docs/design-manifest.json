@@ -71,10 +71,7 @@
           "loading",
           "error"
         ],
-        "gaps": [
-          "open-notice: aviso ao abrir com diferença, proposta em features/FEAT-011-upstream-change/ui-design.md#open-notice, pendente da escalação E12 (ux-foundations)",
-          "set-aside-line: linha \"N set aside\" do live-summary, proposta em features/FEAT-011-upstream-change/ui-design.md#set-aside-line, pendente da pergunta P1"
-        ],
+        "gaps": [],
         "supplements": [
           {
             "state": "builder-frame",
@@ -110,6 +107,16 @@
             "state": "switch-back-restores",
             "strategy": "code-native",
             "source": "features/FEAT-011-upstream-change/ui-design.md#switch-back-restores"
+          },
+          {
+            "state": "open-notice",
+            "strategy": "code-native",
+            "source": "features/FEAT-011-upstream-change/ui-design.md#open-notice"
+          },
+          {
+            "state": "set-aside-line",
+            "strategy": "code-native",
+            "source": "features/FEAT-011-upstream-change/ui-design.md#set-aside-line"
           }
         ]
       },
@@ -123,8 +130,8 @@
         "ui routes #/characters/:id/:step?slot= (technical-design §3.4)",
         "engine.SlotView kind table concedida pela ancestralidade em outra etapa: stepId, decided (FEAT-009 technical-design §3.3)",
         "app.session.decide('ancestry') → needs-confirmation com snapshot.pending (FEAT-011 technical-design §3.2, §3.3)",
-        "app.Snapshot.notice · app.session.dismissNotice() (FEAT-011 technical-design §3.2; proposta E12)",
-        "engine.CharacterView.setAside (FEAT-011 technical-design §3.1; proposta P1)",
+        "app.Snapshot.notice · app.session.dismissNotice() (FEAT-011 technical-design §3.2)",
+        "engine.CharacterView.setAside (FEAT-011 technical-design §3.1)",
         "content.CharacterDocument.log, entrada decision por decision.logged, só para exibir (FEAT-011 technical-design §3.3)"
       ],
       "conformance": {
@@ -135,13 +142,12 @@
           "Emenda de 2026-11-14 (d8020bc, d3f1925): save-failed, foco depois da nova tentativa; no sucesso, vai para o h1 da etapa só se estava no alerta, senão fica onde a pessoa o pôs (C2, DEF-008); na falha, fica em \"Try again\"; sem texto, token nem componente novo",
           "FEAT-009 (2026-11-16): Decide now com as vagas table agrupadas numa linha por etapa; mensagem de has-dependents com \"result\" para resultados de tabela; sem token nem componente novo",
           "Re-verificado em 2026-11-16 contra o design.md e a ux-foundations emendados (E10, E11 e caixa de valor; 9c5db16, 095362b): nada muda na tela; linha agrupada do Decide now passa a \"{d} of {n} decided.\" (C1 conferida: o getByText('Decided.') de ancestry.spec.ts:193 roda com Human, sem vaga table)",
-          "FEAT-011 (2026-11-17): dependents-blocked (FEAT-007) e dependents-blocked-tables (FEAT-009) saem; a troca com dependentes abre o impact-dialog (SCR-WEB-007), e o Keep mantém a prévia; sem token nem componente novo"
+          "FEAT-011 (2026-11-17): dependents-blocked (FEAT-007) e dependents-blocked-tables (FEAT-009) saem; a troca com dependentes abre o impact-dialog (SCR-WEB-007), e o Keep mantém a prévia; sem token nem componente novo",
+          "Re-verificado em 2026-11-17 contra a ux-foundations e o design.md emendados (E12 e P1, 1158beb) e o technical-design emendado (M1, ec54463): open-notice nos estados globais do construtor; linha \"{n} set aside\" do live-summary sem o link até a FEAT-015; sem token nem componente novo"
         ],
-        "escalations": [
-          "E12 (FEAT-011 ui-design): aviso ao abrir com diferença no construtor, sem lugar na ux-foundations; proposta: inline-alert warning no topo da etapa"
-        ]
+        "escalations": []
       },
-      "status": "escalation-pending",
+      "status": "designed",
       "designed_at": "2026-11-12"
     },
     "SCR-WEB-005": {

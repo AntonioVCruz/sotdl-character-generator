@@ -1,8 +1,7 @@
 # UI Design: FEAT-011 — Mudança a montante
 
 > Feature de: `docs/implementation-plan.md` · Par com: `technical-design.md`
-> Telas: SCR-WEB-007, SCR-WEB-003, SCR-WEB-009 (e a conferência da SCR-WEB-005) · Modo: por feature · Status: Draft · Data: 2026-11-17
-> Pendente: escalação E12 (aviso ao abrir, para a ux-foundations) e pergunta P1 (linha "N set aside" do `live-summary`), em [Escalações e pendências](#escalações-e-pendências)
+> Telas: SCR-WEB-007, SCR-WEB-003, SCR-WEB-009 (e a conferência da SCR-WEB-005) · Modo: por feature, re-verificado depois da emenda E12 e P1 (`1158beb`) e da emenda M1 do technical-design (`ec54463`) · Status: Verified · Data: 2026-11-17
 
 Autoridade: `docs/design.md` (com a D40 no `impact-dialog`, §4, e os termos do §6) e `docs/tokens.json`. Todo valor visual abaixo é token (`--…`) ou classe `.typography-*`; breakpoints pelos `@custom-media` da FEAT-007. Ícones Lucide, decorativos com `aria-hidden`. A moldura é a da FEAT-007 ([Builder frame](../FEAT-007-ancestry-step-map-live-summary/ui-design.md#builder-frame)), salvo o que se acrescenta em [Moldura](#moldura-do-construtor). Texto da interface em inglês, sem texto dos livros (P22). Fora desta feature: a variante por fontes (FEAT-004), o ajuste ligado e o ajuste livre no diálogo (FEAT-019), o Write (FEAT-010), o log (SCR-WEB-015, FEAT-020), a Review e o descarte (SCR-WEB-018; FEAT-015 e FEAT-029).
 
@@ -175,7 +174,7 @@ Ancestralidade escolhida, outra em prévia ([selected](../FEAT-007-ancestry-step
 
 [kept](#kept) na Ancestry: o personagem fica como estava, e **a prévia continua aberta**: o cartão pedido continua marcado em prévia (borda de seleção), o atual continua com "Your choice", e o detalhe mostra a prévia e "Choose {New}", que recebe o foco de volta. A continuação depois do `await` não limpa a prévia numa `needs-confirmation` (é a pessoa quem desiste da comparação, selecionando o cartão atual).
 
-- **Decisão:** manter a prévia no Keep. Motivo: o foco volta a um controle que existe, e "Keep current ancestry" mantém a ancestralidade, não desfaz a comparação. Alternativa rejeitada: a seleção voltar para a escolha atual, como no `has-dependents` de hoje; o "Choose {New}" sumiria, e o foco não teria para onde voltar. Muda a expectativa do §7, itens 11 e 14 do technical-design ([Escalações](#escalações-e-pendências), emenda M1).
+- **Decisão:** manter a prévia no Keep. Motivo: o foco volta a um controle que existe, e "Keep current ancestry" mantém a ancestralidade, não desfaz a comparação. Alternativa rejeitada: a seleção voltar para a escolha atual, como no `has-dependents` de hoje; o "Choose {New}" sumiria, e o foco não teria para onde voltar. Decisão do usuário de 2026-11-17; mudou o §7, itens 11 e 14 do technical-design (emenda M1, `ec54463`).
 
 ### switch-applied
 
@@ -261,11 +260,11 @@ Conferida, sem estado novo. "Undo adjustment" chama `session.clear(key)`, que ag
 
 ## Moldura do construtor
 
-Acréscimos à [Builder frame](../FEAT-007-ancestry-step-map-live-summary/ui-design.md#builder-frame), com dois pontos que dependem de decisão: o aviso ao abrir (escalação E12) e a linha do resumo vivo (pergunta P1).
+Acréscimos à [Builder frame](../FEAT-007-ancestry-step-map-live-summary/ui-design.md#builder-frame): o aviso ao abrir (E12) e a linha do resumo vivo (P1), ambos já na ux-foundations e no `design.md` (`1158beb`).
 
 ### open-notice
 
-**Proposta, pendente da escalação E12** (a ux-foundations só define o aviso na importação, F4 e SCR-WEB-001, da FEAT-002; para abrir um personagem salvo no construtor não há lugar definido). Não entra como estado desenhado antes da emenda.
+Estado global do construtor da ux-foundations ("Estados globais (sem tela própria)", emenda E12, `1158beb`): `inline-alert` warning no topo do `main`, em qualquer etapa, depois do alerta de falha de gravação e antes do cabeçalho da etapa, com as suspensas, as restauradas e "Dismiss"; não some sozinho. O mesmo aviso aparece ao abrir o personagem importado (F4; a importação é da FEAT-002).
 
 `snapshot.notice` presente (FR-CONT-016; abertura com diferença, technical-design §3.2 "Abrir"):
 
@@ -279,7 +278,7 @@ Acréscimos à [Builder frame](../FEAT-007-ancestry-step-map-live-summary/ui-des
 
 ### set-aside-line
 
-**Pendente da pergunta P1.** O `live-summary` do `design.md` §4 tem a linha "N set aside · " + `link` "See Review", e o link leva à seção "Set aside" da Review (SCR-WEB-018), que é da FEAT-015, construída depois. Nenhum link vai para uma tela que não existe. Proposta (alternativa A da P1): a linha sem o link até a FEAT-015, "{n} set aside" em `.typography-meta` `--color-text-secondary`, separada por divisor `--color-border-divider`, como última linha do card, só com `view.setAside.length` > 0; fora da contagem de Open decisions, sem caixa tracejada nem `pill-counter`; no celular, dentro do resumo aberto. A FEAT-015 acrescenta " · See Review".
+O `live-summary` do `design.md` §4, com a nota provisória da emenda P1 (`1158beb`): até a Review existir (SCR-WEB-018, FEAT-015), a linha não tem o link "See Review". A linha: "{n} set aside" em `.typography-meta` `--color-text-secondary`, separada por divisor `--color-border-divider`, como última linha do card, só com `view.setAside.length` > 0; fora da contagem de Open decisions, sem caixa tracejada nem `pill-counter`; no celular, dentro do resumo aberto. A FEAT-015 acrescenta " · See Review".
 
 ## Decisões entre telas
 
@@ -320,7 +319,7 @@ Exemplos: "Switch from Dwarf to Human?" · "Change Dwarf Background from 1 to 2?
 
 **Ancestry (SCR-WEB-003)**: sai "You can't switch to {New} yet: … Changing a choice that others depend on isn't available yet." e a variante da tabela ("You can't change {Tabela} to …"). Nada entra na tela: o diálogo traz os textos.
 
-**Moldura (propostas, pendentes de E12 e P1)**: "The rules changed since this character was last saved." · "Set aside, because the current rules no longer have them:" · "Where the rules still ask for a decision, it's open again in Open decisions." · "Restored, because the current rules have them again:" · "{n} earlier {decision|decisions}" · "Dismiss" · "{n} set aside".
+**Moldura** (open-notice e set-aside-line): "The rules changed since this character was last saved." · "Set aside, because the current rules no longer have them:" · "Where the rules still ask for a decision, it's open again in Open decisions." · "Restored, because the current rules have them again:" · "{n} earlier {decision|decisions}" · "Dismiss" · "{n} set aside".
 
 ### Nomes novos contra os localizadores do e2e/ (C1)
 
@@ -333,7 +332,7 @@ Conferidos todos os `getByRole`, `getByText`, `getByLabel`, `getByTitle` e `getB
 | `getByRole('heading', { level: 2, name: 'Human' })` (`builder-dock.spec.ts:229`, sem escopo) | título "Switch from Dwarf to Human?" (h2) | Sem colisão: o teste cria o personagem e escolhe Human sem ancestralidade anterior, então o diálogo não abre. Com o diálogo aberto, o título seria o único `h2` acessível com "Human" (o resto fica `aria-hidden`). Seletor proposto nos testes novos: `page.locator('section.ancestry-detail').getByRole('heading', { level: 2, name: 'Human', exact: true })` para o foco depois do Apply, e o título pelo diálogo (`page.getByRole('dialog').getByRole('heading', { level: 2 })`). |
 | `detail.getByRole('heading', { level: 2, name: 'Dwarf' })` (`ancestry.spec.ts:162`) | título do diálogo com "Dwarf" | Sem colisão: escopado em `section.ancestry-detail`, e o diálogo fica fora dele (portal). |
 | `page.getByRole('status').filter({ hasText: "You can't switch" })` (`ancestry.spec.ts:197`) | o aviso sai | Muda pelo §7, item 14 (o diálogo no lugar), e pela emenda M1. |
-| `getByRole('radio', { name: 'Human, your choice' })` com `toBeChecked()` (`ancestry.spec.ts:203`, no `unchanged()` antes do reload) | — | Muda pela [switch-kept](#switch-kept): depois do Keep, o Dwarf continua em prévia, e o cartão do Human tem "Your choice" sem estar marcado. Emenda M1. |
+| `getByRole('radio', { name: 'Human, your choice' })` com `toBeChecked()` (`ancestry.spec.ts:203`, no `unchanged()` antes do reload) | — | Muda pela [switch-kept](#switch-kept): depois do Keep, o Dwarf continua em prévia, e o cartão do Human tem "Your choice" sem estar marcado. Emenda M1 (`ec54463`). |
 | `getByRole('dialog', { name: 'Creation steps' })` (`ancestry.spec.ts:15`) | os títulos do diálogo de impacto | Sem colisão: nenhum título contém "creation steps". |
 | `getByRole('button', { name: 'Choose Human' })`, `` `Choose ${name}` `` (`builder-dock.spec.ts:58`, `ancestry.spec.ts:38`, `attributes.spec.ts:15`) | "Apply new ancestry", "Keep current ancestry" | Sem colisão: nenhum contém "choose". |
 | `getByRole('button', { name: 'Back' })`, `'Summary'`, `'Cancel'`, `'More'`, `'Apply adjustment'`, `'Undo adjustment'`, `'Next: …'` | "Keep current …", "Apply new …", "Apply undo", "Dismiss", "Stays as it is · {n}", "Reroll …" | Sem colisão: nenhum nome novo contém esses textos ("Apply undo" não contém "Undo adjustment"; "Apply new result" não contém "Apply adjustment"). |
@@ -350,22 +349,15 @@ Conferidos todos os `getByRole`, `getByText`, `getByLabel`, `getByTitle` e `getB
 
 ## Escalações e pendências
 
-- **E12. Aviso ao abrir com diferença no construtor** (para a ux-foundations; FR-CONT-016):
-  - **O que falta:** a ux-foundations só define o aviso na importação (F4; SCR-WEB-001, "importação com decisões deixadas de lado", FEAT-002). Abrir no construtor um personagem salvo cujo pacote mudou (a abertura com diferença do technical-design §3.2) não tem tela nem estado.
-  - **Proposta:** na ux-foundations, um estado global do construtor ao lado dos "Estados globais (sem tela própria)": "abertura com decisões deixadas de lado ou restauradas pela versão nova do pacote (FR-CONT-016, FR-CHG-018): `inline-alert` warning no topo da etapa aberta, com as suspensas, as restauradas e 'Dismiss'"; e no F4, o mesmo aviso ao abrir o personagem importado. O `design.md` não muda: o `inline-alert` já existe, e o conteúdo é o de [open-notice](#open-notice). Sem token novo.
-  - **Telas:** SCR-WEB-003, 005 e 009 (a moldura), e SCR-WEB-001 na FEAT-002.
-  - **Situação:** pendente. A SCR-WEB-003, dona da moldura no manifesto, fica `escalation-pending` até a emenda.
-- **P1. Linha "N set aside" do `live-summary`** (pergunta ao usuário): o link "See Review" do `design.md` §4 vai para a SCR-WEB-018, da FEAT-015.
-  - **A. A linha sem o link até a FEAT-015** ([set-aside-line](#set-aside-line)): "{n} set aside" agora, " · See Review" na FEAT-015. Prós: a D40 fica visível desde já (FR-CHG-019: o personagem tem decisões guardadas, e o resumo diz quantas), e a §3.3 do technical-design já prevê a linha nesta feature. Contras: um número sem caminho para ver quais são; a pessoa só os viu no diálogo. Pede uma nota provisória no `design.md` §4 (como o "Roll or choose" da FEAT-009 até a FEAT-010), ou a aceitação do texto parcial aqui.
-  - **B. A linha inteira com a FEAT-015.** Prós: a linha nasce como o `design.md` a define, sem estado provisório. Contras: até lá, nada na tela diz que há decisões guardadas depois de fechar o diálogo; a linha da §3.3 sai desta feature por emenda do technical-design e do tasks.md.
-  - **Recomendação:** A.
-- **M1. Emenda do §7 do technical-design** (detailed-design; não editado aqui): pela [switch-kept](#switch-kept), depois de "Keep current ancestry" a prévia continua aberta.
-  - item 11 (`Builder.test.tsx`, `FR-FLOW-003: has-dependents shows a warning…`, l.322): no lugar de "a seleção volta para a escolha atual" (Troll desmarcado, Gnome marcado), o Troll continua marcado em prévia, o Gnome continua "Gnome, your choice", e "Choose Troll" está na tela; a Stature decidida e nenhuma gravação, como hoje;
-  - item 14 (`e2e/ancestry.spec.ts`, l.189): o `unchanged()` antes do reload confere "Human, your choice" presente sem `toBeChecked`, o Dwarf em prévia e o foco em "Choose Dwarf"; depois do reload, como hoje (a prévia não é gravada).
-  - itens 12 e 13: os estados que substituem `LOCKED_ROLLED`, `LOCKED_CHOSEN` e `dependents-blocked` são os desta seção ([decided-roll](#decided-roll), [decided-choose](#decided-choose), [replace-with-dependents](#replace-with-dependents), [replace-kept](#replace-kept)); no item 13, o "aviso sai na próxima ação" (l.985–988) sai, sem substituto: o diálogo fecha por Keep, Esc ou Apply.
-  - nas recomendações de localizador do §7 (C1): as da tabela acima, inclusive o contorno do Firefox no AC-15.
+Nenhuma escalação nem pergunta aberta. As três da primeira versão (`9b0e9cc`) foram decididas pelo usuário em 2026-11-17 e aplicadas:
+
+- **E12. Aviso ao abrir com diferença no construtor** (ux-foundations; FR-CONT-016, FR-CHG-018): a proposta do [open-notice](#open-notice) como está. Aplicada na ux-foundations, nos "Estados globais (sem tela própria)" e no F4 (`1158beb`); o `design.md` não mudou para ela (o `inline-alert` já existia). Re-verificado: o open-notice confere com a ux-foundations emendada (posição, tom, conteúdo, "Dismiss", não some sozinho).
+- **P1. Linha "N set aside" do `live-summary`:** alternativa A, a linha sem o link até a FEAT-015. Aplicada no `design.md` §4, como nota provisória do `live-summary`, e na proveniência (`1158beb`). Re-verificado: a [set-aside-line](#set-aside-line) confere com o `design.md` emendado; a FEAT-015 acrescenta " · See Review".
+- **M1. Emenda do technical-design** (detailed-design): a prévia continua aberta depois do "Keep current ancestry". Aplicada (`ec54463`): §3.2, o `keep()` da rerrolagem com o snapshot antes da gravação; §7, as expectativas 11 a 14 e os seletores da tabela [Nomes novos](#nomes-novos-contra-os-localizadores-do-e2e-c1), com o contorno do Firefox no axe do AC-15; tasks.md, T9 a T11.
+- **C1, de novo, só para o aviso e a linha:** os textos não mudaram na re-verificação. Nenhum localizador de `e2e/` casa com eles (o mais próximo, `getByText(/^\d+ open$/)` do `story.spec.ts:179`, fica no `main` e não casa com "{n} set aside", no `aside`).
+
 - **Notas, sem emenda:**
   - O exemplo de linha do `impact-dialog` no `design.md` §4 ("Age 42 · rolled") vira "Dwarf Age: 8–12 · rolled": o rótulo da vaga é o de pendência (FEAT-009), e o valor de uma tabela de história é a faixa, sem texto (P22). Os dois-pontos separam título e valor, que de outro modo se juntariam ("Insanity 1d6 4").
   - O contador de rolagens (FR-DEC-016) não tem lugar na tela; não se cria um.
   - O `roll-card` "rolado" do `design.md` §4 já lista "Reroll"; esta feature só o põe em uso.
-- **RTM:** recebe este `ui-design.md` na Design ref das FRs que as telas daqui realizam: FR-CHG-001 a 006, 008, 009, 010, 018; FR-DEC-015, 017, 018; FR-STEP-005. A FR-CONT-016 e a FR-CHG-019 esperam a E12 e a P1.
+- **RTM:** recebe este `ui-design.md` na Design ref das FRs que as telas daqui realizam: FR-CHG-001 a 006, 008, 009, 010, 018; FR-DEC-015, 017, 018; FR-STEP-005 (`5806971`); e, depois da E12 e da P1, FR-CONT-016 e FR-CHG-019.

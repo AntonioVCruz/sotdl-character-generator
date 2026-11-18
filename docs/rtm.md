@@ -162,7 +162,7 @@
 | FR-CHG-016 | Reabri-la no construtor, na etapa do nível dela, com a confirmação de dependentes | Should | Active | D32, D40 | — | ADR-004 | FEAT-029 | _TBD_ |
 | FR-CHG-017 | Reverter a última mudança confirmada | Could | Active | Entrevista de requisitos | — | _TBD_ | _TBD_ | _TBD_ |
 | FR-CHG-018 | Restaurar a decisão suspensa quando o contexto dela voltar, com dependentes e ajustes… | Must | Active | D40, P6, P6b | UC-010, UC-015 | ADR-004, features/FEAT-011-upstream-change/technical-design.md, features/FEAT-011-upstream-change/ui-design.md | FEAT-011, FEAT-019 | _TBD_ |
-| FR-CHG-019 | Guardar a decisão suspensa no personagem, fora da ficha e do cálculo, até ser… | Must | Active | D40 | UC-010, UC-015 | ADR-004, features/FEAT-011-upstream-change/technical-design.md | FEAT-011 | _TBD_ |
+| FR-CHG-019 | Guardar a decisão suspensa no personagem, fora da ficha e do cálculo, até ser… | Must | Active | D40 | UC-010, UC-015 | ADR-004, features/FEAT-011-upstream-change/technical-design.md, features/FEAT-011-upstream-change/ui-design.md | FEAT-011 | _TBD_ |
 | FR-CHG-020 | Descartar as decisões suspensas, com confirmação, e registrar o descarte no log | Should | Active | D40 | — | ADR-004 | FEAT-029 | _TBD_ |
 | FR-CHG-021 | Suspender a decisão inelegível pela regra e reabrir a vaga | Should | Active | D39, D40 | — | ADR-004 | FEAT-030 | _TBD_ |
 | FR-LOG-001 | Adicionar ao log uma entrada com o tipo, a descrição, a fonte e o modo (rolado,… | Must | Active | P8, SCR-15 | UC-005 | ADR-004, features/FEAT-009-decide-a-table/technical-design.md | FEAT-009 | features/FEAT-009-decide-a-table/acceptance-report.md |
@@ -232,7 +232,7 @@
 | FR-CONT-013 | Aceitar o pacote e usar o caminho alternativo | Must | Active | P26 | — | ADR-003 | FEAT-003 | _TBD_ |
 | FR-CONT-014 | Exibir a página e sugerir o ajuste manual | Must | Active | P11d | UC-005 | ADR-004 | FEAT-019 | _TBD_ |
 | FR-CONT-015 | Recalcular os personagens pela versão atual | Must | Active | P6a | — | ADR-004, features/FEAT-011-upstream-change/technical-design.md | FEAT-011 | _TBD_ |
-| FR-CONT-016 | Suspendê-la, reabrir a vaga se exigida, avisar ao abrir o personagem e registrar no log | Must | Active | P6, P6a, P8, D40 | — | ADR-004, features/FEAT-011-upstream-change/technical-design.md | FEAT-011 | _TBD_ |
+| FR-CONT-016 | Suspendê-la, reabrir a vaga se exigida, avisar ao abrir o personagem e registrar no log | Must | Active | P6, P6a, P8, D40 | — | ADR-004, features/FEAT-011-upstream-change/technical-design.md, features/FEAT-011-upstream-change/ui-design.md | FEAT-011 | _TBD_ |
 | FR-CONT-017 | Ter documentação com exemplos e modelos para copiar | Should | Active | P21b | — | ADR-005 | FEAT-023 | _TBD_ |
 | FR-HELP-001 | Oferecer acesso à página "About" em todas as telas | Must | Active | Entrevista de requisitos | — | _TBD_ | FEAT-022 | _TBD_ |
 | FR-HELP-002 | Informar que o projeto não é oficial nem afiliado à Schwalb Entertainment e que os… | Must | Active | Entrevista de requisitos | — | _TBD_ | FEAT-022 | _TBD_ |
