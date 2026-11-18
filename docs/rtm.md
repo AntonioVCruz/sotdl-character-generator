@@ -87,10 +87,10 @@
 | FR-DEC-012 | Mostrar a faixa do dado de cada entrada | Must | Active | SCR-09, SCR-10 | UC-005 | features/FEAT-009-decide-a-table/technical-design.md, features/FEAT-009-decide-a-table/ui-design.md | FEAT-009 | features/FEAT-009-decide-a-table/acceptance-report.md |
 | FR-DEC-013 | Exibi-la desabilitada, como "already yours", onde ela reaparecer para escolha | Must | Active | SCR-10 | UC-005 | _TBD_ | FEAT-012 | _TBD_ |
 | FR-DEC-014 | Exibi-la como aguardando, com o motivo | Must | Active | Entrevista de requisitos | UC-005 | ADR-004 | FEAT-010 | _TBD_ |
-| FR-DEC-015 | Substituir o resultado e registrar o anterior no log como desfeito | Must | Active | P8 | UC-005, UC-010 | ADR-004 | FEAT-011 | _TBD_ |
-| FR-DEC-016 | Registrar quantas vezes ela já foi rolada | Must | Active | P8 | UC-005 | ADR-004, features/FEAT-009-decide-a-table/technical-design.md | FEAT-009, FEAT-011 | features/FEAT-009-decide-a-table/acceptance-report.md (partial) |
-| FR-DEC-017 | Submetê-la à confirmação de dependentes antes de aplicar | Must | Active | P6 | UC-005, UC-010 | ADR-004 | FEAT-011 | _TBD_ |
-| FR-DEC-018 | Tratar o novo resultado como substituição do anterior | Must | Active | Entrevista de requisitos | UC-005, UC-010 | ADR-004 | FEAT-011 | _TBD_ |
+| FR-DEC-015 | Substituir o resultado e registrar o anterior no log como desfeito | Must | Active | P8 | UC-005, UC-010 | ADR-004, features/FEAT-011-upstream-change/technical-design.md | FEAT-011 | _TBD_ |
+| FR-DEC-016 | Registrar quantas vezes ela já foi rolada | Must | Active | P8 | UC-005 | ADR-004, features/FEAT-009-decide-a-table/technical-design.md, features/FEAT-011-upstream-change/technical-design.md | FEAT-009, FEAT-011 | features/FEAT-009-decide-a-table/acceptance-report.md (partial) |
+| FR-DEC-017 | Submetê-la à confirmação de dependentes antes de aplicar | Must | Active | P6 | UC-005, UC-010 | ADR-004, features/FEAT-011-upstream-change/technical-design.md | FEAT-011 | _TBD_ |
+| FR-DEC-018 | Tratar o novo resultado como substituição do anterior | Must | Active | Entrevista de requisitos | UC-005, UC-010 | ADR-004, features/FEAT-011-upstream-change/technical-design.md | FEAT-011 | _TBD_ |
 | FR-DEC-019 | Aceitar o valor de cada expressão de dado ou etapa da rolagem | Must | Active | D30 | UC-005 | ADR-009, features/FEAT-009-decide-a-table/technical-design.md, features/FEAT-009-decide-a-table/ui-design.md | FEAT-009 | features/FEAT-009-decide-a-table/acceptance-report.md |
 | FR-DEC-020 | Recusá-lo e informar a faixa válida | Must | Active | Entrevista de requisitos | UC-005 | ADR-009, features/FEAT-009-decide-a-table/technical-design.md, features/FEAT-009-decide-a-table/ui-design.md | FEAT-009 | features/FEAT-009-decide-a-table/acceptance-report.md |
 | FR-DEC-021 | Recusar o registro e pedir o texto | Must | Active | Entrevista de requisitos | UC-005 | _TBD_ | FEAT-010 | _TBD_ |
@@ -103,7 +103,7 @@
 | FR-STEP-002 | Exibir os atributos iniciais, as características, os idiomas e profissões, o benefício… | Must | Active | SCR-03, P22 | UC-003 | features/FEAT-007-ancestry-step-map-live-summary/technical-design.md, features/FEAT-007-ancestry-step-map-live-summary/ui-design.md | FEAT-007 | features/FEAT-007-ancestry-step-map-live-summary/acceptance-report.md |
 | FR-STEP-003 | Oferecer a subdecisão de Size | Must | Active | Entrevista de requisitos | UC-003 | features/FEAT-007-ancestry-step-map-live-summary/technical-design.md, features/FEAT-007-ancestry-step-map-live-summary/ui-design.md | FEAT-007 | features/FEAT-007-ancestry-step-map-live-summary/acceptance-report.md |
 | FR-STEP-004 | Oferecer as tabelas Purpose e Form como subdecisões da etapa Ancestry, com rolar e… | Must | Active | P7 | UC-003 | _TBD_ | FEAT-017 | _TBD_ |
-| FR-STEP-005 | Submeter a troca à confirmação de dependentes | Must | Active | P6 | UC-003, UC-010 | _TBD_ | FEAT-011 | _TBD_ |
+| FR-STEP-005 | Submeter a troca à confirmação de dependentes | Must | Active | P6 | UC-003, UC-010 | features/FEAT-011-upstream-change/technical-design.md | FEAT-011 | _TBD_ |
 | FR-STEP-006 | Oferecer busca por nome ou traço e filtro por livro | Should | Active | SCR-03 | — | _TBD_ | FEAT-026 | _TBD_ |
 | FR-STEP-007 | Exibir os quatro atributos com valor, modificador e composição | Must | Active | SCR-05, P11 | UC-004 | features/FEAT-008-attributes-step/technical-design.md, features/FEAT-008-attributes-step/ui-design.md | FEAT-008 | features/FEAT-008-attributes-step/acceptance-report.md |
 | FR-STEP-008 | Pedir ao usuário o atributo a aumentar | Must | Active | Entrevista de requisitos | UC-004 | _TBD_ | FEAT-016 | _TBD_ |
@@ -144,25 +144,25 @@
 | FR-CALC-012 | Exibi-lo com o seu efeito e não incluí-lo no cálculo da Defense | Must | Active | Entrevista de requisitos | UC-008 | ADR-004 | FEAT-013 | _TBD_ |
 | FR-CALC-013 | Substituir a Defense base pela da armadura e indicar quando a Strength estiver abaixo… | Should | Active | P11b | — | ADR-004 | FEAT-030 | _TBD_ |
 | FR-CALC-014 | Incluí-lo no cálculo sem registrá-lo no log | Could | Active | P11c | — | ADR-004 | _TBD_ | _TBD_ |
-| FR-CHG-001 | Exibir o diálogo de impacto antes de aplicá-la | Must | Active | P6, D6, D40, SCR-07 | UC-002, UC-010 | ADR-004 | FEAT-011 | _TBD_ |
-| FR-CHG-002 | Aplicá-la sem diálogo | Must | Active | D40 | UC-010 | ADR-004 | FEAT-011 | _TBD_ |
-| FR-CHG-003 | Mostrar lado a lado o estado atual e o novo | Must | Active | SCR-07 | UC-010 | ADR-004 | FEAT-011 | _TBD_ |
-| FR-CHG-004 | Listar o que fica suspenso, o que é restaurado, o que é recalculado e o que fica… | Must | Active | SCR-07, D40 | UC-010 | ADR-004 | FEAT-011 | _TBD_ |
-| FR-CHG-005 | Incluir os dependentes transitivos | Must | Active | D40 | UC-010 | ADR-004 | FEAT-011 | _TBD_ |
-| FR-CHG-006 | Mostrar o valor antigo e o novo | Must | Active | Entrevista de requisitos | UC-010 | ADR-004 | FEAT-011 | _TBD_ |
+| FR-CHG-001 | Exibir o diálogo de impacto antes de aplicá-la | Must | Active | P6, D6, D40, SCR-07 | UC-002, UC-010 | ADR-004, features/FEAT-011-upstream-change/technical-design.md | FEAT-011 | _TBD_ |
+| FR-CHG-002 | Aplicá-la sem diálogo | Must | Active | D40 | UC-010 | ADR-004, features/FEAT-011-upstream-change/technical-design.md | FEAT-011 | _TBD_ |
+| FR-CHG-003 | Mostrar lado a lado o estado atual e o novo | Must | Active | SCR-07 | UC-010 | ADR-004, features/FEAT-011-upstream-change/technical-design.md | FEAT-011 | _TBD_ |
+| FR-CHG-004 | Listar o que fica suspenso, o que é restaurado, o que é recalculado e o que fica… | Must | Active | SCR-07, D40 | UC-010 | ADR-004, features/FEAT-011-upstream-change/technical-design.md | FEAT-011 | _TBD_ |
+| FR-CHG-005 | Incluir os dependentes transitivos | Must | Active | D40 | UC-010 | ADR-004, features/FEAT-011-upstream-change/technical-design.md | FEAT-011 | _TBD_ |
+| FR-CHG-006 | Mostrar o valor antigo e o novo | Must | Active | Entrevista de requisitos | UC-010 | ADR-004, features/FEAT-011-upstream-change/technical-design.md | FEAT-011 | _TBD_ |
 | FR-CHG-007 | Agrupar o impacto por livro | Must | Active | Entrevista de requisitos | UC-002, UC-010 | ADR-004 | FEAT-004 | _TBD_ |
-| FR-CHG-008 | Suspender os dependentes, restaurar as decisões cujo contexto voltou, recalcular os… | Must | Active | P6, D40 | UC-010 | ADR-004 | FEAT-011 | _TBD_ |
-| FR-CHG-009 | Manter o personagem exatamente como estava | Must | Active | Entrevista de requisitos | UC-010 | ADR-004 | FEAT-011 | _TBD_ |
-| FR-CHG-010 | Registrar o valor recusado no log como desfeito | Must | Active | SCR-15 | UC-010 | ADR-004 | FEAT-011 | _TBD_ |
-| FR-CHG-011 | Registrar no log a suspensão ou a restauração, com o motivo | Must | Active | P8, D40 | UC-010 | ADR-004 | FEAT-011 | _TBD_ |
-| FR-CHG-012 | Reabrir a vaga como decisão aberta | Must | Active | D40 | UC-010 | ADR-004 | FEAT-011 | _TBD_ |
+| FR-CHG-008 | Suspender os dependentes, restaurar as decisões cujo contexto voltou, recalcular os… | Must | Active | P6, D40 | UC-010 | ADR-004, features/FEAT-011-upstream-change/technical-design.md | FEAT-011 | _TBD_ |
+| FR-CHG-009 | Manter o personagem exatamente como estava | Must | Active | Entrevista de requisitos | UC-010 | ADR-004, features/FEAT-011-upstream-change/technical-design.md | FEAT-011 | _TBD_ |
+| FR-CHG-010 | Registrar o valor recusado no log como desfeito | Must | Active | SCR-15 | UC-010 | ADR-004, features/FEAT-011-upstream-change/technical-design.md | FEAT-011 | _TBD_ |
+| FR-CHG-011 | Registrar no log a suspensão ou a restauração, com o motivo | Must | Active | P8, D40 | UC-010 | ADR-004, features/FEAT-011-upstream-change/technical-design.md | FEAT-011 | _TBD_ |
+| FR-CHG-012 | Reabrir a vaga como decisão aberta | Must | Active | D40 | UC-010 | ADR-004, features/FEAT-011-upstream-change/technical-design.md | FEAT-011 | _TBD_ |
 | FR-CHG-013 | Suspendê-lo junto, listá-lo entre os suspensos e restaurá-lo com ela | Must | Active | D40 | UC-010, UC-013 | ADR-004 | FEAT-019 | _TBD_ |
 | FR-CHG-014 | Mantê-lo e listá-lo entre os recalculados | Must | Active | P12 | UC-010, UC-013 | ADR-004 | FEAT-011 | _TBD_ |
 | FR-CHG-015 | Suspender os resultados obtidos com a fonte anterior, reabrir a tabela e restaurá-los… | Should | Active | P6b, D21, D40 | — | ADR-004 | FEAT-024 | _TBD_ |
 | FR-CHG-016 | Reabri-la no construtor, na etapa do nível dela, com a confirmação de dependentes | Should | Active | D32, D40 | — | ADR-004 | FEAT-029 | _TBD_ |
 | FR-CHG-017 | Reverter a última mudança confirmada | Could | Active | Entrevista de requisitos | — | _TBD_ | _TBD_ | _TBD_ |
-| FR-CHG-018 | Restaurar a decisão suspensa quando o contexto dela voltar, com dependentes e ajustes… | Must | Active | D40, P6, P6b | UC-010, UC-015 | ADR-004 | FEAT-011, FEAT-019 | _TBD_ |
-| FR-CHG-019 | Guardar a decisão suspensa no personagem, fora da ficha e do cálculo, até ser… | Must | Active | D40 | UC-010, UC-015 | ADR-004 | FEAT-011 | _TBD_ |
+| FR-CHG-018 | Restaurar a decisão suspensa quando o contexto dela voltar, com dependentes e ajustes… | Must | Active | D40, P6, P6b | UC-010, UC-015 | ADR-004, features/FEAT-011-upstream-change/technical-design.md | FEAT-011, FEAT-019 | _TBD_ |
+| FR-CHG-019 | Guardar a decisão suspensa no personagem, fora da ficha e do cálculo, até ser… | Must | Active | D40 | UC-010, UC-015 | ADR-004, features/FEAT-011-upstream-change/technical-design.md | FEAT-011 | _TBD_ |
 | FR-CHG-020 | Descartar as decisões suspensas, com confirmação, e registrar o descarte no log | Should | Active | D40 | — | ADR-004 | FEAT-029 | _TBD_ |
 | FR-CHG-021 | Suspender a decisão inelegível pela regra e reabrir a vaga | Should | Active | D39, D40 | — | ADR-004 | FEAT-030 | _TBD_ |
 | FR-LOG-001 | Adicionar ao log uma entrada com o tipo, a descrição, a fonte e o modo (rolado,… | Must | Active | P8, SCR-15 | UC-005 | ADR-004, features/FEAT-009-decide-a-table/technical-design.md | FEAT-009 | features/FEAT-009-decide-a-table/acceptance-report.md |
@@ -171,7 +171,7 @@
 | FR-LOG-004 | Registrar os valores informados com a marca "entered" | Must | Active | D30 | UC-005 | features/FEAT-009-decide-a-table/technical-design.md | FEAT-009 | features/FEAT-009-decide-a-table/acceptance-report.md |
 | FR-LOG-005 | Registrar a mudança no log | Must | Active | P12 | UC-013 | ADR-004 | FEAT-019 | _TBD_ |
 | FR-LOG-006 | Registrar uma entrada "Sources" com a ordem resultante dos livros ligados | Must | Active | P14a, SCR-15 | UC-002 | _TBD_ | FEAT-004 | _TBD_ |
-| FR-LOG-007 | Manter a entrada original e registrar o desfeito, a suspensão ou a restauração, com o… | Must | Active | P8, D40 | UC-010 | ADR-004 | FEAT-011 | _TBD_ |
+| FR-LOG-007 | Manter a entrada original e registrar o desfeito, a suspensão ou a restauração, com o… | Must | Active | P8, D40 | UC-010 | ADR-004, features/FEAT-011-upstream-change/technical-design.md | FEAT-011 | _TBD_ |
 | FR-LOG-008 | Salvar a alteração sem registrá-la no log | Must | Active | D36 | UC-011 | _TBD_ | FEAT-015 | _TBD_ |
 | FR-LOG-009 | Impedir a edição e a exclusão de entradas do log | Must | Active | Entrevista de requisitos | UC-014 | ADR-004 | FEAT-020 | _TBD_ |
 | FR-LOG-010 | Guardar a data e a hora | Must | Active | Entrevista de requisitos | UC-014 | features/FEAT-009-decide-a-table/technical-design.md | FEAT-009 | features/FEAT-009-decide-a-table/acceptance-report.md |
@@ -231,8 +231,8 @@
 | FR-CONT-012 | Recusá-lo e listar cada referência que falta, com o local | Must | Active | P20, P21b | — | ADR-003, ADR-005 | FEAT-003 | _TBD_ |
 | FR-CONT-013 | Aceitar o pacote e usar o caminho alternativo | Must | Active | P26 | — | ADR-003 | FEAT-003 | _TBD_ |
 | FR-CONT-014 | Exibir a página e sugerir o ajuste manual | Must | Active | P11d | UC-005 | ADR-004 | FEAT-019 | _TBD_ |
-| FR-CONT-015 | Recalcular os personagens pela versão atual | Must | Active | P6a | — | ADR-004 | FEAT-011 | _TBD_ |
-| FR-CONT-016 | Suspendê-la, reabrir a vaga se exigida, avisar ao abrir o personagem e registrar no log | Must | Active | P6, P6a, P8, D40 | — | ADR-004 | FEAT-011 | _TBD_ |
+| FR-CONT-015 | Recalcular os personagens pela versão atual | Must | Active | P6a | — | ADR-004, features/FEAT-011-upstream-change/technical-design.md | FEAT-011 | _TBD_ |
+| FR-CONT-016 | Suspendê-la, reabrir a vaga se exigida, avisar ao abrir o personagem e registrar no log | Must | Active | P6, P6a, P8, D40 | — | ADR-004, features/FEAT-011-upstream-change/technical-design.md | FEAT-011 | _TBD_ |
 | FR-CONT-017 | Ter documentação com exemplos e modelos para copiar | Should | Active | P21b | — | ADR-005 | FEAT-023 | _TBD_ |
 | FR-HELP-001 | Oferecer acesso à página "About" em todas as telas | Must | Active | Entrevista de requisitos | — | _TBD_ | FEAT-022 | _TBD_ |
 | FR-HELP-002 | Informar que o projeto não é oficial nem afiliado à Schwalb Entertainment e que os… | Must | Active | Entrevista de requisitos | — | _TBD_ | FEAT-022 | _TBD_ |
@@ -241,8 +241,8 @@
 | FR-HELP-005 | Exibir uma mensagem compreensível, sem termos internos do sistema, e preservar os… | Must | Active | Entrevista de requisitos | — | ADR-006, features/FEAT-001-home/technical-design.md, features/FEAT-001-home/ui-design.md | FEAT-022 | features/FEAT-001-home/acceptance-report.md |
 | FR-HELP-006 | Abrir o canal de feedback do projeto | Could | Active | Entrevista de requisitos | — | _TBD_ | _TBD_ | _TBD_ |
 | NFR-PERF-001 | O maior elemento visível da primeira carga (LCP) aparece em até 2,5 s no desktop com… | Must | Active | Entrevista de requisitos (NFR) | — | ADR-001, ADR-006, ADR-008, features/FEAT-001-home/technical-design.md | Foundations | features/FEAT-007-ancestry-step-map-live-summary/acceptance-report.md (partial), features/FEAT-001-home/acceptance-report.md (partial), features/FEAT-009-decide-a-table/acceptance-report.md (partial) |
-| NFR-PERF-002 | Depois de uma decisão, o resumo vivo e a etapa se atualizam em até 100 ms (p95) num… | Must | Active | Entrevista de requisitos (NFR) | — | ADR-001, ADR-004, ADR-008, features/FEAT-008-attributes-step/technical-design.md | FEAT-008 | features/FEAT-008-attributes-step/acceptance-report.md |
-| NFR-PERF-003 | O diálogo de impacto abre em até 300 ms (p95) depois do pedido de mudança | Must | Active | Entrevista de requisitos (NFR) | — | ADR-001, ADR-004, ADR-008 | FEAT-011 | _TBD_ |
+| NFR-PERF-002 | Depois de uma decisão, o resumo vivo e a etapa se atualizam em até 100 ms (p95) num… | Must | Active | Entrevista de requisitos (NFR) | — | ADR-001, ADR-004, ADR-008, features/FEAT-008-attributes-step/technical-design.md, features/FEAT-011-upstream-change/technical-design.md | FEAT-008 | features/FEAT-008-attributes-step/acceptance-report.md |
+| NFR-PERF-003 | O diálogo de impacto abre em até 300 ms (p95) depois do pedido de mudança | Must | Active | Entrevista de requisitos (NFR) | — | ADR-001, ADR-004, ADR-008, features/FEAT-011-upstream-change/technical-design.md | FEAT-011 | _TBD_ |
 | NFR-CAP-001 | Com até 100 personagens salvos por usuário, as metas de desempenho continuam atendidas | Must | Active | Entrevista de requisitos (NFR) | — | ADR-002, features/FEAT-001-home/technical-design.md | FEAT-001 | features/FEAT-001-home/acceptance-report.md |
 | NFR-CAP-002 | O formato de pacote e o carregamento comportam o pacote oficial completo (core e todos… | Must | Active | Entrevista de requisitos (NFR) | — | ADR-003, ADR-005 | FEAT-003 | _TBD_ |
 | NFR-REL-001 | Nenhuma decisão confirmada se perde: o salvamento conclui em até 1 s depois da… | Must | Active | Entrevista de requisitos (NFR) | — | ADR-002 | Foundations | features/FEAT-007-ancestry-step-map-live-summary/acceptance-report.md (partial), features/FEAT-008-attributes-step/acceptance-report.md (partial), features/FEAT-001-home/acceptance-report.md (partial), features/FEAT-009-decide-a-table/acceptance-report.md (partial) |
