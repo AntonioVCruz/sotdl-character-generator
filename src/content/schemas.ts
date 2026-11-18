@@ -260,16 +260,29 @@ export const slotKey = z
 const attributeShiftSchema = z.strictObject({ decrease: attributeId, increase: attributeId })
 export type AttributeShift = z.infer<typeof attributeShiftSchema>
 
+/** Id de uma entrada de log, para os ponteiros (ADR-004 §6). */
+const logId = z.number().int().min(1)
+
+/**
+ * Campos comuns aos três modos (FEAT-011 §4; ADR-004 §1): `setAside`, a marca de registro, que nem o `evaluate` nem a
+ * validade leem; `logged`, o id da entrada `decision` que registrou a decisão (D2), ausente nas gravadas antes dele.
+ */
+const recorded = { setAside: z.literal(true).optional(), logged: logId.optional() }
+/** Contador de rolagens da vaga `table` (FEAT-011 D5): atravessa a troca de modo e conta a rerrolagem recusada. */
+const rolls = z.number().int().min(1).optional()
+
 /**
  * Decisão (FEAT-009 §4, D3). `chosen` grava o valor; numa vaga `table`, a entrada e o livro. `rolled` e `entered`
- * gravam o fato da rolagem: faces (ou a soma informada), modificador e total e, na vaga `table`, a entrada, o livro e,
- * na rolada, o contador. A forma certa por vaga é do comando; a validade na leitura, do motor.
+ * gravam o fato da rolagem: faces (ou a soma informada), modificador e total e, na vaga `table`, a entrada, o livro e
+ * o contador. A forma certa por vaga é do comando; a validade na leitura, do motor.
  */
 const decisionSchema = z.discriminatedUnion('mode', [
   z.strictObject({
     mode: z.literal('chosen'),
     value: z.union([entityId, z.number(), attributeShiftSchema, entryKey]),
+    rolls,
     book: bookId.optional(),
+    ...recorded,
   }),
   z.strictObject({
     mode: z.literal('rolled'),
@@ -277,8 +290,9 @@ const decisionSchema = z.discriminatedUnion('mode', [
     modifier: z.number().int(),
     total: z.number().int(),
     entry: entryKey.optional(),
-    rolls: z.number().int().min(1).optional(),
+    rolls,
     book: bookId.optional(),
+    ...recorded,
   }),
   z.strictObject({
     mode: z.literal('entered'),
@@ -286,7 +300,9 @@ const decisionSchema = z.discriminatedUnion('mode', [
     modifier: z.number().int(),
     total: z.number().int(),
     entry: entryKey.optional(),
+    rolls,
     book: bookId.optional(),
+    ...recorded,
   }),
 ])
 
@@ -306,11 +322,11 @@ export const slotKind = z.enum([
 const rollBase = { count: z.number().int().min(1), sides: z.number().int().min(2), modifier: z.number().int(), total: z.number().int(), rolls: z.number().int().min(1).optional() }
 
 /**
- * Entrada de log (FEAT-009 §3.3; FR-LOG-001, 002, 004, 010): montada pelo `app` no `commit`, com os nomes congelados.
- * O motor nunca a lê (ADR-004 §6).
+ * Entrada de log de uma decisão (FEAT-009 §3.3; FR-LOG-001, 002, 004, 010): montada pelo `app` no `commit`, com os
+ * nomes congelados. O motor nunca a lê (ADR-004 §6).
  */
-export const logEntrySchema = z.strictObject({
-  id: z.number().int().min(1),
+const decisionEntrySchema = z.strictObject({
+  id: logId,
   at: z.iso.datetime(),
   kind: z.literal('decision'),
   slot: slotKey,
@@ -334,26 +350,71 @@ export const logEntrySchema = z.strictObject({
     .optional(),
 })
 
-/** Documento do personagem v1 (ADR-004 §1; technical-design §4): só entradas, nada derivado (FR-CALC-001). */
-export const characterDocumentSchema = z.strictObject({
-  schema: z.literal(1),
-  id: z.string().min(1),
-  contentVersion: z.string().min(1),
-  revision: z.number().int().min(1),
-  createdAt: z.iso.datetime(),
-  updatedAt: z.iso.datetime(),
-  sources: z.strictObject({ order: z.array(bookId).min(1) }),
-  decisions: z.record(slotKey, decisionSchema),
-  // Fora do log (FR-LOG-008).
-  text: z.strictObject({ name: z.string().optional() }),
-  log: z.array(logEntrySchema),
+/**
+ * Entradas novas da FEAT-011 (§3.2, "Entradas de log novas"; ADR-004 §6), sempre de acréscimo. `ref` é o `logged` da
+ * decisão a que a entrada se refere (falta nas decisões sem `logged`); `by` e `cause.entry` apontam para entradas da
+ * mesma escrita; `cause: { content: true }` é a abertura com versão nova do pacote (FR-CONT-016).
+ */
+const undoneEntrySchema = z.strictObject({
+  id: logId,
+  at: z.iso.datetime(),
+  kind: z.literal('undone'),
+  slot: slotKey,
+  ref: logId.optional(),
+  reason: z.enum(['replaced', 'cleared', 'declined']),
+  by: logId.optional(),
 })
+const markEntry = <K extends 'set-aside' | 'restored'>(kind: K) =>
+  z.strictObject({
+    id: logId,
+    at: z.iso.datetime(),
+    kind: z.literal(kind),
+    slot: slotKey,
+    ref: logId.optional(),
+    cause: z.union([z.strictObject({ entry: logId }), z.strictObject({ content: z.literal(true) })]),
+  })
+
+export const logEntrySchema = z.discriminatedUnion('kind', [
+  decisionEntrySchema,
+  undoneEntrySchema,
+  markEntry('set-aside'),
+  markEntry('restored'),
+])
+
+/** Documento do personagem v1 (ADR-004 §1; technical-design §4): só entradas, nada derivado (FR-CALC-001). */
+export const characterDocumentSchema = z
+  .strictObject({
+    schema: z.literal(1),
+    id: z.string().min(1),
+    contentVersion: z.string().min(1),
+    revision: z.number().int().min(1),
+    createdAt: z.iso.datetime(),
+    updatedAt: z.iso.datetime(),
+    sources: z.strictObject({ order: z.array(bookId).min(1) }),
+    decisions: z.record(slotKey, decisionSchema),
+    // ADR-004 §3: as decisões anteriores da vaga, da mais recente para a mais antiga (FEAT-011 §4).
+    earlier: z.record(slotKey, z.array(decisionSchema).min(1)).optional(),
+    // Fora do log (FR-LOG-008).
+    text: z.strictObject({ name: z.string().optional() }),
+    log: z.array(logEntrySchema),
+  })
+  .superRefine((document, ctx) => {
+    // Regra do documento (FEAT-011 §4): toda chave de `earlier` tem `decisions[k]`.
+    for (const key of Object.keys(document.earlier ?? {})) {
+      if (!Object.hasOwn(document.decisions, key)) {
+        ctx.addIssue({ code: 'custom', path: ['earlier', key], message: `earlier["${key}"] needs decisions["${key}"]` })
+      }
+    }
+  })
 
 export type CharacterDocument = z.infer<typeof characterDocumentSchema>
 export type Decision = z.infer<typeof decisionSchema>
 export type ChosenDecision = Extract<Decision, { mode: 'chosen' }>
 export type DecisionValue = ChosenDecision['value']
 export type LogEntry = z.infer<typeof logEntrySchema>
+export type DecisionEntry = Extract<LogEntry, { kind: 'decision' }>
+export type UndoneEntry = Extract<LogEntry, { kind: 'undone' }>
+export type MarkEntry = Extract<LogEntry, { kind: 'set-aside' | 'restored' }>
 export type SlotKindName = z.infer<typeof slotKind>
 
 // Versão do conteúdo gravada no personagem (ADR-004). O versionamento dos pacotes é do design detalhado.

@@ -378,4 +378,91 @@ describe('character document v1: table decisions and log', () => {
       expect(characterDocumentSchema.safeParse({ ...base, log: [extra] }).success).toBe(false)
     }
   })
+
+  // FEAT-011 §4 e AC-1: `earlier`, a marca, `logged`, o contador em `chosen` e `entered`, e as entradas novas.
+  describe('FEAT-011: earlier, record mark, logged and the new log entries', () => {
+    const issuesOf = (document: unknown) => {
+      const parsed = characterDocumentSchema.safeParse(document)
+      return parsed.success ? [] : parsed.error.issues.map((issue) => ({ path: issue.path.join('.'), message: issue.message }))
+    }
+    const PAST = 'origin=gnome/past'
+    const widened = {
+      ...base,
+      decisions: {
+        ...base.decisions,
+        [PAST]: { mode: 'chosen', value: '11-17', rolls: 2, book: 'test.book', logged: 7 },
+        'origin=gnome/build': { mode: 'entered', sum: 11, modifier: 1, total: 12, entry: '9-12', rolls: 1, book: 'test.book', logged: 5 },
+        'origin=gnome/past=18/might': { mode: 'rolled', dice: [4], modifier: 0, total: 4, logged: 6, setAside: true },
+      },
+      earlier: {
+        [PAST]: [
+          { mode: 'rolled', dice: [6, 6, 6], modifier: 0, total: 18, entry: '18', rolls: 1, book: 'other.book', logged: 4, setAside: true },
+          { mode: 'chosen', value: '3-10', book: 'test.book', setAside: true },
+        ],
+      },
+    }
+    const undone = { id: 8, at: '2026-01-01T00:00:00.000Z', kind: 'undone', slot: PAST, ref: 4, reason: 'replaced', by: 7 }
+    const mark = { id: 9, at: '2026-01-01T00:00:00.000Z', kind: 'set-aside', slot: 'origin=gnome/past=18/might', ref: 6, cause: { entry: 7 } }
+    const newEntries = [
+      undone,
+      { ...undone, id: 10, reason: 'cleared', by: undefined },
+      { ...undone, id: 11, reason: 'declined', ref: 10, by: undefined },
+      // Decisão gravada antes do `logged`: a entrada fica sem ponteiro.
+      { id: 12, at: '2026-01-01T00:00:00.000Z', kind: 'undone', slot: 'origin', reason: 'cleared' },
+      mark,
+      { ...mark, id: 13, kind: 'restored', cause: { content: true } },
+      { id: 14, at: '2026-01-01T00:00:00.000Z', kind: 'set-aside', slot: 'origin', cause: { content: true } },
+    ].map((entry) => Object.fromEntries(Object.entries(entry).filter(([, value]) => value !== undefined)))
+
+    it('FR-CHG-019: accepts earlier, setAside, logged and rolls in chosen and entered (AC-1)', () => {
+      expect(characterDocumentSchema.parse(widened)).toEqual(widened)
+    })
+
+    it('FR-CHG-019: rejects earlier[k] without decisions[k], with the path, and an empty earlier[k] (AC-1)', () => {
+      const orphan = { ...widened, earlier: { ...widened.earlier, 'origin=gnome/age': widened.earlier[PAST] } }
+      expect(issuesOf(orphan)).toEqual([{ path: 'earlier.origin=gnome/age', message: expect.stringMatching(/needs decisions/) }])
+      expect(characterDocumentSchema.safeParse({ ...widened, earlier: { [PAST]: [] } }).success).toBe(false)
+    })
+
+    it('FR-CHG-019: rejects a mark other than true, a logged below 1, and an unknown field in an earlier decision (AC-1)', () => {
+      const chosen = widened.decisions[PAST]
+      for (const decision of [{ ...chosen, setAside: false }, { ...chosen, logged: 0 }, { ...chosen, rolls: 0 }]) {
+        expect(characterDocumentSchema.safeParse({ ...widened, decisions: { ...widened.decisions, [PAST]: decision } }).success).toBe(false)
+      }
+      const extra = { ...widened, earlier: { [PAST]: [{ ...widened.earlier[PAST][1], reason: 'invalid' }] } }
+      expect(characterDocumentSchema.safeParse(extra).success).toBe(false)
+    })
+
+    it('FR-LOG-007, FR-CHG-011: accepts undone, set-aside and restored entries with ref, by and cause, after the FEAT-009 entries (AC-1)', () => {
+      const document = { ...widened, log: [...logEntries, ...newEntries] }
+      expect(characterDocumentSchema.parse(document)).toEqual(document)
+    })
+
+    it('FR-LOG-007, FR-CHG-011: rejects an unknown kind or reason, a cause that is neither entry nor content, and an extra field (AC-1)', () => {
+      for (const extra of [
+        { ...undone, kind: 'discarded' },
+        { ...undone, reason: 'rerolled' },
+        { ...undone, cause: { entry: 7 } },
+        { ...mark, cause: {} },
+        { ...mark, cause: { entry: 7, content: true } },
+        { ...mark, cause: { content: false } },
+        { ...mark, by: 7 },
+        { ...mark, slotKind: 'table' },
+      ]) {
+        expect(characterDocumentSchema.safeParse({ ...base, log: [extra] }).success).toBe(false)
+      }
+    })
+
+    it('FR-CHG-019: documents and logs saved up to FEAT-009 stay valid, unchanged (AC-1)', () => {
+      const saved = withDecisions({
+        'origin=gnome/past': { mode: 'chosen', value: '11-17', book: 'test.book' },
+        'origin=gnome/age': { mode: 'rolled', dice: [3, 5, 2], modifier: 0, total: 10, entry: '8-12', rolls: 1, book: 'test.book' },
+        'origin=gnome/build': { mode: 'entered', sum: 11, modifier: 1, total: 12, entry: '9-12', book: 'test.book' },
+      })
+      const document = { ...saved, log: logEntries }
+      const parsed = characterDocumentSchema.parse(document)
+      expect(parsed).toEqual(document)
+      expect('earlier' in parsed).toBe(false)
+    })
+  })
 })

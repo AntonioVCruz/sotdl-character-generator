@@ -5,8 +5,8 @@ import {
   type Book,
   type CharacterDocument,
   type Decision,
+  type DecisionEntry,
   type DecisionValue,
-  type LogEntry,
   type PackSource,
 } from '../content'
 import { cryptoRandomSource, rollDice, type RandomSource } from '../dice'
@@ -179,7 +179,7 @@ function isValid(slot: SlotView, value: DecisionValue): boolean {
 }
 
 type DiceSlot = Extract<SlotView, { kind: 'table' | 'roll-effect' }>
-type LogDraft = Omit<LogEntry, 'id' | 'at'>
+type LogDraft = Omit<DecisionEntry, 'id' | 'at'>
 
 const named = (rules: Rules, id: string) => {
   const item = rules.items.get(id)
