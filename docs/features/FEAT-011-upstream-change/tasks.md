@@ -16,7 +16,7 @@
       `src/engine/impact.ts` (novo), exportado pelo `engine`.
       Pronto quando: os testes do AC-3 e do AC-4 passam (novo `impact.test.ts`), com troca de ancestralidade, neta `roll-effect`, só restauração, recalculados antigo → novo, reabertas, igualdade de `settle` e `impact` no candidato, e documento assentado sem mudança.
 
-- [ ] T4 — `app`: regras de escrita e entradas de log (design §3.2, tabela "Regras de escrita" e "Entradas de log novas"; FR-LOG-007, FR-CHG-011)
+- [x] T4 — `app`: regras de escrita e entradas de log (design §3.2, tabela "Regras de escrita" e "Entradas de log novas"; FR-LOG-007, FR-CHG-011)
       `src/app/changes.ts` (novo), funções puras: substituição com a ativa no índice 0 e em `earlier`, vaga reaberta, `clear`, `logged` na nova, e entradas `undone`, `set-aside` e `restored` com `ref`, `by` e `cause`.
       Pronto quando: os testes unitários das cinco linhas da tabela e da ordem das entradas passam (parte de escrita do AC-10).
 
