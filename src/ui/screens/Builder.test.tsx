@@ -199,7 +199,7 @@ describe('Builder states', () => {
     await vi.waitFor(() => expect(screen.queryByRole('alert')).toBeNull())
     // "Try again" grava o estado que está na tela: a escolha do Troll.
     expect(saved).toHaveLength(1)
-    expect(saved[0].decisions).toEqual({ ancestry: { mode: 'chosen', value: 'ancestry:troll' } })
+    expect(saved[0].decisions).toEqual({ ancestry: { mode: 'chosen', value: 'ancestry:troll', logged: 1 } })
     expect(screen.getByRole('radio', { name: 'Troll, your choice' })).toBeTruthy()
   })
 
@@ -822,7 +822,7 @@ describe('Story step (tables)', () => {
 
     await vi.waitFor(() => expect(document.activeElement).toBe(column))
     await storySettled(session, saved, 1)
-    expect(saved[0].decisions[AGE]).toEqual({ mode: 'rolled', dice: [3, 5, 2], modifier: 0, total: 10, entry: '8-12', rolls: 1, book: TABLES })
+    expect(saved[0].decisions[AGE]).toEqual({ mode: 'rolled', dice: [3, 5, 2], modifier: 0, total: 10, entry: '8-12', rolls: 1, book: TABLES, logged: 1 })
     expect(within(screen.getByRole('main')).getByText('1 of 5 decided')).toBeTruthy()
   })
 
@@ -851,7 +851,7 @@ describe('Story step (tables)', () => {
     expect(modes('Gnome Age').getAttribute('aria-readonly')).toBe('true')
     expect(describedBy(modes('Gnome Age'))).toEqual(["You can choose another result. Rolling instead isn't available yet."])
     await storySettled(session, saved, 1)
-    expect(saved[0].decisions[AGE]).toEqual(chosenEntry('8-12'))
+    expect(saved[0].decisions[AGE]).toEqual({ ...chosenEntry('8-12'), logged: 1 })
     expect(document.activeElement).toBe(middle)
 
     // Choose → Choose substitui (D5).
@@ -859,7 +859,7 @@ describe('Story step (tables)', () => {
     expect(entryRadio('Gnome Age', '13–18 TT p.7').checked).toBe(true)
     expect(entryRadio('Gnome Age', '8–12 TT p.8').checked).toBe(false)
     await storySettled(session, saved, 2)
-    expect(saved[1].decisions[AGE]).toEqual(chosenEntry('13-18'))
+    expect(saved[1].decisions[AGE]).toEqual({ ...chosenEntry('13-18'), logged: 2 })
     expect(document.activeElement).toBe(entryRadio('Gnome Age', '13–18 TT p.7'))
   })
 
@@ -904,7 +904,7 @@ describe('Story step (tables)', () => {
     expect(card('Gnome Fate').querySelector('.roll-value')!.textContent).toBe('11entered')
     await vi.waitFor(() => expect(document.activeElement).toBe(column))
     await storySettled(session, saved, 1)
-    expect(saved[0].decisions['ancestry=gnome/fate']).toEqual({ mode: 'entered', sum: 11, modifier: 0, total: 11, entry: '11-18', book: TABLES })
+    expect(saved[0].decisions['ancestry=gnome/fate']).toEqual({ mode: 'entered', sum: 11, modifier: 0, total: 11, entry: '11-18', book: TABLES, logged: 1 })
 
     // Com modificador (3d6+1): a faixa continua [3, 18], e o total soma o modificador (D4).
     await userEvent.click(within(card('Gnome Omen')).getByRole('button', { name: 'Enter result' }))
@@ -968,7 +968,7 @@ describe('Story step (tables)', () => {
     expect(effect.classList.contains('subdecision--decided')).toBe(true)
     await vi.waitFor(() => expect(document.activeElement).toBe(effectColumn))
     await storySettled(session, saved, 3)
-    expect(saved[2].decisions[MADNESS]).toEqual({ mode: 'rolled', dice: [4], modifier: 0, total: 4 })
+    expect(saved[2].decisions[MADNESS]).toEqual({ mode: 'rolled', dice: [4], modifier: 0, total: 4, logged: 4 })
 
     // dependents-blocked: a grade continua na entrada atual, o foco fica no radio acionado e nada é gravado.
     const other = entryRadio('Gnome Past', '1–3 TT p.7')

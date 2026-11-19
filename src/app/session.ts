@@ -10,8 +10,9 @@ import {
   type PackSource,
 } from '../content'
 import { cryptoRandomSource, rollDice, type RandomSource } from '../dice'
-import { EngineError, evaluate, resolve, type CharacterView, type Provenance, type Rules, type SlotView } from '../engine'
+import { EngineError, evaluate, impact, resolve, type CharacterView, type Impact, type Provenance, type Rules, type SlotView } from '../engine'
 import type { CharacterRepository, LastStepStore } from '../storage'
+import { change, type Change, type ChangeRequest } from './changes'
 
 // Sessão do personagem (technical-design §3.2): store externo lido pelo React com `useSyncExternalStore`
 // (ADR-006). Os comandos são os únicos que escrevem (ADR-004 §5), e cada decisão registrada vai ao log (FEAT-009 §3.3).
@@ -38,6 +39,13 @@ export interface CharacterSummary {
 
 export type OpenFailure = 'not-found' | 'storage-unavailable' | 'unreadable' | 'pack-load-failed'
 
+/** Mudança calculada à espera de Apply ou Keep (FEAT-011 §3.2; SCR-WEB-007). O documento e a visão na tela são os de antes. */
+export interface PendingChange {
+  kind: 'decide' | 'roll' | 'enter' | 'clear'
+  key: string
+  impact: Impact
+}
+
 export type Snapshot =
   | { status: 'loading'; id: string }
   | { status: 'error'; id: string; reason: OpenFailure }
@@ -50,17 +58,19 @@ export type Snapshot =
       save: 'saved' | 'saving' | 'failed'
       /** Slug da última etapa visitada, lido em `open` (FR-CHAR-007; FEAT-001 §3.4). */
       lastStep?: string
+      /** Mudança com suspensas ou restauradas, à espera de `confirm` ou `keep` (FR-CHG-001; FEAT-011 D3). */
+      pending?: PendingChange
     }
 
 export type DecideResult =
   | { ok: true }
   // `already-decided`: o ajuste é uma vez só (FEAT-008 D3); `not-decided`: `clear` de vaga sem decisão.
   | { ok: false; reason: 'unknown-slot' | 'invalid-value' | 'already-decided' | 'not-decided' }
-  // D8: mudança com dependentes é recusada até a FEAT-011.
-  | { ok: false; reason: 'has-dependents'; dependents: string[] }
   // FEAT-009 D4: a soma informada fora de `[count, count × sides]`, com essa faixa (FR-DEC-020).
   | { ok: false; reason: 'out-of-range'; range: [min: number, max: number] }
   | { ok: false; reason: 'save-failed' }
+  // FEAT-011 §3.2: `pending` posto no snapshot, nada aplicado; outro comando com uma pendente; confirm ou keep sem ela.
+  | { ok: false; reason: 'needs-confirmation' | 'change-pending' | 'no-pending' }
 
 export type Repository = CharacterRepository<CharacterDocument, CharacterSummary>
 export type LoadRules = (order: string[]) => Promise<Rules>
@@ -180,6 +190,7 @@ function isValid(slot: SlotView, value: DecisionValue): boolean {
 
 type DiceSlot = Extract<SlotView, { kind: 'table' | 'roll-effect' }>
 type LogDraft = Omit<DecisionEntry, 'id' | 'at'>
+type Ready = Extract<Snapshot, { status: 'ready' }>
 
 const named = (rules: Rules, id: string) => {
   const item = rules.items.get(id)
@@ -274,43 +285,62 @@ export function createCharacterSession({
     })
   }
 
+  // O candidato da mudança pendente (FEAT-011 D3): vai junto com `snapshot.pending` e sai com ele.
+  let proposal: Change | null = null
+
+  /** O snapshot sem a mudança pendente. */
+  function settled(ready: Ready): Ready {
+    proposal = null
+    const next = { ...ready }
+    delete next.pending
+    return next
+  }
+
   /**
-   * Aplica as decisões novas, comum aos comandos: documento novo, `evaluate`, dependentes, tela e gravação. A entrada de
-   * log, quando o comando registra uma decisão, entra no mesmo documento e na mesma gravação (ADR-002; FR-LOG-001).
+   * O documento a gravar de uma mudança: revisão seguinte, e `updatedAt` e o `at` das entradas novas na hora dada, sem
+   * mudar ids nem `logged` (D8: no Apply, a hora da confirmação).
    */
-  function commit(
-    before: Extract<Snapshot, { status: 'ready' }>,
-    decisions: CharacterDocument['decisions'],
-    draft?: LogDraft,
-  ): Promise<DecideResult> {
-    const at = now().toISOString()
-    const log = before.document.log
-    const id = log.reduce((last, entry) => Math.max(last, entry.id), 0) + 1
-    const document: CharacterDocument = {
-      ...before.document,
-      revision: before.document.revision + 1,
-      updatedAt: at,
-      decisions,
-      log: draft ? [...log, { id, at, ...draft }] : log,
-    }
-    const view = evaluate(before.rules, document)
+  function stamped(proposed: Change, before: CharacterDocument, at: string): CharacterDocument {
+    const fresh = new Set(proposed.entries.map((entry) => entry.id))
+    const log = proposed.document.log.map((entry) => (fresh.has(entry.id) ? { ...entry, at } : entry))
+    return { ...proposed.document, revision: before.revision + 1, updatedAt: at, log }
+  }
 
-    // Dependentes: decisões cuja vaga estava viva antes e deixa de estar depois. Órfãs antigas não contam.
-    const live = new Set(view.slots.map((candidate) => candidate.key))
-    const dependents = before.view.slots
-      .map((candidate) => candidate.key)
-      .filter((candidate) => !live.has(candidate) && candidate in before.document.decisions)
-    if (dependents.length) return Promise.resolve({ ok: false, reason: 'has-dependents', dependents })
-
-    set({ ...before, document, view, save: 'saving' })
+  /** O snapshot com o documento novo e a visão dele, antes da gravação, e a gravação (D11 da FEAT-007; FR-CHG-008). */
+  function apply(ready: Ready, document: CharacterDocument, view: CharacterView): Promise<DecideResult> {
+    set({ ...ready, document, view, save: 'saving' })
     return persist()
+  }
+
+  /**
+   * Pipeline comum dos comandos que mudam decisões (FEAT-011 §3.2, passos 2 a 4), depois das recusas sem escrita: o
+   * candidato pelas regras de escrita, com as entradas de log e as marcas (`change`), e o `impact` contra o documento de
+   * antes. Sem nada suspenso nem restaurado, aplica direto (FR-CHG-002); com algo, põe `pending` no snapshot e não grava
+   * (FR-CHG-001, FR-DEC-017, FR-STEP-005).
+   */
+  function propose(before: Ready, slot: SlotView, kind: PendingChange['kind'], request: ChangeRequest): Promise<DecideResult> {
+    const at = now().toISOString()
+    const proposed = change(before.rules, before.document, slot, request, at)
+    const candidate = stamped(proposed, before.document, at)
+    const result = impact(before.rules, before.document, candidate, slot.key)
+    if (!result.needsDialog) return apply(before, candidate, result.after)
+    set({ ...before, pending: { kind, key: slot.key, impact: result } })
+    proposal = proposed
+    return Promise.resolve({ ok: false, reason: 'needs-confirmation' })
   }
 
   const liveSlot = (key: string) => (snapshot.status === 'ready' ? snapshot.view.slots.find((slot) => slot.key === key) : undefined)
 
-  /** Grava a decisão nova de uma vaga, com a entrada de log dela. */
-  function record(before: Extract<Snapshot, { status: 'ready' }>, slot: SlotView, decision: Decision): Promise<DecideResult> {
-    return commit(before, { ...before.document.decisions, [slot.key]: decision }, logDraft(before.rules, slot, decision))
+  /** Recusas antes de qualquer vaga: sem personagem aberto, ou com uma mudança pendente (FR-CHG-009; AC-12). */
+  function blocked(): Extract<DecideResult, { ok: false }> | null {
+    if (snapshot.status !== 'ready') return { ok: false, reason: 'unknown-slot' }
+    if (snapshot.pending) return { ok: false, reason: 'change-pending' }
+    return null
+  }
+
+  /** Registra a decisão nova de uma vaga, com a entrada de log dela, pelo pipeline comum. */
+  function record(before: Ready, slot: SlotView, kind: PendingChange['kind'], decision: Decision): Promise<DecideResult> {
+    return propose(before, slot, kind, { decision, draft: logDraft(before.rules, slot, decision) })
   }
 
   /**
@@ -334,8 +364,10 @@ export function createCharacterSession({
 
   /** Vaga viva com dado (`table` ou `roll-effect`) ainda sem decisão, ou a recusa (§3.2, passos 1 e 2). */
   function diceSlot(key: string): DiceSlot | Extract<DecideResult, { ok: false }> {
+    const refused = blocked()
+    if (refused) return refused
     const slot = liveSlot(key)
-    if (snapshot.status !== 'ready' || !slot) return { ok: false, reason: 'unknown-slot' }
+    if (!slot) return { ok: false, reason: 'unknown-slot' }
     if (slot.kind !== 'table' && slot.kind !== 'roll-effect') return { ok: false, reason: 'invalid-value' }
     // D5: Reroll e troca de modo são da FEAT-011.
     if (slot.decided) return { ok: false, reason: 'already-decided' }
@@ -356,6 +388,8 @@ export function createCharacterSession({
     async open(id: string): Promise<void> {
       const mine = ++opening
       const current = () => mine === opening
+      // Abrir outro personagem descarta a mudança pendente (FEAT-011 §3.2).
+      proposal = null
       set({ status: 'loading', id })
       const fail = (reason: OpenFailure) => {
         if (current()) set({ status: 'error', id, reason })
@@ -387,28 +421,32 @@ export function createCharacterSession({
 
     /**
      * Confirma uma decisão: ancestralidade, Size, o par do ajuste ou a entrada de uma tabela (Choose, FR-DEC-024).
-     * Decidir de novo substitui, salvo no `attribute-shift`, que é uma vez só (FR-STEP-010; FEAT-008 D3), e na tabela
-     * rolada ou informada (D5). O mesmo valor devolve `ok` sem gravar (D13). A tela muda antes da gravação (NFR-PERF-002).
+     * Decidir de novo substitui (troca de ancestralidade, Choose → Choose; FR-STEP-005), salvo no `attribute-shift`, que é
+     * uma vez só (FR-STEP-010; FEAT-008 D3), e na tabela rolada ou informada (FEAT-009 D5, até a troca de modo). O mesmo
+     * valor devolve `ok` sem gravar (D13). Com suspensas ou restauradas, `needs-confirmation` e `pending` (FEAT-011 §3.2).
      */
     async decide(key: string, value: DecisionValue): Promise<DecideResult> {
+      const refused = blocked()
+      if (refused) return refused
+      const before = snapshot as Ready
       const slot = liveSlot(key)
-      if (snapshot.status !== 'ready' || !slot) return { ok: false, reason: 'unknown-slot' }
+      if (!slot) return { ok: false, reason: 'unknown-slot' }
       if (slot.kind === 'attribute-shift' && slot.decided) return { ok: false, reason: 'already-decided' }
       if (!isValid(slot, value)) return { ok: false, reason: 'invalid-value' }
       if (slot.kind === 'table' && slot.result && slot.result.mode !== 'chosen') return { ok: false, reason: 'already-decided' }
       if (slot.decided && slot.value === value) return { ok: true }
       const book = slot.kind === 'table' ? { book: slot.table.provenance.book } : {}
-      return record(snapshot, slot, { mode: 'chosen', value, ...book })
+      return record(before, slot, 'decide', { mode: 'chosen', value, ...book })
     },
 
     /** Rola o dado de uma tabela ou de um efeito com dado (FR-DEC-005, 007; FR-STEP-014): o único passo impuro (ADR-004 §5). */
     async roll(key: string): Promise<DecideResult> {
       const slot = diceSlot(key)
       if ('ok' in slot) return slot
-      const before = snapshot as Extract<Snapshot, { status: 'ready' }>
+      const before = snapshot as Ready
       const decision = diceDecision(slot, { dice: rollDice(slot.kind === 'table' ? slot.table.dice : slot.dice, random) })
       if (!decision) return { ok: false, reason: 'invalid-value' }
-      return record(before, slot, decision)
+      return record(before, slot, 'roll', decision)
     },
 
     /** Enter result (FR-DEC-019, 020; D4): a soma que os dados mostram, sem modificador, em `[count, count × sides]`. */
@@ -419,16 +457,40 @@ export function createCharacterSession({
       if (!Number.isInteger(sum) || sum < range[0] || sum > range[1]) return { ok: false, reason: 'out-of-range', range }
       const decision = diceDecision(slot, { sum })
       if (!decision) return { ok: false, reason: 'invalid-value' }
-      return record(snapshot as Extract<Snapshot, { status: 'ready' }>, slot, decision)
+      return record(snapshot as Ready, slot, 'enter', decision)
     },
 
-    /** Limpa a decisão de uma vaga (FR-STEP-011; FEAT-008 D4): o valor sai de novo do `evaluate`, sem ela. */
+    /**
+     * Limpa a decisão de uma vaga (FR-STEP-011; FEAT-008 D4): sai só a ativa, que vai ao log como desfeita (`cleared`;
+     * FR-LOG-007), e o candidato mais recente que sobra ocupa a vaga (ADR-004 §3). Com dependentes, o diálogo.
+     */
     async clear(key: string): Promise<DecideResult> {
+      const refused = blocked()
+      if (refused) return refused
+      const before = snapshot as Ready
       const slot = liveSlot(key)
-      if (snapshot.status !== 'ready' || !slot) return { ok: false, reason: 'unknown-slot' }
+      if (!slot) return { ok: false, reason: 'unknown-slot' }
       if (!slot.decided) return { ok: false, reason: 'not-decided' }
-      const decisions = Object.fromEntries(Object.entries(snapshot.document.decisions).filter(([candidate]) => candidate !== key))
-      return commit(snapshot, decisions)
+      return propose(before, slot, 'clear', { clear: true })
+    },
+
+    /**
+     * Apply (FR-CHG-008, 011): aplica a mudança pendente, sem rolar de novo (D1), com o `at` das entradas novas e o
+     * `updatedAt` na hora da confirmação (D8). O snapshot muda antes da gravação, e a falha mantém o estado novo com
+     * `save: 'failed'` (FR-CHAR-010).
+     */
+    async confirm(): Promise<DecideResult> {
+      if (snapshot.status !== 'ready' || !snapshot.pending || !proposal) return { ok: false, reason: 'no-pending' }
+      const { pending } = snapshot
+      const document = stamped(proposal, snapshot.document, now().toISOString())
+      return apply(settled(snapshot), document, pending.impact.after)
+    },
+
+    /** Keep current (FR-CHG-009): tira a mudança pendente; o documento fica como estava, e nada é gravado. */
+    async keep(): Promise<DecideResult> {
+      if (snapshot.status !== 'ready' || !snapshot.pending) return { ok: false, reason: 'no-pending' }
+      set(settled(snapshot))
+      return { ok: true }
     },
 
     /**

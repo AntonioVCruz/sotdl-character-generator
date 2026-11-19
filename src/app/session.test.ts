@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
+import core from '../../packs/sotdl.core.json'
 import type { CharacterDocument, Decision } from '../content'
 import { createApp, type CharacterSummary, type Repository } from '.'
 
@@ -227,7 +228,7 @@ describe('character session: decide', () => {
       updatedAt: '2026-01-02T00:00:00.000Z',
       decisions: {
         ancestry: { mode: 'chosen', value: 'ancestry:gnome' },
-        'ancestry=gnome/stature': { mode: 'chosen', value: 0.5 },
+        'ancestry=gnome/stature': { mode: 'chosen', value: 0.5, logged: 1 },
       },
       // FEAT-009 §7: o log, registro e não valor derivado, ganha a entrada da decisão.
       log: [
@@ -293,15 +294,15 @@ describe('character session: decide', () => {
     expect(repository.save).not.toHaveBeenCalled()
   })
 
-  it('FR-FLOW-003: a switch whose dependents it would orphan gives has-dependents with the keys, and nothing changes', async () => {
+  it('FR-STEP-005, FR-CHG-001, FR-CHG-009: a switch with a decided dependent gives needs-confirmation with it set aside in pending, and nothing is applied or saved', async () => {
     const { session, repository } = await opened(stored({ ancestry: 'ancestry:gnome', 'ancestry=gnome/stature': 1 }))
     const before = ready(session)
-    await expect(session.decide('ancestry', 'ancestry:troll')).resolves.toEqual({
-      ok: false,
-      reason: 'has-dependents',
-      dependents: ['ancestry=gnome/stature'],
-    })
-    expect(session.getSnapshot()).toBe(before)
+    await expect(session.decide('ancestry', 'ancestry:troll')).resolves.toEqual({ ok: false, reason: 'needs-confirmation' })
+    const after = ready(session)
+    expect(after.document).toBe(before.document)
+    expect(after.view).toBe(before.view)
+    expect(after.pending).toMatchObject({ kind: 'decide', key: 'ancestry' })
+    expect(after.pending!.impact.setAside.map((item) => item.key)).toEqual(['ancestry=gnome/stature'])
     expect(repository.save).not.toHaveBeenCalled()
   })
 
@@ -375,7 +376,7 @@ describe('character session: score adjustment and clear', () => {
       ...adjustable(),
       revision: 2,
       updatedAt: '2026-01-02T00:00:00.000Z',
-      decisions: { ancestry: { mode: 'chosen', value: 'ancestry:troll' }, adjust: { mode: 'chosen', value: pair } },
+      decisions: { ancestry: { mode: 'chosen', value: 'ancestry:troll' }, adjust: { mode: 'chosen', value: pair, logged: 1 } },
       // FEAT-009 §7: com a entrada de log da decisão.
       log: [
         {
@@ -442,12 +443,14 @@ describe('character session: score adjustment and clear', () => {
     await expect(session.clear('nowhere')).resolves.toEqual({ ok: false, reason: 'unknown-slot' })
   })
 
-  it('FR-STEP-011: clear of a slot with decided children gives has-dependents; clearing Size, then switching ancestry, applies (AC-11)', async () => {
+  it('FR-STEP-011: clear of a slot with decided children gives needs-confirmation; after keep, clearing Size, then switching ancestry, applies (AC-11)', async () => {
     const { session, repository } = await opened(adjustable({ ancestry: 'ancestry:gnome', 'ancestry=gnome/stature': 1 }))
     const before = ready(session)
-    await expect(session.clear('ancestry')).resolves.toEqual({ ok: false, reason: 'has-dependents', dependents: ['ancestry=gnome/stature'] })
-    expect(session.getSnapshot()).toBe(before)
+    await expect(session.clear('ancestry')).resolves.toEqual({ ok: false, reason: 'needs-confirmation' })
+    expect(ready(session).document).toBe(before.document)
+    expect(ready(session).pending!.impact.setAside.map((item) => item.key)).toEqual(['ancestry=gnome/stature'])
     expect(repository.save).not.toHaveBeenCalled()
+    await expect(session.keep()).resolves.toEqual({ ok: true })
 
     await expect(session.clear('ancestry=gnome/stature')).resolves.toEqual({ ok: true })
     expect(ready(session).view.slots.find((slot) => slot.key === 'ancestry=gnome/stature')).toMatchObject({ decided: false })
@@ -563,13 +566,13 @@ describe('character session: tables (Roll, Enter result, Choose)', () => {
     await expect(result).resolves.toEqual({ ok: true })
     // 3d6 são três sorteios (FR-DEC-005).
     expect(random).toHaveBeenCalledTimes(3)
-    expect(savedDocument(docs).decisions[AGE]).toEqual({ mode: 'rolled', dice: [3, 5, 2], modifier: 0, total: 10, entry: '8-12', rolls: 1, book: TABLES })
+    expect(savedDocument(docs).decisions[AGE]).toEqual({ mode: 'rolled', dice: [3, 5, 2], modifier: 0, total: 10, entry: '8-12', rolls: 1, book: TABLES, logged: 1 })
   })
 
   it('FR-DEC-005: the modifier of the current version of the table is added to the faces', async () => {
     const { session, docs } = await withTables({}, sequence([2, 4, 1]))
     await expect(session.roll(OMEN)).resolves.toEqual({ ok: true })
-    expect(savedDocument(docs).decisions[OMEN]).toEqual({ mode: 'rolled', dice: [3, 5, 2], modifier: 1, total: 11, entry: '4-11', rolls: 1, book: TABLES })
+    expect(savedDocument(docs).decisions[OMEN]).toEqual({ mode: 'rolled', dice: [3, 5, 2], modifier: 1, total: 11, entry: '4-11', rolls: 1, book: TABLES, logged: 1 })
   })
 
   it('FR-DEC-019, FR-DEC-020: Enter result records the sum, the modifier, the total, the entry and the book (AC-7)', async () => {
@@ -577,7 +580,7 @@ describe('character session: tables (Roll, Enter result, Choose)', () => {
     const result = session.enter(FATE, 11)
     expect(slotIn(session, FATE)).toMatchObject({ decided: true, result: { mode: 'entered', entry: '11-18', sum: 11, modifier: 0, total: 11 } })
     await expect(result).resolves.toEqual({ ok: true })
-    expect(savedDocument(docs).decisions[FATE]).toEqual({ mode: 'entered', sum: 11, modifier: 0, total: 11, entry: '11-18', book: TABLES })
+    expect(savedDocument(docs).decisions[FATE]).toEqual({ mode: 'entered', sum: 11, modifier: 0, total: 11, entry: '11-18', book: TABLES, logged: 1 })
   })
 
   it('FR-DEC-019, FR-DEC-020: a sum outside [count, count × sides] gives out-of-range with that range, changing and saving nothing (AC-7)', async () => {
@@ -595,35 +598,37 @@ describe('character session: tables (Roll, Enter result, Choose)', () => {
   it('FR-DEC-019, FR-DEC-020: with 3d6+1, entering 11 gives total 12 with the modifier recorded (AC-7)', async () => {
     const { session, docs } = await withTables()
     await expect(session.enter(OMEN, 11)).resolves.toEqual({ ok: true })
-    expect(savedDocument(docs).decisions[OMEN]).toEqual({ mode: 'entered', sum: 11, modifier: 1, total: 12, entry: '12-19', book: TABLES })
+    expect(savedDocument(docs).decisions[OMEN]).toEqual({ mode: 'entered', sum: 11, modifier: 1, total: 12, entry: '12-19', book: TABLES, logged: 1 })
   })
 
   it('FR-STEP-014: the roll-effect, rolled or entered, records the dice (or the sum), the modifier and the total, without entry or book (AC-8)', async () => {
     const rolled = await withTables({ [PAST]: chosenEntry('4') }, sequence([3]))
     await expect(rolled.session.roll(MADNESS)).resolves.toEqual({ ok: true })
-    expect(savedDocument(rolled.docs).decisions[MADNESS]).toEqual({ mode: 'rolled', dice: [4], modifier: 0, total: 4 })
+    expect(savedDocument(rolled.docs).decisions[MADNESS]).toEqual({ mode: 'rolled', dice: [4], modifier: 0, total: 4, logged: 1 })
     expect(ready(rolled.session).view.summary.characteristics.find((c) => c.name === 'Madness')?.value).toBe(4)
 
     const entered = await withTables({ [PAST]: chosenEntry('4') })
     await expect(entered.session.enter(MADNESS, 7)).resolves.toEqual({ ok: false, reason: 'out-of-range', range: [1, 6] })
     await expect(entered.session.enter(MADNESS, 5)).resolves.toEqual({ ok: true })
-    expect(savedDocument(entered.docs).decisions[MADNESS]).toEqual({ mode: 'entered', sum: 5, modifier: 0, total: 5 })
+    expect(savedDocument(entered.docs).decisions[MADNESS]).toEqual({ mode: 'entered', sum: 5, modifier: 0, total: 5, logged: 1 })
   })
 
   it('FR-DEC-024: Choose records the entry and the book, without dice; Choose → Choose replaces it (AC-6)', async () => {
     const { session, docs } = await withTables()
     await expect(session.decide(AGE, '3-7')).resolves.toEqual({ ok: true })
-    expect(savedDocument(docs).decisions[AGE]).toEqual({ mode: 'chosen', value: '3-7', book: TABLES })
+    expect(savedDocument(docs).decisions[AGE]).toEqual({ mode: 'chosen', value: '3-7', book: TABLES, logged: 1 })
     await expect(session.decide(AGE, '13-18')).resolves.toEqual({ ok: true })
-    expect(savedDocument(docs).decisions[AGE]).toEqual({ mode: 'chosen', value: '13-18', book: TABLES })
+    expect(savedDocument(docs).decisions[AGE]).toEqual({ mode: 'chosen', value: '13-18', book: TABLES, logged: 2 })
     expect(slotIn(session, AGE)).toMatchObject({ decided: true, value: '13-18', result: { mode: 'chosen', entry: '13-18' } })
   })
 
-  it('FR-DEC-024: Choose → Choose with the roll-effect of the current entry decided gives has-dependents, and nothing changes (AC-8)', async () => {
+  it('FR-DEC-017: Choose → Choose with the roll-effect of the current entry decided gives needs-confirmation with it set aside, and nothing is applied or saved (AC-8)', async () => {
     const { session, repository } = await withTables({ [PAST]: chosenEntry('4'), [MADNESS]: { mode: 'rolled', dice: [4], modifier: 0, total: 4 } })
     const before = ready(session)
-    await expect(session.decide(PAST, '5-6')).resolves.toEqual({ ok: false, reason: 'has-dependents', dependents: [MADNESS] })
-    expect(session.getSnapshot()).toBe(before)
+    await expect(session.decide(PAST, '5-6')).resolves.toEqual({ ok: false, reason: 'needs-confirmation' })
+    expect(ready(session).document).toBe(before.document)
+    expect(ready(session).view).toBe(before.view)
+    expect(ready(session).pending!.impact.setAside.map((item) => item.key)).toEqual([MADNESS])
     expect(repository.save).not.toHaveBeenCalled()
   })
 
@@ -655,9 +660,10 @@ describe('character session: tables (Roll, Enter result, Choose)', () => {
     expect(random).not.toHaveBeenCalled()
   })
 
-  it('FEAT-009 D8 (FEAT-007): switching the ancestry with a decided table gives has-dependents (AC-11)', async () => {
+  it('FR-STEP-005: switching the ancestry with a decided table gives needs-confirmation with it set aside (AC-11)', async () => {
     const { session } = await withTables({ [AGE]: chosenEntry('3-7') })
-    await expect(session.decide('ancestry', 'ancestry:troll')).resolves.toEqual({ ok: false, reason: 'has-dependents', dependents: [AGE] })
+    await expect(session.decide('ancestry', 'ancestry:troll')).resolves.toEqual({ ok: false, reason: 'needs-confirmation' })
+    expect(ready(session).pending!.impact.setAside.map((item) => item.key)).toEqual([AGE])
   })
 
   it('NFR-REL-001: reopening a rolled character gives the same faces, modifier, total and entry without drawing (AC-13)', async () => {
@@ -776,26 +782,31 @@ describe('character session: decision log', () => {
     ])
   })
 
-  it('FR-LOG-001: refusals, clear and retrySave write no entry (AC-10)', async () => {
+  it('FR-LOG-001, FR-LOG-007: refusals and retrySave write no entry; clear writes an undone entry (AC-10)', async () => {
     const { session, docs, control } = await withTables({ [PAST]: chosenEntry('4'), [MADNESS]: { mode: 'rolled', dice: [4], modifier: 0, total: 4 } })
     await session.decide(AGE, '3-7')
     expect(savedDocument(docs).log.map((entry) => entry.slot)).toEqual([AGE])
 
-    await session.decide(PAST, '5-6')
+    await expect(session.decide(PAST, '5-6')).resolves.toEqual({ ok: false, reason: 'needs-confirmation' })
+    await expect(session.keep()).resolves.toEqual({ ok: true })
     await session.enter(FATE, 30)
-    await session.roll(AGE)
+    await expect(session.roll('ancestry=gnome/stature')).resolves.toEqual({ ok: false, reason: 'invalid-value' })
     expect(ready(session).document.log).toHaveLength(1)
 
     await expect(session.clear(AGE)).resolves.toEqual({ ok: true })
-    expect(savedDocument(docs).log.map((entry) => entry.slot)).toEqual([AGE])
+    expect(savedDocument(docs).log.map((entry) => [entry.kind, entry.slot])).toEqual([
+      ['decision', AGE],
+      ['undone', AGE],
+    ])
 
     control.failSave = true
     await expect(session.decide(FOE, '1-10')).resolves.toEqual({ ok: false, reason: 'save-failed' })
     control.failSave = false
     await expect(session.retrySave()).resolves.toEqual({ ok: true })
-    expect(savedDocument(docs).log.map((entry) => [entry.id, entry.slot])).toEqual([
-      [1, AGE],
-      [2, FOE],
+    expect(savedDocument(docs).log.map((entry) => [entry.id, entry.kind, entry.slot])).toEqual([
+      [1, 'decision', AGE],
+      [2, 'undone', AGE],
+      [3, 'decision', FOE],
     ])
   })
 
@@ -808,5 +819,333 @@ describe('character session: decision log', () => {
     expect(session.getSnapshot()).toBe(before)
     expect(repository.save).not.toHaveBeenCalled()
     expect(before.document.log).toEqual([])
+  })
+})
+
+// FEAT-011: mudança a montante pelo pipeline comum (technical-design §3.2), com o pacote do core servido pelo fetch falso.
+files['/packs/sotdl.core.json'] = core
+const CORE = 'sotdl.core'
+const D_AGE = 'ancestry=dwarf/age'
+const D_BUILD = 'ancestry=dwarf/build'
+const D_BACKGROUND = 'ancestry=dwarf/background'
+const H_SIZE = 'ancestry=human/size'
+const LATER_AT = '2026-01-03T00:00:00.000Z'
+const needsConfirmation = { ok: false, reason: 'needs-confirmation' }
+const corruption = (session: Awaited<ReturnType<typeof opened>>['session']) =>
+  ready(session).view.summary.characteristics.find((characteristic) => characteristic.name === 'Corruption')?.value
+const ageOf = { mode: 'rolled', dice: [3, 5, 2], modifier: 0, total: 10, entry: '8-12', rolls: 1, book: CORE, logged: 3 }
+const backgroundOf = { mode: 'chosen', value: '1', book: CORE, logged: 2 }
+
+/** Dwarf do core com Background 1 escolhido e a Age rolada (3 + 5 + 2), pelos comandos: entradas 1 a 3 do log. */
+async function dwarf(clock = { time: AT }, random = sequence([2, 4, 1])) {
+  const memory = memoryRepository()
+  memory.docs.set('id-1', stored({}, [CORE]))
+  const session = createApp({ repository: memory.repository, ...deps, now: () => new Date(clock.time), random, lastStep: memoryLastStep() }).createSession()
+  await session.open('id-1')
+  await session.decide('ancestry', 'ancestry:dwarf')
+  await session.decide(D_BACKGROUND, '1')
+  await session.roll(D_AGE)
+  vi.mocked(memory.repository.save).mockClear()
+  return { ...memory, session, random, clock }
+}
+
+/** Retém só a próxima gravação do repositório até `release` (C15: nenhuma outra gravação muda). */
+function holdNextSave(repository: Repository) {
+  let release!: () => void
+  const held = new Promise<void>((resolve) => (release = resolve))
+  const save = vi.mocked(repository.save)
+  const original = save.getMockImplementation()!
+  save.mockImplementationOnce(async (document, meta) => {
+    await held
+    return original(document, meta)
+  })
+  return release
+}
+
+describe('character session: upstream change (FEAT-011)', () => {
+  it('FR-STEP-005, FR-CHG-001, FR-CHG-008, FR-CHG-011, FR-CHG-019, FR-LOG-007: Dwarf with Background 1 and Age rolled → Human waits in pending; Apply sets the tables aside and logs it in one write (AC-5)', async () => {
+    const { session, docs, repository } = await dwarf()
+    const before = ready(session)
+    await expect(session.decide('ancestry', 'ancestry:human')).resolves.toEqual(needsConfirmation)
+    const waiting = ready(session)
+    expect(waiting.document).toBe(before.document)
+    expect(waiting.view).toBe(before.view)
+    expect(waiting.save).toBe('saved')
+    expect(waiting.pending).toMatchObject({ kind: 'decide', key: 'ancestry' })
+    expect(waiting.pending!.impact.setAside.map((item) => item.key)).toEqual([D_AGE, D_BACKGROUND])
+    expect(waiting.pending!.impact.recalculated.characteristics).toContainEqual(expect.objectContaining({ name: 'Corruption', from: 1, to: 0 }))
+    expect(repository.save).not.toHaveBeenCalled()
+
+    const applying = session.confirm()
+    // O snapshot muda antes da gravação (FR-CHG-008; D11 da FEAT-007).
+    expect(ready(session)).toMatchObject({ save: 'saving', view: { ancestry: 'ancestry:human' } })
+    expect(ready(session).pending).toBeUndefined()
+    expect(corruption(session)).toBe(0)
+    expect(savedDocument(docs).decisions.ancestry).toMatchObject({ value: 'ancestry:dwarf' })
+    await expect(applying).resolves.toEqual({ ok: true })
+
+    expect(repository.save).toHaveBeenCalledTimes(1)
+    const saved = savedDocument(docs)
+    expect(saved.decisions).toEqual({
+      ancestry: { mode: 'chosen', value: 'ancestry:human', logged: 4 },
+      [D_AGE]: { ...ageOf, setAside: true },
+      [D_BACKGROUND]: { ...backgroundOf, setAside: true },
+    })
+    expect(saved.log.slice(3)).toEqual([
+      expect.objectContaining({ id: 4, kind: 'decision', slot: 'ancestry', result: { entity: { id: 'ancestry:human', name: 'Human' } } }),
+      { id: 5, at: AT, kind: 'undone', slot: 'ancestry', ref: 1, reason: 'replaced', by: 4 },
+      { id: 6, at: AT, kind: 'set-aside', slot: D_AGE, ref: 3, cause: { entry: 4 } },
+      { id: 7, at: AT, kind: 'set-aside', slot: D_BACKGROUND, ref: 2, cause: { entry: 4 } },
+    ])
+    expect(saved.revision).toBe(before.document.revision + 1)
+  })
+
+  it('FR-CHG-008, FR-LOG-010: Apply stamps the new entries and updatedAt with the time of the confirmation, keeping ids and logged (D8)', async () => {
+    const { session, docs, clock } = await dwarf()
+    await session.decide('ancestry', 'ancestry:human')
+    clock.time = LATER_AT
+    await session.confirm()
+    const saved = savedDocument(docs)
+    expect(saved.updatedAt).toBe(LATER_AT)
+    expect(saved.log.map((entry) => [entry.id, entry.at])).toEqual([
+      [1, AT],
+      [2, AT],
+      [3, AT],
+      [4, LATER_AT],
+      [5, LATER_AT],
+      [6, LATER_AT],
+      [7, LATER_AT],
+    ])
+    expect(saved.decisions.ancestry).toEqual({ mode: 'chosen', value: 'ancestry:human', logged: 4 })
+  })
+
+  it('FR-CHG-009: Keep current takes the pending change away; the document stays as it was, and nothing is saved', async () => {
+    const { session, repository } = await dwarf()
+    const before = ready(session)
+    await session.decide('ancestry', 'ancestry:human')
+    await expect(session.keep()).resolves.toEqual({ ok: true })
+    const kept = ready(session)
+    expect(kept.pending).toBeUndefined()
+    expect(kept.document).toBe(before.document)
+    expect(kept.view).toBe(before.view)
+    expect(repository.save).not.toHaveBeenCalled()
+  })
+
+  it('FR-CHG-018, FR-CHG-001: Human → Dwarf restores the tables with the recorded values, without drawing; with the Human Size decided, it is set aside in the same dialog (AC-6)', async () => {
+    const { session, docs, random } = await dwarf()
+    await session.decide('ancestry', 'ancestry:human')
+    await session.confirm()
+
+    // Só restauração: nada decidido para o Human.
+    await expect(session.decide('ancestry', 'ancestry:dwarf')).resolves.toEqual(needsConfirmation)
+    const restoreOnly = ready(session).pending!.impact
+    expect(restoreOnly.setAside).toEqual([])
+    expect(restoreOnly.restored.map((item) => [item.key, item.decision])).toEqual([
+      [D_AGE, ageOf],
+      [D_BACKGROUND, backgroundOf],
+    ])
+    await session.keep()
+
+    // Com o Size do Human decidido, ele entra em "set aside" no mesmo diálogo.
+    await expect(session.decide(H_SIZE, 1)).resolves.toEqual({ ok: true })
+    await expect(session.decide('ancestry', 'ancestry:dwarf')).resolves.toEqual(needsConfirmation)
+    const both = ready(session).pending!.impact
+    expect(both.setAside.map((item) => item.key)).toEqual([H_SIZE])
+    expect(both.restored.map((item) => item.key)).toEqual([D_AGE, D_BACKGROUND])
+
+    await expect(session.confirm()).resolves.toEqual({ ok: true })
+    // Só as três faces da Age original: o Apply não sorteia (D1).
+    expect(random).toHaveBeenCalledTimes(3)
+    expect(slotIn(session, D_AGE)).toMatchObject({ decided: true, result: { mode: 'rolled', faces: [3, 5, 2], total: 10, entry: '8-12' } })
+    expect(corruption(session)).toBe(1)
+    const saved = savedDocument(docs)
+    expect(saved.decisions[D_AGE]).toEqual(ageOf)
+    expect(saved.decisions[D_BACKGROUND]).toEqual(backgroundOf)
+    expect(saved.decisions[H_SIZE]).toEqual({ mode: 'chosen', value: 1, logged: 8, setAside: true })
+    expect(saved.log.slice(8)).toEqual([
+      expect.objectContaining({ id: 9, kind: 'decision', slot: 'ancestry', result: { entity: { id: 'ancestry:dwarf', name: 'Dwarf' } } }),
+      { id: 10, at: AT, kind: 'undone', slot: 'ancestry', ref: 4, reason: 'replaced', by: 9 },
+      { id: 11, at: AT, kind: 'set-aside', slot: H_SIZE, ref: 8, cause: { entry: 9 } },
+      { id: 12, at: AT, kind: 'restored', slot: D_AGE, ref: 3, cause: { entry: 9 } },
+      { id: 13, at: AT, kind: 'restored', slot: D_BACKGROUND, ref: 2, cause: { entry: 9 } },
+    ])
+  })
+
+  it('FR-CHG-002: with nothing set aside or restored the change applies directly, even when values are recalculated: ancestry switch without decided children, and Choose → Choose without a child (AC-7)', async () => {
+    const memory = memoryRepository()
+    memory.docs.set('id-1', stored({}, [CORE]))
+    const session = createApp({ repository: memory.repository, ...deps, lastStep: memoryLastStep() }).createSession()
+    await session.open('id-1')
+    await session.decide('ancestry', 'ancestry:dwarf')
+    const agility = () => ready(session).view.summary.attributes.find((attribute) => attribute.name === 'Agility')?.score
+    expect(agility()).toBe(9)
+    const switching = session.decide('ancestry', 'ancestry:human')
+    expect(ready(session)).toMatchObject({ save: 'saving', view: { ancestry: 'ancestry:human' } })
+    expect(ready(session).pending).toBeUndefined()
+    await expect(switching).resolves.toEqual({ ok: true })
+    expect(agility()).toBe(10)
+
+    const tables = await withTables({ [AGE]: chosenEntry('3-7') })
+    const choosing = tables.session.decide(AGE, '13-18')
+    expect(ready(tables.session).pending).toBeUndefined()
+    expect(slotIn(tables.session, AGE)).toMatchObject({ decided: true, value: '13-18' })
+    await expect(choosing).resolves.toEqual({ ok: true })
+  })
+
+  it('FR-CHG-018, FR-CHG-019: deciding a reopened slot again puts the new decision in decisions and the set-aside one ahead in earlier, with its mark and no entry about it (AC-10)', async () => {
+    // A entrada 1-2 não existe na tabela (pacote fictício: entrada removida); a decisão já foi registrada como suspensa.
+    const old: Decision = { mode: 'chosen', value: '1-2', book: TABLES, setAside: true }
+    const { session, docs } = await withTables({ [AGE]: old })
+    expect(slotIn(session, AGE)).toMatchObject({ decided: false })
+    await expect(session.decide(AGE, '3-7')).resolves.toEqual({ ok: true })
+    const saved = savedDocument(docs)
+    expect(saved.decisions[AGE]).toEqual({ ...chosenEntry('3-7'), logged: 1 })
+    expect(saved.earlier).toEqual({ [AGE]: [old] })
+    expect(saved.log.map((entry) => [entry.id, entry.kind, entry.slot])).toEqual([[1, 'decision', AGE]])
+  })
+
+  it('FR-CHG-019, FR-LOG-007: replacing an active decision kept in earlier moves the one in decisions ahead and takes the active one out as undone (AC-10)', async () => {
+    const invalid: Decision = { mode: 'chosen', value: '1-2', book: TABLES, setAside: true }
+    const active: Decision = { mode: 'chosen', value: '3-7', book: TABLES, logged: 7 }
+    const memory = memoryRepository()
+    memory.docs.set('id-1', {
+      ...stored({}, [TABLES]),
+      decisions: { ancestry: { mode: 'chosen', value: 'ancestry:gnome' }, [AGE]: invalid },
+      earlier: { [AGE]: [active] },
+    })
+    const session = createApp({ repository: memory.repository, ...deps, lastStep: memoryLastStep() }).createSession()
+    await session.open('id-1')
+    expect(slotIn(session, AGE)).toMatchObject({ decided: true, value: '3-7', candidate: 1 })
+    await expect(session.decide(AGE, '13-18')).resolves.toEqual({ ok: true })
+    const saved = savedDocument(memory.docs)
+    expect(saved.decisions[AGE]).toEqual({ ...chosenEntry('13-18'), logged: 1 })
+    expect(saved.earlier).toEqual({ [AGE]: [invalid] })
+    expect(saved.log.slice(1)).toEqual([{ id: 2, at: AT, kind: 'undone', slot: AGE, ref: 7, reason: 'replaced', by: 1 }])
+  })
+
+  it('FR-LOG-007, FR-CHG-018: clear takes out only the active decision; the most recent one left takes the slot and, being active, comes in restored (AC-10)', async () => {
+    const superseded: Decision = { mode: 'chosen', value: '13-18', book: TABLES, logged: 1, setAside: true }
+    const { session, docs } = await withTables({ [AGE]: { ...chosenEntry('3-7'), logged: 2 } })
+    const document = { ...savedDocument(docs), earlier: { [AGE]: [superseded] } }
+    docs.set('id-1', document)
+    await session.open('id-1')
+    expect(ready(session).view.setAside).toEqual([expect.objectContaining({ key: AGE, index: 1, reason: 'superseded' })])
+
+    await expect(session.clear(AGE)).resolves.toEqual(needsConfirmation)
+    const { impact } = ready(session).pending!
+    expect(impact.restored.map((item) => [item.key, item.decision])).toEqual([[AGE, { mode: 'chosen', value: '13-18', book: TABLES, logged: 1 }]])
+    expect(impact.undone).toEqual({ ...chosenEntry('3-7'), logged: 2 })
+
+    await expect(session.confirm()).resolves.toEqual({ ok: true })
+    const saved = savedDocument(docs)
+    expect(saved.decisions[AGE]).toEqual({ mode: 'chosen', value: '13-18', book: TABLES, logged: 1 })
+    expect(saved.earlier).toBeUndefined()
+    expect(saved.log).toEqual([
+      { id: 1, at: AT, kind: 'undone', slot: AGE, ref: 2, reason: 'cleared' },
+      { id: 2, at: AT, kind: 'restored', slot: AGE, ref: 1, cause: { entry: 1 } },
+    ])
+  })
+
+  it('FR-LOG-007, FR-CHG-002: clear without dependents applies directly and writes the undone entry pointing to the decision (AC-11)', async () => {
+    const { session, docs } = await opened(adjustable())
+    await session.decide('adjust', pair)
+    const clearing = session.clear('adjust')
+    expect(ready(session)).toMatchObject({ save: 'saving' })
+    expect(ready(session).pending).toBeUndefined()
+    await expect(clearing).resolves.toEqual({ ok: true })
+    expect(savedDocument(docs).log.slice(1)).toEqual([{ id: 2, at: AT, kind: 'undone', slot: 'adjust', ref: 1, reason: 'cleared' }])
+  })
+
+  it('FR-CHG-009: with a pending change, decide, roll, enter and clear give change-pending and change nothing; confirm and keep without one give no-pending (AC-12)', async () => {
+    const { session, repository, random } = await dwarf()
+    await expect(session.confirm()).resolves.toEqual({ ok: false, reason: 'no-pending' })
+    await expect(session.keep()).resolves.toEqual({ ok: false, reason: 'no-pending' })
+
+    await session.decide('ancestry', 'ancestry:human')
+    const waiting = ready(session)
+    const changePending = { ok: false, reason: 'change-pending' }
+    await expect(session.decide(D_BUILD, '9-12')).resolves.toEqual(changePending)
+    await expect(session.decide('ancestry', 'ancestry:dwarf')).resolves.toEqual(changePending)
+    await expect(session.roll(D_BUILD)).resolves.toEqual(changePending)
+    await expect(session.enter(D_BUILD, 10)).resolves.toEqual(changePending)
+    await expect(session.clear(D_BACKGROUND)).resolves.toEqual(changePending)
+    expect(session.getSnapshot()).toBe(waiting)
+    expect(repository.save).not.toHaveBeenCalled()
+    expect(random).toHaveBeenCalledTimes(3)
+
+    // retrySave e visit seguem valendo, e a pendente fica.
+    session.visit('story')
+    await expect(session.retrySave()).resolves.toEqual({ ok: true })
+    expect(ready(session).pending).toBe(waiting.pending)
+    expect(repository.save).toHaveBeenCalledTimes(1)
+    expect(await repository.get('id-1')).toMatchObject({ decisions: { ancestry: { value: 'ancestry:dwarf' } } })
+
+    // Abrir de novo descarta a pendente.
+    await session.open('id-1')
+    expect(ready(session).pending).toBeUndefined()
+    await expect(session.confirm()).resolves.toEqual({ ok: false, reason: 'no-pending' })
+  })
+
+  it('FR-CHG-019, FR-CHG-018, NFR-REL-001: the set-aside decisions survive saving and reopening, with values, book, logged and mark, and come back with their context without a new decision (AC-14)', async () => {
+    const { session, repository } = await dwarf()
+    await session.decide('ancestry', 'ancestry:human')
+    await session.confirm()
+
+    const reopened = createApp({ ...deps, repository, lastStep: memoryLastStep() }).createSession()
+    await reopened.open('id-1')
+    const view = ready(reopened).view
+    expect(ready(reopened).document.decisions[D_AGE]).toEqual({ ...ageOf, setAside: true })
+    expect(ready(reopened).document.decisions[D_BACKGROUND]).toEqual({ ...backgroundOf, setAside: true })
+    expect(view.setAside.map((item) => [item.key, item.reason, item.decision])).toEqual([
+      [D_AGE, 'not-generated', ageOf],
+      [D_BACKGROUND, 'not-generated', backgroundOf],
+    ])
+    expect(view.openDecisions.map((open) => open.key)).not.toContain(D_AGE)
+
+    await expect(reopened.decide('ancestry', 'ancestry:dwarf')).resolves.toEqual(needsConfirmation)
+    await reopened.confirm()
+    expect(slotIn(reopened, D_AGE)).toMatchObject({ decided: true, value: '8-12' })
+    expect(slotIn(reopened, D_BACKGROUND)).toMatchObject({ decided: true, value: '1' })
+  })
+
+  it('FR-CHAR-010, NFR-REL-001: with the save held, Apply shows the new state before the save ends; the pending change does not wait for any save (AC-17)', async () => {
+    const { session, docs, repository } = await dwarf()
+
+    // Uma gravação anterior retida: o diálogo abre por `pending` sem esperar por ela.
+    const releaseBuild = holdNextSave(repository)
+    const building = session.decide(D_BUILD, '9-12')
+    await expect(session.decide('ancestry', 'ancestry:human')).resolves.toEqual(needsConfirmation)
+    expect(ready(session).pending!.impact.setAside.map((item) => item.key)).toEqual([D_AGE, D_BUILD, D_BACKGROUND])
+    expect(savedDocument(docs).decisions[D_BUILD]).toBeUndefined()
+    await session.keep()
+    releaseBuild()
+    await expect(building).resolves.toEqual({ ok: true })
+
+    const release = holdNextSave(repository)
+    const before = savedDocument(docs)
+    await expect(session.decide('ancestry', 'ancestry:human')).resolves.toEqual(needsConfirmation)
+    const applying = session.confirm()
+    await Promise.resolve()
+    expect(ready(session)).toMatchObject({ save: 'saving', view: { ancestry: 'ancestry:human' } })
+    expect(ready(session).pending).toBeUndefined()
+    expect(savedDocument(docs)).toBe(before)
+    release()
+    await expect(applying).resolves.toEqual({ ok: true })
+    expect(ready(session).save).toBe('saved')
+    expect(savedDocument(docs).decisions.ancestry).toMatchObject({ value: 'ancestry:human' })
+  })
+
+  it('FR-CHAR-010: a failed save after Apply keeps the new state with save failed, and retrySave saves it (AC-17)', async () => {
+    const { session, docs, control } = await dwarf()
+    await session.decide('ancestry', 'ancestry:human')
+    control.failSave = true
+    await expect(session.confirm()).resolves.toEqual({ ok: false, reason: 'save-failed' })
+    expect(ready(session)).toMatchObject({ save: 'failed', view: { ancestry: 'ancestry:human' } })
+    expect(ready(session).pending).toBeUndefined()
+    expect(savedDocument(docs).decisions.ancestry).toMatchObject({ value: 'ancestry:dwarf' })
+
+    control.failSave = false
+    await expect(session.retrySave()).resolves.toEqual({ ok: true })
+    expect(savedDocument(docs).decisions[D_AGE]).toEqual({ ...ageOf, setAside: true })
   })
 })

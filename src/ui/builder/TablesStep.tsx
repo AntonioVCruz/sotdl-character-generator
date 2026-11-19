@@ -2,10 +2,9 @@ import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } 
 import { Check, CircleAlert } from 'lucide-react'
 import { Button, FieldError, Input, Label, Radio, RadioGroup, Text, TextField } from 'react-aria-components'
 import type { CharacterSession, DecideResult, Snapshot } from '../../app'
-import { toOpenDecision, type DiceResult, type SlotView, type StepView, type TableResult } from '../../engine'
+import { type DiceResult, type SlotView, type StepView, type TableResult } from '../../engine'
 import {
   CHOOSE_A_RESULT,
-  decisionTitle,
   effectDice,
   effectText,
   enterHelp,
@@ -22,7 +21,6 @@ import {
   REGIME_PHRASE,
   resultCalc,
   slotElementId,
-  tableDependentsMessage,
   tableDice,
 } from './copy'
 import { PendingList } from './FallbackStep'
@@ -71,9 +69,7 @@ export function TablesStep({ session, snapshot, step, nameOf }: {
             session={session}
             slot={slot}
             effects={view.slots.filter((child): child is EffectSlot => child.kind === 'roll-effect' && child.key.startsWith(`${slot.key}=`))}
-            slots={view.slots}
             actions={actions}
-            nameOf={nameOf}
           />
         ))}
       </div>
@@ -82,13 +78,11 @@ export function TablesStep({ session, snapshot, step, nameOf }: {
   )
 }
 
-function RollCard({ session, slot, effects, slots, actions, nameOf }: {
+function RollCard({ session, slot, effects, actions }: {
   session: CharacterSession
   slot: TableSlot
   effects: EffectSlot[]
-  slots: SlotView[]
   actions: Actions
-  nameOf: (id: string) => string
 }) {
   const { table, result } = slot
   const base = slotElementId(slot.key)
@@ -140,14 +134,7 @@ function RollCard({ session, slot, effects, slots, actions, nameOf }: {
 
   async function choose(entry: string) {
     const action = act()
-    const current = result?.entry
-    const refused = refusal(await session.decide(slot.key, entry), action)
-    if (refused?.reason !== 'has-dependents' || !actions.isLatest(action) || current === undefined) return
-    const dependents = refused.dependents.map((key) => {
-      const dependent = slots.find((candidate) => candidate.key === key)
-      return { title: dependent ? decisionTitle(toOpenDecision(dependent), nameOf) : '', kind: dependent?.kind ?? 'roll-effect' }
-    })
-    setNotice(tableDependentsMessage(table.name, rangeText(entry), rangeText(current), dependents))
+    refusal(await session.decide(slot.key, entry), action)
   }
 
   const entry = result && table.entries.find((candidate) => candidate.key === result.entry)

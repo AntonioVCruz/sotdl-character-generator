@@ -4,7 +4,7 @@ import { Button, Label, Radio, RadioGroup } from 'react-aria-components'
 import type { CharacterSession, Snapshot } from '../../app'
 import { ancestryDetail, formatNumber, preview, toOpenDecision, type CharacterView, type SlotView, type StepView } from '../../engine'
 import { href } from '../router'
-import { decisionTitle, formatValue, hasDependentsMessage, lockReason, slotElementId, statusLabel, tablesIn } from './copy'
+import { decisionTitle, formatValue, lockReason, slotElementId, statusLabel, tablesIn } from './copy'
 import { InlineAlert } from '../parts'
 import { Eyebrow, SourceBadge, TypeBadge } from './parts'
 
@@ -54,16 +54,6 @@ export function AncestryStep({ session, snapshot, slot, nameOf }: {
     }
     // Recusada, a escolha não chega à tela e o foco fica onde está. Falha ao gravar mantém a escolha na tela (D11).
     if (!result.ok && result.reason !== 'save-failed') focusOnChoice.current = null
-    if (!result.ok && result.reason === 'has-dependents') {
-      // Resultado de tabela é "result", não "choice" (ui-design da FEAT-009, Mensagens).
-      const dependents = result.dependents.map((key) => {
-        const dependent = snapshot.view.slots.find((candidate) => candidate.key === key)
-        return { title: dependent ? decisionTitle(toOpenDecision(dependent), nameOf) : '', kind: dependent?.kind ?? 'choose-value' }
-      })
-      onNotice(hasDependentsMessage(nameOf(id), current ? nameOf(current) : '', dependents))
-      clearPreview()
-      return
-    }
     clearPreview()
   }
 

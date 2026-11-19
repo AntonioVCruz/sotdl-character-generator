@@ -22,7 +22,7 @@
       `src/app/changes.ts` (novo), funções puras: substituição com a ativa no índice 0 e em `earlier`, vaga reaberta, `clear`, `logged` na nova, e entradas `undone`, `set-aside` e `restored` com `ref`, `by` e `cause`.
       Pronto quando: os testes unitários das cinco linhas da tabela e da ordem das entradas passam (parte de escrita do AC-10).
 
-- [ ] T5 — Sessão: pipeline comum, mudança pendente, troca de ancestralidade, Choose → Choose e `clear` (design §3.2; FR-STEP-005, FR-CHG-001, 002, 008, 009, 011, 019; FR-DEC-017; FR-LOG-007)
+- [x] T5 — Sessão: pipeline comum, mudança pendente, troca de ancestralidade, Choose → Choose e `clear` (design §3.2; FR-STEP-005, FR-CHG-001, 002, 008, 009, 011, 019; FR-DEC-017; FR-LOG-007)
       O pipeline substitui o `commit` com `has-dependents`; `pending`, `confirm`, `keep` e `change-pending`; `clear` novo; hora do Apply (D8). As expectativas 1 a 5 e 7 a 9 do §7 mudam aqui, e a 10 inteira (o `logged` nas comparações exatas do `Builder.test.tsx`, que a sessão desta tarefa passa a gravar). Reroll, troca de modo e contador ficam para a T6: `roll` e `enter` numa vaga decidida, e `decide` numa tabela rolada ou informada, continuam como hoje.
       Na interface, só o mínimo para compilar: o `AncestryStep` e o `TablesStep` deixam de tratar `has-dependents`, sem estado nem texto novo (a interface nova é da T9 e da T10).
       Pronto quando: os testes do AC-5, AC-6, AC-7 (ancestralidade e Choose → Choose), AC-10 (sessão), AC-11, AC-12, AC-14 e AC-17 (sessão, gravação retida e falha) passam no `session.test.ts`; typecheck e lint verdes; as suítes verdes, salvo os testes das expectativas 11 e 13 (o caso do dependents-blocked) e 14 do §7, que ficam vermelhos até a T9.
