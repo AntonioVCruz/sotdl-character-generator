@@ -43,7 +43,7 @@
       Só a integração: o diálogo pelo `snapshot.pending`, Apply e Keep current, o `AncestryStep` sem o aviso de `has-dependents`, o `notice` com `dismissNotice` e a linha "N set aside". As telas são do `design-manifest.json`. Mudam aqui, como o §7 as emendou: a expectativa 11 (emenda M1: depois do Keep, a prévia continua aberta, e "Choose {New}" recebe o foco); a 14, no `e2e/ancestry.spec.ts`; e a parte da 13 em que o Choose → Choose com dependentes abre o diálogo da moldura e o Keep deixa a grade na entrada 4 (l.973–988, com a saída do "aviso sai na próxima ação"), porque o diálogo é genérico, pelo `pending`. O `LOCKED_*` e o Reroll ficam para a T10.
       Pronto quando: os testes de componente do diálogo e da Ancestry passam no `Builder.test.tsx`, incluindo os estados do ui-design e a gravação retida do AC-17, e as telas conferem com o manifesto; todas as suítes verdes, unitárias e E2E nos 5 projetos.
 
-- [ ] T10 — UI: tabela decidida com Reroll, troca de modo e dependentes (design §3.3; ui-design; SCR-WEB-009)
+- [x] T10 — UI: tabela decidida com Reroll, troca de modo e dependentes (design §3.3; ui-design; SCR-WEB-009)
       Só a integração: os modos da tabela e da `roll-effect` decididas no lugar de `LOCKED_*` (o diálogo no lugar do `dependents-blocked` já vem da T9). Mudam aqui, como o §7 as emendou: a expectativa 12 (emenda M1: decided-roll e decided-choose do ui-design) e o resto da 13 (effect-reroll no lugar do `LOCKED_ROLLED` da `roll-effect`, l.966).
       Pronto quando: os testes de componente da Story passam no `Builder.test.tsx`, com sorteio fixo, e a tela confere com o manifesto.
 

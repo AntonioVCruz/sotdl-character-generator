@@ -808,7 +808,7 @@ describe('Story step (tables)', () => {
     }
   })
 
-  it('FR-DEC-007, FR-DEC-008: Roll shows the faces, the modifier, the total, the range, the page, no effects and the no-text line, read-only with its reason (AC-4, AC-5)', async () => {
+  it('FR-DEC-007, FR-DEC-008: Roll shows the faces, the modifier, the total, the range, the page, no effects and the no-text line, with free segments and Reroll (AC-4, AC-5)', async () => {
     const { session, saved } = setup({ document: gnome(), random: sequence([2, 4, 1]) })
     renderBuilder('story')
     await screen.findByRole('region', { name: 'Gnome Age' })
@@ -825,11 +825,14 @@ describe('Story step (tables)', () => {
     expect(box.textContent).toBe('10rolled')
     expect(box.querySelector('.typography-stat-lg')!.textContent).toBe('10')
 
-    // decided-locked: segmento da decisão marcado, só leitura, com o motivo; Roll e Enter result saem.
+    // decided-roll (ui-design da FEAT-011): segmento da decisão marcado, segmentos livres e sem motivo; no fim da coluna,
+    // "Reroll 3d6" secundário no lugar do Roll; sem "Enter result", porque a Age não tem `enter` em `table.modes`.
     expect(within(modes('Gnome Age')).getByRole('radio', { name: 'Roll' })).toHaveProperty('checked', true)
-    expect(modes('Gnome Age').getAttribute('aria-readonly')).toBe('true')
-    expect(describedBy(modes('Gnome Age'))).toEqual(["Rerolling or changing this result isn't available yet."])
-    expect(within(card('Gnome Age')).queryByRole('button', { name: /^Roll/ })).toBeNull()
+    expect(modes('Gnome Age').getAttribute('aria-readonly')).toBeNull()
+    expect(modes('Gnome Age').getAttribute('aria-describedby')).toBeNull()
+    expect(within(column).getByRole('button', { name: 'Reroll 3d6' }).className).toContain('button-secondary')
+    expect(within(card('Gnome Age')).queryByRole('button', { name: 'Roll 3d6' })).toBeNull()
+    expect(within(card('Gnome Age')).queryByRole('button', { name: 'Enter result' })).toBeNull()
 
     await vi.waitFor(() => expect(document.activeElement).toBe(column))
     await storySettled(session, saved, 1)
@@ -858,9 +861,11 @@ describe('Story step (tables)', () => {
     expect(column.querySelector('.roll-result__entry')!.textContent).toBe('8–12')
     expect(within(column).getByText(/^No text added for this entry/).textContent).toBe('No text added for this entry · TT p.8')
     expect(card('Gnome Age').querySelector('.roll-value')).toBeNull()
+    // decided-choose (ui-design da FEAT-011): segmentos livres, sem a linha do motivo.
     expect(within(modes('Gnome Age')).getByRole('radio', { name: 'Choose' })).toHaveProperty('checked', true)
-    expect(modes('Gnome Age').getAttribute('aria-readonly')).toBe('true')
-    expect(describedBy(modes('Gnome Age'))).toEqual(["You can choose another result. Rolling instead isn't available yet."])
+    expect(modes('Gnome Age').getAttribute('aria-readonly')).toBeNull()
+    expect(modes('Gnome Age').getAttribute('aria-describedby')).toBeNull()
+    expect(within(card('Gnome Age')).queryByText(/Rolling instead/)).toBeNull()
     await storySettled(session, saved, 1)
     expect(saved[0].decisions[AGE]).toEqual({ ...chosenEntry('8-12'), logged: 1 })
     expect(document.activeElement).toBe(middle)
@@ -872,6 +877,16 @@ describe('Story step (tables)', () => {
     await storySettled(session, saved, 2)
     expect(saved[1].decisions[AGE]).toEqual({ ...chosenEntry('13-18'), logged: 2 })
     expect(document.activeElement).toBe(entryRadio('Gnome Age', '13–18 TT p.7'))
+
+    // decided-choose, segmento Roll: a coluna sem caixa nem cálculo e, no fim, "Roll 3d6" (não "Reroll": o resultado na
+    // tela não foi rolado).
+    await userEvent.click(within(modes('Gnome Age')).getByRole('radio', { name: 'Roll' }))
+    const rollColumn = resultColumn(AGE)!
+    expect(rollColumn.querySelector('.roll-result__entry')!.textContent).toBe('13–18')
+    expect(within(rollColumn).getByRole('button', { name: 'Roll 3d6' }).className).toContain('button-secondary')
+    expect(within(card('Gnome Age')).queryByRole('button', { name: 'Reroll 3d6' })).toBeNull()
+    expect(within(rollColumn).queryByText(/^Rolled/)).toBeNull()
+    expect(card('Gnome Age').querySelector('.roll-value')).toBeNull()
   })
 
   it('FR-DEC-019, FR-DEC-020: Enter result has one field with the valid range; out of range shows it and saves nothing; entered shows the sum, the modifier and the total (AC-7)', async () => {
@@ -974,7 +989,9 @@ describe('Story step (tables)', () => {
     const effectColumn = resultColumn(MADNESS)!
     expect(within(effectColumn).getByText('Rolled 1d6: 4 · Modifier +0 · Total 4')).toBeTruthy()
     expect(within(effectColumn).getByRole('listitem').textContent).toBe('Madness +4')
-    expect(within(effectColumn).getByText("Rerolling or changing this result isn't available yet.")).toBeTruthy()
+    // effect-reroll (ui-design da FEAT-011): "Reroll 1d6" e "Enter result" no lugar do motivo.
+    expect(within(effectColumn).getByRole('button', { name: 'Reroll 1d6' }).className).toContain('button-secondary')
+    expect(within(effectColumn).getByRole('button', { name: 'Enter result' })).toBeTruthy()
     expect(effect.querySelector('.roll-value')!.textContent).toBe('4rolled')
     expect(effect.classList.contains('subdecision--decided')).toBe(true)
     await vi.waitFor(() => expect(document.activeElement).toBe(effectColumn))
@@ -1347,3 +1364,260 @@ describe('Impact dialog and open notice (FEAT-011)', () => {
 
 const IMPACT_D40 = 'Set-aside decisions stay with this character, off the sheet, and come back on their own if what they depend on returns.'
 const NOTICE_TITLE = 'The rules changed since this character was last saved.'
+
+// FEAT-011 T10 (SCR-WEB-009): tabela decidida com Reroll, troca de modo e dependentes, com sorteio fixo. O `test.rollpast`
+// é o pacote de tabelas com a Gnome Past no regime `roll`, para o Enter result numa tabela com `roll-effect`.
+const tablesPack = files['/packs/test.tables.json'] as { components: { items: Record<string, unknown>[] }[] }
+files['/packs/test.rollpast.json'] = {
+  ...tablesPack,
+  id: 'test.rollpast',
+  components: [{ ...tablesPack.components[0], items: tablesPack.components[0].items.map((item) => (item.id === 'table:gnome-past' ? { ...item, regime: 'roll' } : item)) }],
+}
+
+describe('Story step: decided table (FEAT-011)', () => {
+  afterEach(cleanup)
+
+  const PAST = 'ancestry=gnome/past'
+  const FATE = 'ancestry=gnome/fate'
+  const button = (name: string, label: string) => within(card(name)).getByRole('button', { name: label })
+  const effectBox = () => document.getElementById(slotElementId(MADNESS))!
+  const dialogColumn = (dialog: HTMLElement, name: string) => within(dialog).getByRole('heading', { level: 3, name }).parentElement!
+  /** Gnome Past rolada em 4 e a Madness rolada em 4, pelos cliques (as duas primeiras gravações). */
+  async function pastAndMadness(session: CharacterSession, saved: unknown[]) {
+    await userEvent.click(await screen.findByRole('button', { name: 'Roll d6' }))
+    await userEvent.click(within(effectBox()).getByRole('button', { name: 'Roll 1d6' }))
+    await storySettled(session, saved, 2)
+  }
+
+  it('FR-DEC-015, FR-DEC-016: decided-roll has "Reroll 3d6" and "Enter result"; a Reroll with the same faces applies directly and takes the focus to the result column (mode-switch)', async () => {
+    const { session, saved } = setup({ document: gnome(), random: sequence([2, 4, 1, 2, 4, 1]) })
+    renderBuilder('story')
+    await screen.findByRole('region', { name: 'Gnome Fate' })
+    await userEvent.click(button('Gnome Fate', 'Roll 3d6'))
+    const column = resultColumn(FATE)!
+    await vi.waitFor(() => expect(document.activeElement).toBe(column))
+    await storySettled(session, saved, 1)
+
+    // A Fate tem `enter` em `table.modes`: "Reroll 3d6" e "Enter result", os dois secundários, no fim da coluna.
+    const reroll = within(column).getByRole('button', { name: 'Reroll 3d6' })
+    const enter = within(column).getByRole('button', { name: 'Enter result' })
+    expect([reroll.className, enter.className].every((name) => name.includes('button-secondary'))).toBe(true)
+    expect(column.lastElementChild!.contains(reroll)).toBe(true)
+    expect(within(card('Gnome Fate')).queryByRole('button', { name: 'Roll 3d6' })).toBeNull()
+
+    // As mesmas faces: a marca é consumida pelo `logged` novo, não pela vaga decidida (C2).
+    await userEvent.click(reroll)
+    await vi.waitFor(() => expect(document.activeElement).toBe(column))
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(within(column).getByText('Rolled 3d6: 3 + 5 + 2 · Modifier +0 · Total 10')).toBeTruthy()
+    await storySettled(session, saved, 2)
+    expect(saved[1].decisions[FATE]).toEqual({ mode: 'rolled', dice: [3, 5, 2], modifier: 0, total: 10, entry: '3-10', rolls: 2, book: TABLES, logged: 2 })
+  })
+
+  it('FR-DEC-018: Enter result on a decided table opens the form in place of the actions; "Use this result" replaces the result, closes the form and focuses the result column (replace-applied)', async () => {
+    const { session, saved } = setup({ document: gnome(), random: sequence([2, 4, 1]) })
+    renderBuilder('story')
+    await screen.findByRole('region', { name: 'Gnome Fate' })
+    await userEvent.click(button('Gnome Fate', 'Roll 3d6'))
+    await storySettled(session, saved, 1)
+
+    await userEvent.click(within(resultColumn(FATE)!).getByRole('button', { name: 'Enter result' }))
+    const field = within(card('Gnome Fate')).getByLabelText('Your 3d6 roll')
+    await vi.waitFor(() => expect(document.activeElement).toBe(field))
+    expect(within(card('Gnome Fate')).queryByRole('button', { name: 'Reroll 3d6' })).toBeNull()
+    await userEvent.type(field, '15')
+    await userEvent.click(within(card('Gnome Fate')).getByRole('button', { name: 'Use this result' }))
+
+    const column = resultColumn(FATE)!
+    expect(within(column).getByText('Entered for 3d6: 15 · Modifier +0 · Total 15')).toBeTruthy()
+    expect(within(card('Gnome Fate')).queryByLabelText('Your 3d6 roll')).toBeNull()
+    expect(within(column).getByRole('button', { name: 'Reroll 3d6' })).toBeTruthy()
+    await vi.waitFor(() => expect(document.activeElement).toBe(column))
+    await storySettled(session, saved, 2)
+    expect(saved[1].decisions[FATE]).toEqual({ mode: 'entered', sum: 15, modifier: 0, total: 15, entry: '11-18', rolls: 1, book: TABLES, logged: 2 })
+  })
+
+  it('FR-DEC-018, FR-DEC-016: Choose on a rolled table shows the grid with the decided entry and its calculation, and replaces it; Roll on the chosen one rolls again with rolls 2 (decided-choose)', async () => {
+    const { session, saved } = setup({ document: gnome(), random: sequence([2, 4, 1, 0, 0, 0]) })
+    renderBuilder('story')
+    await screen.findByRole('region', { name: 'Gnome Age' })
+    await userEvent.click(button('Gnome Age', 'Roll 3d6'))
+    await storySettled(session, saved, 1)
+
+    // Segmento Choose com a decisão rolada: a grade marca a entrada dela, e a coluna mostra o cálculo, sem caixa de valor.
+    await userEvent.click(within(modes('Gnome Age')).getByRole('radio', { name: 'Choose' }))
+    expect(entryRadio('Gnome Age', '8–12 TT p.8').checked).toBe(true)
+    expect(within(resultColumn(AGE)!).getByText('Rolled 3d6: 3 + 5 + 2 · Modifier +0 · Total 10')).toBeTruthy()
+    expect(card('Gnome Age').querySelector('.roll-value')).toBeNull()
+    expect(within(card('Gnome Age')).queryByRole('button', { name: 'Reroll 3d6' })).toBeNull()
+
+    // Troca de modo para Choose, sem dependentes: aplica direto, sem foco programático.
+    const low = entryRadio('Gnome Age', '3–7 TT p.7')
+    await userEvent.click(low)
+    expect(low.checked).toBe(true)
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(within(resultColumn(AGE)!).queryByText(/^Rolled/)).toBeNull()
+    await storySettled(session, saved, 2)
+    expect(document.activeElement).toBe(low)
+    expect(saved[1].decisions[AGE]).toEqual({ ...chosenEntry('3-7'), rolls: 1, logged: 2 })
+
+    // Roll → Choose → Roll: "Roll 3d6" no segmento Roll, e a rolagem nova tem rolls 2 (FR-DEC-016).
+    await userEvent.click(within(modes('Gnome Age')).getByRole('radio', { name: 'Roll' }))
+    await userEvent.click(button('Gnome Age', 'Roll 3d6'))
+    const column = resultColumn(AGE)!
+    expect(within(column).getByText('Rolled 3d6: 1 + 1 + 1 · Modifier +0 · Total 3')).toBeTruthy()
+    expect(within(column).getByRole('button', { name: 'Reroll 3d6' })).toBeTruthy()
+    await vi.waitFor(() => expect(document.activeElement).toBe(column))
+    await storySettled(session, saved, 3)
+    expect(saved[2].decisions[AGE]).toEqual({ mode: 'rolled', dice: [1, 1, 1], modifier: 0, total: 3, entry: '3-7', rolls: 2, book: TABLES, logged: 4 })
+  })
+
+  it('FR-DEC-015, FR-DEC-017, FR-CHG-010, FR-CHAR-010: a Reroll onto another entry opens the by-reroll dialog; Keep closes it without waiting for the save, focuses "Reroll d6" with the result as it was, and logs the declined value (replace-kept)', async () => {
+    const { session, saved, control } = setup({ document: gnome(), random: sequence([3, 3, 0]) })
+    renderBuilder('story')
+    await pastAndMadness(session, saved)
+
+    const reroll = within(resultColumn(PAST)!).getByRole('button', { name: 'Reroll d6' })
+    await userEvent.click(reroll)
+    const dialog = await screen.findByRole('dialog')
+    expect(within(dialog).getByRole('heading', { level: 2 }).textContent).toBe('Use the new roll for Gnome Past?')
+    expect(dialogColumn(dialog, 'Current').textContent).toBe('Current4Rolled d6: 4 · Modifier +0 · Total 4Madness +1d6')
+    expect(dialogColumn(dialog, 'New').textContent).toBe('New1–3Rolled d6: 1 · Modifier +0 · Total 1')
+    expect(within(dialog).getByText("Whichever result you don't use goes to the log as undone. It isn't set aside.")).toBeTruthy()
+    expect(items(within(dialog).getByRole('list', { name: 'Will be set aside' }))).toEqual(['Madness 1d6: 4 · rolled'])
+    expect(saved).toHaveLength(2)
+
+    // Só a gravação do Keep fica retida (C15): o diálogo fecha quando o `pending` some, antes do fim da gravação.
+    control.hold()
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Keep current result' }))
+    await vi.waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+    expect(saved).toHaveLength(2)
+    await vi.waitFor(() => expect(document.activeElement).toBe(reroll))
+    expect(within(resultColumn(PAST)!).getByText('Rolled d6: 4 · Modifier +0 · Total 4')).toBeTruthy()
+    expect(within(resultColumn(MADNESS)!).getByText('Rolled 1d6: 4 · Modifier +0 · Total 4')).toBeTruthy()
+
+    control.release()
+    await storySettled(session, saved, 3)
+    expect(saved[2].decisions[PAST]).toEqual({ mode: 'rolled', dice: [4], modifier: 0, total: 4, entry: '4', rolls: 2, book: TABLES, logged: 1 })
+    expect((saved[2] as unknown as { log: { kind: string; reason?: string }[] }).log.slice(2).map((entry) => [entry.kind, entry.reason])).toEqual([
+      ['decision', undefined],
+      ['undone', 'declined'],
+    ])
+    expect(document.activeElement).toBe(reroll)
+  })
+
+  it('FR-DEC-015, FR-DEC-017: Apply on the by-reroll dialog shows the new result, the roll-effect goes away, and the focus goes to the result column, without drawing again (replace-applied)', async () => {
+    const { session, saved } = setup({ document: gnome(), random: sequence([3, 3, 0]) })
+    renderBuilder('story')
+    await pastAndMadness(session, saved)
+
+    await userEvent.click(within(resultColumn(PAST)!).getByRole('button', { name: 'Reroll d6' }))
+    const dialog = await screen.findByRole('dialog')
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Apply new result' }))
+    await vi.waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+    const column = resultColumn(PAST)!
+    expect(within(column).getByText('Rolled d6: 1 · Modifier +0 · Total 1')).toBeTruthy()
+    expect(column.querySelector('.roll-result__entry')!.textContent).toBe('1–3')
+    expect(document.getElementById(slotElementId(MADNESS))).toBeNull()
+    await vi.waitFor(() => expect(document.activeElement).toBe(column))
+    // Sem a 4ª face: o Apply grava o candidato, sem rolar de novo (D1); a sequência falharia se rolasse.
+    await storySettled(session, saved, 3)
+    expect(saved[2].decisions[PAST]).toMatchObject({ dice: [1], entry: '1-3', rolls: 2 })
+    expect(saved[2].decisions[MADNESS]).toMatchObject({ total: 4, setAside: true })
+  })
+
+  it('FR-DEC-018, FR-DEC-017: Choose → Choose and the switch to Choose with the roll-effect decided open the dialog; after Apply, the entry used in the grid has the focus (applied)', async () => {
+    const { session, saved } = setup({ document: gnome(), random: sequence([3, 3]) })
+    renderBuilder('story')
+    await pastAndMadness(session, saved)
+
+    // Troca de modo para Choose numa rolada, com a roll-effect decidida.
+    await userEvent.click(within(modes('Gnome Past')).getByRole('radio', { name: 'Choose' }))
+    const high = entryRadio('Gnome Past', '5–6 TT p.7')
+    await userEvent.click(high)
+    let dialog = await screen.findByRole('dialog')
+    expect(within(dialog).getByRole('heading', { level: 2 }).textContent).toBe('Change Gnome Past from 4 to 5–6?')
+    expect(within(dialog).queryByText("Whichever result you don't use goes to the log as undone. It isn't set aside.")).toBeNull()
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Apply new result' }))
+    await vi.waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+    expect(entryRadio('Gnome Past', '5–6 TT p.7').checked).toBe(true)
+    await vi.waitFor(() => expect(document.activeElement).toBe(entryRadio('Gnome Past', '5–6 TT p.7')))
+    await storySettled(session, saved, 3)
+    expect(document.activeElement).toBe(entryRadio('Gnome Past', '5–6 TT p.7'))
+
+    // Choose → Choose de volta à 4 restaura a Madness (restore-only), e o foco fica na entrada acionada.
+    await userEvent.click(entryRadio('Gnome Past', '4 TT p.7'))
+    dialog = await screen.findByRole('dialog')
+    expect(items(within(dialog).getByRole('list', { name: 'Will be restored' }))).toEqual(['Madness 1d6: 4 · rolled'])
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Apply new result' }))
+    await vi.waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+    await vi.waitFor(() => expect(document.activeElement).toBe(entryRadio('Gnome Past', '4 TT p.7')))
+    expect(within(resultColumn(MADNESS)!).getByText('Rolled 1d6: 4 · Modifier +0 · Total 4')).toBeTruthy()
+    await storySettled(session, saved, 4)
+    expect(document.activeElement).toBe(entryRadio('Gnome Past', '4 TT p.7'))
+  })
+
+  it('FR-DEC-015, FR-CHG-010: Roll on a chosen table with the roll-effect decided opens the by-reroll dialog; Keep keeps the Roll segment and focuses "Roll d6" (replace-kept)', async () => {
+    const { session, saved } = setup({ document: gnome({ [PAST]: chosenEntry('4'), [MADNESS]: { mode: 'rolled', dice: [4], modifier: 0, total: 4 } }), random: sequence([0]) })
+    renderBuilder('story')
+    await screen.findByRole('region', { name: 'Gnome Past' })
+    await userEvent.click(within(modes('Gnome Past')).getByRole('radio', { name: 'Roll' }))
+    const roll = within(resultColumn(PAST)!).getByRole('button', { name: 'Roll d6' })
+    expect(within(card('Gnome Past')).queryByRole('button', { name: 'Reroll d6' })).toBeNull()
+    await userEvent.click(roll)
+    const dialog = await screen.findByRole('dialog')
+    expect(within(dialog).getByRole('heading', { level: 2 }).textContent).toBe('Use the new roll for Gnome Past?')
+    expect(dialogColumn(dialog, 'Current').textContent).toBe('Current4ChosenMadness +1d6')
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Keep current result' }))
+    await vi.waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+    // O Keep não muda o modo da decisão, então o segmento escolhido pela pessoa fica.
+    expect(within(modes('Gnome Past')).getByRole('radio', { name: 'Roll' })).toHaveProperty('checked', true)
+    await vi.waitFor(() => expect(document.activeElement).toBe(roll))
+    await storySettled(session, saved, 1)
+    expect(saved[0].decisions[PAST]).toEqual({ ...chosenEntry('4'), rolls: 1 })
+  })
+
+  it('FR-DEC-018, FR-DEC-017: "Use this result" on a decided table with the roll-effect decided opens the dialog; Keep leaves the form open with the sum, and "Use this result" gets the focus (replace-kept)', async () => {
+    const { session, saved } = setup({ document: stored({ ancestry: 'ancestry:gnome' }, ['test.rollpast']), random: sequence([3, 3]) })
+    renderBuilder('story')
+    await pastAndMadness(session, saved)
+
+    // A linha de ações da tabela é o último filho da coluna, depois da caixa da Madness (que tem o seu "Enter result").
+    await userEvent.click(within(resultColumn(PAST)!.lastElementChild as HTMLElement).getByRole('button', { name: 'Enter result' }))
+    await userEvent.type(within(card('Gnome Past')).getByLabelText('Your d6 roll'), '2')
+    const use = within(card('Gnome Past')).getByRole('button', { name: 'Use this result' })
+    await userEvent.click(use)
+    const dialog = await screen.findByRole('dialog')
+    expect(within(dialog).getByRole('heading', { level: 2 }).textContent).toBe('Change Gnome Past from 4 to 1–3?')
+    expect(dialogColumn(dialog, 'New').textContent).toBe('New1–3Entered for d6: 2 · Modifier +0 · Total 2')
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Keep current result' }))
+    await vi.waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+    expect((within(card('Gnome Past')).getByLabelText('Your d6 roll') as HTMLInputElement).value).toBe('2')
+    await vi.waitFor(() => expect(document.activeElement).toBe(use))
+    await nextFrame()
+    expect(saved).toHaveLength(2)
+  })
+
+  it('FR-DEC-015, FR-STEP-014: the decided roll-effect has "Reroll 1d6" and "Enter result"; both apply directly and focus the result column of the box (effect-reroll)', async () => {
+    const { session, saved } = setup({ document: gnome(), random: sequence([3, 3, 0]) })
+    renderBuilder('story')
+    await pastAndMadness(session, saved)
+
+    const column = resultColumn(MADNESS)!
+    await userEvent.click(within(column).getByRole('button', { name: 'Reroll 1d6' }))
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(within(column).getByText('Rolled 1d6: 1 · Modifier +0 · Total 1')).toBeTruthy()
+    await vi.waitFor(() => expect(document.activeElement).toBe(column))
+    await storySettled(session, saved, 3)
+    expect(saved[2].decisions[MADNESS]).toEqual({ mode: 'rolled', dice: [1], modifier: 0, total: 1, logged: 3 })
+
+    await userEvent.click(within(column).getByRole('button', { name: 'Enter result' }))
+    const field = within(effectBox()).getByLabelText('Your 1d6 roll')
+    await userEvent.type(field, '6{Enter}')
+    expect(within(column).getByText('Entered for 1d6: 6 · Modifier +0 · Total 6')).toBeTruthy()
+    expect(within(effectBox()).queryByLabelText('Your 1d6 roll')).toBeNull()
+    await vi.waitFor(() => expect(document.activeElement).toBe(column))
+    await storySettled(session, saved, 4)
+    expect(saved[3].decisions[MADNESS]).toEqual({ mode: 'entered', sum: 6, modifier: 0, total: 6, logged: 5 })
+  })
+})

@@ -147,8 +147,6 @@ export const NOT_DECIDED = 'Not decided yet. Nothing else waits for it.'
 export const CHOOSE_A_RESULT = 'Choose a result.'
 export const LATER = 'Or decide later: it stays in Open decisions.'
 export const NO_TEXT = 'No text added for this entry · '
-export const LOCKED_ROLLED = "Rerolling or changing this result isn't available yet."
-export const LOCKED_CHOSEN = "You can choose another result. Rolling instead isn't available yet."
 
 export const enterLabel = (dice: string) => `Your ${dice} roll`
 export const enterHelp = ([min, max]: [number, number]) =>

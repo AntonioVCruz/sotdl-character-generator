@@ -11,8 +11,6 @@ import {
   enterLabel,
   formatModifier,
   LATER,
-  LOCKED_CHOSEN,
-  LOCKED_ROLLED,
   NO_TEXT,
   NOT_DECIDED,
   outOfRange,
@@ -27,6 +25,7 @@ import { PendingList } from './FallbackStep'
 import { SourceBadge } from './parts'
 
 type Ready = Extract<Snapshot, { status: 'ready' }>
+type Decisions = Ready['document']['decisions']
 type TableSlot = Extract<SlotView, { kind: 'table' }>
 type EffectSlot = Extract<SlotView, { kind: 'roll-effect' }>
 type Range = [number, number]
@@ -68,6 +67,7 @@ export function TablesStep({ session, snapshot, step, nameOf }: {
             session={session}
             slot={slot}
             effects={view.slots.filter((child): child is EffectSlot => child.kind === 'roll-effect' && child.key.startsWith(`${slot.key}=`))}
+            decisions={snapshot.document.decisions}
             actions={actions}
           />
         ))}
@@ -77,36 +77,50 @@ export function TablesStep({ session, snapshot, step, nameOf }: {
   )
 }
 
-function RollCard({ session, slot, effects, actions }: {
+function RollCard({ session, slot, effects, decisions, actions }: {
   session: CharacterSession
   slot: TableSlot
   effects: EffectSlot[]
+  /** `decisions` do documento: o `logged` de cada vaga diz quando o snapshot mostra uma decisão nova (FEAT-011). */
+  decisions: Decisions
   actions: Actions
 }) {
   const { table, result } = slot
   const base = slotElementId(slot.key)
-  const ids = { title: `${base}-title`, choose: `${base}-choose`, reason: `${base}-reason` }
+  const ids = { title: `${base}-title`, choose: `${base}-choose` }
   const dice = tableDice(table.dice)
-  // Modo aberto, estado local (technical-design §3.4): Choose no regime `choice`, Roll nos demais; decidida, o da decisão.
-  const [localMode, setLocalMode] = useState<'roll' | 'choose'>(table.regime === 'choice' ? 'choose' : 'roll')
-  const mode = result ? (result.mode === 'chosen' ? 'choose' : 'roll') : localMode
-  // Foco depois de Roll e "Use this result": a marca é posta no clique e consumida quando o snapshot mostra a vaga
-  // decidida, antes da gravação (ui-design, rolled; D11 da FEAT-007; DEF-008). O fim da gravação não move o foco.
-  const mark = useRef<{ key: string; action: number } | null>(null)
-  const decided = [slot, ...effects].filter((candidate) => candidate.decided).map((candidate) => candidate.key).join(' ')
+  // Segmento mostrado, estado local (technical-design da FEAT-009 §3.4; ui-design da FEAT-011, decided-choose): o da
+  // decisão, até a pessoa trocá-lo; sem decisão, Choose no regime `choice` e Roll nos demais. Volta ao da decisão quando o
+  // snapshot muda o modo dela (uma escolha vira Choose; uma rolagem ou um Enter result vira Roll); o Keep não o muda.
+  const decisionMode = result ? (result.mode === 'chosen' ? 'choose' : 'roll') : undefined
+  const [mode, setMode] = useState<'roll' | 'choose'>(decisionMode ?? (table.regime === 'choice' ? 'choose' : 'roll'))
+  const [shownFor, setShownFor] = useState(decisionMode)
+  if (shownFor !== decisionMode) {
+    setShownFor(decisionMode)
+    if (decisionMode) setMode(decisionMode)
+  }
+  // Foco depois de Roll, Reroll e "Use this result": a marca é posta no clique, com o `logged` da vaga naquele momento, e
+  // consumida quando o snapshot mostra outro `logged` em `decisions[key]`, antes da gravação (ui-design da FEAT-011,
+  // mode-switch; D11 da FEAT-007; DEF-008). Não pela vaga decidida: um Reroll pode repetir as faces, e o Keep da
+  // rerrolagem só muda o contador. O fim da gravação não move o foco.
+  const mark = useRef<{ key: string; action: number; logged: number | undefined } | null>(null)
   useEffect(() => {
     const target = mark.current
-    if (!target || !decided.split(' ').includes(target.key)) return
+    if (!target || decisions[target.key]?.logged === target.logged) return
     mark.current = null
     const frame = requestAnimationFrame(() => document.getElementById(resultId(target.key))?.focus())
     return () => cancelAnimationFrame(frame)
-  }, [decided])
+  }, [decisions])
+  const marked = (key: string, action: number) => (mark.current = { key, action, logged: decisions[key]?.logged })
 
   function act() {
     return actions.next()
   }
 
-  /** A recusa de um comando (nunca `save-failed`: o resultado já está na tela); desfaz a marca deste clique. */
+  /**
+   * A recusa de um comando (nunca `save-failed`: o resultado já está na tela); desfaz a marca deste clique. A
+   * `needs-confirmation` conta como recusa: nada foi aplicado, e o diálogo da moldura cuida do foco (ui-design da FEAT-011).
+   */
   function refusal(outcome: DecideResult, action: number) {
     if (outcome.ok || outcome.reason === 'save-failed') return null
     if (mark.current?.action === action) mark.current = null
@@ -115,14 +129,14 @@ function RollCard({ session, slot, effects, actions }: {
 
   async function roll(key: string) {
     const action = act()
-    mark.current = { key, action }
+    marked(key, action)
     refusal(await session.roll(key), action)
   }
 
   /** "Use this result": devolve a faixa válida a mostrar no campo, só numa recusa `out-of-range` sem ação depois. */
   async function enter(key: string, sum: number): Promise<Range | null> {
     const action = act()
-    mark.current = { key, action }
+    marked(key, action)
     const refused = refusal(await session.enter(key, sum), action)
     return refused?.reason === 'out-of-range' && actions.isLatest(action) ? refused.range : null
   }
@@ -132,7 +146,23 @@ function RollCard({ session, slot, effects, actions }: {
     refusal(await session.decide(slot.key, entry), action)
   }
 
+  const canEnter = table.modes.includes('enter')
   const entry = result && table.entries.find((candidate) => candidate.key === result.entry)
+  // "Reroll {dado}" sobre resultado rolado ou informado; "Roll {dado}" sobre escolhido (ui-design da FEAT-011).
+  const decidedActions = result && mode === 'roll' && (
+    <DiceActions
+      label={`${result.mode === 'chosen' ? 'Roll' : 'Reroll'} ${dice}`}
+      decided
+      dice={dice}
+      range={table.enterRange}
+      canEnter={canEnter}
+      logged={decisions[slot.key]?.logged}
+      onRoll={() => roll(slot.key)}
+      onEnter={(sum) => enter(slot.key, sum)}
+      actions={actions}
+    />
+  )
+  /** A coluna de resultado; no segmento Roll, com a linha de ações no fim (ui-design da FEAT-011, decided-roll). */
   const resultColumn = result && entry && (
     <div id={resultId(slot.key)} tabIndex={-1} className="roll-result__column">
       {result.mode !== 'chosen' && <p className="typography-meta roll-result__calc">{resultCalc(dice, result)}</p>}
@@ -154,14 +184,13 @@ function RollCard({ session, slot, effects, actions }: {
         <EffectBox
           key={effect.key}
           slot={effect}
+          logged={decisions[effect.key]?.logged}
           onRoll={() => roll(effect.key)}
           onEnter={(sum) => enter(effect.key, sum)}
           actions={actions}
         />
       ))}
-      <p id={ids.reason} className="typography-meta roll-result__note">
-        {result.mode === 'chosen' ? LOCKED_CHOSEN : LOCKED_ROLLED}
-      </p>
+      {decidedActions}
     </div>
   )
 
@@ -178,12 +207,10 @@ function RollCard({ session, slot, effects, actions }: {
           className="segmented-control"
           orientation="horizontal"
           aria-labelledby={ids.title}
-          aria-describedby={result ? ids.reason : undefined}
           value={mode}
-          isReadOnly={result !== undefined}
           onChange={(value) => {
             act()
-            setLocalMode(value as 'roll' | 'choose')
+            setMode(value as 'roll' | 'choose')
           }}
         >
           {table.modes
@@ -229,11 +256,15 @@ function RollCard({ session, slot, effects, actions }: {
             <ValueBox result={result} />
             {resultColumn}
           </div>
+        ) : result ? (
+          // Segmento Roll com a decisão escolhida: a coluna sem caixa nem cálculo, e "Roll {dado}" no fim.
+          resultColumn
         ) : (
           <DiceActions
+            label={`Roll ${dice}`}
             dice={dice}
             range={table.enterRange}
-            canEnter={table.modes.includes('enter')}
+            canEnter={canEnter}
             onRoll={() => roll(slot.key)}
             onEnter={(sum) => enter(slot.key, sum)}
             actions={actions}
@@ -268,9 +299,11 @@ export function EffectChips({ texts }: { texts: string[] }) {
   )
 }
 
-/** Vaga `roll-effect` no cartão da tabela (ui-design, effect-open e effect-decided; FR-STEP-014). */
-function EffectBox({ slot, onRoll, onEnter, actions }: {
+/** Vaga `roll-effect` no cartão da tabela (ui-design da FEAT-009, effect-open e effect-decided; FR-STEP-014). */
+function EffectBox({ slot, logged, onRoll, onEnter, actions }: {
   slot: EffectSlot
+  /** O `logged` da decisão da vaga: o formulário do Enter result fecha quando ele muda. */
+  logged: number | undefined
   onRoll: () => void
   onEnter: (sum: number) => Promise<Range | null>
   actions: Actions
@@ -286,12 +319,23 @@ function EffectBox({ slot, onRoll, onEnter, actions }: {
           <div id={resultId(slot.key)} tabIndex={-1} className="roll-result__column">
             <p className="typography-meta roll-result__calc">{resultCalc(dice, result)}</p>
             <EffectChips texts={[`${slot.target.name} ${formatModifier(result.total)}`]} />
-            <p className="typography-meta roll-result__note">{LOCKED_ROLLED}</p>
+            {/* effect-reroll (ui-design da FEAT-011): Reroll e Enter result, no lugar do motivo. */}
+            <DiceActions
+              label={`Reroll ${dice}`}
+              decided
+              dice={dice}
+              range={slot.enterRange}
+              canEnter
+              logged={logged}
+              onRoll={onRoll}
+              onEnter={onEnter}
+              actions={actions}
+            />
           </div>
         </div>
       ) : (
         <>
-          <DiceActions dice={dice} range={slot.enterRange} canEnter onRoll={onRoll} onEnter={onEnter} actions={actions} />
+          <DiceActions label={`Roll ${dice}`} dice={dice} range={slot.enterRange} canEnter onRoll={onRoll} onEnter={onEnter} actions={actions} />
           <p className="typography-meta roll-result__note">{LATER}</p>
         </>
       )}
@@ -300,19 +344,29 @@ function EffectBox({ slot, onRoll, onEnter, actions }: {
 }
 
 /**
- * "Roll {dado}" e "Enter result", ou o formulário do Enter result no lugar dos botões (ui-design, to-decide e entering).
- * "Cancel" volta aos botões sem gravar, com o foco em "Enter result".
+ * "Roll {dado}" e "Enter result", ou o formulário do Enter result no lugar dos botões (ui-design da FEAT-009, to-decide
+ * e entering). "Cancel" volta aos botões sem gravar, com o foco em "Enter result". Na vaga decidida (ui-design da
+ * FEAT-011, decided-roll e effect-reroll), os botões são secundários, no fim da coluna de resultado, e o formulário fecha
+ * quando o snapshot mostra a decisão nova (outro `logged`); no Keep, ele continua aberto, com a soma digitada.
  */
-function DiceActions({ dice, range, canEnter, onRoll, onEnter, actions, children }: {
+function DiceActions({ label, decided = false, dice, range, canEnter, logged, onRoll, onEnter, actions, children }: {
+  label: string
+  decided?: boolean
   dice: string
   range: Range
   canEnter: boolean
+  logged?: number
   onRoll: () => void
   onEnter: (sum: number) => Promise<Range | null>
   actions: Actions
   children?: ReactNode
 }) {
   const [entering, setEntering] = useState(false)
+  const [openFor, setOpenFor] = useState(logged)
+  if (openFor !== logged) {
+    setOpenFor(logged)
+    setEntering(false)
+  }
   const enterButton = useRef<HTMLButtonElement>(null)
   const returnFocus = useRef(false)
   useEffect(() => {
@@ -337,9 +391,9 @@ function DiceActions({ dice, range, canEnter, onRoll, onEnter, actions, children
     )
   }
   return (
-    <div className="roll-card__actions">
-      <Button className="button-primary typography-label" onPress={onRoll}>
-        {`Roll ${dice}`}
+    <div className={`roll-card__actions${decided ? ' roll-result__actions' : ''}`}>
+      <Button className={`${decided ? 'button-secondary' : 'button-primary'} typography-label`} onPress={onRoll}>
+        {label}
       </Button>
       {canEnter && (
         <Button

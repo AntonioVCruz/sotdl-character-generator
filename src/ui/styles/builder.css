@@ -925,6 +925,18 @@ a.step-map__item--current:hover {
   gap: var(--space-3);
 }
 
+/* Linha de ações da vaga decidida (ui-design da FEAT-011, decided-roll): --space-3 abaixo do que vem antes (gap da
+   coluna + margem); no celular, gap --space-2. */
+.roll-result__actions {
+  margin-top: var(--space-2);
+}
+
+@media (--bp-below-md) {
+  .roll-result__actions {
+    gap: var(--space-2);
+  }
+}
+
 /* Caixa de valor à esquerda, alinhada ao topo; coluna de resultado ao lado, também no celular. */
 .roll-result {
   display: flex;
