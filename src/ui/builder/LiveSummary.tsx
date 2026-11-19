@@ -3,7 +3,7 @@ import { ChevronDown, ChevronUp } from 'lucide-react'
 import { Button, Disclosure, DisclosurePanel } from 'react-aria-components'
 import { toOpenDecision, type CharacterView, type OpenDecision, type Stage, type StepView } from '../../engine'
 import { href } from '../router'
-import { decisionTitle, decisionWhere, formatModifier, formatValue, limitText, rangeText } from './copy'
+import { decisionTitle, decisionWhere, formatModifier, formatValue, limitText, rangeText, setAsideCount } from './copy'
 import { PillCounter } from '../parts'
 import { Eyebrow } from './parts'
 
@@ -77,6 +77,8 @@ export function LiveSummary({ view, nameOf }: { view: CharacterView; nameOf: (id
           {gained.talents.length > 0 && <p className="typography-meta">{gained.talents.map((t) => t.name).join(', ')}</p>}
         </div>
       )}
+      {/* set-aside-line (ui-design da FEAT-011): fora de Open decisions; o link "See Review" entra com a FEAT-015. */}
+      {view.setAside.length > 0 && <p className="typography-meta live-summary__set-aside">{setAsideCount(view.setAside.length)}</p>}
     </section>
   )
 }

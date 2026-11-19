@@ -186,7 +186,7 @@ test('FR-STEP-002, FR-FLOW-014: selecting an ancestry shows its detail and what 
   await expect(page.getByRole('button', { name: 'Next: Attributes' })).toBeDisabled()
 })
 
-test('FR-FLOW-003, D8: switching Human with Size decided to Dwarf is refused with a warning, and nothing changes', async ({ page }, testInfo) => {
+test('FR-STEP-005, FR-CHG-009: switching Human with Size decided to Dwarf opens the impact dialog, and Keep current changes nothing', async ({ page }, testInfo) => {
   await createCharacter(page)
   await choose(page, 'Human')
   await page.locator('label.segmented-control__segment').filter({ hasText: /^1$/ }).click()
@@ -194,11 +194,25 @@ test('FR-FLOW-003, D8: switching Human with Size decided to Dwarf is refused wit
 
   await card(page, 'Dwarf').click()
   await page.getByRole('button', { name: 'Choose Dwarf' }).click()
-  await expect(page.getByRole('status').filter({ hasText: "You can't switch" })).toHaveText(
-    "You can't switch to Dwarf yet: your Size choice for Human depends on your current ancestry. Changing a choice that others depend on isn't available yet.",
-  )
+  // O diálogo de impacto, com o Size em "set aside" (§7, item 14; C1: o diálogo sem nome, as ações com `exact`).
+  const dialog = page.getByRole('dialog')
+  await expect(dialog.getByRole('heading', { level: 3, name: 'Will be set aside', exact: true })).toBeVisible()
+  await expect(dialog.getByRole('listitem').filter({ hasText: 'Size: 1' })).toBeVisible()
+  await dialog.getByRole('button', { name: 'Keep current ancestry', exact: true }).click()
+  await expect(dialog).toHaveCount(0)
 
-  // Nada muda: Human continua a escolha, o Size continua decidido e o resumo é o do Human.
+  // Emenda M1: o Dwarf continua em prévia, o Human continua a escolha sem estar marcado, e "Choose Dwarf" tem o foco.
+  await expect(page.getByRole('radio', { name: 'Dwarf' })).toBeChecked()
+  await expect(page.getByRole('radio', { name: 'Human, your choice' })).toBeVisible()
+  await expect(page.getByRole('radio', { name: 'Human, your choice' })).not.toBeChecked()
+  await expect(page.getByRole('button', { name: 'Choose Dwarf' })).toBeFocused()
+  // O Size continua decidido (fora de Open decisions, que fica em 2) e o resumo é o do Human; nada foi gravado.
+  const kept = await summary(page, testInfo)
+  await expect(kept.getByRole('button', { name: /Health\s*10/ })).toBeVisible()
+  await expect(kept.getByRole('heading', { name: 'Open decisions · 2' })).toBeVisible()
+  await closeSummary(page, testInfo)
+
+  // Depois de recarregar: Human continua a escolha, o Size continua decidido e o resumo é o do Human (a prévia não é gravada).
   const unchanged = async () => {
     await expect(page.getByRole('radio', { name: 'Human, your choice' })).toBeChecked()
     await expect(page.getByRole('radiogroup', { name: 'Size' }).getByRole('radio', { name: '1', exact: true })).toBeChecked()
@@ -207,7 +221,6 @@ test('FR-FLOW-003, D8: switching Human with Size decided to Dwarf is refused wit
     await expect(aside.getByRole('heading', { name: 'Open decisions · 2' })).toBeVisible()
     await closeSummary(page, testInfo)
   }
-  await unchanged()
   await page.reload()
   await unchanged()
 })

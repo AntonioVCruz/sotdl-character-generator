@@ -24,7 +24,6 @@ import {
   tableDice,
 } from './copy'
 import { PendingList } from './FallbackStep'
-import { InlineAlert } from '../parts'
 import { SourceBadge } from './parts'
 
 type Ready = Extract<Snapshot, { status: 'ready' }>
@@ -91,9 +90,6 @@ function RollCard({ session, slot, effects, actions }: {
   // Modo aberto, estado local (technical-design §3.4): Choose no regime `choice`, Roll nos demais; decidida, o da decisão.
   const [localMode, setLocalMode] = useState<'roll' | 'choose'>(table.regime === 'choice' ? 'choose' : 'roll')
   const mode = result ? (result.mode === 'chosen' ? 'choose' : 'roll') : localMode
-  // Aviso de `has-dependents` no Choose → Choose (dependents-blocked); some na próxima ação neste cartão.
-  const [notice, setNotice] = useState<string | null>(null)
-
   // Foco depois de Roll e "Use this result": a marca é posta no clique e consumida quando o snapshot mostra a vaga
   // decidida, antes da gravação (ui-design, rolled; D11 da FEAT-007; DEF-008). O fim da gravação não move o foco.
   const mark = useRef<{ key: string; action: number } | null>(null)
@@ -107,7 +103,6 @@ function RollCard({ session, slot, effects, actions }: {
   }, [decided])
 
   function act() {
-    setNotice(null)
     return actions.next()
   }
 
@@ -162,7 +157,6 @@ function RollCard({ session, slot, effects, actions }: {
           onRoll={() => roll(effect.key)}
           onEnter={(sum) => enter(effect.key, sum)}
           actions={actions}
-          onAction={() => setNotice(null)}
         />
       ))}
       <p id={ids.reason} className="typography-meta roll-result__note">
@@ -204,11 +198,6 @@ function RollCard({ session, slot, effects, actions }: {
       <p className="typography-meta roll-card__regime">
         {REGIME_PHRASE[table.regime]} <SourceBadge provenance={table.provenance} />
       </p>
-      {notice && (
-        <InlineAlert tone="warning">
-          <p>{notice}</p>
-        </InlineAlert>
-      )}
       <div className="roll-card__body">
         {mode === 'choose' ? (
           <>
@@ -248,7 +237,6 @@ function RollCard({ session, slot, effects, actions }: {
             onRoll={() => roll(slot.key)}
             onEnter={(sum) => enter(slot.key, sum)}
             actions={actions}
-            onAction={() => setNotice(null)}
           >
             <span className="typography-meta roll-result__note">{NOT_DECIDED}</span>
           </DiceActions>
@@ -268,7 +256,7 @@ function ValueBox({ result }: { result: Exclude<TableResult, { mode: 'chosen' }>
   )
 }
 
-function EffectChips({ texts }: { texts: string[] }) {
+export function EffectChips({ texts }: { texts: string[] }) {
   return (
     <ul className="effect-chips">
       {texts.map((text, index) => (
@@ -281,12 +269,11 @@ function EffectChips({ texts }: { texts: string[] }) {
 }
 
 /** Vaga `roll-effect` no cartão da tabela (ui-design, effect-open e effect-decided; FR-STEP-014). */
-function EffectBox({ slot, onRoll, onEnter, actions, onAction }: {
+function EffectBox({ slot, onRoll, onEnter, actions }: {
   slot: EffectSlot
   onRoll: () => void
   onEnter: (sum: number) => Promise<Range | null>
   actions: Actions
-  onAction: () => void
 }) {
   const dice = effectDice(slot.dice)
   const { result } = slot
@@ -304,7 +291,7 @@ function EffectBox({ slot, onRoll, onEnter, actions, onAction }: {
         </div>
       ) : (
         <>
-          <DiceActions dice={dice} range={slot.enterRange} canEnter onRoll={onRoll} onEnter={onEnter} actions={actions} onAction={onAction} />
+          <DiceActions dice={dice} range={slot.enterRange} canEnter onRoll={onRoll} onEnter={onEnter} actions={actions} />
           <p className="typography-meta roll-result__note">{LATER}</p>
         </>
       )}
@@ -316,14 +303,13 @@ function EffectBox({ slot, onRoll, onEnter, actions, onAction }: {
  * "Roll {dado}" e "Enter result", ou o formulário do Enter result no lugar dos botões (ui-design, to-decide e entering).
  * "Cancel" volta aos botões sem gravar, com o foco em "Enter result".
  */
-function DiceActions({ dice, range, canEnter, onRoll, onEnter, actions, onAction, children }: {
+function DiceActions({ dice, range, canEnter, onRoll, onEnter, actions, children }: {
   dice: string
   range: Range
   canEnter: boolean
   onRoll: () => void
   onEnter: (sum: number) => Promise<Range | null>
   actions: Actions
-  onAction: () => void
   children?: ReactNode
 }) {
   const [entering, setEntering] = useState(false)
@@ -342,10 +328,8 @@ function DiceActions({ dice, range, canEnter, onRoll, onEnter, actions, onAction
         range={range}
         onEnter={onEnter}
         actions={actions}
-        onAction={onAction}
         onCancel={() => {
           actions.next()
-          onAction()
           returnFocus.current = true
           setEntering(false)
         }}
@@ -363,7 +347,6 @@ function DiceActions({ dice, range, canEnter, onRoll, onEnter, actions, onAction
           className="button-secondary typography-label"
           onPress={() => {
             actions.next()
-            onAction()
             setEntering(true)
           }}
         >
@@ -379,12 +362,11 @@ function DiceActions({ dice, range, canEnter, onRoll, onEnter, actions, onAction
  * Enter result (ui-design, entering; E9): um campo por expressão de dado, validado ao confirmar. Vazio ou não inteiro dá
  * o erro local, sem comando; a recusa `out-of-range` mostra a faixa devolvida. O campo mantém o valor e o foco.
  */
-function EnterForm({ dice, range, onEnter, actions, onAction, onCancel }: {
+function EnterForm({ dice, range, onEnter, actions, onCancel }: {
   dice: string
   range: Range
   onEnter: (sum: number) => Promise<Range | null>
   actions: Actions
-  onAction: () => void
   onCancel: () => void
 }) {
   const [draft, setDraft] = useState('')
@@ -395,7 +377,6 @@ function EnterForm({ dice, range, onEnter, actions, onAction, onCancel }: {
     const text = draft.trim()
     if (!/^-?\d+$/.test(text)) {
       actions.next()
-      onAction()
       setError(range)
       return
     }
@@ -410,7 +391,6 @@ function EnterForm({ dice, range, onEnter, actions, onAction, onCancel }: {
         value={draft}
         onChange={(value) => {
           actions.next()
-          onAction()
           setDraft(value)
           setError(null)
         }}

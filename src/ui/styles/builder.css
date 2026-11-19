@@ -1117,3 +1117,102 @@ a.step-map__item--current:hover {
     display: grid;
   }
 }
+
+/* impact-dialog (design.md §4; ui-design da FEAT-011, SCR-WEB-007). O contêiner é o `dialog` da Home. */
+.impact-dialog__columns {
+  display: grid;
+  gap: var(--space-4);
+}
+
+@media (--bp-md) {
+  .impact-dialog__columns {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.impact-dialog__column,
+.impact-dialog__group {
+  display: grid;
+  gap: var(--space-1);
+  align-content: start;
+}
+
+.impact-dialog__group {
+  gap: var(--space-2);
+}
+
+.impact-dialog__value {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+.impact-dialog__lists {
+  display: grid;
+  gap: var(--space-4);
+  padding-top: var(--space-4);
+  border-top: var(--border-width-default) solid var(--color-border-divider);
+}
+
+.impact-dialog__list,
+.open-notice__list {
+  display: grid;
+  gap: var(--space-1-5);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.impact-dialog__item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  color: var(--color-text-default);
+}
+
+.impact-dialog__item .icon {
+  flex: none;
+  width: var(--size-icon-sm);
+  height: var(--size-icon-sm);
+}
+
+.impact-dialog__recalculated {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.impact-dialog__recalculated .typography-badge {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.impact-dialog__note,
+.decision-line__depends,
+.open-notice .typography-meta {
+  color: var(--color-text-secondary);
+}
+
+.impact-dialog__stays-heading {
+  margin: 0;
+}
+
+/* Linha de decisão (ui-design da FEAT-011): "depends on" numa linha abaixo. */
+.decision-line {
+  display: grid;
+}
+
+/* open-notice (ui-design da FEAT-011, Moldura): o inline-alert warning com as listas e "Dismiss". */
+.open-notice {
+  display: grid;
+  gap: var(--space-2);
+  justify-items: start;
+}
+
+/* set-aside-line (design.md §4, live-summary, nota provisória P1). */
+.live-summary__set-aside {
+  padding-top: var(--space-3);
+  border-top: var(--border-width-default) solid var(--color-border-divider);
+  color: var(--color-text-secondary);
+}

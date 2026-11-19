@@ -5,7 +5,6 @@ import type { CharacterSession, Snapshot } from '../../app'
 import { ancestryDetail, formatNumber, preview, toOpenDecision, type CharacterView, type SlotView, type StepView } from '../../engine'
 import { href } from '../router'
 import { decisionTitle, formatValue, lockReason, slotElementId, statusLabel, tablesIn } from './copy'
-import { InlineAlert } from '../parts'
 import { Eyebrow, SourceBadge, TypeBadge } from './parts'
 
 type Ready = Extract<Snapshot, { status: 'ready' }>
@@ -18,11 +17,10 @@ export function AncestryStep({ session, snapshot, slot, nameOf }: {
   slot: EntitySlot
   nameOf: (id: string) => string
 }) {
-  // Aviso de `has-dependents` (D8); some na próxima ação do jogador nesta etapa.
-  const [notice, onNotice] = useState<string | null>(null)
   const current = slot.decided ? (slot.value as string) : null
   const [selected, setSelected] = useState<string | null>(null)
-  const shown = selected ?? current
+  // A prévia aplicada pelo diálogo passa a ser a escolha, sem a borda de prévia (ui-design da FEAT-011, switch-applied).
+  const shown = (selected === current ? null : selected) ?? current
   const detailTitle = useRef<HTMLHeadingElement>(null)
   // Ao confirmar, o foco vai ao título do detalhe assim que a escolha aparece na tela, sem esperar a gravação
   // (ui-design, "Ao confirmar"; technical-design D11; DEF-003). O `decide` muda o snapshot antes de gravar.
@@ -40,13 +38,11 @@ export function AncestryStep({ session, snapshot, slot, nameOf }: {
 
   function select(id: string) {
     actions.current += 1
-    onNotice(null)
     setSelected(id === current ? null : id)
   }
 
   async function choose(id: string) {
     const action = (actions.current += 1)
-    onNotice(null)
     focusOnChoice.current = id
     const result = await session.decide(slot.key, id)
     const clearPreview = () => {
@@ -54,16 +50,13 @@ export function AncestryStep({ session, snapshot, slot, nameOf }: {
     }
     // Recusada, a escolha não chega à tela e o foco fica onde está. Falha ao gravar mantém a escolha na tela (D11).
     if (!result.ok && result.reason !== 'save-failed') focusOnChoice.current = null
+    // Com dependentes, o diálogo da moldura decide; a prévia continua aberta (ui-design da FEAT-011, switch-kept).
+    if (!result.ok && result.reason === 'needs-confirmation') return
     clearPreview()
   }
 
   return (
     <>
-      {notice && (
-        <InlineAlert tone="warning">
-          <p>{notice}</p>
-        </InlineAlert>
-      )}
       <RadioGroup
         id={slotElementId(slot.key)}
         aria-label="What is your character's ancestry?"

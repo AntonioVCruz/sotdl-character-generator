@@ -1,13 +1,15 @@
 import { ChevronDown, ChevronUp, LoaderCircle } from 'lucide-react'
-import { type RefObject, useEffect, useRef, useState } from 'react'
+import { type RefObject, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Button, Dialog, DialogTrigger, Popover } from 'react-aria-components'
-import type { CharacterSession, Snapshot } from '../../app'
+import type { CharacterSession, PendingChange, Snapshot } from '../../app'
 import type { CharacterView, StepView } from '../../engine'
 import { AppHeader, PageFooter } from '../AppHeader'
 import { AncestryStep } from '../builder/AncestryStep'
 import { AttributesStep } from '../builder/AttributesStep'
 import { formatValue, isTablesStep, lockReason, OPEN_MESSAGE, SAVE_FAILED, slotElementId, statusLabel } from '../builder/copy'
 import { FallbackStep } from '../builder/FallbackStep'
+import { ImpactDialog } from '../builder/ImpactDialog'
+import { OpenNotice } from '../builder/OpenNotice'
 import { TablesStep } from '../builder/TablesStep'
 import { LiveSummary, OpenDecisions } from '../builder/LiveSummary'
 import { StepHeader } from '../builder/StepHeader'
@@ -153,6 +155,29 @@ function BuilderReady({ session, snapshot, route }: {
     return () => main.removeEventListener('focusin', reveal)
   }, [redirect, current])
 
+  // Diálogo de impacto (SCR-WEB-007; ui-design da FEAT-011): abre e fecha pelo `snapshot.pending` (C2). Apply e Keep põem
+  // uma marca, consumida quando o snapshot perde a pendente; a continuação depois do `await` só a desfaz numa recusa.
+  const closing = useRef<{ via: 'apply'; pending: PendingChange } | { via: 'keep' } | null>(null)
+  // O controle que abriu o diálogo, guardado quando a pendente aparece, antes de o foco ir para o título.
+  const opener = useRef<HTMLElement | null>(null)
+  useLayoutEffect(() => {
+    if (snapshot.pending) opener.current = document.activeElement instanceof HTMLElement ? document.activeElement : null
+  }, [snapshot.pending])
+  useEffect(() => {
+    const mark = closing.current
+    if (!mark || snapshot.pending) return
+    closing.current = null
+    const back = opener.current
+    opener.current = null
+    // No quadro seguinte ao fechamento (ui-design, kept e applied).
+    const frame = requestAnimationFrame(() => {
+      if (mark.via === 'apply') return appliedTarget(mark.pending)?.focus()
+      // Keep: o foco volta ao controle que abriu; se uma troca de rota o tirou da tela, vai para o `h1` da etapa.
+      ;(back?.isConnected ? back : title.current)?.focus()
+    })
+    return () => cancelAnimationFrame(frame)
+  }, [snapshot.pending])
+
   if (redirect || !current) return <BuilderLoading />
 
   const nameOf = (itemId: string) => {
@@ -161,6 +186,20 @@ function BuilderReady({ session, snapshot, route }: {
   }
   const stepRoot = view.slots.find((slot) => slot.stepId === current.id && slot.source === null)
   const detail = [view.ancestry && nameOf(view.ancestry), 'Level 0'].filter(Boolean).join(' · ')
+
+  async function apply() {
+    const now = session.getSnapshot()
+    if (now.status !== 'ready' || !now.pending) return
+    closing.current = { via: 'apply', pending: now.pending }
+    const result = await session.confirm()
+    if (!result.ok && result.reason === 'no-pending' && closing.current?.via === 'apply') closing.current = null
+  }
+
+  async function keep() {
+    closing.current = { via: 'keep' }
+    const result = await session.keep()
+    if (!result.ok && closing.current?.via === 'keep') closing.current = null
+  }
 
   return (
     <>
@@ -174,6 +213,7 @@ function BuilderReady({ session, snapshot, route }: {
         </nav>
         <main className="builder__step" ref={step}>
           <SaveAlert session={session} snapshot={snapshot} titleRef={title} />
+          <OpenNotice session={session} snapshot={snapshot} titleRef={title} nameOf={nameOf} />
           <StepHeader step={current} steps={view.steps} slots={view.slots} rules={rules} titleRef={title} />
           {/* O corpo sai do `kind` da vaga raiz da etapa, nunca do nome dela (ADR-003 §6). */}
           {stepRoot?.kind === 'choose-entity' && stepRoot.of === 'ancestry' ? (
@@ -200,9 +240,23 @@ function BuilderReady({ session, snapshot, route }: {
           <OpenDecisions id={id} view={view} nameOf={nameOf} onNavigate={() => setSummaryOpen(false)} />
         </aside>
       </div>
+      <ImpactDialog pending={snapshot.pending} nameOf={nameOf} onKeep={keep} onApply={apply} />
       <PageFooter />
     </>
   )
+}
+
+/**
+ * Destino do foco depois do Apply, pela variante (ui-design da FEAT-011, applied): o `h2` do detalhe na troca de
+ * ancestralidade, a coluna de resultado depois de Roll e Enter result, o `h2` do card no `clear`. No Choose → Choose, a
+ * própria restauração do `Modal` devolve o foco à entrada acionada.
+ */
+function appliedTarget({ kind, key, impact }: PendingChange): HTMLElement | null {
+  const slotKind = (impact.change.from ?? impact.change.to)?.kind
+  if (kind === 'clear') return document.getElementById(slotKind === 'attribute-shift' ? 'adjustment-title' : slotElementId(key))
+  if (slotKind === 'choose-entity') return document.getElementById('ancestry-detail-title')
+  if (kind === 'roll' || kind === 'enter') return document.getElementById(`${slotElementId(key)}-result`)
+  return null
 }
 
 /** Seletor de etapas (SCR-WEB-016, e no intermediário): gatilho no topo e o `step-map` num popover. */

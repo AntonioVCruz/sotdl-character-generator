@@ -7,6 +7,10 @@ import { slotElementId } from '../builder/copy'
 import { useRoute } from '../router'
 import Builder from './Builder'
 
+// O jsdom não tem `CSS.escape`, que o React Aria usa ao abrir o `Modal` do diálogo de impacto (como no Home.test.tsx).
+const css = ((globalThis as { CSS?: Partial<typeof CSS> }).CSS ??= {})
+css.escape ??= (value: string) => value.replace(/[^\w-]/g, (char) => `\\${char}`)
+
 // Pacote fictício servido por um fetch falso; sessão real do `app` sobre um repositório em memória.
 const files: Record<string, unknown> = {
   '/packs/test.core.json': {
@@ -151,6 +155,8 @@ vi.mock('../../app', async (importOriginal) => ({
 }))
 
 const renderBuilder = (step = 'ancestry') => render(<Builder route={{ id: 'c1', step }} />)
+/** Os textos dos itens de uma lista, na ordem. */
+const items = (list: HTMLElement) => within(list).getAllByRole('listitem').map((item) => item.textContent)
 
 describe('Builder states', () => {
   afterEach(cleanup)
@@ -319,23 +325,28 @@ describe('Builder states', () => {
     expect(screen.getByRole('button', { name: 'Choose Troll' })).toBeTruthy()
   })
 
-  it('FR-FLOW-003: has-dependents shows a warning that names the choice in the way (Size of the Human, here Stature of the Gnome)', async () => {
-    const { repository } = setup({ document: stored({ ancestry: 'ancestry:gnome', 'ancestry=gnome/stature': 1 }) })
+  it('FR-STEP-005, FR-CHG-001, FR-CHG-009: a switch with a decided dependent opens the impact dialog with it set aside; Keep current keeps the character, with the preview open (switch-kept)', async () => {
+    const { session, repository } = setup({ document: stored({ ancestry: 'ancestry:gnome', 'ancestry=gnome/stature': 1 }) })
     renderBuilder()
     await userEvent.click(await screen.findByRole('radio', { name: 'Troll' }))
     await userEvent.click(screen.getByRole('button', { name: 'Choose Troll' }))
 
-    const status = await screen.findByRole('status')
-    expect(status.textContent).toBe(
-      "You can't switch to Troll yet: your Stature choice for Gnome depends on your current ancestry. Changing a choice that others depend on isn't available yet.",
-    )
-    expect(screen.getByRole('radio', { name: 'Gnome, your choice' })).toBeTruthy()
-    // Nada muda: a seleção volta para a escolha atual.
-    expect((screen.getByRole('radio', { name: 'Troll' }) as HTMLInputElement).checked).toBe(false)
-    expect((screen.getByRole('radio', { name: 'Gnome, your choice' }) as HTMLInputElement).checked).toBe(true)
-    // A Stature decidida continua, e nada foi gravado.
-    expect((screen.getByRole('radio', { name: '1' }) as HTMLInputElement).checked).toBe(true)
-    expect(screen.getByText('Decided.')).toBeTruthy()
+    // No lugar do aviso, o diálogo de impacto, com a Stature em "set aside".
+    const dialog = await screen.findByRole('dialog')
+    expect(within(dialog).getByRole('heading', { level: 2 }).textContent).toBe('Switch from Gnome to Troll?')
+    expect(items(within(dialog).getByRole('list', { name: 'Will be set aside' }))).toEqual(['Stature: 1'])
+    expect(screen.queryByRole('status')).toBeNull()
+
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Keep current ancestry' }))
+    await vi.waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+    // switch-kept: a prévia continua aberta, com o Troll marcado em prévia; o Gnome continua a escolha, sem estar marcado.
+    expect((screen.getByRole('radio', { name: 'Troll' }) as HTMLInputElement).checked).toBe(true)
+    expect((screen.getByRole('radio', { name: 'Gnome, your choice' }) as HTMLInputElement).checked).toBe(false)
+    // "Choose Troll" continua na tela e recebe o foco de volta.
+    await vi.waitFor(() => expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Choose Troll' })))
+    // A Stature continua decidida, e nada foi gravado.
+    const ready = session.getSnapshot() as Extract<ReturnType<typeof session.getSnapshot>, { status: 'ready' }>
+    expect(ready.view.slots.find((slot) => slot.key === 'ancestry=gnome/stature')).toMatchObject({ decided: true, value: 1 })
     expect(repository.save).not.toHaveBeenCalled()
   })
 
@@ -932,7 +943,7 @@ describe('Story step (tables)', () => {
     expect(repository.save).not.toHaveBeenCalled()
   })
 
-  it('FR-STEP-014, FR-DEC-011: an entry with a dice effect opens its roll-effect in the same card, with Roll and Enter result; Choose → Choose with it decided is refused with the reason (AC-8)', async () => {
+  it('FR-STEP-014, FR-DEC-011: an entry with a dice effect opens its roll-effect in the same card, with Roll and Enter result; Choose → Choose with it decided opens the impact dialog, and Keep leaves the grid on the current entry (AC-8)', async () => {
     const { session, saved } = setup({ document: gnome(), random: sequence([3]) })
     renderBuilder('story')
     await screen.findByRole('region', { name: 'Gnome Past' })
@@ -970,22 +981,19 @@ describe('Story step (tables)', () => {
     await storySettled(session, saved, 3)
     expect(saved[2].decisions[MADNESS]).toEqual({ mode: 'rolled', dice: [4], modifier: 0, total: 4, logged: 4 })
 
-    // dependents-blocked: a grade continua na entrada atual, o foco fica no radio acionado e nada é gravado.
+    // replace-with-dependents: o diálogo da moldura, com a Madness em "set aside".
     const other = entryRadio('Gnome Past', '1–3 TT p.7')
     await userEvent.click(other)
-    const status = await within(card('Gnome Past')).findByRole('status')
-    expect(status.textContent).toBe(
-      "You can't change Gnome Past to 1–3 yet: your Madness 1d6 result depends on the current result, 4. Changing a choice that others depend on isn't available yet.",
-    )
+    const dialog = await screen.findByRole('dialog')
+    expect(within(dialog).getByRole('heading', { level: 2 }).textContent).toBe('Change Gnome Past from 4 to 1–3?')
+    expect(items(within(dialog).getByRole('list', { name: 'Will be set aside' }))).toEqual(['Madness 1d6: 4 · rolled'])
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Keep current result' }))
+    await vi.waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+    // replace-kept: a grade fica na entrada 4, a entrada acionada sem marca e com o foco, e nada é gravado.
     expect(entryRadio('Gnome Past', '4 TT p.7').checked).toBe(true)
     expect(other.checked).toBe(false)
-    expect(document.activeElement).toBe(other)
+    await vi.waitFor(() => expect(document.activeElement).toBe(other))
     expect(saved).toHaveLength(3)
-
-    // O aviso sai na próxima ação da pessoa neste cartão: aqui, outra entrada, recusada de novo, com o aviso dela.
-    await userEvent.click(entryRadio('Gnome Past', '5–6 TT p.7'))
-    await vi.waitFor(() => expect(within(card('Gnome Past')).getByRole('status').textContent).toMatch(/^You can't change Gnome Past to 5–6 yet:/))
-    expect(within(card('Gnome Past')).getAllByRole('status')).toHaveLength(1)
   })
 
   it('AC-14 (FR-DEC-005): Roll shows the result before the save ends, and focus taken to another card during the save stays there', async () => {
@@ -1103,14 +1111,237 @@ describe('Story step (tables)', () => {
     expect(screen.getByRole('radiogroup', { name: 'Stature' })).toBeTruthy()
   })
 
-  it('FR-FLOW-003 (AC-11): has-dependents with a table result names it as a result, after the choices', async () => {
+  it('FR-STEP-005, FR-CHG-004 (AC-11): the impact dialog of a switch sets aside the Stature and the Gnome Age result, and Keep saves nothing', async () => {
     const { repository } = setup({ document: gnome({ 'ancestry=gnome/stature': { mode: 'chosen', value: 1 }, [AGE]: chosenEntry('3-7') }) })
     renderBuilder('ancestry')
     await userEvent.click(await screen.findByRole('radio', { name: 'Troll' }))
     await userEvent.click(screen.getByRole('button', { name: 'Choose Troll' }))
-    expect((await screen.findByRole('status')).textContent).toBe(
-      "You can't switch to Troll yet: your Stature choice and your Gnome Age result for Gnome depend on your current ancestry. Changing a choice that others depend on isn't available yet.",
-    )
+    const dialog = await screen.findByRole('dialog')
+    expect(items(within(dialog).getByRole('list', { name: 'Will be set aside' }))).toEqual(['Stature: 1', 'Gnome Age: 3–7 · chosen'])
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Keep current ancestry' }))
+    await vi.waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
     expect(repository.save).not.toHaveBeenCalled()
   })
 })
+
+
+// FEAT-011 T9: diálogo de impacto (SCR-WEB-007), troca de ancestralidade (SCR-WEB-003) e aviso ao abrir (moldura).
+describe('Impact dialog and open notice (FEAT-011)', () => {
+  afterEach(cleanup)
+
+  const PAST = 'ancestry=gnome/past'
+  const summaryCard = () => screen.getByRole('complementary', { name: 'Summary' })
+  const withStature = () => stored({ ancestry: 'ancestry:gnome', 'ancestry=gnome/stature': 1 })
+  async function askForTroll() {
+    await userEvent.click(await screen.findByRole('radio', { name: 'Troll' }))
+    const opener = screen.getByRole('button', { name: 'Choose Troll' })
+    await userEvent.click(opener)
+    return { opener, dialog: await screen.findByRole('dialog') }
+  }
+
+  it('FR-CHG-003, NFR-ACC-001: the dialog is named by its title and opens with the focus on it; Tab stays inside, a click outside does not close it, and Esc is Keep (dialog-open)', async () => {
+    const { session, repository } = setup({ document: withStature() })
+    const keep = vi.spyOn(session, 'keep')
+    renderBuilder()
+    const { opener, dialog } = await askForTroll()
+    const title = within(dialog).getByRole('heading', { level: 2 })
+    // C9: o nome vem do título visível, por `aria-labelledby`.
+    expect(dialog.getAttribute('aria-labelledby')).toBe(title.id)
+    expect(dialog.hasAttribute('aria-label')).toBe(false)
+    expect(screen.getByRole('dialog', { name: 'Switch from Gnome to Troll?' })).toBe(dialog)
+    await vi.waitFor(() => expect(document.activeElement).toBe(title))
+
+    // Current × New (FR-CHG-003): o nome e o selo de cada ancestralidade.
+    const column = (name: string) => within(dialog).getByRole('heading', { level: 3, name }).parentElement!
+    expect(column('Current').textContent).toBe('CurrentGnomeTC p.5')
+    expect(column('New').textContent).toBe('NewTrollTC p.6')
+    expect(within(dialog).getByText(IMPACT_D40)).toBeTruthy()
+
+    // Foco preso no diálogo: sem a contenção, o Tab depois de Apply sairia dele (o jsdom não tem `inert`, C16).
+    const keepButton = within(dialog).getByRole('button', { name: 'Keep current ancestry' })
+    const apply = within(dialog).getByRole('button', { name: 'Apply new ancestry' })
+    await userEvent.tab()
+    expect(document.activeElement).toBe(keepButton)
+    await userEvent.tab()
+    expect(document.activeElement).toBe(apply)
+    await userEvent.tab()
+    expect(document.activeElement).toBe(keepButton)
+    await userEvent.tab({ shift: true })
+    expect(document.activeElement).toBe(apply)
+
+    // O clique fora não fecha (isDismissable={false}).
+    await userEvent.click(document.querySelector('.dialog-overlay')!)
+    expect(screen.getByRole('dialog')).toBe(dialog)
+    expect(keep).not.toHaveBeenCalled()
+
+    // Esc é Keep: o diálogo fecha pelo snapshot, e o foco volta ao controle que o abriu.
+    await userEvent.keyboard('{Escape}')
+    await vi.waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+    expect(keep).toHaveBeenCalledOnce()
+    await vi.waitFor(() => expect(document.activeElement).toBe(opener))
+    expect(repository.save).not.toHaveBeenCalled()
+  })
+
+  it('FR-CHG-008, FR-CHAR-010, NFR-REL-001 (AC-17): with the saves held, the dialog opens without waiting for them, and Apply shows the new ancestry before the save ends, with the focus on the detail title and the "1 set aside" line (switch-applied)', async () => {
+    const { control, saved } = setup({ document: withStature(), holdSave: true })
+    renderBuilder()
+    // Uma gravação anterior, retida: o diálogo abre por `pending`, sem esperar por ela.
+    await userEvent.click(await screen.findByRole('radio', { name: '1/2' }))
+    expect(within(summaryCard()).queryByText(/set aside$/)).toBeNull()
+    const { dialog } = await askForTroll()
+    expect(saved).toEqual([])
+
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Apply new ancestry' }))
+    await vi.waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+    expect((screen.getByRole('radio', { name: 'Troll, your choice' }) as HTMLInputElement).checked).toBe(true)
+    const heading = document.getElementById('ancestry-detail-title')!
+    expect(heading.textContent).toBe('Troll')
+    await vi.waitFor(() => expect(document.activeElement).toBe(heading))
+    expect(within(summaryCard()).getByText('1 set aside')).toBeTruthy()
+    expect(saved).toEqual([])
+
+    control.release()
+    await vi.waitFor(() => expect(saved).toHaveLength(2))
+    expect(saved[1].decisions['ancestry=gnome/stature']).toMatchObject({ value: 0.5, setAside: true })
+    await nextFrame()
+    // O fim da gravação não move o foco.
+    expect(document.activeElement).toBe(heading)
+  })
+
+  it('FR-CHAR-010 (AC-17): a failed save after Apply keeps the new ancestry on screen, with the frame alert', async () => {
+    const { saved } = setup({ document: withStature(), failSave: true })
+    renderBuilder()
+    const { dialog } = await askForTroll()
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Apply new ancestry' }))
+    expect((await screen.findByRole('alert')).textContent).toMatch(/Your last choice wasn't saved/)
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect((screen.getByRole('radio', { name: 'Troll, your choice' }) as HTMLInputElement).checked).toBe(true)
+    expect(saved).toEqual([])
+  })
+
+  it('FR-CHG-018, FR-CHG-001, FR-CHG-006: switching back restores the set-aside decision, with only "Will be restored" and the recalculated values (restore-only)', async () => {
+    const document = { ...stored({ ancestry: 'ancestry:troll' }), decisions: { ancestry: { mode: 'chosen', value: 'ancestry:troll' }, 'ancestry=gnome/stature': { mode: 'chosen', value: 1, setAside: true } } }
+    const { saved } = setup({ document })
+    renderBuilder()
+    // A abertura sem diferença não mostra aviso; a linha do resumo conta a suspensa.
+    await screen.findByRole('radio', { name: 'Troll, your choice' })
+    expect(screen.queryByText(NOTICE_TITLE)).toBeNull()
+    expect(within(summaryCard()).getByText('1 set aside')).toBeTruthy()
+
+    await userEvent.click(screen.getByRole('radio', { name: 'Gnome' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Choose Gnome' }))
+    const dialog = await screen.findByRole('dialog')
+    expect(within(dialog).getByRole('heading', { level: 2 }).textContent).toBe('Switch from Troll to Gnome?')
+    expect(within(dialog).queryByRole('list', { name: 'Will be set aside' })).toBeNull()
+    expect(within(dialog).queryByText(IMPACT_D40)).toBeNull()
+    expect(items(within(dialog).getByRole('list', { name: 'Will be restored' }))).toEqual(['Stature: 1'])
+    expect(items(within(dialog).getByRole('list', { name: 'Will be recalculated' }))).toEqual(['Might12 → 8', 'Stature2 → 1'])
+
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Apply new ancestry' }))
+    await vi.waitFor(() => expect(saved).toHaveLength(1))
+    expect(saved[0].decisions['ancestry=gnome/stature']).toEqual({ mode: 'chosen', value: 1 })
+    expect(within(summaryCard()).queryByText(/set aside$/)).toBeNull()
+  })
+
+  it('FR-CHG-005, FR-CHG-006: the transitive dependent says what it depends on; a value that goes away is shown as "—"', async () => {
+    setup({
+      document: gnome({
+        'ancestry=gnome/stature': { mode: 'chosen', value: 1 },
+        [AGE]: chosenEntry('3-7'),
+        [PAST]: chosenEntry('4'),
+        [MADNESS]: { mode: 'rolled', dice: [4], modifier: 0, total: 4 },
+      }),
+    })
+    renderBuilder()
+    const { dialog } = await askForTroll()
+    const list = within(dialog).getByRole('list', { name: 'Will be set aside' })
+    const lines = within(list).getAllByRole('listitem')
+    expect(lines.map((line) => line.querySelector('.decision-line > span')!.textContent)).toEqual([
+      'Stature: 1',
+      'Gnome Age: 3–7 · chosen',
+      'Gnome Past: 4 · chosen',
+      'Madness 1d6: 4 · rolled',
+    ])
+    // Só o dependente transitivo leva a linha "depends on", com o rótulo da vaga mãe.
+    expect(lines.map((line) => line.querySelector('.decision-line__depends')?.textContent ?? null)).toEqual([null, null, null, 'depends on Gnome Past'])
+    expect(items(within(dialog).getByRole('list', { name: 'Will be recalculated' }))).toEqual(['Might8 → 12', 'Stature1 → —', 'Madness4 → 0'])
+  })
+
+  it('FR-CHG-004: what stays is in a collapsed "Stays as it is" disclosure (Choose → Choose with the roll-effect decided)', async () => {
+    setup({
+      document: gnome({
+        'ancestry=gnome/stature': { mode: 'chosen', value: 1 },
+        [AGE]: chosenEntry('3-7'),
+        [PAST]: chosenEntry('4'),
+        [MADNESS]: { mode: 'rolled', dice: [4], modifier: 0, total: 4 },
+      }),
+    })
+    renderBuilder('story')
+    await screen.findByRole('region', { name: 'Gnome Past' })
+    await userEvent.click(entryRadio('Gnome Past', '5–6 TT p.7'))
+    const dialog = await screen.findByRole('dialog')
+    expect(within(dialog).getByRole('heading', { level: 2 }).textContent).toBe('Change Gnome Past from 4 to 5–6?')
+    const column = (name: string) => within(dialog).getByRole('heading', { level: 3, name }).parentElement!
+    expect(column('Current').textContent).toBe('Current4ChosenMadness +1d6')
+    expect(column('New').textContent).toBe('New5–6ChosenMadness +1')
+    const trigger = within(dialog).getByRole('button', { name: 'Stays as it is · 3' })
+    expect(trigger.closest('h3')).not.toBeNull()
+    expect(trigger.getAttribute('aria-expanded')).toBe('false')
+    await userEvent.click(trigger)
+    expect(trigger.getAttribute('aria-expanded')).toBe('true')
+    expect(within(dialog).getByText('Gnome Age:', { exact: false })).toBeTruthy()
+    // Tab: o gatilho de "Stays as it is" antes das ações.
+    expect(within(dialog).getAllByRole('button').map((button) => button.textContent)).toEqual(['Stays as it is · 3', 'Keep current result', 'Apply new result'])
+  })
+
+  it('FR-CONT-016, FR-CHG-012: opening with a difference shows the static notice at the top of main, with the frozen names, and Dismiss takes it away without saving (open-notice)', async () => {
+    const sizeEntry = {
+      id: 1,
+      at: '2026-01-01T00:00:00.000Z',
+      kind: 'decision',
+      slot: 'ancestry=troll/size',
+      slotKind: 'choose-value',
+      step: { id: 'step:ancestry', name: 'Ancestry' },
+      origin: { id: 'ancestry:troll', name: 'Troll' },
+      mode: 'chosen',
+      subject: { id: 'characteristic:stature', name: 'Stature' },
+      source: { book: TABLES, abbr: 'TT', page: 6 },
+      result: { value: 2 },
+    }
+    const document = {
+      ...gnome({
+        // Entrada que a versão atual não tem: a vaga reabre (pacote fictício).
+        [AGE]: chosenEntry('1-2'),
+        // Vagas não geradas: uma com a entrada original no log, outra gravada antes da FEAT-011, sem `logged`.
+        'ancestry=troll/size': { mode: 'chosen', value: 2, logged: 1 },
+        'ancestry=troll/omen': chosenEntry('3'),
+      }),
+      log: [sizeEntry],
+    }
+    const { saved } = setup({ document })
+    renderBuilder()
+    const title = await stepTitle("What is your character's ancestry?")
+    const main = screen.getByRole('main')
+    const notice = within(main).getByText(NOTICE_TITLE).closest('.inline-alert')!
+    // Estático (live={false}), antes do cabeçalho da etapa.
+    expect(notice.hasAttribute('role')).toBe(false)
+    expect(notice.compareDocumentPosition(title) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(items(within(notice as HTMLElement).getByRole('list', { name: 'Set aside, because the current rules no longer have them:' }))).toEqual([
+      'Gnome Age: 1–2 · chosen',
+      'Stature: 2',
+      '1 earlier decision',
+    ])
+    expect(within(notice as HTMLElement).getByText("Where the rules still ask for a decision, it's open again in Open decisions.")).toBeTruthy()
+    expect(within(notice as HTMLElement).getByText(IMPACT_D40)).toBeTruthy()
+    await vi.waitFor(() => expect(saved).toHaveLength(1))
+
+    const dismiss = within(notice as HTMLElement).getByRole('button', { name: 'Dismiss' })
+    await userEvent.click(dismiss)
+    expect(screen.queryByText(NOTICE_TITLE)).toBeNull()
+    expect(globalThis.document.activeElement).toBe(title)
+    expect(saved).toHaveLength(1)
+  })
+})
+
+const IMPACT_D40 = 'Set-aside decisions stay with this character, off the sheet, and come back on their own if what they depend on returns.'
+const NOTICE_TITLE = 'The rules changed since this character was last saved.'

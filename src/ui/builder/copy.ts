@@ -3,14 +3,16 @@ import {
   type CharacteristicSummary,
   type DiceResult,
   type EffectView,
+  type ImpactItem,
   type OpenDecision,
-  type SlotKind,
   type SlotView,
   type StepStatus,
   type StepView,
   type TableResult,
   type TableView,
+  toOpenDecision,
 } from '../../engine'
+import type { Snapshot } from '../../app'
 import { STORAGE_UNAVAILABLE } from '../copy'
 
 // Texto do construtor (ui-design §Textos, NFR-L10N-001). Nenhum id, enum ou nome de vaga aparece na tela (lição 5);
@@ -210,36 +212,142 @@ export const OPEN_MESSAGE = {
 
 export const SAVE_FAILED = "Your last choice wasn't saved. It's still on screen, but it will be lost if you close this page."
 
-/** Um dependente nomeado na mensagem de `has-dependents`: o título e o `kind` da vaga, que dá o substantivo. */
-export type Dependent = { title: string; kind: SlotKind }
+// ui-design da FEAT-011, Textos: diálogo de impacto (SCR-WEB-007), aviso ao abrir e linha do resumo (moldura).
+
+export const IMPACT_TEXT = {
+  current: 'Current',
+  new: 'New',
+  setAside: 'Will be set aside',
+  restored: 'Will be restored',
+  recalculated: 'Will be recalculated',
+  notDecided: 'Not decided yet.',
+  chosen: 'Chosen',
+  d40: 'Set-aside decisions stay with this character, off the sheet, and come back on their own if what they depend on returns.',
+  rerollNote: "Whichever result you don't use goes to the log as undone. It isn't set aside.",
+} as const
+
+export const staysLabel = (count: number) => `Stays as it is · ${count}`
+export const dependsOnText = (decision: string) => `depends on ${decision}`
+/** O par do ajuste: "{Atributo} +1, {Atributo} −1". */
+export const shiftText = (increase: string, decrease: string) => `${increase} +1, ${decrease} −1`
+
+const ANCESTRY_ACTIONS = { keep: 'Keep current ancestry', apply: 'Apply new ancestry' }
+const RESULT_ACTIONS = { keep: 'Keep current result', apply: 'Apply new result' }
+/**
+ * Decide, Enter result ou Roll numa vaga que não é ancestralidade, tabela nem efeito com dado: não acontece no conteúdo
+ * do MVP (só essas vagas têm dependentes). O ui-design não tem texto para ela; "Apply new choice" é provisório.
+ */
+export const CHOICE_ACTIONS = { keep: 'Keep current choice', apply: 'Apply new choice' }
+
+export interface ImpactWording {
+  title: string
+  keep: string
+  apply: string
+}
+
+/** Valor curto de uma vaga decidida, para o título: faixa na tabela, total no efeito, nome ou número nas escolhas. */
+function shortValue(slot: SlotView | undefined, nameOf: (id: string) => string): string | null {
+  if (!slot?.decided) return null
+  if (slot.kind === 'table') return slot.result ? rangeText(slot.result.entry) : null
+  if (slot.kind === 'roll-effect') return slot.result ? String(slot.result.total) : null
+  if (slot.kind === 'choose-entity') return nameOf(String(slot.value))
+  if (slot.kind === 'attribute-shift') return slot.value ? shiftText(nameOf(slot.value.increase), nameOf(slot.value.decrease)) : null
+  return slot.value === undefined ? null : typeof slot.value === 'number' ? formatNumber(slot.value) : String(slot.value)
+}
+
+const changeTitle = (subject: string, from: string | null, to: string | null) =>
+  from === null ? `Change ${subject} to ${to}?` : `Change ${subject} from ${from} to ${to}?`
+
+/** Título e ações do diálogo pela variante (ui-design da FEAT-011, Textos, diálogo de impacto). */
+export function impactWording(
+  kind: 'decide' | 'roll' | 'enter' | 'clear',
+  slot: SlotView | undefined,
+  from: SlotView | undefined,
+  to: SlotView | undefined,
+  nameOf: (id: string) => string,
+): ImpactWording {
+  const subject = slot ? decisionTitle(toOpenDecision(slot), nameOf) : ''
+  const current = shortValue(from, nameOf)
+  const next = shortValue(to, nameOf)
+  if (kind === 'clear') {
+    const noun = slot?.kind === 'table' || slot?.kind === 'roll-effect' ? 'result' : 'choice'
+    return { title: `Undo your ${subject} ${noun}?`, keep: `Keep current ${noun}`, apply: 'Apply undo' }
+  }
+  if (slot?.kind === 'choose-entity') {
+    return { title: current === null ? changeTitle(subject, null, next) : `Switch from ${current} to ${next}?`, ...ANCESTRY_ACTIONS }
+  }
+  if (slot?.kind === 'table' || slot?.kind === 'roll-effect') {
+    if (kind === 'roll') return { title: current === null ? `Use this roll for ${subject}?` : `Use the new roll for ${subject}?`, ...RESULT_ACTIONS }
+    return { title: changeTitle(subject, current, next), ...RESULT_ACTIONS }
+  }
+  return { title: changeTitle(subject, current, next), ...CHOICE_ACTIONS }
+}
+
+export const NOTICE_TEXT = {
+  title: 'The rules changed since this character was last saved.',
+  setAside: 'Set aside, because the current rules no longer have them:',
+  reopened: "Where the rules still ask for a decision, it's open again in Open decisions.",
+  restored: 'Restored, because the current rules have them again:',
+  dismiss: 'Dismiss',
+} as const
+
+export const earlierDecisions = (count: number) => `${count} earlier ${count === 1 ? 'decision' : 'decisions'}`
+export const setAsideCount = (count: number) => `${count} set aside`
+
+type Decision = ImpactItem['decision']
+type LogEntry = Extract<Snapshot, { status: 'ready' }>['document']['log'][number]
+type DecisionEntry = Extract<LogEntry, { kind: 'decision' }>
+
+/** As partes de uma linha de decisão (ui-design da FEAT-011, Linha de decisão): título, valor e, em resultado, o modo. */
+export interface LineParts {
+  title: string
+  value: string
+  mode?: string
+}
+
+/** Uma decisão guardada na vaga dela: o rótulo de pendência, o valor gravado e o modo, só em resultado. */
+export function partsOf(slot: SlotView, decision: Decision, nameOf: (id: string) => string): LineParts {
+  const title = decisionTitle(toOpenDecision(slot), nameOf)
+  switch (slot.kind) {
+    case 'table': {
+      const key = decision.mode === 'chosen' ? String(decision.value) : (decision.entry ?? '')
+      const entity = slot.table.entries.find((entry) => entry.key === key)?.entity
+      return { title, value: entity ? `${rangeText(key)} ${entity.name}` : rangeText(key), mode: decision.mode }
+    }
+    case 'roll-effect':
+      return { title, value: decision.mode === 'chosen' ? String(decision.value) : String(decision.total), mode: decision.mode }
+    case 'attribute-shift': {
+      const { increase, decrease } = (decision as Extract<Decision, { mode: 'chosen' }>).value as { increase: string; decrease: string }
+      return { title, value: shiftText(nameOf(increase), nameOf(decrease)) }
+    }
+    case 'choose-entity':
+      return { title, value: nameOf(String((decision as Extract<Decision, { mode: 'chosen' }>).value)) }
+    default: {
+      const value = (decision as Extract<Decision, { mode: 'chosen' }>).value
+      return { title, value: typeof value === 'number' ? formatValue(value) : String(value) }
+    }
+  }
+}
 
 /**
- * Regra do `{decisões}` (ui-design da FEAT-009, Mensagens): "result" para `table` e `roll-effect`, "choice" para os
- * demais; agrupa por substantivo, "choice" antes de "result", e o verbo concorda com o total.
+ * Uma suspensa sem vaga (vaga não gerada): os nomes congelados da entrada `decision` original, pelo `logged`, só para
+ * exibir (technical-design §3.3; ui-design, open-notice). Sem a entrada, `undefined`.
  */
-function dependentsPhrase(dependents: Dependent[]): { phrase: string; verb: string } {
-  const isResult = (kind: SlotKind) => kind === 'table' || kind === 'roll-effect'
-  const groups = (['choice', 'result'] as const)
-    .map((noun) => ({ noun, titles: dependents.filter((d) => isResult(d.kind) === (noun === 'result')).map((d) => d.title) }))
-    .filter(({ titles }) => titles.length > 0)
-    .map(({ noun, titles }) =>
-      titles.length === 1 ? `your ${titles[0]} ${noun}` : `your ${titles.slice(0, -1).join(', ')} and ${titles[titles.length - 1]} ${noun}s`,
-    )
-  return { phrase: groups.join(' and '), verb: dependents.length === 1 ? 'depends' : 'depend' }
-}
-
-const CHANGING_LATER = "Changing a choice that others depend on isn't available yet."
-
-/** D8: nomeia as decisões que impedem a troca ("your Size choice for Human depends on…"). */
-export function hasDependentsMessage(next: string, current: string, dependents: Dependent[]): string {
-  const { phrase, verb } = dependentsPhrase(dependents)
-  return `You can't switch to ${next} yet: ${phrase} for ${current} ${verb} on your current ancestry. ${CHANGING_LATER}`
-}
-
-/** `has-dependents` no Choose → Choose de uma tabela (ui-design da FEAT-009, Mensagens). */
-export function tableDependentsMessage(table: string, next: string, current: string, dependents: Dependent[]): string {
-  const { phrase, verb } = dependentsPhrase(dependents)
-  return `You can't change ${table} to ${next} yet: ${phrase} ${verb} on the current result, ${current}. ${CHANGING_LATER}`
+export function partsOfLogged(log: LogEntry[], logged: number | undefined): LineParts | undefined {
+  const entry = log.find((candidate): candidate is DecisionEntry => candidate.kind === 'decision' && candidate.id === logged)
+  if (!entry) return undefined
+  const title = entry.subject?.name ?? entry.step.name
+  const { result } = entry
+  const value =
+    'entry' in result
+      ? [rangeText(result.entry), result.entity?.name].filter(Boolean).join(' ')
+      : 'shift' in result
+        ? shiftText(result.shift.increase.name, result.shift.decrease.name)
+        : 'value' in result
+          ? formatValue(result.value)
+          : result.entity.name
+  const isResult = entry.slotKind === 'table' || entry.slotKind === 'roll-effect'
+  return { title, value, ...(isResult && { mode: entry.mode }) }
 }
 
 /** Id de elemento da vaga, para o atalho `?slot=` (FR-FLOW-011). */

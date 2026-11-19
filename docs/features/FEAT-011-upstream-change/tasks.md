@@ -39,7 +39,7 @@
       Fixture com suspensas acumuladas (vagas não geradas e vagas com vários candidatos) e os casos de `evaluate` e `impact` em `evaluate.perf.test.ts`.
       Pronto quando: os casos da parte unitária do AC-16 passam, com os p95 no console.
 
-- [ ] T9 — UI: diálogo de impacto, troca de ancestralidade e aviso ao abrir (design §3.3; ui-design; SCR-WEB-007, SCR-WEB-003)
+- [x] T9 — UI: diálogo de impacto, troca de ancestralidade e aviso ao abrir (design §3.3; ui-design; SCR-WEB-007, SCR-WEB-003)
       Só a integração: o diálogo pelo `snapshot.pending`, Apply e Keep current, o `AncestryStep` sem o aviso de `has-dependents`, o `notice` com `dismissNotice` e a linha "N set aside". As telas são do `design-manifest.json`. Mudam aqui, como o §7 as emendou: a expectativa 11 (emenda M1: depois do Keep, a prévia continua aberta, e "Choose {New}" recebe o foco); a 14, no `e2e/ancestry.spec.ts`; e a parte da 13 em que o Choose → Choose com dependentes abre o diálogo da moldura e o Keep deixa a grade na entrada 4 (l.973–988, com a saída do "aviso sai na próxima ação"), porque o diálogo é genérico, pelo `pending`. O `LOCKED_*` e o Reroll ficam para a T10.
       Pronto quando: os testes de componente do diálogo e da Ancestry passam no `Builder.test.tsx`, incluindo os estados do ui-design e a gravação retida do AC-17, e as telas conferem com o manifesto; todas as suítes verdes, unitárias e E2E nos 5 projetos.
 
