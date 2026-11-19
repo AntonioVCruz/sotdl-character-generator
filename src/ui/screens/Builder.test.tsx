@@ -1169,10 +1169,12 @@ describe('Impact dialog and open notice (FEAT-011)', () => {
     await userEvent.tab({ shift: true })
     expect(document.activeElement).toBe(apply)
 
-    // O clique fora não fecha (isDismissable={false}).
+    // O clique fora não fecha (isDismissable={false}), e a contenção devolve o foco ao diálogo no quadro seguinte. O Esc
+    // só vem depois disso: com o foco ainda no `body`, ele não chega ao diálogo (a corrida do CI 44562205950).
     await userEvent.click(document.querySelector('.dialog-overlay')!)
     expect(screen.getByRole('dialog')).toBe(dialog)
     expect(keep).not.toHaveBeenCalled()
+    await vi.waitFor(() => expect(dialog.contains(document.activeElement)).toBe(true))
 
     // Esc é Keep: o diálogo fecha pelo snapshot, e o foco volta ao controle que o abriu.
     await userEvent.keyboard('{Escape}')
