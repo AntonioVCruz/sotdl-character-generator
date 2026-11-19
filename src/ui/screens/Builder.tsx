@@ -171,7 +171,12 @@ function BuilderReady({ session, snapshot, route }: {
     opener.current = null
     // No quadro seguinte ao fechamento (ui-design, kept e applied).
     const frame = requestAnimationFrame(() => {
-      if (mark.via === 'apply') return appliedTarget(mark.pending)?.focus()
+      if (mark.via === 'apply') {
+        // Sem destino próprio da variante (Choose → Choose, troca de modo para Choose), a entrada acionada, se ainda
+        // está na tela: a restauração do `Modal` não é confiável.
+        const target = appliedTarget(mark.pending) ?? (back?.isConnected ? back : null)
+        return target?.focus()
+      }
       // Keep: o foco volta ao controle que abriu; se uma troca de rota o tirou da tela, vai para o `h1` da etapa.
       ;(back?.isConnected ? back : title.current)?.focus()
     })
@@ -248,8 +253,9 @@ function BuilderReady({ session, snapshot, route }: {
 
 /**
  * Destino do foco depois do Apply, pela variante (ui-design da FEAT-011, applied): o `h2` do detalhe na troca de
- * ancestralidade, a coluna de resultado depois de Roll e Enter result, o `h2` do card no `clear`. No Choose → Choose, a
- * própria restauração do `Modal` devolve o foco à entrada acionada.
+ * ancestralidade, a coluna de resultado depois de Roll e Enter result, o `h2` do card no `clear`. No Choose → Choose e na
+ * troca de modo para Choose, devolve `null`, e a moldura devolve o foco ao `opener` guardado: a entrada acionada, agora
+ * marcada.
  */
 function appliedTarget({ kind, key, impact }: PendingChange): HTMLElement | null {
   const slotKind = (impact.change.from ?? impact.change.to)?.kind
