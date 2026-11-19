@@ -1,24 +1,30 @@
 import { describe, expect, it } from 'vitest'
-import type { Book, CharacterDocument, DecisionValue, Formula } from '../content'
+import type { Book, CharacterDocument, Decision, DecisionValue, Formula } from '../content'
 import core from '../../packs/sotdl.core.json'
-import { evaluate, resolve, type Rules } from '.'
+import { evaluate, impact, resolve, settle, type Rules } from '.'
 
 // Guarda unitária da NFR-PERF-002 (technical-design §5; ADR-008): `evaluate`, 200 execuções, p95 ≤ 20 ms, um quinto
 // do limite do notebook. Os números saem no console, para o relatório de aceite.
+// Guarda unitária da NFR-PERF-003 (FEAT-011 §5): `impact`, 200 execuções, p95 ≤ 60 ms, um quinto de 300 ms.
 
 const RUNS = 200
 const LIMIT_MS = 20
+const IMPACT_LIMIT_MS = 60
 
 /** p95 pelo posto mais próximo: a 190ª de 200 amostras em ordem. */
-function p95(rules: Rules, document: CharacterDocument): number {
+function p95Of(run: () => unknown): number {
   const samples: number[] = []
-  for (let run = 0; run < RUNS; run++) {
+  for (let i = 0; i < RUNS; i++) {
     const start = performance.now()
-    evaluate(rules, document)
+    run()
     samples.push(performance.now() - start)
   }
   samples.sort((a, b) => a - b)
   return samples[Math.ceil(0.95 * RUNS) - 1]
+}
+
+function p95(rules: Rules, document: CharacterDocument): number {
+  return p95Of(() => evaluate(rules, document))
 }
 
 function character(order: string[], decisions: Record<string, DecisionValue>): CharacterDocument {
@@ -182,6 +188,93 @@ function tableFixture() {
   return { rules: resolve([book], ['test.tabled']), document }
 }
 
+/**
+ * Pacote fictício com suspensas acumuladas (FEAT-011 §5): 10 ancestralidades, cada uma com as mesmas 6 tabelas d20 de
+ * 20 entradas decididas, e só a primeira escolhida: 54 suspensas de vagas não geradas. As 6 tabelas da escolhida têm 5
+ * candidatos em `earlier`: 3 de outro livro (`invalid`) e 2 válidos e mais antigos (`superseded`), 30 suspensas com
+ * conferência de validade. Toda decisão tem `logged`, e o documento sai assentado por `settle`, como a sessão o grava.
+ */
+function setAsideFixture() {
+  const BOOK = 'test.accumulated'
+  const attributes = ['might', 'wits', 'grace', 'nerve'].map((name) => `attribute:${name}`)
+  const trait = (i: number) => `characteristic:trait-${i}`
+  const ancestries = Array.from({ length: 10 }, (_, i) => `a${i}`)
+  const tables = Array.from({ length: 6 }, (_, i) => `t${i}`)
+  const ROLLED = '7'
+
+  const book = {
+    format: 1,
+    id: BOOK,
+    name: 'Accumulated',
+    abbr: 'AC',
+    layer: 'core',
+    published: '2001',
+    components: [
+      {
+        id: 'base',
+        type: 'adds',
+        default: 'on',
+        items: [
+          { id: 'procedure:test', steps: ['step:origin', 'step:story'] },
+          { id: 'step:origin', name: 'Origin', page: 1, slots: { ancestry: { kind: 'choose-entity', of: 'ancestry' } } },
+          { id: 'step:story', name: 'Story', page: 2, requires: ['step:origin'] },
+          ...attributes.map((id) => ({ id, name: id, page: 3, modifier: { add: [{ ref: 'self' }, -10] } })),
+          ...Array.from({ length: 4 }, (_, i) => ({
+            id: trait(i),
+            name: `Trait ${i}`,
+            page: 3,
+            formula: { add: [{ ref: attributes[i] }, ...(i === 0 ? [] : [{ ref: trait(i - 1) }])] },
+          })),
+          ...tables.map((t, i) => ({
+            id: `table:${t}`,
+            name: `Table ${i}`,
+            page: 4,
+            dice: { count: 1, sides: 20 },
+            regime: 'roll-or-choose',
+            entries: Object.fromEntries(
+              Array.from({ length: 20 }, (_, e) => [
+                String(e + 1),
+                String(e + 1) === ROLLED ? { effects: { bonus: { target: trait(i % 4), add: 1 } } } : {},
+              ]),
+            ),
+          })),
+          ...ancestries.map((a, i) => ({
+            id: `ancestry:${a}`,
+            name: `Ancestry ${i}`,
+            page: 5,
+            attributes: Object.fromEntries(attributes.map((id) => [id, 10])),
+            grants: Object.fromEntries(tables.map((t) => [t, { kind: 'table', step: 'step:story', table: `table:${t}` }])),
+          })),
+        ],
+      },
+    ],
+  } as unknown as Book
+
+  let logged = 0
+  const next = () => ++logged
+  const rolled = (entry: string, book: string): Decision => ({ mode: 'rolled', dice: [Number(entry)], modifier: 0, total: Number(entry), entry, rolls: 1, book, logged: next() })
+  const chosen = (value: string): Decision => ({ mode: 'chosen', value, book: BOOK, logged: next() })
+
+  const document = character([BOOK], {})
+  document.decisions.ancestry = { mode: 'chosen', value: 'ancestry:a0', logged: next() }
+  document.earlier = {}
+  for (const [i, a] of ancestries.entries()) {
+    for (const [j, t] of tables.entries()) {
+      const key = `ancestry=${a}/${t}`
+      if (i > 0) {
+        document.decisions[key] = chosen(String(1 + j))
+        continue
+      }
+      // Da mais antiga para a mais recente, como as regras de escrita as empilham; `earlier` vai da mais recente à mais antiga.
+      const older = [1, 2, 3, 4, 5].map((k) => (k % 2 ? rolled(String(k + 1), 'test.other') : chosen(String(10 + k))))
+      document.earlier[key] = older.reverse()
+      document.decisions[key] = rolled(ROLLED, BOOK)
+    }
+  }
+  const rules = resolve([book], [BOOK])
+  return { rules, document: settle(rules, document).document, next }
+}
+
 describe('evaluate: time guard', () => {
   it('NFR-PERF-002: evaluate of the most complete core character stays under 20 ms at p95', () => {
     const rules = resolve([core as unknown as Book], ['sotdl.core'])
@@ -248,5 +341,55 @@ describe('evaluate: time guard', () => {
     const time = p95(rules, document)
     console.info(`NFR-PERF-002 evaluate p95, table fixture: ${time.toFixed(3)} ms over ${RUNS} runs`)
     expect(time).toBeLessThanOrEqual(LIMIT_MS)
+  })
+
+  it('NFR-PERF-002: evaluate of a fixture with accumulated set-aside decisions (54 not generated, 30 with a validity check) stays under 20 ms at p95', () => {
+    const { rules, document } = setAsideFixture()
+    // O porte da §5, conferido na própria fixture.
+    const view = evaluate(rules, document)
+    const reasons = view.setAside.reduce<Record<string, number>>((count, item) => ({ ...count, [item.reason]: (count[item.reason] ?? 0) + 1 }), {})
+    expect(reasons).toEqual({ 'not-generated': 54, invalid: 18, superseded: 12 })
+    expect(view.slots.filter((slot) => slot.kind === 'table' && slot.decided && slot.candidate === 0)).toHaveLength(6)
+
+    const time = p95(rules, document)
+    console.info(`NFR-PERF-002 evaluate p95, set-aside fixture (54 not generated, 18 invalid, 12 superseded): ${time.toFixed(3)} ms over ${RUNS} runs`)
+    expect(time).toBeLessThanOrEqual(LIMIT_MS)
+  })
+})
+
+describe('impact: time guard', () => {
+  it('NFR-PERF-003: impact of switching a core Dwarf with the six tables and the adjustment to Human stays under 60 ms at p95', () => {
+    const rules = resolve([core as unknown as Book], ['sotdl.core'])
+    let logged = 0
+    const before = character(['sotdl.core'], {})
+    before.decisions.ancestry = { mode: 'chosen', value: 'ancestry:dwarf', logged: ++logged }
+    const entries = { 'hated-creature': '1-2', age: '8-12', build: '9-12', appearance: '9-11', background: '1', personality: '9-12' }
+    for (const [grant, entry] of Object.entries(entries)) {
+      before.decisions[`ancestry=dwarf/${grant}`] = { mode: 'chosen', value: entry, book: 'sotdl.core', logged: ++logged }
+    }
+    before.decisions.adjustment = { mode: 'chosen', value: { decrease: 'attribute:strength', increase: 'attribute:intellect' }, logged: ++logged }
+    const after = settle(rules, { ...before, decisions: { ...before.decisions, ancestry: { mode: 'chosen', value: 'ancestry:human', logged: logged + 1 } } }).document
+
+    const result = impact(rules, before, after, 'ancestry')
+    expect(result.setAside).toHaveLength(6)
+    expect(result.recalculated.characteristics.find((c) => c.name === 'Corruption')).toMatchObject({ from: 1, to: 0 })
+    expect(result.stays.map((item) => item.key)).toEqual(['adjustment'])
+
+    const time = p95Of(() => impact(rules, before, after, 'ancestry'))
+    console.info(`NFR-PERF-003 impact p95, core (Dwarf, six tables, Background 1, adjustment → Human): ${time.toFixed(3)} ms over ${RUNS} runs`)
+    expect(time).toBeLessThanOrEqual(IMPACT_LIMIT_MS)
+  })
+
+  it('NFR-PERF-003: impact of switching the chosen ancestry of the set-aside fixture stays under 60 ms at p95', () => {
+    const { rules, document: before, next } = setAsideFixture()
+    const after = settle(rules, { ...before, decisions: { ...before.decisions, ancestry: { mode: 'chosen', value: 'ancestry:a1', logged: next() } } }).document
+
+    const result = impact(rules, before, after, 'ancestry')
+    expect(result.setAside).toHaveLength(6)
+    expect(result.restored).toHaveLength(6)
+
+    const time = p95Of(() => impact(rules, before, after, 'ancestry'))
+    console.info(`NFR-PERF-003 impact p95, set-aside fixture (a0 → a1): ${time.toFixed(3)} ms over ${RUNS} runs`)
+    expect(time).toBeLessThanOrEqual(IMPACT_LIMIT_MS)
   })
 })

@@ -35,7 +35,7 @@
       `settle` no `open`, `notice`, `dismissNotice`, uma gravação com a marca, as entradas e o metadado, e falha com `retrySave`.
       Pronto quando: os testes do AC-13 (i) a (v) passam, com duas instâncias do app e o fetch falso servindo duas versões do pacote fictício, e a abertura sem diferença continua sem gravar.
 
-- [ ] T8 — Guardas de desempenho (design §5; NFR-PERF-002, 003)
+- [x] T8 — Guardas de desempenho (design §5; NFR-PERF-002, 003)
       Fixture com suspensas acumuladas (vagas não geradas e vagas com vários candidatos) e os casos de `evaluate` e `impact` em `evaluate.perf.test.ts`.
       Pronto quando: os casos da parte unitária do AC-16 passam, com os p95 no console.
 
