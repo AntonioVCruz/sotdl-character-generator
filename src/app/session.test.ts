@@ -1149,3 +1149,161 @@ describe('character session: upstream change (FEAT-011)', () => {
     expect(savedDocument(docs).decisions[D_AGE]).toEqual({ ...ageOf, setAside: true })
   })
 })
+
+// FEAT-011 T7: abrir com uma versão nova do pacote (technical-design §3.2, "Abrir"). Cada instância do app tem o seu
+// carregador de regras, e o fetch falso de cada uma serve uma versão do pacote fictício de tabelas.
+const tablesBook = files['/packs/test.tables.json'] as ReturnType<typeof book>
+const withAgeEntries = (entries: Record<string, unknown>) => ({
+  ...tablesBook,
+  components: [
+    {
+      ...tablesBook.components[0],
+      items: tablesBook.components[0].items.map((item) => ((item as { id: string }).id === 'table:gnome-age' ? { ...(item as object), entries } : item)),
+    },
+  ],
+})
+const VERSION = {
+  first: tablesBook,
+  // A entrada 3-7 sai (versão nova do pacote).
+  removed: withAgeEntries({ '3-6': {}, '7-12': { page: 8 }, '13-18': {} }),
+  // Só o efeito da entrada 3-7 muda.
+  effect: withAgeEntries({ '3-7': { effects: { madness: { target: 'characteristic:madness', add: 1 } } }, '8-12': { page: 8 }, '13-18': {} }),
+}
+function instance(repository: Repository, tables: unknown = VERSION.first) {
+  const serving = vi.fn(async (url: string) => {
+    const body = url === '/packs/test.tables.json' ? tables : files[url]
+    return { ok: body !== undefined, status: body === undefined ? 404 : 200, json: async () => body }
+  })
+  return createApp({ ...deps, repository, packs: { baseUrl: '/', fetch: serving }, lastStep: memoryLastStep() }).createSession()
+}
+/** Gnome com a Age escolhida em 3-7 pela primeira versão (entrada 1 do log), gravado pelo comando. */
+async function gnomeWithAge() {
+  const memory = memoryRepository()
+  memory.docs.set('id-1', { ...stored({}, [TABLES]), decisions: { ancestry: { mode: 'chosen', value: 'ancestry:gnome' } } })
+  const first = instance(memory.repository)
+  await first.open('id-1')
+  await first.decide(AGE, '3-7')
+  vi.mocked(memory.repository.save).mockClear()
+  return memory
+}
+
+describe('character session: open with a new version of the pack (FEAT-011)', () => {
+  it('FR-CONT-015, FR-CONT-016, FR-CHG-011, FR-CHG-012: a recorded entry removed sets the decision aside and reopens the slot, with the notice and one save with the mark, the set-aside entry and the metadata (AC-13 i)', async () => {
+    const { repository, docs, metas } = await gnomeWithAge()
+    const before = savedDocument(docs)
+    const release = holdNextSave(repository)
+    const second = instance(repository, VERSION.removed)
+    const opening = second.open('id-1')
+    // O snapshot fica pronto, com o aviso e `saving`, antes do fim da gravação.
+    await vi.waitFor(() => expect(second.getSnapshot()).toMatchObject({ status: 'ready', save: 'saving' }))
+    const snapshot = ready(second)
+    expect(snapshot.notice!.setAside.map((item) => [item.key, item.reason])).toEqual([[AGE, 'invalid']])
+    expect(snapshot.notice!.restored).toEqual([])
+    expect(slotIn(second, AGE)).toMatchObject({ decided: false })
+    expect(snapshot.view.openDecisions.map((open) => open.key)).toContain(AGE)
+    expect(savedDocument(docs)).toBe(before)
+    release()
+    await opening
+    expect(ready(second).save).toBe('saved')
+
+    expect(repository.save).toHaveBeenCalledTimes(1)
+    const saved = savedDocument(docs)
+    expect(saved.revision).toBe(before.revision + 1)
+    expect(saved.updatedAt).toBe(AT)
+    expect(saved.decisions[AGE]).toEqual({ ...chosenEntry('3-7'), logged: 1, setAside: true })
+    expect(saved.log.slice(1)).toEqual([{ id: 2, at: AT, kind: 'set-aside', slot: AGE, ref: 1, cause: { content: true } }])
+    expect(metas.get('id-1')).toMatchObject({ openDecisions: snapshot.view.openDecisions.length, updatedAt: AT })
+  })
+
+  it('FR-CONT-016, FR-CHG-018: the entry back in a later version restores the decision, with the notice and the restored entry (AC-13 ii)', async () => {
+    const { repository, docs } = await gnomeWithAge()
+    await instance(repository, VERSION.removed).open('id-1')
+    vi.mocked(repository.save).mockClear()
+
+    const third = instance(repository, VERSION.first)
+    await third.open('id-1')
+    expect(ready(third).notice!.setAside).toEqual([])
+    expect(ready(third).notice!.restored.map((item) => item.key)).toEqual([AGE])
+    expect(slotIn(third, AGE)).toMatchObject({ decided: true, value: '3-7' })
+    expect(repository.save).toHaveBeenCalledTimes(1)
+    const saved = savedDocument(docs)
+    expect(saved.decisions[AGE]).toEqual({ ...chosenEntry('3-7'), logged: 1 })
+    expect(saved.log.slice(2)).toEqual([{ id: 3, at: AT, kind: 'restored', slot: AGE, ref: 1, cause: { content: true } }])
+  })
+
+  it('FR-CONT-015: when only the effect of the entry changes, the value follows the new version and nothing is saved (AC-13 iii)', async () => {
+    const { repository, docs } = await gnomeWithAge()
+    const before = savedDocument(docs)
+    const next = instance(repository, VERSION.effect)
+    await next.open('id-1')
+    expect(ready(next).view.summary.characteristics.find((c) => c.name === 'Madness')?.value).toBe(1)
+    expect(ready(next).notice).toBeUndefined()
+    expect(ready(next).save).toBe('saved')
+    expect(repository.save).not.toHaveBeenCalled()
+    expect(savedDocument(docs)).toBe(before)
+  })
+
+  it('ADR-004 §1: opening without a difference saves nothing: revision, log and updatedAt stay the same (AC-13 iv)', async () => {
+    const { repository, docs } = await gnomeWithAge()
+    const before = savedDocument(docs)
+    const same = instance(repository, VERSION.first)
+    await same.open('id-1')
+    expect(ready(same).notice).toBeUndefined()
+    expect(ready(same).document).toEqual(savedDocument(docs))
+    expect(repository.save).not.toHaveBeenCalled()
+    expect(savedDocument(docs)).toMatchObject({ revision: before.revision, updatedAt: before.updatedAt, log: before.log })
+  })
+
+  it('FR-CONT-016, FR-CHG-019: an older document with an orphan and no mark records it as set aside on the first opening, and nothing on the second (AC-13 v)', async () => {
+    const memory = memoryRepository()
+    memory.docs.set('id-1', stored({ ancestry: 'ancestry:troll', 'ancestry=gnome/stature': 1 }))
+    const first = instance(memory.repository)
+    await first.open('id-1')
+    expect(ready(first).notice!.setAside).toEqual([
+      expect.objectContaining({ key: 'ancestry=gnome/stature', reason: 'not-generated', decision: { mode: 'chosen', value: 1 } }),
+    ])
+    expect(ready(first).notice!.setAside[0].slot).toBeUndefined()
+    expect(memory.repository.save).toHaveBeenCalledTimes(1)
+    const saved = savedDocument(memory.docs)
+    expect(saved.decisions['ancestry=gnome/stature']).toEqual({ mode: 'chosen', value: 1, setAside: true })
+    // Sem `logged` (gravada antes da FEAT-011), a entrada fica sem ponteiro.
+    expect(saved.log).toEqual([{ id: 1, at: AT, kind: 'set-aside', slot: 'ancestry=gnome/stature', cause: { content: true } }])
+
+    vi.mocked(memory.repository.save).mockClear()
+    const second = instance(memory.repository)
+    await second.open('id-1')
+    expect(ready(second).notice).toBeUndefined()
+    expect(memory.repository.save).not.toHaveBeenCalled()
+  })
+
+  it('FR-CHAR-010: a failed save when opening with a difference shows save failed with the notice, and retrySave saves it (AC-13)', async () => {
+    const memory = memoryRepository()
+    memory.docs.set('id-1', stored({ ancestry: 'ancestry:troll', 'ancestry=gnome/stature': 1 }))
+    memory.control.failSave = true
+    const session = instance(memory.repository)
+    await session.open('id-1')
+    expect(ready(session)).toMatchObject({ save: 'failed', notice: { restored: [] } })
+    expect(savedDocument(memory.docs).log).toEqual([])
+
+    memory.control.failSave = false
+    await expect(session.retrySave()).resolves.toEqual({ ok: true })
+    expect(savedDocument(memory.docs).decisions['ancestry=gnome/stature']).toEqual({ mode: 'chosen', value: 1, setAside: true })
+    expect(ready(session).notice).toBeDefined()
+  })
+
+  it('FR-CONT-016: dismissNotice takes the notice away without saving; commands keep it until then', async () => {
+    const memory = memoryRepository()
+    memory.docs.set('id-1', stored({ ancestry: 'ancestry:troll', 'ancestry=gnome/stature': 1 }))
+    const session = instance(memory.repository)
+    await session.open('id-1')
+    vi.mocked(memory.repository.save).mockClear()
+    await session.decide('ancestry', 'ancestry:sprite')
+    expect(ready(session).notice).toBeDefined()
+    vi.mocked(memory.repository.save).mockClear()
+    const before = ready(session)
+    session.dismissNotice()
+    expect(ready(session).notice).toBeUndefined()
+    expect(ready(session).document).toBe(before.document)
+    expect(memory.repository.save).not.toHaveBeenCalled()
+  })
+})

@@ -31,7 +31,7 @@
       `roll` e `enter` em vaga decidida, `decide` numa tabela rolada ou informada, `rolls` da vaga, e o `keep` da rerrolagem com a `decision` recusada, a `undone` `declined` e o `rolls` da ativa. A expectativa 6 do §7 muda aqui.
       Pronto quando: os testes do AC-7 (Reroll na mesma entrada), AC-8 e AC-9 passam, com sorteio fixo.
 
-- [ ] T7 — Sessão: abrir com versão nova do pacote (design §3.2, "Abrir"; D4; FR-CONT-015, 016)
+- [x] T7 — Sessão: abrir com versão nova do pacote (design §3.2, "Abrir"; D4; FR-CONT-015, 016)
       `settle` no `open`, `notice`, `dismissNotice`, uma gravação com a marca, as entradas e o metadado, e falha com `retrySave`.
       Pronto quando: os testes do AC-13 (i) a (v) passam, com duas instâncias do app e o fetch falso servindo duas versões do pacote fictício, e a abertura sem diferença continua sem gravar.
 

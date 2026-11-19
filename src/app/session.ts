@@ -10,9 +10,21 @@ import {
   type PackSource,
 } from '../content'
 import { cryptoRandomSource, rollDice, type RandomSource } from '../dice'
-import { EngineError, evaluate, impact, resolve, type CharacterView, type Impact, type Provenance, type Rules, type SlotView } from '../engine'
+import {
+  EngineError,
+  evaluate,
+  impact,
+  resolve,
+  settle,
+  type CharacterView,
+  type Impact,
+  type Provenance,
+  type Rules,
+  type Settled,
+  type SlotView,
+} from '../engine'
 import type { CharacterRepository, LastStepStore } from '../storage'
-import { change, type Change, type ChangeRequest } from './changes'
+import { change, markEntries, nextLogId, type Change, type ChangeRequest } from './changes'
 
 // Sessão do personagem (technical-design §3.2): store externo lido pelo React com `useSyncExternalStore`
 // (ADR-006). Os comandos são os únicos que escrevem (ADR-004 §5), e cada decisão registrada vai ao log (FEAT-009 §3.3).
@@ -60,7 +72,15 @@ export type Snapshot =
       lastStep?: string
       /** Mudança com suspensas ou restauradas, à espera de `confirm` ou `keep` (FR-CHG-001; FEAT-011 D3). */
       pending?: PendingChange
+      /** Aviso da abertura com diferença (FR-CONT-016), até `dismissNotice`. */
+      notice?: OpenNotice
     }
+
+/** O que a abertura achou de diferente da marca de registro (FEAT-011 §3.2, "Abrir"). */
+export interface OpenNotice {
+  setAside: Settled['setAside']
+  restored: Settled['restored']
+}
 
 export type DecideResult =
   | { ok: true }
@@ -415,8 +435,33 @@ export function createCharacterSession({
         if (error instanceof PackLoadError || error instanceof EngineError) return fail('pack-load-failed')
         throw error
       }
+      if (!current()) return
       // Uma falha de leitura da etapa não é falha de abertura: o store devolve `undefined`.
-      if (current()) set({ status: 'ready', id, document: parsed.data, rules, view, save: 'saved', lastStep: lastStep.get(id) })
+      const ready: Ready = { status: 'ready', id, document: parsed.data, rules, view, save: 'saved', lastStep: lastStep.get(id) }
+
+      // Comparação com a marca de registro (ADR-004 §1, §4; FR-CONT-015, 016): sem diferença, nada é gravado.
+      const found = settle(rules, parsed.data, view)
+      if (found.setAside.length === 0 && found.restored.length === 0) return set(ready)
+      // Com diferença: o documento assentado e as entradas com `cause: { content: true }`, numa gravação com o
+      // metadado; o snapshot vem antes da gravação, com o aviso. A visão não muda: os derivados já seguem a versão vigente.
+      const at = now().toISOString()
+      const entries = markEntries(found, { content: true }, at, nextLogId(parsed.data))
+      const document: CharacterDocument = {
+        ...found.document,
+        revision: parsed.data.revision + 1,
+        updatedAt: at,
+        log: [...parsed.data.log, ...entries],
+      }
+      set({ ...ready, document, save: 'saving', notice: { setAside: found.setAside, restored: found.restored } })
+      await persist()
+    },
+
+    /** Tira o aviso da abertura, sem gravar (FR-CONT-016; ui-design, open-notice). */
+    dismissNotice(): void {
+      if (snapshot.status !== 'ready' || !snapshot.notice) return
+      const next = { ...snapshot }
+      delete next.notice
+      set(next)
     },
 
     /**
