@@ -86,6 +86,30 @@ export function markEntries(
 /** O id seguinte do log (FEAT-009 §3.3: em sequência no documento). */
 export const nextLogId = (document: CharacterDocument) => document.log.reduce((last, entry) => Math.max(last, entry.id), 0) + 1
 
+/**
+ * Keep de uma rerrolagem (FR-CHG-010; D5; emenda M1): o valor recusado vai ao log como uma `decision`, com o `rolls` do
+ * contador, e uma `undone` `declined` com `ref` nela; na vaga `table`, a ativa passa a ter esse `rolls`. Valor, ficha e
+ * cálculo não mudam, e nada vai para `decisions` nem `earlier` além do contador.
+ */
+export function decline(
+  document: CharacterDocument,
+  slot: SlotView,
+  refused: Decision,
+  draft: DecisionDraft,
+  at: string,
+): { document: CharacterDocument; entries: LogEntry[] } {
+  const id = nextLogId(document)
+  // A entrada `decision` é a da rolagem pendente, com id e hora desta escrita.
+  const entries: LogEntry[] = [{ ...draft, id, at }, undoneEntry(id + 1, at, slot.key, { ...refused, logged: id }, 'declined')]
+  const active = activeIndex(slot)
+  const candidates = candidatesOf(document, slot.key)
+  const counted =
+    slot.kind === 'table' && active !== undefined && refused.rolls !== undefined
+      ? withCandidates(document, slot.key, candidates.map((decision, index) => (index === active ? { ...decision, rolls: refused.rolls } : decision)))
+      : document
+  return { document: { ...counted, log: [...document.log, ...entries] }, entries }
+}
+
 /** Uma decisão nova e a entrada dela, ou o `clear` da vaga. */
 export type ChangeRequest = { decision: Decision; draft: DecisionDraft } | { clear: true }
 

@@ -27,7 +27,7 @@
       Na interface, só o mínimo para compilar: o `AncestryStep` e o `TablesStep` deixam de tratar `has-dependents`, sem estado nem texto novo (a interface nova é da T9 e da T10).
       Pronto quando: os testes do AC-5, AC-6, AC-7 (ancestralidade e Choose → Choose), AC-10 (sessão), AC-11, AC-12, AC-14 e AC-17 (sessão, gravação retida e falha) passam no `session.test.ts`; typecheck e lint verdes; as suítes verdes, salvo os testes das expectativas 11 e 13 (o caso do dependents-blocked) e 14 do §7, que ficam vermelhos até a T9.
 
-- [ ] T6 — Sessão: Reroll, troca de modo e contador (design §3.2, "Comandos" e "Contador"; D5; FR-DEC-015, 016, 018; FR-CHG-010)
+- [x] T6 — Sessão: Reroll, troca de modo e contador (design §3.2, "Comandos" e "Contador"; D5; FR-DEC-015, 016, 018; FR-CHG-010)
       `roll` e `enter` em vaga decidida, `decide` numa tabela rolada ou informada, `rolls` da vaga, e o `keep` da rerrolagem com a `decision` recusada, a `undone` `declined` e o `rolls` da ativa. A expectativa 6 do §7 muda aqui.
       Pronto quando: os testes do AC-7 (Reroll na mesma entrada), AC-8 e AC-9 passam, com sorteio fixo.
 

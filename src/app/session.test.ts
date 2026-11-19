@@ -632,7 +632,7 @@ describe('character session: tables (Roll, Enter result, Choose)', () => {
     expect(repository.save).not.toHaveBeenCalled()
   })
 
-  it('FEAT-009 D5: roll and enter on a decided table, and Choose on a rolled or entered one, give already-decided; roll on a slot without dice and decide on a roll-effect give invalid-value (AC-11)', async () => {
+  it('FR-FLOW-014, FR-STEP-014: roll on a slot without dice and decide on a roll-effect give invalid-value (AC-11)', async () => {
     const { session, repository, random } = await withTables({
       [AGE]: rolledEntry('8-12', [3, 5, 2], 10),
       [FATE]: { mode: 'entered', sum: 11, modifier: 0, total: 11, entry: '11-18', book: TABLES },
@@ -640,12 +640,6 @@ describe('character session: tables (Roll, Enter result, Choose)', () => {
       [PAST]: chosenEntry('4'),
     })
     const before = ready(session)
-    const alreadyDecided = { ok: false, reason: 'already-decided' }
-    await expect(session.roll(AGE)).resolves.toEqual(alreadyDecided)
-    await expect(session.enter(AGE, 10)).resolves.toEqual(alreadyDecided)
-    await expect(session.roll(FOE)).resolves.toEqual(alreadyDecided)
-    await expect(session.decide(AGE, '3-7')).resolves.toEqual(alreadyDecided)
-    await expect(session.decide(FATE, '3-10')).resolves.toEqual(alreadyDecided)
 
     const invalid = { ok: false, reason: 'invalid-value' }
     await expect(session.roll('ancestry')).resolves.toEqual(invalid)
@@ -1147,6 +1141,229 @@ describe('character session: upstream change (FEAT-011)', () => {
     control.failSave = false
     await expect(session.retrySave()).resolves.toEqual({ ok: true })
     expect(savedDocument(docs).decisions[D_AGE]).toEqual({ ...ageOf, setAside: true })
+  })
+})
+
+// FEAT-011 T6: Reroll, troca de modo e contador (technical-design §3.2, "Comandos" e "Contador"; D5), com sorteio fixo.
+const madness = (session: Awaited<ReturnType<typeof opened>>['session']) =>
+  ready(session).view.summary.characteristics.find((characteristic) => characteristic.name === 'Madness')?.value
+
+describe('character session: Reroll, mode switch and counter (FEAT-011)', () => {
+  it('FR-DEC-015, FR-DEC-016: Reroll on a rolled table draws new faces with rolls = previous + 1; the previous one leaves the document and goes to the log as undone, never set aside (AC-8)', async () => {
+    const { session, docs, random } = await withTables({}, sequence([2, 4, 1, 0, 0, 0]))
+    await session.roll(AGE)
+    const rerolling = session.roll(AGE)
+    expect(ready(session)).toMatchObject({ save: 'saving' })
+    expect(ready(session).pending).toBeUndefined()
+    expect(slotIn(session, AGE)).toMatchObject({ decided: true, result: { mode: 'rolled', faces: [1, 1, 1], total: 3, entry: '3-7', rolls: 2 } })
+    await expect(rerolling).resolves.toEqual({ ok: true })
+    expect(random).toHaveBeenCalledTimes(6)
+    const saved = savedDocument(docs)
+    expect(saved.decisions[AGE]).toEqual({ mode: 'rolled', dice: [1, 1, 1], modifier: 0, total: 3, entry: '3-7', rolls: 2, book: TABLES, logged: 2 })
+    expect(saved.earlier).toBeUndefined()
+    expect(ready(session).view.setAside).toEqual([])
+    expect(saved.log.slice(1)).toEqual([
+      expect.objectContaining({ id: 2, kind: 'decision', slot: AGE, mode: 'rolled', roll: { count: 3, sides: 6, modifier: 0, total: 3, rolls: 2, faces: [1, 1, 1] } }),
+      { id: 3, at: AT, kind: 'undone', slot: AGE, ref: 1, reason: 'replaced', by: 2 },
+    ])
+  })
+
+  it('FR-CHG-002, FR-DEC-015: a Reroll that lands on the same entry with its roll-effect decided applies directly, and the child stays (AC-7)', async () => {
+    const { session, docs } = await withTables({}, sequence([3, 3, 3]))
+    await session.roll(PAST)
+    await session.roll(MADNESS)
+    const rerolling = session.roll(PAST)
+    expect(ready(session).pending).toBeUndefined()
+    expect(slotIn(session, MADNESS)).toMatchObject({ decided: true, result: { total: 4 } })
+    await expect(rerolling).resolves.toEqual({ ok: true })
+    const saved = savedDocument(docs)
+    expect(saved.decisions[PAST]).toEqual({ mode: 'rolled', dice: [4], modifier: 0, total: 4, entry: '4', rolls: 2, book: TABLES, logged: 3 })
+    expect(saved.decisions[MADNESS]).toEqual({ mode: 'rolled', dice: [4], modifier: 0, total: 4, logged: 2 })
+    expect(saved.log.slice(3)).toEqual([{ id: 4, at: AT, kind: 'undone', slot: PAST, ref: 1, reason: 'replaced', by: 3 }])
+    expect(madness(session)).toBe(4)
+  })
+
+  it('FR-DEC-015, FR-DEC-017, FR-CHG-009, FR-CHG-010, FR-DEC-016: a Reroll onto another entry with the roll-effect decided waits in pending; Keep logs the declined value and raises the counter of the active one, and the next roll counts it (AC-8)', async () => {
+    const { session, docs, repository, random } = await withTables({}, sequence([3, 3, 0, 4]))
+    await session.roll(PAST)
+    await session.roll(MADNESS)
+    vi.mocked(repository.save).mockClear()
+    const before = ready(session)
+    const rolledFour = { mode: 'rolled', dice: [4], modifier: 0, total: 4, entry: '4', rolls: 1, book: TABLES, logged: 1 }
+
+    await expect(session.roll(PAST)).resolves.toEqual(needsConfirmation)
+    const waiting = ready(session)
+    expect(waiting.document).toBe(before.document)
+    expect(waiting.view).toBe(before.view)
+    expect(waiting.pending).toMatchObject({ kind: 'roll', key: PAST })
+    expect(waiting.pending!.impact.setAside.map((item) => item.key)).toEqual([MADNESS])
+    expect(waiting.pending!.impact.undone).toEqual(rolledFour)
+    expect(waiting.pending!.impact.change.to).toMatchObject({ result: { mode: 'rolled', faces: [1], entry: '1-3', rolls: 2 } })
+    expect(repository.save).not.toHaveBeenCalled()
+
+    const keeping = session.keep()
+    // O snapshot muda antes da gravação, já sem `pending` e com o log e o contador novos (emenda M1).
+    const kept = ready(session)
+    expect(kept).toMatchObject({ save: 'saving' })
+    expect(kept.pending).toBeUndefined()
+    expect(kept.document.log).toHaveLength(4)
+    expect(slotIn(session, PAST)).toMatchObject({ decided: true, result: { mode: 'rolled', faces: [4], total: 4, entry: '4', rolls: 2 } })
+    expect(kept.view.summary).toEqual(before.view.summary)
+    expect(savedDocument(docs).log).toHaveLength(2)
+    await expect(keeping).resolves.toEqual({ ok: true })
+
+    expect(repository.save).toHaveBeenCalledTimes(1)
+    const saved = savedDocument(docs)
+    expect(saved.decisions[PAST]).toEqual({ ...rolledFour, rolls: 2 })
+    expect(saved.decisions[MADNESS]).toEqual({ mode: 'rolled', dice: [4], modifier: 0, total: 4, logged: 2 })
+    expect(saved.earlier).toBeUndefined()
+    expect(saved.revision).toBe(before.document.revision + 1)
+    expect(saved.log.slice(2)).toEqual([
+      expect.objectContaining({ id: 3, kind: 'decision', slot: PAST, mode: 'rolled', result: { entry: '1-3' }, roll: { count: 1, sides: 6, modifier: 0, total: 1, rolls: 2, faces: [1] } }),
+      { id: 4, at: AT, kind: 'undone', slot: PAST, ref: 3, reason: 'declined' },
+    ])
+    expect(madness(session)).toBe(4)
+
+    // A próxima rolagem conta a recusada (D5), e o Apply não sorteia de novo (D1).
+    await expect(session.roll(PAST)).resolves.toEqual(needsConfirmation)
+    expect(ready(session).pending!.impact.change.to).toMatchObject({ result: { faces: [5], entry: '5-6', rolls: 3 } })
+    await expect(session.confirm()).resolves.toEqual({ ok: true })
+    expect(random).toHaveBeenCalledTimes(4)
+    expect(savedDocument(docs).decisions[PAST]).toEqual({ mode: 'rolled', dice: [5], modifier: 0, total: 5, entry: '5-6', rolls: 3, book: TABLES, logged: 5 })
+    expect(savedDocument(docs).log.slice(5, 7)).toEqual([
+      { id: 6, at: AT, kind: 'undone', slot: PAST, ref: 1, reason: 'replaced', by: 5 },
+      { id: 7, at: AT, kind: 'set-aside', slot: MADNESS, ref: 2, cause: { entry: 5 } },
+    ])
+  })
+
+  it('FR-CHAR-010, FR-CHG-010: a failed save on Keep of a reroll keeps the declined record on screen with save failed, and retrySave saves it', async () => {
+    const { session, docs, control } = await withTables({}, sequence([3, 3, 0]))
+    await session.roll(PAST)
+    await session.roll(MADNESS)
+    await session.roll(PAST)
+    control.failSave = true
+    await expect(session.keep()).resolves.toEqual({ ok: false, reason: 'save-failed' })
+    expect(ready(session)).toMatchObject({ save: 'failed' })
+    expect(ready(session).pending).toBeUndefined()
+    expect(ready(session).document.log).toHaveLength(4)
+    expect(slotIn(session, PAST)).toMatchObject({ result: { entry: '4', rolls: 2 } })
+    expect(savedDocument(docs).log).toHaveLength(2)
+
+    control.failSave = false
+    await expect(session.retrySave()).resolves.toEqual({ ok: true })
+    expect(savedDocument(docs).log.map((entry) => [entry.id, entry.kind])).toEqual([
+      [1, 'decision'],
+      [2, 'decision'],
+      [3, 'decision'],
+      [4, 'undone'],
+    ])
+    expect(savedDocument(docs).decisions[PAST]).toMatchObject({ entry: '4', rolls: 2 })
+  })
+
+  it('FR-DEC-018, FR-DEC-016: Choose on a rolled table, Roll on a chosen one and Enter result on a rolled or chosen one replace it, carrying the counter; Roll → Choose → Roll gives rolls 2 (AC-9)', async () => {
+    const { session, docs, repository } = await withTables({}, sequence([2, 4, 1, 0, 0, 0]))
+    await session.roll(AGE)
+    await expect(session.decide(AGE, '3-7')).resolves.toEqual({ ok: true })
+    expect(savedDocument(docs).decisions[AGE]).toEqual({ mode: 'chosen', value: '3-7', book: TABLES, rolls: 1, logged: 2 })
+    await expect(session.roll(AGE)).resolves.toEqual({ ok: true })
+    expect(savedDocument(docs).decisions[AGE]).toEqual({ mode: 'rolled', dice: [1, 1, 1], modifier: 0, total: 3, entry: '3-7', rolls: 2, book: TABLES, logged: 4 })
+    await expect(session.enter(AGE, 15)).resolves.toEqual({ ok: true })
+    expect(savedDocument(docs).decisions[AGE]).toEqual({ mode: 'entered', sum: 15, modifier: 0, total: 15, entry: '13-18', rolls: 2, book: TABLES, logged: 6 })
+    await expect(session.decide(AGE, '8-12')).resolves.toEqual({ ok: true })
+    await expect(session.enter(AGE, 4)).resolves.toEqual({ ok: true })
+    expect(savedDocument(docs).decisions[AGE]).toEqual({ mode: 'entered', sum: 4, modifier: 0, total: 4, entry: '3-7', rolls: 2, book: TABLES, logged: 10 })
+    expect(savedDocument(docs).log.filter((entry) => entry.kind === 'undone')).toEqual([
+      { id: 3, at: AT, kind: 'undone', slot: AGE, ref: 1, reason: 'replaced', by: 2 },
+      { id: 5, at: AT, kind: 'undone', slot: AGE, ref: 2, reason: 'replaced', by: 4 },
+      { id: 7, at: AT, kind: 'undone', slot: AGE, ref: 4, reason: 'replaced', by: 6 },
+      { id: 9, at: AT, kind: 'undone', slot: AGE, ref: 6, reason: 'replaced', by: 8 },
+      { id: 11, at: AT, kind: 'undone', slot: AGE, ref: 8, reason: 'replaced', by: 10 },
+    ])
+    expect(savedDocument(docs).earlier).toBeUndefined()
+
+    // Choose com a entrada da ativa, qualquer que seja o modo: `ok` sem gravar (D13 da FEAT-009).
+    vi.mocked(repository.save).mockClear()
+    await expect(session.decide(AGE, '3-7')).resolves.toEqual({ ok: true })
+    expect(repository.save).not.toHaveBeenCalled()
+  })
+
+  it('FR-DEC-018, FR-DEC-017: Choose and Enter result on a rolled table, and Roll on a chosen one, with the roll-effect of the entry decided, open the dialog with it set aside (AC-9)', async () => {
+    const rolled = await withTables({}, sequence([3, 3]))
+    await rolled.session.roll(PAST)
+    await rolled.session.roll(MADNESS)
+    vi.mocked(rolled.repository.save).mockClear()
+    const before = ready(rolled.session)
+    for (const [kind, command] of [
+      ['decide', () => rolled.session.decide(PAST, '5-6')],
+      ['enter', () => rolled.session.enter(PAST, 2)],
+    ] as const) {
+      await expect(command()).resolves.toEqual(needsConfirmation)
+      expect(ready(rolled.session).pending).toMatchObject({ kind, key: PAST })
+      expect(ready(rolled.session).pending!.impact.setAside.map((item) => item.key)).toEqual([MADNESS])
+      expect(ready(rolled.session).pending!.impact.undone).toMatchObject({ mode: 'rolled', entry: '4' })
+      await expect(rolled.session.keep()).resolves.toEqual({ ok: true })
+      expect(ready(rolled.session).document).toBe(before.document)
+    }
+    expect(rolled.repository.save).not.toHaveBeenCalled()
+
+    // Roll numa escolhida é uma rerrolagem: o Keep registra o valor recusado e o contador da ativa (FR-CHG-010).
+    const chosen = await withTables({ [PAST]: chosenEntry('4'), [MADNESS]: { mode: 'rolled', dice: [4], modifier: 0, total: 4 } }, sequence([0]))
+    await expect(chosen.session.roll(PAST)).resolves.toEqual(needsConfirmation)
+    expect(ready(chosen.session).pending).toMatchObject({ kind: 'roll', key: PAST })
+    expect(ready(chosen.session).pending!.impact.undone).toEqual(chosenEntry('4'))
+    expect(ready(chosen.session).pending!.impact.setAside.map((item) => item.key)).toEqual([MADNESS])
+    await expect(chosen.session.keep()).resolves.toEqual({ ok: true })
+    expect(savedDocument(chosen.docs).decisions[PAST]).toEqual({ ...chosenEntry('4'), rolls: 1 })
+    expect(savedDocument(chosen.docs).log).toEqual([
+      expect.objectContaining({ id: 1, kind: 'decision', slot: PAST, mode: 'rolled', roll: { count: 1, sides: 6, modifier: 0, total: 1, rolls: 1, faces: [1] } }),
+      { id: 2, at: AT, kind: 'undone', slot: PAST, ref: 1, reason: 'declined' },
+    ])
+  })
+
+  it('FR-DEC-018, FR-CHG-018: Choose → Choose sets the roll-effect of the current entry aside, and choosing that entry again restores it without drawing (AC-9)', async () => {
+    const { session, docs, random } = await withTables({}, sequence([3]))
+    await session.decide(PAST, '4')
+    await session.roll(MADNESS)
+    await expect(session.decide(PAST, '5-6')).resolves.toEqual(needsConfirmation)
+    await expect(session.confirm()).resolves.toEqual({ ok: true })
+    expect(savedDocument(docs).decisions[MADNESS]).toEqual({ mode: 'rolled', dice: [4], modifier: 0, total: 4, logged: 2, setAside: true })
+    expect(madness(session)).toBe(0)
+
+    await expect(session.decide(PAST, '4')).resolves.toEqual(needsConfirmation)
+    const { impact } = ready(session).pending!
+    expect(impact.setAside).toEqual([])
+    expect(impact.restored.map((item) => [item.key, item.decision])).toEqual([[MADNESS, { mode: 'rolled', dice: [4], modifier: 0, total: 4, logged: 2 }]])
+    await expect(session.confirm()).resolves.toEqual({ ok: true })
+    expect(slotIn(session, MADNESS)).toMatchObject({ decided: true, result: { faces: [4], total: 4 } })
+    expect(madness(session)).toBe(4)
+    expect(random).toHaveBeenCalledTimes(1)
+  })
+
+  it('FR-DEC-015, FR-STEP-014: the roll-effect takes Reroll and Enter result, replacing the value without a counter', async () => {
+    const { session, docs } = await withTables({}, sequence([3, 3, 0]))
+    await session.roll(PAST)
+    await session.roll(MADNESS)
+    const rerolling = session.roll(MADNESS)
+    expect(ready(session).pending).toBeUndefined()
+    expect(madness(session)).toBe(1)
+    await expect(rerolling).resolves.toEqual({ ok: true })
+    expect(savedDocument(docs).decisions[MADNESS]).toEqual({ mode: 'rolled', dice: [1], modifier: 0, total: 1, logged: 3 })
+    await expect(session.enter(MADNESS, 6)).resolves.toEqual({ ok: true })
+    expect(savedDocument(docs).decisions[MADNESS]).toEqual({ mode: 'entered', sum: 6, modifier: 0, total: 6, logged: 5 })
+    expect(madness(session)).toBe(6)
+    expect(savedDocument(docs).log.filter((entry) => entry.kind === 'undone')).toEqual([
+      { id: 4, at: AT, kind: 'undone', slot: MADNESS, ref: 2, reason: 'replaced', by: 3 },
+      { id: 6, at: AT, kind: 'undone', slot: MADNESS, ref: 3, reason: 'replaced', by: 5 },
+    ])
+  })
+
+  it('FR-DEC-016: in a reopened slot the counter comes from the decision in decisions (D5)', async () => {
+    const old: Decision = { mode: 'rolled', dice: [1, 1, 1], modifier: 0, total: 3, entry: '1-2', rolls: 3, book: TABLES, setAside: true }
+    const { session, docs } = await withTables({ [AGE]: old }, sequence([2, 4, 1]))
+    expect(slotIn(session, AGE)).toMatchObject({ decided: false })
+    await expect(session.roll(AGE)).resolves.toEqual({ ok: true })
+    expect(savedDocument(docs).decisions[AGE]).toEqual({ ...rolledEntry('8-12', [3, 5, 2], 10), rolls: 4, logged: 1 })
+    expect(savedDocument(docs).earlier).toEqual({ [AGE]: [old] })
   })
 })
 

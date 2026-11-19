@@ -11,6 +11,7 @@ import {
 } from '../content'
 import { cryptoRandomSource, rollDice, type RandomSource } from '../dice'
 import {
+  candidatesOf,
   EngineError,
   evaluate,
   impact,
@@ -24,7 +25,7 @@ import {
   type SlotView,
 } from '../engine'
 import type { CharacterRepository, LastStepStore } from '../storage'
-import { change, markEntries, nextLogId, type Change, type ChangeRequest } from './changes'
+import { change, decline, markEntries, nextLogId, type Change, type ChangeRequest } from './changes'
 
 // Sessão do personagem (technical-design §3.2): store externo lido pelo React com `useSyncExternalStore`
 // (ADR-006). Os comandos são os únicos que escrevem (ADR-004 §5), e cada decisão registrada vai ao log (FEAT-009 §3.3).
@@ -364,10 +365,21 @@ export function createCharacterSession({
   }
 
   /**
+   * O contador da vaga `table` (D5; ADR-004 §1): o `rolls` da prévia, que é a ativa ou, na vaga reaberta,
+   * `decisions[k]`. Fora da `table`, sem contador.
+   */
+  function priorRolls(ready: Ready, slot: SlotView): number | undefined {
+    if (slot.kind !== 'table') return undefined
+    const prior = slot.decided ? candidatesOf(ready.document, slot.key)[slot.candidate ?? 0] : ready.document.decisions[slot.key]
+    return prior?.rolls
+  }
+
+  /**
    * O fato de uma rolagem ou de uma soma informada (D3): `modifier` é o da versão vigente da tabela (0 se ausente), e, na
    * vaga `table`, a entrada é a que contém o total e `book` o livro dessa versão; na `roll-effect`, sem entrada nem livro.
+   * O contador (D5): a rolada grava o da prévia + 1; a informada leva o da prévia, quando ele existe.
    */
-  function diceDecision(slot: DiceSlot, fact: { dice: number[] } | { sum: number }): Decision | null {
+  function diceDecision(slot: DiceSlot, fact: { dice: number[] } | { sum: number }, prior: number | undefined): Decision | null {
     const dice = slot.kind === 'table' ? slot.table.dice : slot.dice
     const modifier = dice.modifier ?? 0
     const shown = 'sum' in fact ? fact.sum : fact.dice.reduce((sum, face) => sum + face, 0)
@@ -378,19 +390,20 @@ export function createCharacterSession({
     if (!entry) return null
     const book = slot.table.provenance.book
     return recorded.mode === 'rolled'
-      ? { ...recorded, modifier, total, entry: entry.key, rolls: 1, book }
-      : { ...recorded, modifier, total, entry: entry.key, book }
+      ? { ...recorded, modifier, total, entry: entry.key, rolls: (prior ?? 0) + 1, book }
+      : { ...recorded, modifier, total, entry: entry.key, ...(prior !== undefined && { rolls: prior }), book }
   }
 
-  /** Vaga viva com dado (`table` ou `roll-effect`) ainda sem decisão, ou a recusa (§3.2, passos 1 e 2). */
+  /**
+   * Vaga viva com dado (`table` ou `roll-effect`), ou a recusa (§3.2, passo 1). Decidida, o comando é Reroll ou troca
+   * de modo, pelo mesmo pipeline (FR-DEC-015, 018).
+   */
   function diceSlot(key: string): DiceSlot | Extract<DecideResult, { ok: false }> {
     const refused = blocked()
     if (refused) return refused
     const slot = liveSlot(key)
     if (!slot) return { ok: false, reason: 'unknown-slot' }
     if (slot.kind !== 'table' && slot.kind !== 'roll-effect') return { ok: false, reason: 'invalid-value' }
-    // D5: Reroll e troca de modo são da FEAT-011.
-    if (slot.decided) return { ok: false, reason: 'already-decided' }
     return slot
   }
 
@@ -466,9 +479,10 @@ export function createCharacterSession({
 
     /**
      * Confirma uma decisão: ancestralidade, Size, o par do ajuste ou a entrada de uma tabela (Choose, FR-DEC-024).
-     * Decidir de novo substitui (troca de ancestralidade, Choose → Choose; FR-STEP-005), salvo no `attribute-shift`, que é
-     * uma vez só (FR-STEP-010; FEAT-008 D3), e na tabela rolada ou informada (FEAT-009 D5, até a troca de modo). O mesmo
-     * valor devolve `ok` sem gravar (D13). Com suspensas ou restauradas, `needs-confirmation` e `pending` (FEAT-011 §3.2).
+     * Decidir de novo substitui (troca de ancestralidade, Choose → Choose, troca de modo para Choose; FR-STEP-005,
+     * FR-DEC-018), salvo no `attribute-shift`, que é uma vez só (FR-STEP-010; FEAT-008 D3). O valor da ativa devolve `ok`
+     * sem gravar (D13). Na tabela, a escolhida leva o contador da prévia (D5). Com suspensas ou restauradas,
+     * `needs-confirmation` e `pending` (FEAT-011 §3.2).
      */
     async decide(key: string, value: DecisionValue): Promise<DecideResult> {
       const refused = blocked()
@@ -478,31 +492,40 @@ export function createCharacterSession({
       if (!slot) return { ok: false, reason: 'unknown-slot' }
       if (slot.kind === 'attribute-shift' && slot.decided) return { ok: false, reason: 'already-decided' }
       if (!isValid(slot, value)) return { ok: false, reason: 'invalid-value' }
-      if (slot.kind === 'table' && slot.result && slot.result.mode !== 'chosen') return { ok: false, reason: 'already-decided' }
       if (slot.decided && slot.value === value) return { ok: true }
-      const book = slot.kind === 'table' ? { book: slot.table.provenance.book } : {}
-      return record(before, slot, 'decide', { mode: 'chosen', value, ...book })
+      const rolls = priorRolls(before, slot)
+      const table = slot.kind === 'table' ? { book: slot.table.provenance.book, ...(rolls !== undefined && { rolls }) } : {}
+      return record(before, slot, 'decide', { mode: 'chosen', value, ...table })
     },
 
-    /** Rola o dado de uma tabela ou de um efeito com dado (FR-DEC-005, 007; FR-STEP-014): o único passo impuro (ADR-004 §5). */
+    /**
+     * Rola o dado de uma tabela ou de um efeito com dado (FR-DEC-005, 007; FR-STEP-014): o único passo impuro (ADR-004
+     * §5). Na vaga decidida, é o Reroll, ou a troca de modo para Roll numa escolhida (FR-DEC-015, 018). O dado rola uma
+     * vez, aqui; o Apply grava o candidato sem rolar de novo (D1).
+     */
     async roll(key: string): Promise<DecideResult> {
       const slot = diceSlot(key)
       if ('ok' in slot) return slot
       const before = snapshot as Ready
-      const decision = diceDecision(slot, { dice: rollDice(slot.kind === 'table' ? slot.table.dice : slot.dice, random) })
+      const faces = rollDice(slot.kind === 'table' ? slot.table.dice : slot.dice, random)
+      const decision = diceDecision(slot, { dice: faces }, priorRolls(before, slot))
       if (!decision) return { ok: false, reason: 'invalid-value' }
       return record(before, slot, 'roll', decision)
     },
 
-    /** Enter result (FR-DEC-019, 020; D4): a soma que os dados mostram, sem modificador, em `[count, count × sides]`. */
+    /**
+     * Enter result (FR-DEC-019, 020; D4): a soma que os dados mostram, sem modificador, em `[count, count × sides]`. Na
+     * vaga decidida, substitui: troca de modo para Enter result, ou outra soma (FR-DEC-018).
+     */
     async enter(key: string, sum: number): Promise<DecideResult> {
       const slot = diceSlot(key)
       if ('ok' in slot) return slot
+      const before = snapshot as Ready
       const range = slot.kind === 'table' ? slot.table.enterRange : slot.enterRange
       if (!Number.isInteger(sum) || sum < range[0] || sum > range[1]) return { ok: false, reason: 'out-of-range', range }
-      const decision = diceDecision(slot, { sum })
+      const decision = diceDecision(slot, { sum }, priorRolls(before, slot))
       if (!decision) return { ok: false, reason: 'invalid-value' }
-      return record(snapshot as Ready, slot, 'enter', decision)
+      return record(before, slot, 'enter', decision)
     },
 
     /**
@@ -531,11 +554,28 @@ export function createCharacterSession({
       return apply(settled(snapshot), document, pending.impact.after)
     },
 
-    /** Keep current (FR-CHG-009): tira a mudança pendente; o documento fica como estava, e nada é gravado. */
+    /**
+     * Keep current (FR-CHG-009): tira a mudança pendente; o documento fica como estava, e nada é gravado. Numa rerrolagem
+     * (pendente `roll` com `undone`), grava só o registro da recusa (FR-CHG-010; D5; emenda M1): a `decision` do valor
+     * recusado e a `undone` `declined`, e o contador na ativa. Como no `confirm`, o snapshot muda antes da gravação, já
+     * sem `pending`; a falha mantém esse estado com `save: 'failed'` (FR-CHAR-010).
+     */
     async keep(): Promise<DecideResult> {
       if (snapshot.status !== 'ready' || !snapshot.pending) return { ok: false, reason: 'no-pending' }
-      set(settled(snapshot))
-      return { ok: true }
+      const { pending } = snapshot
+      const proposed = proposal
+      const kept = settled(snapshot)
+      const from = pending.impact.change.from
+      const refused = proposed?.document.decisions[pending.key]
+      const [entry] = proposed?.entries ?? []
+      if (pending.kind !== 'roll' || !pending.impact.undone || !from || !refused || entry?.kind !== 'decision') {
+        set(kept)
+        return { ok: true }
+      }
+      const at = now().toISOString()
+      const declined = decline(kept.document, from, refused, entry, at)
+      const document = { ...declined.document, revision: kept.document.revision + 1, updatedAt: at }
+      return apply(kept, document, evaluate(kept.rules, document))
     },
 
     /**
