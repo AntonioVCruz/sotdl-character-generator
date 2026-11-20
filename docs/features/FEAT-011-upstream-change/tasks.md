@@ -47,7 +47,7 @@
       Só a integração: os modos da tabela e da `roll-effect` decididas no lugar de `LOCKED_*` (o diálogo no lugar do `dependents-blocked` já vem da T9). Mudam aqui, como o §7 as emendou: a expectativa 12 (emenda M1: decided-roll e decided-choose do ui-design) e o resto da 13 (effect-reroll no lugar do `LOCKED_ROLLED` da `roll-effect`, l.966).
       Pronto quando: os testes de componente da Story passam no `Builder.test.tsx`, com sorteio fixo, e a tela confere com o manifesto.
 
-- [ ] T11 — E2E do fluxo crítico 2 e tempo do diálogo (design §6, AC-15 e AC-16; ADR-008 fluxo 2; UC-010)
+- [x] T11 — E2E do fluxo crítico 2 e tempo do diálogo (design §6, AC-15 e AC-16; ADR-008 fluxo 2; UC-010)
       `e2e/impact.spec.ts` (novo): Dwarf → Human → recarregar → Dwarf, Keep current e axe com o diálogo. Caso NFR-PERF-003 no `perf.spec.ts`. (A expectativa 14 do §7 passou à T9, emenda 4.) Localizadores pelos seletores do §7 (C1). No `firefox`, o caso do axe com o diálogo aberto segue o contorno do `docs/scaffold-notes.md` (regra do Firefox 1572 com o axe e `aria-labelledby`, FEAT-009 T9): página nova no mesmo contexto, o diálogo reaberto sem localizador por nome sobre elementos com `aria-labelledby`, e o axe nela.
       Pronto quando: `npm run e2e` passa nos 5 projetos com `--retries=0 --workers=1`, e o p95 do diálogo fica ≤ 300 ms em `chromium` e `mobile-chrome` 4×.
 
