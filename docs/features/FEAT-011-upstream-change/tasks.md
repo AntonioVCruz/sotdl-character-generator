@@ -51,6 +51,6 @@
       `e2e/impact.spec.ts` (novo): Dwarf → Human → recarregar → Dwarf, Keep current e axe com o diálogo. Caso NFR-PERF-003 no `perf.spec.ts`. (A expectativa 14 do §7 passou à T9, emenda 4.) Localizadores pelos seletores do §7 (C1). No `firefox`, o caso do axe com o diálogo aberto segue o contorno do `docs/scaffold-notes.md` (regra do Firefox 1572 com o axe e `aria-labelledby`, FEAT-009 T9): página nova no mesmo contexto, o diálogo reaberto sem localizador por nome sobre elementos com `aria-labelledby`, e o axe nela.
       Pronto quando: `npm run e2e` passa nos 5 projetos com `--retries=0 --workers=1`, e o p95 do diálogo fica ≤ 300 ms em `chromium` e `mobile-chrome` 4×.
 
-- [ ] T12 — Verificação (design §6)
+- [x] T12 — Verificação (design §6)
       Os AC-1 a AC-17 demonstrados. `npm run typecheck`, `lint`, `test`, `packs:check`, `build` e `e2e` verdes. Cada FR-CHG e FR-DEC do cabeçalho tem teste com o FR no nome (NFR-MAINT-002), e as mudanças de teste batem com o §7.
       Pronto quando: todas as suítes estão verdes, sem retry, e cada critério tem um teste que o demonstra.

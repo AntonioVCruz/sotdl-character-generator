@@ -632,7 +632,7 @@ describe('character session: tables (Roll, Enter result, Choose)', () => {
     expect(repository.save).not.toHaveBeenCalled()
   })
 
-  it('FR-FLOW-014, FR-STEP-014: roll on a slot without dice and decide on a roll-effect give invalid-value (AC-11)', async () => {
+  it('FR-FLOW-014, FR-STEP-014: roll on a slot without dice and decide on a roll-effect give invalid-value', async () => {
     const { session, repository, random } = await withTables({
       [AGE]: rolledEntry('8-12', [3, 5, 2], 10),
       [FATE]: { mode: 'entered', sum: 11, modifier: 0, total: 11, entry: '11-18', book: TABLES },
