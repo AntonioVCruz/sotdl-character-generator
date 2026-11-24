@@ -1,6 +1,6 @@
 # Casos de uso: Gerador de personagens SotDL
 
-> Fonte: `docs/srs.md` (v1.2) · Última atualização: 2026-11-15
+> Fonte: `docs/srs.md` (v1.3) · Última atualização: 2026-11-24
 > Escopo: MVP (requisitos Must). Requisitos Should e Could não têm caso de uso.
 
 ## Atores
@@ -171,7 +171,7 @@ graph LR
 - **Descrição:** Obter o resultado de uma tabela por rolagem, escolha, texto próprio ou resultado informado. Incluído pelos UC-006 a UC-009.
 - **Pré-condições:** A tabela não está aguardando outra.
 - **Pós-condições (sucesso):** O resultado está registrado com origem e efeitos aplicados; subdecisões geradas estão resolvidas ou abertas.
-- **Rastreia:** FR-DEC-001..024, FR-LOG-001..004, FR-CONT-014
+- **Rastreia:** FR-DEC-001..013, FR-DEC-015..024, FR-LOG-001..004, FR-CONT-014
 
 **Fluxo principal**
 1. O sistema exibe a tabela com o regime previsto e os modos disponíveis.
