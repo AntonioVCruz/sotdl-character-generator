@@ -218,20 +218,49 @@
           "ajuste ligado em \"Will be set aside\" (FR-CHG-013, FEAT-019)",
           "ajustes livres em \"Will be recalculated\" (FR-CHG-014, FEAT-019)"
         ],
-        "supplements": []
+        "supplements": [
+          {
+            "state": "by-write",
+            "strategy": "code-native",
+            "source": "features/FEAT-010-write-and-roll-all/ui-design.md#by-write"
+          },
+          {
+            "state": "by-roll-all",
+            "strategy": "code-native",
+            "source": "features/FEAT-010-write-and-roll-all/ui-design.md#by-roll-all"
+          },
+          {
+            "state": "written-line",
+            "strategy": "code-native",
+            "source": "features/FEAT-010-write-and-roll-all/ui-design.md#written-line"
+          },
+          {
+            "state": "applied-write-roll-all",
+            "strategy": "code-native",
+            "source": "features/FEAT-010-write-and-roll-all/ui-design.md#applied-write-roll-all"
+          }
+        ]
       },
       "contract_bindings": [
         "app.Snapshot.pending: kind, key, impact (FEAT-011 technical-design §3.2)",
         "engine.Impact: change (from, to), undone, setAside, restored, recalculated, stays, needsDialog, before, after (FEAT-011 technical-design §3.1)",
         "engine.ImpactItem / StoredRef: key, decision, parent, slot (FEAT-011 technical-design §3.1)",
-        "app.session.confirm() · app.session.keep() → DecideResult (FEAT-011 technical-design §3.2)"
+        "app.session.confirm() · app.session.keep() → DecideResult (FEAT-011 technical-design §3.2)",
+        "app.PendingChange: kind 'write' com key e impact; kind 'roll-all' com step, keys e impact sem change (FEAT-010 technical-design §3.2)",
+        "engine.Impact.change opcional (impact com key nulo, D8); before e after para as colunas do Roll all (FEAT-010 technical-design §3.1, §3.3)",
+        "engine.TableResult { mode: 'written', text } e content.Decision written (text) (FEAT-010 technical-design §3.1, §4)",
+        "content.DecisionEntry mode 'written' com result.text, para as linhas vindas do log (FEAT-010 technical-design §4)"
       ],
       "conformance": {
-        "result": "pass",
-        "corrections": [],
-        "escalations": []
+        "result": "escalation-pending",
+        "corrections": [
+          "FEAT-010 (2026-11-24): variantes write e roll-all e a linha de uma decisão escrita; Current × New mantidas no roll-all (FR-CHG-003), uma linha por tabela; Keep e Apply no padrão \"Keep current …\" / \"Apply …\", com o precedente da vaga aberta da FEAT-011; sem token nem componente novo"
+        ],
+        "escalations": [
+          "P1 (pergunta ao usuário, ui-design da FEAT-010): destino do foco depois do Apply do roll-all, o mesmo do roll-all-applied da SCR-WEB-009"
+        ]
       },
-      "status": "designed",
+      "status": "escalation-pending",
       "designed_at": "2026-11-17"
     },
     "SCR-WEB-009": {
@@ -258,9 +287,9 @@
           "error"
         ],
         "gaps": [
-          "written (Write, FEAT-010)",
-          "waiting (FEAT-010)",
-          "with-subdecision de resultado (FEAT-010)"
+          "waiting (FEAT-024)",
+          "with-subdecision de resultado (FEAT-012)",
+          "written com o checkbox \"This result has a rules effect\" (FR-DEC-022, FEAT-019)"
         ],
         "supplements": [
           {
@@ -297,6 +326,46 @@
             "state": "effect-reroll",
             "strategy": "code-native",
             "source": "features/FEAT-011-upstream-change/ui-design.md#effect-reroll"
+          },
+          {
+            "state": "write-mode",
+            "strategy": "code-native",
+            "source": "features/FEAT-010-write-and-roll-all/ui-design.md#write-mode"
+          },
+          {
+            "state": "write-refused",
+            "strategy": "code-native",
+            "source": "features/FEAT-010-write-and-roll-all/ui-design.md#write-refused"
+          },
+          {
+            "state": "written",
+            "strategy": "code-native",
+            "source": "features/FEAT-010-write-and-roll-all/ui-design.md#written"
+          },
+          {
+            "state": "write-again",
+            "strategy": "code-native",
+            "source": "features/FEAT-010-write-and-roll-all/ui-design.md#write-again"
+          },
+          {
+            "state": "mode-switch-write",
+            "strategy": "code-native",
+            "source": "features/FEAT-010-write-and-roll-all/ui-design.md#mode-switch-write"
+          },
+          {
+            "state": "roll-all",
+            "strategy": "code-native",
+            "source": "features/FEAT-010-write-and-roll-all/ui-design.md#roll-all"
+          },
+          {
+            "state": "roll-all-none",
+            "strategy": "code-native",
+            "source": "features/FEAT-010-write-and-roll-all/ui-design.md#roll-all-none"
+          },
+          {
+            "state": "roll-all-applied",
+            "strategy": "code-native",
+            "source": "features/FEAT-010-write-and-roll-all/ui-design.md#roll-all-applied"
           }
         ]
       },
@@ -312,17 +381,24 @@
         "engine.Stage define e sum com ResultOrigin; AttributeSummary.pendingOn (technical-design §3.3)",
         "ui routes #/characters/:id/:step?slot= e slotElementId (FEAT-007 technical-design §3.4)",
         "app.session.roll, decide, enter em vaga decidida: Reroll e troca de modo, needs-confirmation com snapshot.pending (FEAT-011 technical-design §3.2, §3.3)",
-        "content.CharacterDocument.decisions[key].logged, para a marca do Reroll (FEAT-011 technical-design §4)"
+        "content.CharacterDocument.decisions[key].logged, para a marca do Reroll (FEAT-011 technical-design §4)",
+        "app.session.write(key, text) → DecideResult com empty-text (FEAT-010 technical-design §3.2)",
+        "app.session.rollAll(stepId) → DecideResult com nothing-to-roll e needs-confirmation (FEAT-010 technical-design §3.2)",
+        "engine.rollAllKeys(view, stepId): presença e quantidade do Roll all undecided (FEAT-010 technical-design §3.1, D9)",
+        "engine.TableView.modes com 'write' no regime roll-or-choose; TableResult { mode: 'written', text } (FEAT-010 technical-design §3.1)"
       ],
       "conformance": {
-        "result": "pass",
+        "result": "escalation-pending",
         "corrections": [
           "Re-verificado em 2026-11-16 contra o design.md e a ux-foundations emendados (E10, E11 e caixa de valor; 9c5db16, 095362b): caixa de valor com altura de linha --font-size-4xl, agora como o design.md §4, não mais correção; grade das tabelas de história só com faixa e página, sem o campo Name (E10), sem tratamento provisório; A5.1 (E11) sem efeito na tela; nome acessível da grade composto pelo h2 e pelo rótulo (\"Dwarf Age Choose a result.\", C9); sem token nem componente novo",
-          "FEAT-011 (2026-11-17): decided-locked e dependents-blocked saem; tabela decidida com Reroll (button-secondary, já no design.md §4) e troca de modo; sem token nem componente novo"
+          "FEAT-011 (2026-11-17): decided-locked e dependents-blocked saem; tabela decidida com Reroll (button-secondary, já no design.md §4) e troca de modo; sem token nem componente novo",
+          "FEAT-010 (2026-11-24): segmento Write e estado escrito (textarea do design.md §4, sem o checkbox da FEAT-019), eyebrow \"Roll, choose or write your own\", Roll all undecided como button-secondary, desabilitado com o motivo (P31); sem token nem componente novo"
         ],
-        "escalations": []
+        "escalations": [
+          "P1 (pergunta ao usuário, ui-design da FEAT-010): destino do foco depois do Roll all undecided aplicado; recomendação: a frase do motivo da linha do Roll all"
+        ]
       },
-      "status": "designed",
+      "status": "escalation-pending",
       "designed_at": "2026-11-16"
     },
     "SCR-WEB-016": {
