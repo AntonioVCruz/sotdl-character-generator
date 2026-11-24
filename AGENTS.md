@@ -128,6 +128,7 @@ Uma SPA na raiz (ADR-006). Módulos em `src/`, com as dependências da [arquitet
 ## Comandos
 
 Funcionam no PowerShell. Os scripts `pre*` geram os tokens antes de cada um.
+No Windows com PowerShell 5.1, siga a lição C24 de [`docs/reference/lessons-learned.md`](docs/reference/lessons-learned.md) (commit por arquivo e push à parte, `npx playwright test` com parâmetros, Vitest a partir de `C:` maiúsculo).
 
 | Comando | O que faz |
 | :-- | :-- |

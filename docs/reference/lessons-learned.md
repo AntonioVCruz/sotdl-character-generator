@@ -220,3 +220,30 @@ Um revisor externo apontou "FEAT-001 Verified sem aceite" (rejeitado: C10), "DEF
 ## C22. Worktree com junção de `node_modules`
 
 **Lição:** num worktree em que o `node_modules` é uma junção (Windows), desfaça a junção antes de `git worktree remove --force`, para a remoção não apagar o `node_modules` do repositório principal.
+
+## C23. Queda num só motor não é resíduo antes de rodar no ambiente do CI
+
+Na FEAT-009 (T9), o caso do axe do `e2e/story.spec.ts` derrubava só o Firefox do Playwright 1.65 ("Page crashed"). A nota que já estava no `scaffold-notes.md` atribuía uma queda parecida (duas análises do axe na mesma página) ao Firefox no Windows, sem verificar. Uma sonda achou a causa, com uma reprodução mínima: no firefox-1572, ler o getter `ariaLabelledByElements` do mesmo elemento no mundo isolado do Playwright (o `getByRole` com `name`) e depois no da página (o axe) mata o processo de conteúdo (SIGSEGV). A correção está no firefox-1578 (Playwright 1.66, ainda alpha, com o qual o `story.spec.ts` passou 15 de 15). O contorno, uma página nova no mesmo contexto, ficou só no caso do axe e só no projeto `firefox`, e o `impact.spec.ts` da FEAT-011 seguiu a mesma regra.
+
+**Lição:**
+- Uma falha que só aparece num motor não é tratada como resíduo de ambiente antes de rodar na configuração do CI (`--retries=0 --workers=1`; C13).
+- Uma sonda com limite (de tempo e de repetições) acha a causa e a reduz a uma reprodução mínima.
+- O contorno fica só no caso e no projeto afetados, com a condição de remoção escrita junto (aqui, o Playwright 1.66 estável).
+
+## C24. Windows e PowerShell 5.1
+
+Na T10 da FEAT-011, o commit e o push foram num só comando, separados por `;`. O commit falhou, o `;` rodou o push mesmo assim, e só a T6 subiu. No mesmo ambiente, o PowerShell 5.1 engole o `--` de `npm run e2e -- …`, e a rodada sai com 12 workers. O Vitest falha ao carregar as suítes ("reading 'config'") quando o diretório atual começa com `c:` minúsculo, como o da sessão aberta pelo VS Code; o aceite da FEAT-011 rodou com `C:` maiúsculo.
+
+**Lição:**
+- Mensagem de commit sempre por arquivo (`git commit -F <arquivo>`). O `git push` vai num comando separado, depois de conferir o commit com `git log --oneline -1`.
+- No PowerShell 5.1, o E2E com parâmetros roda por `npx playwright test …` (por exemplo, `--retries=0 --workers=1`), não por `npm run e2e -- …`.
+- O Vitest roda depois de `Set-Location 'C:\…'`, com `C:` maiúsculo.
+
+## C25. NFR de tempo de interface: o design fixa o ponto de chegada
+
+O §5 do technical-design da FEAT-011 copiou da FEAT-008 o método da NFR-PERF-002 para o E2E da NFR-PERF-003, mas escreveu "até o diálogo visível". O teste fecha a medida no primeiro quadro depois que o título aparece no `h2` do diálogo, e nesse quadro a opacidade ainda é 0 (achado 1 do aceite). Até o fim da animação de entrada, de 200 ms, o p95 no `mobile-chrome` 4× ficou entre 284 e 298 ms, com 2 a 16 ms de folga sob o limite de 300 ms. A emenda 5 do §5 trocou a palavra pelo método e deixou a animação fora da medida.
+
+**Lição:**
+- Todo design com NFR de tempo de interface diz o ponto de chegada da medida (o DOM com um quadro, o primeiro quadro pintado ou o fim da animação) e se a animação do design system conta.
+- Ao reusar o método de outra feature, copie também o ponto de chegada, sem trocar a palavra.
+- Uma meta que inclua uma animação de duração fixa precisa de folga maior que a variação do CI (C13).
