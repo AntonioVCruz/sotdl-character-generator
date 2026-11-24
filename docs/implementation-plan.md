@@ -1,11 +1,12 @@
 # Plano de implementação: Gerador de personagens SotDL
 
 > Status: Aprovado · Última atualização: 2026-11-24
-> Entradas: `docs/srs.md` v1.2.1 · `docs/use-cases.md` · `docs/architecture.md` (ADR-001 a 010) · `docs/ux-foundations.md` (com `docs/design.md`). Todas presentes.
+> Entradas: `docs/srs.md` v1.3 · `docs/use-cases.md` · `docs/architecture.md` (ADR-001 a 010) · `docs/ux-foundations.md` (com `docs/design.md`). Todas presentes.
 > Emenda de 2026-11-16: emenda 4 da FEAT-009 (technical-design §2 e §8) e D40 (suspender e restaurar em vez de desfazer). Fatias alteradas: FEAT-002, 009, 010, 011, 012, 013, 016, 019, 020, 024, 029, 030. Ordem de construção sem mudança.
 > Emenda de 2026-11-17: pendências do aceite da FEAT-009 (`8b72dbc`), sem escopo novo. Fatias alteradas: FEAT-005, 016, 024. Ordem de construção, FRs e telas sem mudança.
 > Emenda de 2026-11-17 (emenda 2 do technical-design da FEAT-011, §8): FR-CHG-014 passa da FEAT-011 para a FEAT-019, por depender da camada de ajustes; blocos e telas da FEAT-011 completados. Fatias alteradas: FEAT-011, 019. Ordem de construção sem mudança.
 > Emenda de 2026-11-24: achado 2 do aceite da FEAT-011 (`368c33f`) e pendências do technical-design da FEAT-011 (§8). As partes da FR-DEC-016, FR-DEC-018 e FR-CHG-019 que ficaram fora da FEAT-011 (§6 do design) ganham dono; pendências para o design da FEAT-004 e da FEAT-019. Fatias alteradas: FEAT-002, 004, 010, 011, 012, 019. Ordem de construção e telas sem mudança.
+> Emenda de 2026-11-24 (technical-design da FEAT-010, §8, emenda 1; D11 e SRS v1.3): a FEAT-010 fica com o Write e o "Roll all undecided"; a FR-DEC-014 (Should desde a v1.3) e o filtro das tabelas aguardando da FR-DEC-023 vão para a FEAT-024; a FR-DEC-010, a FR-STEP-015 e a FR-CONT-008 (parcial: concessões) vão para a FEAT-012, com duas pendências do design da FEAT-010. Fatias alteradas: FEAT-010, 012, 024. Ordem de construção sem mudança; posição 6 renomeada.
 
 ## 1. Visão geral
 
@@ -51,9 +52,9 @@ O caminho mínimo de ponta a ponta, publicado.
 | FEAT-007 | **Etapa Ancestry, mapa de etapas e resumo vivo** (Dwarf e Human do core) | FR-STEP-001, 002, 003; FR-FLOW-001 a 014, 018; FR-CALC-001; FR-DEC-011; FR-SRC-010; FR-CONT-006, 009; FR-CONT-003 (parcial) | UC-003 | SCR-WEB-003, SCR-WEB-016 | `engine.resolve`, `engine.evaluate`, `app`, `ui` | Ancestralidade, procedimento, fórmulas, `decisions` |
 | FEAT-008 | Etapa Attributes: ajuste ±1, características com fórmula e composição | FR-STEP-007, 009, 010, 011; FR-CALC-002, 003, 006, 007, 008; FR-CALC-005 (parcial); FR-CALC-009 (parcial) | UC-004 | SCR-WEB-005 | `engine.evaluate` | Fórmulas, limites |
 | FEAT-009 | Decidir uma tabela: Roll, Choose, Enter result (tabelas de história do Dwarf, Hated Creature). Adianta no motor a validade de uma decisão de tabela na leitura (AC-17 do design); aviso, log e impacto ficam com a FEAT-011. | FR-DEC-001, 002, 004, 005, 007, 008, 012, 019, 020, 024; FR-DEC-016 (parcial: primeira rolagem); FR-STEP-012 (parcial: Roll e Choose), 013, 014; FR-CALC-010, 011; FR-CALC-005 (parcial); FR-CONT-008 (parcial: sem concessões nem ligações); FR-LOG-001, 002, 004, 010 | UC-005, UC-006 | SCR-WEB-009, SCR-WEB-003 ("Decide now" do Dwarf) | `dice`, `engine.evaluate`, `app`, `content`, `ui`, `packs/` | Tabelas, tipos de criatura, decisões, log |
-| FEAT-010 | Write, subdecisões, tabelas aguardando e "Roll all undecided" | FR-DEC-003, 010, 014, 021, 023; FR-DEC-016 (parcial: Roll all undecided); FR-DEC-018 (parcial: Write); FR-STEP-012 (parcial: Write), 015; FR-CONT-008 (parcial: concessões); FR-LOG-003 | UC-005, UC-006 | SCR-WEB-009 | `engine.evaluate`, `app` | Decisões, concessões |
+| FEAT-010 | Write e "Roll all undecided" | FR-DEC-003, 021; FR-DEC-023 (parcial: sem tabelas aguardando); FR-DEC-016 (parcial: Roll all undecided); FR-DEC-018 (parcial: Write); FR-STEP-012 (parcial: Write); FR-LOG-003 | UC-005, UC-006 | SCR-WEB-009 | `engine.evaluate`, `engine.impact`, `content`, `app`, `ui`, `e2e/` | Decisões |
 | FEAT-011 | Mudança a montante: diálogo de impacto que suspende e restaura (D40), rerrolagem, troca de modo, troca de ancestralidade, versão nova do pacote; entradas de log de desfeito, de suspensão e de restauração | FR-CHG-001 a 006, 008 a 012, 018 (parcial: sem ajuste ligado), 019 (parcial: sem exportação); FR-DEC-015, 017; FR-DEC-018 (parcial: sem Write); FR-DEC-016 (parcial: Reroll e troca de modo); FR-STEP-005; FR-LOG-007; FR-CONT-015, 016 | UC-010 | SCR-WEB-007, SCR-WEB-003, SCR-WEB-009 | `engine.impact`, `app`, `content`, `ui`, `e2e/` | Decisões, decisões guardadas (`earlier`, marca `setAside`), log |
-| FEAT-012 | Profissões e idiomas, com nome digitado (D36) e troca por idioma. Inclui os efeitos das entradas 12 e 13 do Background do Dwarf (profissão e idioma concedidos), com o mecanismo de concessão da FEAT-010. | FR-STEP-016, 017, 019, 020, 021; FR-DEC-006, 009, 013; FR-DEC-016 (parcial: rolagem encadeada); FR-CONT-008 (parcial: ligações entre tabelas) | UC-007 | SCR-WEB-010 | `dice` (encadeada), `engine.evaluate` | Tabelas de profissão, idiomas |
+| FEAT-012 | Profissões e idiomas, com nome digitado (D36) e troca por idioma. Inclui os efeitos das entradas 12 e 13 do Background do Dwarf (profissão e idioma concedidos). O mecanismo de concessão por resultado e a subdecisão de entrada nascem nesta fatia. Pendências do design da FEAT-010 (§8): (i) decidir se o "Roll all undecided" rola, no mesmo comando, as vagas `table` filhas que uma tabela rolada abrir por concessão de entrada; (ii) com a primeira filha real de uma entrada (o idioma da Background 13), o E2E de um Choose → Choose com dependente, com o foco depois do Apply (FEAT-011: technical-design §8, nota 1). | FR-STEP-015, 016, 017, 019, 020, 021; FR-DEC-006, 009, 010, 013; FR-DEC-016 (parcial: rolagem encadeada); FR-CONT-008 (parcial: concessões e ligações entre tabelas) | UC-007 | SCR-WEB-010 | `dice` (encadeada), `engine.evaluate` | Tabelas de profissão, idiomas |
 | FEAT-013 | Riqueza e equipamento. Inclui os efeitos das entradas 14 e 20 do Background do Dwarf (item e dinheiro). | FR-STEP-022, 023, 024; FR-CALC-012 | UC-008 | SCR-WEB-011 | `engine.evaluate` | Estilo de vida, pacotes de equipamento |
 | FEAT-014 | Coisa interessante | FR-STEP-026, 027 | UC-009 | SCR-WEB-008 | `dice`, `engine.evaluate` | Tabelas de coisa interessante |
 | FEAT-015 | Roleplaying e Review | FR-STEP-029, 030, 031; FR-FLOW-015, 016, 017; FR-CHAR-012; FR-LOG-008 | UC-011 | SCR-WEB-017, SCR-WEB-018 | `app`, `ui` | `text`, decisões abertas |
@@ -80,7 +81,7 @@ O caminho mínimo de ponta a ponta, publicado.
 | ID | Fatia | FRs | Telas |
 | :- | :-- | :-- | :-- |
 | FEAT-023 | Componentes por livro, regras opcionais, atributos aleatórios, pacote da casa embarcado, documentação do formato | FR-SRC-016, 017, 018; FR-CONT-017 | SCR-WEB-002, SCR-WEB-005 |
-| FEAT-024 | Revisão de procedimento e substituição de tabela: Development do *Only Human*, *Oddities*; a troca de fonte de uma tabela suspende e restaura os resultados (D40). O design verifica de ponta a ponta o AC-17 (iv) e (v) da FEAT-009 pela troca de fonte e pela substituição com `replaces`: a decisão gravada com o livro anterior deixa de valer e a vaga reabre; voltando a fonte, ela volta (FEAT-009: technical-design §8, acceptance-report). | FR-FLOW-019; FR-SRC-021, 025; FR-CHG-015; FR-STEP-028 | SCR-WEB-006, SCR-WEB-008 |
+| FEAT-024 | Revisão de procedimento e substituição de tabela: Development do *Only Human*, *Oddities*; a troca de fonte de uma tabela suspende e restaura os resultados (D40). O design verifica de ponta a ponta o AC-17 (iv) e (v) da FEAT-009 pela troca de fonte e pela substituição com `replaces`: a decisão gravada com o livro anterior deixa de valer e a vaga reabre; voltando a fonte, ela volta (FEAT-009: technical-design §8, acceptance-report). | FR-FLOW-019; FR-SRC-021, 025; FR-CHG-015; FR-STEP-028; FR-DEC-014; FR-DEC-023 (parcial: tabelas aguardando) | SCR-WEB-006, SCR-WEB-008 |
 | FEAT-025 | Versão no cartão e comparação | FR-SRC-019, 020 | SCR-WEB-003, SCR-WEB-004 |
 | FEAT-026 | Motivos de indisponível, resumo das fontes, lista navegável, busca de ancestralidade | FR-SRC-022, 023, 024; FR-STEP-006 | SCR-WEB-002, SCR-WEB-003 |
 | FEAT-027 | Concessões e decisões do mestre | FR-DEC-025 | SCR-WEB-011, SCR-WEB-014 |
@@ -100,7 +101,7 @@ O caminho mínimo de ponta a ponta, publicado.
 | 3 | FEAT-001 Home | Torna o app usável entre sessões; precisa da contagem de decisões abertas. |
 | 4 | FEAT-009 Decidir uma tabela | Cria os primeiros dependentes reais. |
 | 5 | FEAT-011 Mudança a montante | Risco da ADR-004 puxado para cedo, assim que existem dependentes. |
-| 6 | FEAT-010 Write e subdecisões | Completa os modos de decisão antes das etapas que os reusam. |
+| 6 | FEAT-010 Write e Roll all undecided | Completa os modos de decisão antes das etapas que os reusam. |
 | 7 | FEAT-012 Profissões e idiomas | Rolagem encadeada e nomes digitados (D36). |
 | 8 | FEAT-013 Riqueza e equipamento | |
 | 9 | FEAT-014 Coisa interessante | |
@@ -129,7 +130,7 @@ graph LR
     f1["FEAT-001 Home"]
     f9["FEAT-009 Decidir tabela"]
     f11["FEAT-011 Impacto"]
-    f10["FEAT-010 Write e subdecisões"]
+    f10["FEAT-010 Write e Roll all"]
     f12["FEAT-012 Profissões"]
     f13["FEAT-013 Riqueza"]
     f14["FEAT-014 Coisa interessante"]
