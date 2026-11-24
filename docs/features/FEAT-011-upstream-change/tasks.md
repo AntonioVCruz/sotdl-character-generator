@@ -1,7 +1,7 @@
 # Tasks: FEAT-011 — Mudança a montante
 
 > Executa: `docs/features/FEAT-011-upstream-change/technical-design.md` (e o `ui-design.md`, nas tarefas de interface)
-> Status: T1 a T4 feitas · Última atualização: 2026-11-19 (emenda 4 do §8: ordem de execução e escopo da T5, T9, T10 e T11)
+> Status: T1 a T12 feitas · Última atualização: 2026-11-24
 > Antes da T1: as emendas 1 a 3 do §8 aplicadas (C11). Todo "pronto quando" inclui `npm run typecheck` e `npm run lint` verdes, e as suítes das features anteriores verdes, salvo as expectativas do §7 que a própria tarefa muda (C8).
 >
 > **Ordem de execução (emenda 4 do §8):** T1 → T2 → T3 → T4 → **T5 → T7 → T9 → T6 → T10 → T8 → T11 → T12**. Os ids não mudam. Motivo (C8): a T5 tira o `has-dependents` do `DecideResult`, e os testes que dependem da recusa (§7, itens 11, 13 e 14) só mudam com o diálogo; o CI roda testes e E2E em todo push no `main`. A T9 vem logo depois da T5 para encurtar o intervalo vermelho, e a T7 antes da T9 porque o open-notice precisa do `notice` da sessão. **Sem push entre a T5 e a T9.**
