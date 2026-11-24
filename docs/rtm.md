@@ -1,6 +1,6 @@
 # Matriz de rastreabilidade de requisitos (RTM)
 
-> Fonte: `docs/srs.md` (v1.2), `docs/use-cases.md` · Última atualização: 2026-11-17
+> Fonte: `docs/srs.md` (v1.2.1), `docs/use-cases.md` · Última atualização: 2026-11-24
 > As colunas Design, Plan e Test são preenchidas pelas etapas seguintes, cada uma só na sua coluna: arquitetura e design detalhado (Design), planejamento (Plan), verificação (Test). Sempre acrescentar, nunca sobrescrever.
 
 | Req ID | Requisito (curto) | Prioridade | Status | Origem | Caso(s) de uso | Design ref | Plan ref | Test ref |
@@ -88,9 +88,9 @@
 | FR-DEC-013 | Exibi-la desabilitada, como "already yours", onde ela reaparecer para escolha | Must | Active | SCR-10 | UC-005 | _TBD_ | FEAT-012 | _TBD_ |
 | FR-DEC-014 | Exibi-la como aguardando, com o motivo | Must | Active | Entrevista de requisitos | UC-005 | ADR-004 | FEAT-010 | _TBD_ |
 | FR-DEC-015 | Substituir o resultado e registrar o anterior no log como desfeito | Must | Active | P8 | UC-005, UC-010 | ADR-004, features/FEAT-011-upstream-change/technical-design.md, features/FEAT-011-upstream-change/ui-design.md | FEAT-011 | features/FEAT-011-upstream-change/acceptance-report.md |
-| FR-DEC-016 | Registrar quantas vezes ela já foi rolada | Must | Active | P8 | UC-005 | ADR-004, features/FEAT-009-decide-a-table/technical-design.md, features/FEAT-011-upstream-change/technical-design.md | FEAT-009, FEAT-011 | features/FEAT-009-decide-a-table/acceptance-report.md (partial), features/FEAT-011-upstream-change/acceptance-report.md (partial) |
+| FR-DEC-016 | Registrar quantas vezes ela já foi rolada | Must | Active | P8 | UC-005 | ADR-004, features/FEAT-009-decide-a-table/technical-design.md, features/FEAT-011-upstream-change/technical-design.md | FEAT-009, FEAT-011, FEAT-010, FEAT-012 | features/FEAT-009-decide-a-table/acceptance-report.md (partial), features/FEAT-011-upstream-change/acceptance-report.md (partial) |
 | FR-DEC-017 | Submetê-la à confirmação de dependentes antes de aplicar | Must | Active | P6 | UC-005, UC-010 | ADR-004, features/FEAT-011-upstream-change/technical-design.md, features/FEAT-011-upstream-change/ui-design.md | FEAT-011 | features/FEAT-011-upstream-change/acceptance-report.md |
-| FR-DEC-018 | Tratar o novo resultado como substituição do anterior | Must | Active | Entrevista de requisitos | UC-005, UC-010 | ADR-004, features/FEAT-011-upstream-change/technical-design.md, features/FEAT-011-upstream-change/ui-design.md | FEAT-011 | features/FEAT-011-upstream-change/acceptance-report.md (partial) |
+| FR-DEC-018 | Tratar o novo resultado como substituição do anterior | Must | Active | Entrevista de requisitos | UC-005, UC-010 | ADR-004, features/FEAT-011-upstream-change/technical-design.md, features/FEAT-011-upstream-change/ui-design.md | FEAT-011, FEAT-010 | features/FEAT-011-upstream-change/acceptance-report.md (partial) |
 | FR-DEC-019 | Aceitar o valor de cada expressão de dado ou etapa da rolagem | Must | Active | D30 | UC-005 | ADR-009, features/FEAT-009-decide-a-table/technical-design.md, features/FEAT-009-decide-a-table/ui-design.md | FEAT-009 | features/FEAT-009-decide-a-table/acceptance-report.md |
 | FR-DEC-020 | Recusá-lo e informar a faixa válida | Must | Active | Entrevista de requisitos | UC-005 | ADR-009, features/FEAT-009-decide-a-table/technical-design.md, features/FEAT-009-decide-a-table/ui-design.md | FEAT-009 | features/FEAT-009-decide-a-table/acceptance-report.md |
 | FR-DEC-021 | Recusar o registro e pedir o texto | Must | Active | Entrevista de requisitos | UC-005 | _TBD_ | FEAT-010 | _TBD_ |
@@ -162,7 +162,7 @@
 | FR-CHG-016 | Reabri-la no construtor, na etapa do nível dela, com a confirmação de dependentes | Should | Active | D32, D40 | — | ADR-004 | FEAT-029 | _TBD_ |
 | FR-CHG-017 | Reverter a última mudança confirmada | Could | Active | Entrevista de requisitos | — | _TBD_ | _TBD_ | _TBD_ |
 | FR-CHG-018 | Restaurar a decisão suspensa quando o contexto dela voltar, com dependentes e ajustes… | Must | Active | D40, P6, P6b | UC-010, UC-015 | ADR-004, features/FEAT-011-upstream-change/technical-design.md, features/FEAT-011-upstream-change/ui-design.md | FEAT-011, FEAT-019 | features/FEAT-011-upstream-change/acceptance-report.md (partial) |
-| FR-CHG-019 | Guardar a decisão suspensa no personagem, fora da ficha e do cálculo, até ser… | Must | Active | D40 | UC-010, UC-015 | ADR-004, features/FEAT-011-upstream-change/technical-design.md, features/FEAT-011-upstream-change/ui-design.md | FEAT-011 | features/FEAT-011-upstream-change/acceptance-report.md (partial) |
+| FR-CHG-019 | Guardar a decisão suspensa no personagem, fora da ficha e do cálculo, até ser… | Must | Active | D40 | UC-010, UC-015 | ADR-004, features/FEAT-011-upstream-change/technical-design.md, features/FEAT-011-upstream-change/ui-design.md | FEAT-011, FEAT-002 | features/FEAT-011-upstream-change/acceptance-report.md (partial) |
 | FR-CHG-020 | Descartar as decisões suspensas, com confirmação, e registrar o descarte no log | Should | Active | D40 | — | ADR-004 | FEAT-029 | _TBD_ |
 | FR-CHG-021 | Suspender a decisão inelegível pela regra e reabrir a vaga | Should | Active | D39, D40 | — | ADR-004 | FEAT-030 | _TBD_ |
 | FR-LOG-001 | Adicionar ao log uma entrada com o tipo, a descrição, a fonte e o modo (rolado,… | Must | Active | P8, SCR-15 | UC-005 | ADR-004, features/FEAT-009-decide-a-table/technical-design.md | FEAT-009 | features/FEAT-009-decide-a-table/acceptance-report.md |
