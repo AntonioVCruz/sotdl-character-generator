@@ -1,7 +1,7 @@
 # UI Design: FEAT-011 — Mudança a montante
 
 > Feature de: `docs/implementation-plan.md` · Par com: `technical-design.md`
-> Telas: SCR-WEB-007, SCR-WEB-003, SCR-WEB-009 (e a conferência da SCR-WEB-005) · Modo: por feature, re-verificado depois da emenda E12 e P1 (`1158beb`) e da emenda M1 do technical-design (`ec54463`) · Status: Verified · Data: 2026-11-17
+> Telas: SCR-WEB-007, SCR-WEB-003, SCR-WEB-009 (e a conferência da SCR-WEB-005) · Modo: por feature, re-verificado depois da emenda E12 e P1 (`1158beb`) e da emenda M1 do technical-design (`ec54463`) · Status: Verified · Data: 2026-11-17 · Limpeza de texto do aceite em 2026-11-24
 
 Autoridade: `docs/design.md` (com a D40 no `impact-dialog`, §4, e os termos do §6) e `docs/tokens.json`. Todo valor visual abaixo é token (`--…`) ou classe `.typography-*`; breakpoints pelos `@custom-media` da FEAT-007. Ícones Lucide, decorativos com `aria-hidden`. A moldura é a da FEAT-007 ([Builder frame](../FEAT-007-ancestry-step-map-live-summary/ui-design.md#builder-frame)), salvo o que se acrescenta em [Moldura](#moldura-do-construtor). Texto da interface em inglês, sem texto dos livros (P22). Fora desta feature: a variante por fontes (FEAT-004), o ajuste ligado e o ajuste livre no diálogo (FEAT-019), o Write (FEAT-010), o log (SCR-WEB-015, FEAT-020), a Review e o descarte (SCR-WEB-018; FEAT-015 e FEAT-029).
 
@@ -126,7 +126,7 @@ Começa quando o snapshot ganha `pending` (C2). A tela por trás mostra o docume
 "Keep current …" ou Esc chama `session.keep()`. O estado começa quando o snapshot perde `pending` com o documento de antes (FR-CHG-009):
 
 - o diálogo fecha;
-- o foco volta ao controle que abriu o diálogo (a restauração de foco do `Modal`): "Choose {New}" na Ancestry, a entrada da grade acionada, "Reroll {dado}", "Roll {dado}" ou "Use this result" na Story. Esses controles continuam na tela depois do Keep ([switch-kept](#switch-kept), [replace-kept](#replace-kept)). Se uma troca de rota tirou o controle da tela, o foco vai para o `h1` da etapa;
+- o foco volta ao controle que abriu o diálogo, guardado pela moldura (`opener`, `Builder.tsx`) quando a pendente aparece e devolvido por ela no quadro seguinte ao fechamento, sem depender da restauração de foco do `Modal`: "Choose {New}" na Ancestry, a entrada da grade acionada, "Reroll {dado}", "Roll {dado}" ou, no Enter result, o controle que enviou a soma ("Use this result" pelo clique, o campo da soma pela tecla Enter) na Story. Esses controles continuam na tela depois do Keep ([switch-kept](#switch-kept), [replace-kept](#replace-kept)). Se uma troca de rota tirou o controle da tela, o foco vai para o `h1` da etapa;
 - nenhum anúncio além do controle focado; nada muda no resumo.
 
 ### applied
@@ -134,12 +134,12 @@ Começa quando o snapshot ganha `pending` (C2). A tela por trás mostra o docume
 "Apply …" chama `session.confirm()` e põe a marca do Apply (`{ key, kind }` da pendente). O estado começa quando o snapshot perde `pending` e mostra o candidato aplicado, antes da gravação (FR-CHG-008; D11):
 
 - o diálogo fecha;
-- a marca é consumida no efeito sobre o snapshot, e o foco vai para o destino da variante, no quadro seguinte ao fechamento, depois da restauração de foco do `Modal` (que tentaria voltar ao controle que abriu, como o seletor de etapas já faz com o `h1`; `Builder.tsx`):
+- a marca é consumida no efeito sobre o snapshot, e a moldura (`Builder.tsx`) põe o foco no destino da variante, no quadro seguinte ao fechamento, sem depender da restauração de foco do `Modal`:
 
 | Variante | Destino do foco | Coerente com |
 | :-- | :-- | :-- |
 | Troca de ancestralidade | o `h2` do detalhe da ancestralidade, agora a escolhida | "Ao confirmar" da FEAT-007 |
-| Choose → Choose e troca de modo para Choose | a entrada da grade acionada, agora marcada (a própria restauração do `Modal`; sem foco programático) | chosen da FEAT-009 |
+| Choose → Choose e troca de modo para Choose | a entrada da grade acionada, agora marcada: o controle que abriu o diálogo, guardado pela moldura (`opener`), se ainda está na tela | chosen da FEAT-009 |
 | Reroll, Roll numa escolhida, Enter result | a coluna de resultado do cartão (`tabindex="-1"`), lida a partir do cálculo | rolled e entered da FEAT-009 |
 | Reroll e Enter result na `roll-effect` | a coluna de resultado da caixa do efeito | effect-decided da FEAT-009 |
 | `clear` | o `h2` do card da vaga ("Score adjustment") | undone da FEAT-008 |
@@ -240,7 +240,7 @@ A substituição tem `needsDialog` (a entrada atual tem uma `roll-effect` decidi
 
 ### replace-kept
 
-[kept](#kept) no cartão: a grade continua na entrada atual (controlada pelo snapshot), a entrada acionada fica sem marca e recebe o foco de volta; na rerrolagem, "Reroll {dado}" ou "Roll {dado}" recebe o foco, com o resultado de antes; no Enter result, o formulário continua aberto, com a soma digitada, e "Use this result" recebe o foco. Nada é gravado, salvo na rerrolagem ([by-reroll](#by-reroll)).
+[kept](#kept) no cartão: a grade continua na entrada atual (controlada pelo snapshot), a entrada acionada fica sem marca e recebe o foco de volta; na rerrolagem, "Reroll {dado}" ou "Roll {dado}" recebe o foco, com o resultado de antes; no Enter result, o formulário continua aberto, com a soma digitada, e o foco volta ao controle que enviou a soma: "Use this result" pelo clique, o campo da soma pela tecla Enter (decisão F2 do usuário). Nada é gravado, salvo na rerrolagem ([by-reroll](#by-reroll)).
 
 ### replace-applied
 
@@ -250,7 +250,7 @@ A substituição tem `needsDialog` (a entrada atual tem uma `roll-effect` decidi
 
 `roll-effect` decidida ([effect-decided](../FEAT-009-decide-a-table/ui-design.md#effect-decided)): no lugar do motivo `LOCKED_ROLLED`, a linha de ações com `button-secondary` "Reroll {dado do efeito}" ("Reroll 1d6") e "Enter result" (FR-STEP-014). Sem dependentes no MVP, aplica direto: o snapshot mostra o valor novo, e o foco vai para a coluna de resultado da caixa (marca do clique, consumida com outro `logged`). O "Enter result" abre o formulário dentro da caixa, como na effect-open.
 
-- **Teclado:** a ordem da FEAT-009, com a linha de ações depois dos efeitos e da caixa da `roll-effect`: cabeçalho → por cartão: `segmented-control` → grade ou linha de ações → caixa da `roll-effect` (e a linha de ações dela) → Back → Next.
+- **Teclado:** a ordem da FEAT-009, com a linha de ações da tabela no fim da coluna de resultado, depois dos efeitos e da caixa da `roll-effect` ([decided-roll](#decided-roll)): cabeçalho → por cartão: `segmented-control` → no segmento Choose, a grade → caixa da `roll-effect` (e a linha de ações dela) → no segmento Roll, a linha de ações da tabela → Back → Next.
 - **Notas responsivas:** as da FEAT-009. No celular, a linha de ações quebra com `flex-wrap`, gap `--space-2`, botões com o rótulo inteiro.
 - **Anel de foco** (C18): "Reroll" e "Roll" são botões (anel no próprio elemento); os segmentos e a grade já têm `data-focus-ring` (FEAT-009), e o caso da Story no `builder-dock.spec.ts` (FEAT-009 T9) continua cobrindo.
 
@@ -355,6 +355,10 @@ Nenhuma escalação nem pergunta aberta. As três da primeira versão (`9b0e9cc`
 - **P1. Linha "N set aside" do `live-summary`:** alternativa A, a linha sem o link até a FEAT-015. Aplicada no `design.md` §4, como nota provisória do `live-summary`, e na proveniência (`1158beb`). Re-verificado: a [set-aside-line](#set-aside-line) confere com o `design.md` emendado; a FEAT-015 acrescenta " · See Review".
 - **M1. Emenda do technical-design** (detailed-design): a prévia continua aberta depois do "Keep current ancestry". Aplicada (`ec54463`): §3.2, o `keep()` da rerrolagem com o snapshot antes da gravação; §7, as expectativas 11 a 14 e os seletores da tabela [Nomes novos](#nomes-novos-contra-os-localizadores-do-e2e-c1), com o contorno do Firefox no axe do AC-15; tasks.md, T9 a T11.
 - **C1, de novo, só para o aviso e a linha:** os textos não mudaram na re-verificação. Nenhum localizador de `e2e/` casa com eles (o mais próximo, `getByText(/^\d+ open$/)` do `story.spec.ts:179`, fica no `main` e não casa com "{n} set aside", no `aside`).
+- **Limpeza de texto, do aceite** (achado 4 do `acceptance-report.md`; 2026-11-24). Sem mudar tela, comportamento nem manifesto; o texto passa a descrever o que foi aceito:
+  - [kept](#kept) e [applied](#applied): o foco é posto pela moldura, a partir do controle guardado quando a pendente aparece (`opener`), e não pela restauração de foco do `Modal`; sai o "sem foco programático" do Choose → Choose (nota 1 do §8 do technical-design);
+  - [replace-kept](#replace-kept): com a soma enviada pela tecla Enter, o foco volta ao campo da soma; pelo clique, a "Use this result" (decisão F2 do usuário; nota 3);
+  - [effect-reroll](#effect-reroll): a sequência do teclado segue o `TablesStep.tsx`, com a caixa da `roll-effect` antes da linha de ações da tabela (nota 4).
 
 - **Notas, sem emenda:**
   - O exemplo de linha do `impact-dialog` no `design.md` §4 ("Age 42 · rolled") vira "Dwarf Age: 8–12 · rolled": o rótulo da vaga é o de pendência (FEAT-009), e o valor de uma tabela de história é a faixa, sem texto (P22). Os dois-pontos separam título e valor, que de outro modo se juntariam ("Insanity 1d6 4").
