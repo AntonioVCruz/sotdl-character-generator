@@ -3,7 +3,7 @@
 > Feature de: `docs/implementation-plan.md` §3 (E3) e §4 (posição 6) · Épico: E3 Construtor de nível 0
 > Implementa: FR-DEC-003, 021; FR-DEC-023 (parcial: sem tabelas aguardando); FR-DEC-016 (parcial: Roll all undecided); FR-DEC-018 (parcial: Write); FR-STEP-012 (parcial: Write); FR-LOG-003. Saem da linha do plano, por decisão do usuário (D11; emenda 1 do §8): FR-DEC-014 para a FEAT-024; FR-DEC-010, FR-STEP-015 e FR-CONT-008 (parcial: concessões) para a FEAT-012
 > Realiza: UC-005 (2b sem efeito de regra, 2d, 2g, 2e no Write) · UC-006 (1) · Telas: SCR-WEB-009, desenhada pelo ui-design
-> Status: Draft · Data: 2026-11-24 · Decisões do usuário de 2026-11-24: D7 e D11
+> Status: Verified · Data: 2026-11-24 · Decisões do usuário de 2026-11-24: D7 e D11 · Emendas 1 a 3 do §8 aplicadas em 2026-11-24
 
 ## 1. Intenção
 
@@ -231,19 +231,20 @@ Também conferidos:
 
 ## 8. Escalações e pendências
 
-- **Escalações e emendas** (rodam logo depois deste design, num prompt à parte, cada uma na skill dona; C11):
-  1. **implementation-planning, plano e RTM** (D11; §2, divergências 1 e 2):
+- **Escalações e emendas** (rodam logo depois deste design, num prompt à parte, cada uma na skill dona; C11). As três foram aplicadas em 2026-11-24, com a do `design.md` abaixo:
+  1. **implementation-planning, plano e RTM** (D11; §2, divergências 1 e 2). Aplicada (`b75cf6a`), com as duas pendências da FEAT-012 deste §8 na linha dela e o nó do grafo do §4 renomeado:
      - linha da FEAT-010: nome "Write e Roll all undecided"; FRs: FR-DEC-003, 021; FR-DEC-023 (parcial: sem tabelas aguardando); FR-DEC-016 (parcial: Roll all undecided); FR-DEC-018 (parcial: Write); FR-STEP-012 (parcial: Write); FR-LOG-003; blocos `engine.evaluate`, `engine.impact`, `content`, `app`, `ui`, `e2e/`; dados: decisões. Saem FR-DEC-010, FR-DEC-014, FR-STEP-015 e FR-CONT-008 (parcial: concessões);
      - linha da FEAT-012: entram FR-DEC-010, FR-STEP-015 e FR-CONT-008 (parcial: concessões); o texto "com o mecanismo de concessão da FEAT-010" passa a dizer que o mecanismo de concessão por resultado e a subdecisão de entrada nascem nesta fatia;
      - linha da FEAT-024: entram FR-DEC-014 e FR-DEC-023 (parcial: tabelas aguardando);
      - §4, posição 6: "FEAT-010 Write e Roll all undecided";
      - RTM, Plan ref: FR-DEC-010 e FR-STEP-015 → FEAT-012; FR-DEC-014 → FEAT-024; FR-DEC-023 → FEAT-010, FEAT-024; FR-CONT-008 sem a FEAT-010.
-  2. **requirements-engineering, SRS** (D11, D2):
+  2. **requirements-engineering, SRS** (D11, D2). Aplicada (SRS v1.3, `e31a7d7`). Decisão do usuário na emenda: o rastreio do UC-005 sai da FR-DEC-014, e no RTM a coluna de casos de uso dela passa a "—", como nas outras Should:
      - FR-DEC-014: nota "Não ocorre com o conteúdo do MVP", e prioridade revista para Should, como a FR-CHG-015;
      - FR-CHG-018, nota: a validade de uma decisão escrita é só a regra (a), porque ela não tem entrada (D2).
-  3. **software-architecture, ADR-004 §1** (D2): na frase da validade, "para a decisão escrita, que não tem entrada, só a regra (a)". A ADR não cita a feature (C19).
+  3. **software-architecture, ADR-004 §1** (D2): na frase da validade, "para a decisão escrita, que não tem entrada, só a regra (a)". A ADR não cita a feature (C19). Aplicada (`68dd471`), em §1 ("Suspensa é derivada") e em §3 ("Mais de uma decisão por vaga").
+  4. **ux-foundations, `design.md` §4** (`roll-card`, estado aguardando), por decisão do usuário: o exemplo "Waits for Purpose", que contradiz o core (§2), passou ao modelo "Waits for {table}", sem mudar estado, leiaute nem tokens. Aplicada (`a74fb04`); nenhum ui-design usa o estado, então não há re-verificação.
 - **Sem escalação:**
-  - o `design.md` §4 (`roll-card`) mantém o estado "aguardando", com o exemplo "Waits for Purpose", porque o estado continua no componente para a FEAT-024 (decisão do usuário). O checkbox do estado "escrito" é da FEAT-019 (FR-DEC-022), e o ui-design desta feature desenha o estado sem ele;
+  - o `design.md` §4 (`roll-card`) mantém o estado "aguardando", porque o estado continua no componente para a FEAT-024 (decisão do usuário); só o exemplo mudou (emenda 4 acima). O checkbox do estado "escrito" é da FEAT-019 (FR-DEC-022), e o ui-design desta feature desenha o estado sem ele;
   - a `ux-foundations.md` (linha da SCR-WEB-009, "aguardando" e "com subdecisão") descreve a tela inteira e continua certa. Os `gaps` do manifesto mudam de dono no ui-design desta feature (§3.3).
 - **Correção do pedido, sem emenda:** a Background 1 do Dwarf não tem `roll-effect` (p.19, só Corruption +1). O caso "Write com a `roll-effect` decidida, em `setAside`, e a volta que a restaura" é o AC-6, com a Gnome Past 4 do pacote fictício.
 - **Pendência do foco depois do Apply no Choose → Choose** (FEAT-011 §8, nota 1, sem caso no E2E): **não cai aqui.** O Write só chega ao diálogo com pacote fictício, e o E2E usa só o pacote real. Qualquer que seja o destino do foco que o ui-design der ao Write (o `opener` da moldura ou a coluna de resultado), o caso fica no `Builder.test.tsx`, como o Choose → Choose. Proposta: a FEAT-012, com a primeira filha real de uma entrada (o idioma da Background 13), pode ter o E2E de um Choose → Choose com dependente.
