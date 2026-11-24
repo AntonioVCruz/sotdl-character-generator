@@ -110,8 +110,9 @@ test('NFR-PERF-002: after a decision the step and the live summary update within
   expect(p95).toBeLessThanOrEqual(profile.limit)
 })
 
-// NFR-PERF-003 (FEAT-011 technical-design §5): do clique que pede a troca de Dwarf completo para Human até o diálogo
-// de impacto visível. Mesmos perfis do caso acima; a NFR-PERF-003 não distingue aparelho, então o limite é o mesmo.
+// NFR-PERF-003 (FEAT-011 technical-design §5): do clique que pede a troca de Dwarf completo para Human até o primeiro
+// quadro depois que o título da troca aparece no `h2` do diálogo, com a animação de entrada fora da medida. Mesmos
+// perfis do caso acima; a NFR-PERF-003 não distingue aparelho, então o limite é o mesmo.
 const DIALOG_PROFILES: Record<string, { limit: number; throttle?: number }> = {
   chromium: { limit: 300 },
   'mobile-chrome': { limit: 300, throttle: 4 },
