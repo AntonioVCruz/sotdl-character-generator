@@ -1081,6 +1081,93 @@ describe('Story step (tables)', () => {
     expect(saved[0].decisions['ancestry=gnome/fate']).toBeUndefined()
   })
 
+  // DEF-013 (design.md §4, "error", emenda D-ERR; ui-design, entering): a região `aria-live="polite"` do erro já está no
+  // formulário, vazia, antes do envio; a mensagem aparece dentro dela, ligada ao campo, e o foco fica onde estava. A
+  // região é capturada antes do envio e conferida por identidade depois: uma região criada junto com a mensagem não passa.
+  const enterRegion = (scope: HTMLElement) => scope.querySelector<HTMLElement>('.enter-form [aria-live="polite"]')
+  /** A região do formulário aberto em `scope`, já no DOM e vazia antes do envio. */
+  function regionBeforeSubmit(scope: HTMLElement) {
+    const region = enterRegion(scope)
+    expect(region, 'aria-live="polite" region in the Enter result form').not.toBeNull()
+    expect(region!.textContent).toBe('')
+    return region!
+  }
+  async function expectAnnounced(scope: HTMLElement, region: HTMLElement, field: HTMLElement, message: string, focused: Element) {
+    await vi.waitFor(() => expect(region.textContent).toBe(message))
+    expect(enterRegion(scope)).toBe(region)
+    // A mensagem do `aria-describedby` está dentro da região, e a região é o ancestral `aria-live` mais próximo dela.
+    const error = (field.getAttribute('aria-describedby') ?? '')
+      .split(' ')
+      .map((id) => document.getElementById(id))
+      .find((element) => element?.textContent === message)
+    expect(error, 'message in aria-describedby').toBeTruthy()
+    expect(error!.closest('[aria-live]')).toBe(region)
+    expect(field.getAttribute('aria-invalid')).toBe('true')
+    expect(document.activeElement).toBe(focused)
+    await nextFrame()
+    expect(document.activeElement).toBe(focused)
+  }
+
+  it('DEF-013, FR-DEC-004, FR-DEC-019, NFR-ACC-001: "Use this result" with the field empty shows the local error in the live region already in the form, with the focus kept on the button', async () => {
+    const { session, repository } = setup({ document: gnome() })
+    const enter = vi.spyOn(session, 'enter')
+    renderBuilder('story')
+    await screen.findByRole('region', { name: 'Gnome Fate' })
+    await userEvent.click(within(card('Gnome Fate')).getByRole('button', { name: 'Enter result' }))
+    const field = within(card('Gnome Fate')).getByLabelText('Your 3d6 roll')
+    await vi.waitFor(() => expect(document.activeElement).toBe(field))
+    const region = regionBeforeSubmit(card('Gnome Fate'))
+
+    const use = within(card('Gnome Fate')).getByRole('button', { name: 'Use this result' })
+    await userEvent.click(use)
+    expect(enter).not.toHaveBeenCalled()
+    await expectAnnounced(card('Gnome Fate'), region, field, 'Enter a value from 3 to 18.', use)
+    expect(repository.save).not.toHaveBeenCalled()
+
+    // A mensagem some na próxima edição; a região continua no formulário, vazia.
+    await userEvent.type(field, '1')
+    expect(enterRegion(card('Gnome Fate'))).toBe(region)
+    expect(region.textContent).toBe('')
+  })
+
+  it('DEF-013, FR-STEP-014, FR-DEC-020, NFR-ACC-001: on the roll-effect, the out-of-range refusal shows in the live region already in the form, with the focus kept on "Use this result"', async () => {
+    const { session, saved } = setup({ document: gnome() })
+    const enter = vi.spyOn(session, 'enter')
+    renderBuilder('story')
+    await screen.findByRole('region', { name: 'Gnome Past' })
+    await userEvent.click(within(modes('Gnome Past')).getByRole('radio', { name: 'Choose' }))
+    await userEvent.click(entryRadio('Gnome Past', '4 TT p.7'))
+    await storySettled(session, saved, 1)
+    const effect = document.getElementById(slotElementId(MADNESS))!
+    await userEvent.click(within(effect).getByRole('button', { name: 'Enter result' }))
+    const field = within(effect).getByLabelText('Your 1d6 roll')
+    const region = regionBeforeSubmit(effect)
+
+    await userEvent.type(field, '7')
+    const use = within(effect).getByRole('button', { name: 'Use this result' })
+    await userEvent.click(use)
+    expect(enter).toHaveBeenCalledWith(MADNESS, 7)
+    await expectAnnounced(effect, region, field, 'Enter a value from 1 to 6.', use)
+    expect((field as HTMLInputElement).value).toBe('7')
+    expect(saved).toHaveLength(1)
+  })
+
+  it('DEF-013, FR-DEC-004, FR-DEC-019, NFR-ACC-001: Enter in the empty field shows the local error in the live region already in the form, with the focus kept on the field', async () => {
+    const { session, repository } = setup({ document: gnome() })
+    const enter = vi.spyOn(session, 'enter')
+    renderBuilder('story')
+    await screen.findByRole('region', { name: 'Gnome Fate' })
+    await userEvent.click(within(card('Gnome Fate')).getByRole('button', { name: 'Enter result' }))
+    const field = within(card('Gnome Fate')).getByLabelText('Your 3d6 roll')
+    await vi.waitFor(() => expect(document.activeElement).toBe(field))
+    const region = regionBeforeSubmit(card('Gnome Fate'))
+
+    await userEvent.keyboard('{Enter}')
+    expect(enter).not.toHaveBeenCalled()
+    await expectAnnounced(card('Gnome Fate'), region, field, 'Enter a value from 3 to 18.', field)
+    expect(repository.save).not.toHaveBeenCalled()
+  })
+
   it('AC-14 (FR-CHAR-010): when the save of a Roll fails, the result stays and the frame alert shows', async () => {
     const { session, control, saved } = setup({ document: gnome(), random: sequence([2, 4, 1]), holdSave: true, failSave: true })
     renderBuilder('story')
