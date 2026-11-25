@@ -37,20 +37,33 @@ async function openChoose(page: Page, name: string) {
   await expect(modes(page, name).getByRole('radio', { name: 'Choose', exact: true })).toBeChecked()
 }
 
-/** Rola uma tabela de 3d6 e confere o cálculo (faces de 1 a 6, modificador +0, total = soma) e a faixa da entrada. */
+/** Rola uma tabela de 3d6 e confere o resultado (`rolled`). */
 async function roll3d6(page: Page, name: string) {
   await card(page, name).getByRole('button', { name: 'Roll 3d6' }).click()
+  return rolled(page, name, { count: 3, sides: 6 })
+}
+
+/**
+ * Confere o resultado rolado de um cartão, sem o clique (também o do Roll all undecided): o cálculo (faces de 1 ao número
+ * de lados, modificador +0, total = soma), o total na faixa da entrada (o início da entrada, sem a criatura) e a caixa de
+ * valor. As tabelas do Dwarf não têm modificador.
+ */
+async function rolled(page: Page, name: string, { count, sides }: { count: number; sides: number }) {
+  const dice = `${count === 1 ? '' : count}d${sides}`
+  const face = sides < 10 ? '(\\d)' : '(\\d{1,2})'
+  const pattern = new RegExp(`^Rolled ${dice}: ${Array(count).fill(face).join(' \\+ ')} · Modifier \\+0 · Total (\\d+)$`)
   const calc = card(page, name).locator('.roll-result__calc')
-  await expect(calc).toHaveText(/^Rolled 3d6: \d \+ \d \+ \d · Modifier \+0 · Total \d+$/)
-  const [, ...numbers] = (await calc.textContent())!.match(/^Rolled 3d6: (\d) \+ (\d) \+ (\d) · Modifier \+0 · Total (\d+)$/)!.map(Number)
-  const [a, b, c, total] = numbers
-  for (const face of [a, b, c]) {
-    expect(face, `${name}: face`).toBeGreaterThanOrEqual(1)
-    expect(face, `${name}: face`).toBeLessThanOrEqual(6)
+  await expect(calc).toHaveText(pattern)
+  const numbers = (await calc.textContent())!.match(pattern)!.slice(1).map(Number)
+  const faces = numbers.slice(0, -1)
+  const total = numbers[numbers.length - 1]
+  for (const value of faces) {
+    expect(value, `${name}: face`).toBeGreaterThanOrEqual(1)
+    expect(value, `${name}: face`).toBeLessThanOrEqual(sides)
   }
-  expect(total, `${name}: total`).toBe(a + b + c)
+  expect(total, `${name}: total`).toBe(faces.reduce((sum, value) => sum + value, 0))
   const entry = (await card(page, name).locator('.roll-result__entry').textContent())!
-  const [start, end = start] = entry.split('–').map(Number)
+  const [start, end = start] = entry.match(/^(\d+)(?:–(\d+))?/)!.slice(1).filter(Boolean).map(Number)
   expect(total, `${name}: total na faixa ${entry}`).toBeGreaterThanOrEqual(start)
   expect(total, `${name}: total na faixa ${entry}`).toBeLessThanOrEqual(end)
   await expect(card(page, name).locator('.roll-value')).toHaveText(`${total}rolled`)
@@ -192,14 +205,98 @@ test('FR-CHAR-006, FR-DEC-005, FR-DEC-007, FR-DEC-024, FR-CALC-010, NFR-REL-001:
   expect(csp).toEqual([])
 })
 
+// FEAT-010 (AC-12): Write e "Roll all undecided" no fluxo crítico 1. O texto escrito é o do AC-3, inventado (P22).
+const WRITTEN = 'Raised by a caravan of tinkers.'
+const EMPTY_TEXT = "Write your result first. Spaces and line breaks alone don't count."
+const NOTHING_TO_ROLL = 'Every table in this step has a result.'
+/** Os dados das cinco tabelas que o Roll all rola (pacote do core, p.18 e 19). */
+const ROLLED_BY_ALL = [
+  ['Dwarf Hatred', { count: 1, sides: 20 }],
+  ['Dwarf Age', { count: 3, sides: 6 }],
+  ['Dwarf Build', { count: 3, sides: 6 }],
+  ['Dwarf Background', { count: 1, sides: 20 }],
+  ['Dwarf Personality', { count: 3, sides: 6 }],
+] as const
+
+/** Write na Dwarf Appearance com o texto dado, pelo segmento e por "Use this text". */
+async function writeAppearance(page: Page, text: string) {
+  await modes(page, 'Dwarf Appearance').getByText('Write', { exact: true }).click()
+  await expect(modes(page, 'Dwarf Appearance').getByRole('radio', { name: 'Write', exact: true })).toBeChecked()
+  await card(page, 'Dwarf Appearance').getByRole('textbox', { name: 'Your own result' }).fill(text)
+  await card(page, 'Dwarf Appearance').getByRole('button', { name: 'Use this text', exact: true }).click()
+}
+
+test('FR-DEC-003, FR-DEC-021, FR-DEC-023, FR-DEC-016, FR-CHAR-006, NFR-REL-001: with Dwarf, an empty Write on the Dwarf Appearance is refused, a written text survives a reload, "Roll all undecided" decides the other five and the Home shows "Complete" (AC-12)', async ({
+  page,
+}, testInfo) => {
+  const csp = await watchCsp(page)
+  await toStory(page)
+  const appearance = card(page, 'Dwarf Appearance')
+  const field = appearance.getByRole('textbox', { name: 'Your own result' })
+  const use = appearance.getByRole('button', { name: 'Use this text', exact: true })
+
+  // UC-005 2g: só espaços é recusado no campo, com o valor e o foco mantidos (write-refused).
+  await writeAppearance(page, '   ')
+  await expect(appearance.getByText(EMPTY_TEXT)).toBeVisible()
+  await expect(field).toHaveAttribute('aria-invalid', 'true')
+  await expect(field).toHaveValue('   ')
+  await expect(use).toBeFocused()
+
+  // UC-005 2b: o texto do AC-3 aparece aparado no cartão (written).
+  await field.fill(`  ${WRITTEN}  `)
+  await use.click()
+  await expect(appearance.getByText(WRITTEN, { exact: true })).toBeVisible()
+  await expect(appearance.getByRole('button', { name: 'Change text', exact: true })).toBeVisible()
+
+  // Recarregar: o texto continua, com o segmento Write marcado (NFR-REL-001).
+  await saved(page, KEYS.filter((key) => key.endsWith('/appearance')))
+  await page.reload()
+  await expect(page.getByRole('heading', { level: 1, name: "What is your character's story?" })).toBeVisible()
+  await expect(appearance.getByText(WRITTEN, { exact: true })).toBeVisible()
+  await expect(modes(page, 'Dwarf Appearance').getByRole('radio', { name: 'Write', exact: true })).toBeChecked()
+
+  // UC-005 2d: "Roll all undecided · 5" rola as outras cinco, a Hatred incluída, cada uma no segmento Roll (roll-all-applied).
+  const main = page.getByRole('main')
+  await main.getByRole('button', { name: 'Roll all undecided · 5', exact: true }).click()
+  for (const [name, dice] of ROLLED_BY_ALL) {
+    const result = await rolled(page, name, dice)
+    if (name === 'Dwarf Age') expect(AGE_RANGES).toContain(result.entry)
+    await checked(modes(page, name).getByRole('radio', { name: 'Roll', exact: true }))
+  }
+  // A Appearance não muda.
+  await expect(appearance.getByText(WRITTEN, { exact: true })).toBeVisible()
+  await checked(modes(page, 'Dwarf Appearance').getByRole('radio', { name: 'Write', exact: true }))
+  await expect(appearance.locator('.roll-result__calc')).toHaveCount(0)
+
+  // roll-all-none: o botão desabilitado, o motivo visível e com o foco.
+  await expect(main.getByRole('button', { name: 'Roll all undecided', exact: true })).toBeDisabled()
+  const reason = main.getByText(NOTHING_TO_ROLL)
+  await expect(reason).toBeVisible()
+  await expect(reason).toBeFocused()
+  await expect(main.getByText('6 of 6 decided', { exact: true })).toBeVisible()
+  await saved(page, KEYS)
+
+  // FR-CHAR-006: na Home, o personagem fica "Complete".
+  await page.getByRole('link', { name: isMobile(testInfo) ? 'Back to My characters' : 'SotDL Generator' }).click()
+  await expect(page.getByRole('heading', { level: 1, name: 'My characters' })).toBeVisible()
+  const only = page.getByRole('list', { name: 'Saved characters' }).getByRole('article')
+  await expect(only).toHaveCount(1)
+  await expect(only.getByText('Complete', { exact: true })).toBeVisible()
+
+  expect(csp).toEqual([])
+})
+
 // Sem vigiar a CSP: o axe injeta script e estilo. Uma análise por teste (scaffold-notes).
-test('NFR-ACC-001: the Story step with rolled and chosen tables has no serious axe violations (AC-16)', async ({ page, context }, testInfo) => {
+test('NFR-ACC-001: the Story step with rolled, chosen and written tables has no serious axe violations (AC-16, AC-12)', async ({ page, context }, testInfo) => {
   await toStory(page)
   await grid(page, 'Dwarf Hatred').getByText('Troglodytes', { exact: true }).click()
   const age = await roll3d6(page, 'Dwarf Age')
   await openChoose(page, 'Dwarf Background')
   await grid(page, 'Dwarf Background').getByText('1', { exact: true }).click()
   await checked(grid(page, 'Dwarf Background').getByRole('radio', { name: /^1 CORE p\.19$/ }))
+  // FEAT-010: um cartão escrito (written).
+  await writeAppearance(page, WRITTEN)
+  await expect(card(page, 'Dwarf Appearance').getByText(WRITTEN, { exact: true })).toBeVisible()
 
   // Contorno só no Firefox; remover ao atualizar para o Playwright 1.66. O Firefox do Playwright 1.65 (firefox-1572)
   // derruba o processo de conteúdo ("Page crashed") quando o `ariaLabelledByElements` do mesmo elemento é lido no mundo
@@ -208,12 +305,13 @@ test('NFR-ACC-001: the Story step with rolled and chosen tables has no serious a
   // personagem, com o estado decidido esperado sem localizador por nome (scaffold-notes, "Desvios encontrados ao rodar").
   let target = page
   if (testInfo.project.name === 'firefox') {
-    await saved(page, KEYS.filter((key) => /hated|age|background/.test(key)))
+    await saved(page, KEYS.filter((key) => /hated|age|background|appearance/.test(key)))
     target = await context.newPage()
     await target.goto(page.url())
     await expect(target.locator('h1')).toHaveText("What is your character's story?")
     await expect(target.getByText(age.calc, { exact: true })).toBeVisible()
-    await expect(target.getByText('3 of 6 decided', { exact: true })).toBeVisible()
+    await expect(target.getByText(WRITTEN, { exact: true })).toBeVisible()
+    await expect(target.getByText('4 of 6 decided', { exact: true })).toBeVisible()
   }
 
   const { violations } = await new AxeBuilder({ page: target })

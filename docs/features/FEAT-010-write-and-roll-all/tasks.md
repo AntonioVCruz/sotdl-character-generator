@@ -30,7 +30,7 @@
       As expectativas 1 e 2 do §7 mudam aqui, e a 4 se o ui-design mudar a frase do regime, para as suítes não ficarem vermelhas entre a T5 e a T6.
       Pronto quando: os testes do AC-11 e do AC-2 (tela) passam no `Builder.test.tsx`, com a gravação retida e com `save-failed`; `npx playwright test e2e/story.spec.ts e2e/builder-dock.spec.ts --retries=0 --workers=1` verde nos 5 projetos.
 
-- [ ] T6 — E2E do fluxo crítico 1 com Write e Roll all undecided (design §6, AC-12; ADR-008 fluxo 1; UC-005 2b, 2d, 2g)
+- [x] T6 — E2E do fluxo crítico 1 com Write e Roll all undecided (design §6, AC-12; ADR-008 fluxo 1; UC-005 2b, 2d, 2g)
       Em `e2e/story.spec.ts`, um teste novo: Dwarf; Write vazio recusado na Dwarf Appearance; Write com texto; recarregar; "Roll all undecided" decide as outras cinco sem mudar a Appearance; "Complete" na Home. O caso do axe ganha um cartão escrito, com o contorno do Firefox do `docs/scaffold-notes.md` (C23). Seletores pela tabela C1 do ui-design.
       Pronto quando: `npx playwright test e2e/story.spec.ts --retries=0 --workers=1 --repeat-each=3` verde nos 5 projetos (C13).
 
