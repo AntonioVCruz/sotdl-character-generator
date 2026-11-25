@@ -3,7 +3,9 @@ import { act, cleanup, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { createCharacterSession, createRulesLoader, type CharacterSession, type Repository } from '../../app'
+import { impact } from '../../engine'
 import { slotElementId } from '../builder/copy'
+import { ImpactDialog } from '../builder/ImpactDialog'
 import { useRoute } from '../router'
 import Builder from './Builder'
 
@@ -1400,6 +1402,74 @@ describe('Impact dialog and open notice (FEAT-011)', () => {
     expect(within(dialog).getByText('Gnome Age:', { exact: false })).toBeTruthy()
     // Tab: o gatilho de "Stays as it is" antes das ações.
     expect(within(dialog).getAllByRole('button').map((button) => button.textContent)).toEqual(['Stays as it is · 3', 'Keep current result', 'Apply new result'])
+  })
+
+  // DEF-014 (ui-design, SCR-WEB-007, item 2; ui-design da FEAT-009, rolled, item 1). O Vitest não aplica o CSS (todo
+  // `.css` importado chega vazio, inclusive com `?raw`), então o teste confere a ligação que o CSS faz: as declarações
+  // `color` das regras do `builder.css`, lido do disco, cujo seletor casa com o elemento renderizado (`Element.matches`).
+  /** As cores que o `builder.css` dá ao próprio elemento, na ordem do arquivo. */
+  async function builderColorsOf() {
+    // Caminho a partir da raiz do projeto, onde o Vitest roda (no jsdom, o `import.meta.url` não é `file:`).
+    const { readFileSync } = (await import('node:fs' as string)) as { readFileSync: (path: string, encoding: 'utf8') => string }
+    const builderCss = readFileSync('src/ui/styles/builder.css', 'utf8')
+    // Guarda contra uma leitura vazia, que faria o teste falhar pelo motivo errado (C15).
+    expect(builderCss).toMatch(/\.impact-dialog__mode\b/)
+    return (element: Element) => builderColors(builderCss, element)
+  }
+  function builderColors(builderCss: string, element: Element) {
+    const colors: string[] = []
+    for (const [, selectors, body] of builderCss.replace(/\/\*[\s\S]*?\*\//g, '').matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+      const color = /(?:^|;)\s*color:\s*([^;]+)/.exec(body)?.[1].trim()
+      if (!color) continue
+      for (const selector of selectors.split(',').map((part) => part.trim())) {
+        // Seletores de `@keyframes` ("from", "50%") e de pseudoelementos não casam com elemento.
+        if (selector.includes('::') || /^(from|to|\d+%)$/.test(selector)) continue
+        if (element.matches(selector)) colors.push(color)
+      }
+    }
+    return colors
+  }
+  const SECONDARY = ['var(--color-text-secondary)']
+
+  it('DEF-014, FR-CHG-003: in the table column, the calculation and "Chosen" are in .typography-meta bound to --color-text-secondary', async () => {
+    setup({ document: gnome({ [PAST]: chosenEntry('4'), [MADNESS]: { mode: 'rolled', dice: [4], modifier: 0, total: 4 } }), random: sequence([0]) })
+    renderBuilder('story')
+    await screen.findByRole('region', { name: 'Gnome Past' })
+    await userEvent.click(within(modes('Gnome Past')).getByRole('radio', { name: 'Roll' }))
+    await userEvent.click(within(resultColumn(PAST)!).getByRole('button', { name: 'Roll d6' }))
+    const dialog = await screen.findByRole('dialog')
+    const column = (name: string) => within(dialog).getByRole('heading', { level: 3, name }).parentElement!
+
+    const chosen = within(column('Current')).getByText('Chosen')
+    const calc = within(column('New')).getByText('Rolled d6: 1 · Modifier +0 · Total 1')
+    const colorsOf = await builderColorsOf()
+    for (const element of [chosen, calc]) {
+      expect(element.classList.contains('typography-meta'), element.textContent!).toBe(true)
+      expect(colorsOf(element), element.textContent!).toEqual(SECONDARY)
+    }
+  })
+
+  it('DEF-014, FR-CHG-003: in the roll-effect column, the calculation is in .typography-meta bound to --color-text-secondary', async () => {
+    // Nenhum fluxo abre o diálogo com a vaga de uma roll-effect (sem vaga filha, ela não suspende nem restaura nada;
+    // DEF-014, alcance): o diálogo é renderizado direto, com o impacto calculado pelo motor sobre a sessão real.
+    const { session } = setup({ document: gnome({ [PAST]: chosenEntry('4'), [MADNESS]: { mode: 'rolled', dice: [4], modifier: 0, total: 4 } }) })
+    renderBuilder('story')
+    await screen.findByRole('region', { name: 'Gnome Past' })
+    const snapshot = session.getSnapshot()
+    if (snapshot.status !== 'ready') throw new Error('the session is not ready')
+    const after = { ...snapshot.document, decisions: { ...snapshot.document.decisions, [MADNESS]: { mode: 'entered', sum: 6, modifier: 0, total: 6 } } }
+    const pending = { kind: 'enter' as const, key: MADNESS, impact: impact(snapshot.rules, snapshot.document, after as never, MADNESS) }
+    render(<ImpactDialog pending={pending} nameOf={(id) => id} onKeep={() => {}} onApply={() => {}} />)
+    const dialog = await screen.findByRole('dialog')
+    const column = (name: string) => within(dialog).getByRole('heading', { level: 3, name }).parentElement!
+    expect(column('Current').textContent).toBe('Current4Rolled 1d6: 4 · Modifier +0 · Total 4Madness +4')
+    expect(column('New').textContent).toBe('New6Entered for 1d6: 6 · Modifier +0 · Total 6Madness +6')
+
+    const colorsOf = await builderColorsOf()
+    for (const element of [within(column('Current')).getByText(/^Rolled 1d6/), within(column('New')).getByText(/^Entered for 1d6/)]) {
+      expect(element.classList.contains('typography-meta'), element.textContent!).toBe(true)
+      expect(colorsOf(element), element.textContent!).toEqual(SECONDARY)
+    }
   })
 
   it('FR-CONT-016, FR-CHG-012: opening with a difference shows the static notice at the top of main, with the frozen names, and Dismiss takes it away without saving (open-notice)', async () => {
