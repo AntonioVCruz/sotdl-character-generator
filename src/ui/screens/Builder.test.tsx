@@ -770,12 +770,12 @@ async function storySettled(session: CharacterSession, saved: unknown[], count: 
 describe('Story step (tables)', () => {
   afterEach(cleanup)
 
-  it('FR-STEP-012, FR-DEC-001, FR-DEC-002, FR-DEC-004: one card per table, each with Roll and Choose and its regime; Enter result only on roll-regime tables (AC-1, AC-2)', async () => {
+  it('FR-STEP-012, FR-DEC-001, FR-DEC-002, FR-DEC-003, FR-DEC-004: one card per table, each with Roll and Choose and its regime, Write on the roll-or-choose ones; Enter result only on roll-regime tables (AC-1, AC-2)', async () => {
     setup({ document: gnome() })
     renderBuilder('story')
     await stepTitle("What is your character's story?")
     const main = screen.getByRole('main')
-    expect(within(main).getByText('Step 2 of 2 · Roll or choose')).toBeTruthy()
+    expect(within(main).getByText('Step 2 of 2 · Roll, choose or write your own')).toBeTruthy()
     expect(main.querySelector('.step-header__rule')!.textContent).toBe(
       "Roll on each of your ancestry's tables, or choose the result you want. Some results change your scores: you'll see them under the result. TT p.11",
     )
@@ -796,7 +796,9 @@ describe('Story step (tables)', () => {
 
     for (const name of CARDS) {
       const segments = within(modes(name)).getAllByRole('radio') as HTMLInputElement[]
-      expect(segments.map((segment) => segment.closest('label')!.textContent)).toEqual(['Roll', 'Choose'])
+      expect(segments.map((segment) => segment.closest('label')!.textContent)).toEqual(
+        name === 'Gnome Age' || name === 'Gnome Past' ? ['Roll', 'Choose', 'Write'] : ['Roll', 'Choose'],
+      )
       // O regime `choice` abre em Choose; os demais, em Roll. Em Roll, Enter result só nas tabelas de regime `roll`.
       expect(within(modes(name)).getByRole('radio', { name: name === 'Gnome Foe' ? 'Choose' : 'Roll' })).toHaveProperty('checked', true)
       await userEvent.click(within(modes(name)).getByRole('radio', { name: 'Roll' }))
@@ -1619,5 +1621,605 @@ describe('Story step: decided table (FEAT-011)', () => {
     await vi.waitFor(() => expect(document.activeElement).toBe(column))
     await storySettled(session, saved, 4)
     expect(saved[3].decisions[MADNESS]).toEqual({ mode: 'entered', sum: 6, modifier: 0, total: 6, logged: 5 })
+  })
+})
+
+// FEAT-010 T5 (SCR-WEB-009, SCR-WEB-007): Write e "Roll all undecided", pelos estados do ui-design, com o pacote de
+// tabelas (Gnome). Os textos escritos são inventados (P22), como o do AC-3.
+describe('Story step: Write and Roll all undecided (FEAT-010)', () => {
+  afterEach(cleanup)
+
+  const TEXT = 'Raised by a caravan of tinkers.'
+  const HELP = 'Write it in your own words, or as your GM decides. Up to 2,000 characters.'
+  const LIMIT = "You've reached the limit. Text past 2,000 characters isn't kept."
+  const EMPTY = "Write your result first. Spaces and line breaks alone don't count."
+  const REASON = 'Every table in this step has a result.'
+  const REROLL_NOTE = "Whichever result you don't use goes to the log as undone. It isn't set aside."
+  const PAST = 'ancestry=gnome/past'
+  const FATE = 'ancestry=gnome/fate'
+  const OMEN = 'ancestry=gnome/omen'
+  const FOE = 'ancestry=gnome/foe'
+  const TABLE_KEYS = [AGE, FATE, OMEN, PAST, FOE]
+  const madness = (extra: object = {}) => ({ mode: 'rolled', dice: [4], modifier: 0, total: 4, ...extra })
+  const writtenEntry = (text = TEXT) => ({ mode: 'written', text, book: TABLES })
+  /** Faces de um Roll all das cinco tabelas: Age 3+5+2, Fate 1+1+1, Omen 6+6+6 (+1), Past com a face dada, Foe 1. */
+  const allFaces = (past: number) => [2, 4, 1, 0, 0, 0, 5, 5, 5, past - 1, 0]
+
+  const field = (name: string) => within(card(name)).getByLabelText('Your own result') as HTMLTextAreaElement
+  const button = (name: string, label: string) => within(card(name)).getByRole('button', { name: label })
+  const segment = (name: string, label: string) => within(modes(name)).getByRole('radio', { name: label }) as HTMLInputElement
+  const dialogColumn = (dialog: HTMLElement, name: string) => within(dialog).getByRole('heading', { level: 3, name }).parentElement!
+  const rows = (column: HTMLElement) => [...column.querySelectorAll('.impact-dialog__rows > p')].map((row) => row.textContent)
+  const main = () => screen.getByRole('main')
+  const announcement = () => main().querySelector('.roll-all [role="status"]')!
+  const reason = () => within(main()).getByText(REASON)
+
+  async function write(name: string, text: string) {
+    await userEvent.click(segment(name, 'Write'))
+    await userEvent.type(field(name), text)
+    await userEvent.click(button(name, 'Use this text'))
+  }
+
+  it('FR-DEC-003: the Write segment shows the field with its label and help, keeps the focus on the segment, and its draft survives a switch of segment; at 2,000 characters the help says the limit (write-mode)', async () => {
+    const { session, repository } = setup({ document: gnome() })
+    const writeCommand = vi.spyOn(session, 'write')
+    renderBuilder('story')
+    await screen.findByRole('region', { name: 'Gnome Age' })
+
+    // Write nunca é o inicial; trocar para ele não põe o foco no campo.
+    expect(segment('Gnome Age', 'Roll').checked).toBe(true)
+    await userEvent.click(segment('Gnome Age', 'Write'))
+    expect(segment('Gnome Age', 'Write').checked).toBe(true)
+    expect(document.activeElement).toBe(segment('Gnome Age', 'Write'))
+
+    // Campo pelo `<label>` (C9), ajuda pelo `aria-describedby`, três linhas, limite no campo, sem placeholder.
+    const input = field('Gnome Age')
+    expect(input.tagName).toBe('TEXTAREA')
+    expect(input.getAttribute('rows')).toBe('3')
+    expect(input.getAttribute('maxlength')).toBe('2000')
+    expect(input.hasAttribute('placeholder')).toBe(false)
+    expect(input.hasAttribute('aria-label')).toBe(false)
+    expect(input.value).toBe('')
+    expect(describedBy(input)).toEqual([HELP])
+    expect(button('Gnome Age', 'Use this text').className).toContain('button-primary')
+    expect(within(card('Gnome Age')).queryByRole('button', { name: 'Cancel' })).toBeNull()
+    expect(within(card('Gnome Age')).queryByRole('button', { name: 'Roll 3d6' })).toBeNull()
+    expect(within(card('Gnome Age')).getByText('Not decided yet. Nothing else waits for it.')).toBeTruthy()
+
+    // Enter é quebra de linha, sem confirmar; o rascunho sobrevive à troca de segmento.
+    await userEvent.type(input, 'Raised by{Enter}tinkers')
+    expect(input.value).toBe('Raised by\ntinkers')
+    await userEvent.click(segment('Gnome Age', 'Roll'))
+    expect(within(card('Gnome Age')).queryByLabelText('Your own result')).toBeNull()
+    await userEvent.click(segment('Gnome Age', 'Write'))
+    expect(field('Gnome Age').value).toBe('Raised by\ntinkers')
+
+    // No limite, a ajuda ganha a frase, sem erro; o que passa de 2.000 caracteres não entra.
+    await userEvent.clear(field('Gnome Age'))
+    await userEvent.paste('a'.repeat(2001))
+    expect(field('Gnome Age').value).toHaveLength(2000)
+    expect(describedBy(field('Gnome Age'))).toEqual([`${HELP} ${LIMIT}`])
+    expect(field('Gnome Age').getAttribute('aria-invalid')).toBeNull()
+    await userEvent.keyboard('{Backspace}')
+    expect(describedBy(field('Gnome Age'))).toEqual([HELP])
+    expect(writeCommand).not.toHaveBeenCalled()
+    expect(repository.save).not.toHaveBeenCalled()
+  })
+
+  it('FR-DEC-021, NFR-ACC-001: Write with only spaces and line breaks is refused in the field, announced by a live region already in the form, keeping the text and the focus on "Use this text", and nothing is saved (write-refused, AC-2)', async () => {
+    const { session, repository } = setup({ document: gnome() })
+    const writeCommand = vi.spyOn(session, 'write')
+    renderBuilder('story')
+    await screen.findByRole('region', { name: 'Gnome Age' })
+    await userEvent.click(segment('Gnome Age', 'Write'))
+
+    // D-ERR: a região viva está no formulário desde que ele abre, vazia (no DOM renderizado, C4).
+    const region = card('Gnome Age').querySelector('.write-form [aria-live="polite"]')!
+    expect(region).not.toBeNull()
+    expect(region.textContent).toBe('')
+    const input = field('Gnome Age')
+    await userEvent.type(input, '   {Enter}  ')
+    const use = button('Gnome Age', 'Use this text')
+    await userEvent.click(use)
+    expect(writeCommand).toHaveBeenCalledWith(AGE, '   \n  ')
+
+    await vi.waitFor(() => expect(region.textContent).toBe(EMPTY))
+    expect(card('Gnome Age').querySelector('.write-form [aria-live="polite"]')).toBe(region)
+    expect(input.getAttribute('aria-invalid')).toBe('true')
+    expect(describedBy(input)).toEqual([HELP, EMPTY])
+    expect(input.value).toBe('   \n  ')
+    expect(document.activeElement).toBe(use)
+    await nextFrame()
+    expect(document.activeElement).toBe(use)
+    expect(repository.save).not.toHaveBeenCalled()
+
+    // A mensagem some na próxima edição.
+    await userEvent.type(input, 'x')
+    expect(region.textContent).toBe('')
+    expect(input.getAttribute('aria-invalid')).toBeNull()
+  })
+
+  it('FR-DEC-003, FR-LOG-003, NFR-REL-001 (AC-3, AC-11): "Use this text" shows the written state before the save ends, with the focus on the result column; the text is saved trimmed, and the end of the save does not move the focus (written)', async () => {
+    const { session, control, saved } = setup({ document: gnome(), holdSave: true })
+    renderBuilder('story')
+    await screen.findByRole('region', { name: 'Gnome Age' })
+    await write('Gnome Age', `  ${TEXT}  `)
+
+    const column = resultColumn(AGE)!
+    expect(column.getAttribute('tabindex')).toBe('-1')
+    expect(within(column).getByText('Your own result').tagName).toBe('P')
+    expect(within(column).getByText(TEXT).classList.contains('written-text')).toBe(true)
+    expect(within(column).getByRole('button', { name: 'Change text' }).className).toContain('button-secondary')
+    // Sem cálculo, faixa, "No text added for this entry", efeitos, selo de entrada nem caixa de valor.
+    expect(column.querySelector('.roll-result__calc, .roll-result__entry, .effect-chips, .source-badge')).toBeNull()
+    expect(within(card('Gnome Age')).queryByText(/No text added/)).toBeNull()
+    expect(card('Gnome Age').querySelector('.roll-value')).toBeNull()
+    expect(within(card('Gnome Age')).queryByLabelText('Your own result')).toBeNull()
+    expect(segment('Gnome Age', 'Write').checked).toBe(true)
+    await vi.waitFor(() => expect(document.activeElement).toBe(column))
+    expect(saved).toEqual([])
+
+    control.release()
+    await storySettled(session, saved, 1)
+    expect(saved[0].decisions[AGE]).toEqual({ mode: 'written', text: TEXT, book: TABLES, logged: 1 })
+    expect(document.activeElement).toBe(column)
+    expect(within(main()).getByText('1 of 5 decided')).toBeTruthy()
+  })
+
+  it('FR-CHAR-010 (AC-11): when the save of a Write fails, the written state stays with the frame alert, and the focus does not move', async () => {
+    const { session, control, saved } = setup({ document: gnome(), holdSave: true, failSave: true })
+    renderBuilder('story')
+    await screen.findByRole('region', { name: 'Gnome Age' })
+    await write('Gnome Age', TEXT)
+    await vi.waitFor(() => expect(document.activeElement).toBe(resultColumn(AGE)))
+
+    control.release()
+    expect((await screen.findByRole('alert')).textContent).toMatch(/Your last choice wasn't saved/)
+    await vi.waitFor(() => expect(session.getSnapshot()).toMatchObject({ save: 'failed' }))
+    await act(async () => {})
+    await nextFrame()
+    expect(saved).toEqual([])
+    expect(within(resultColumn(AGE)!).getByText(TEXT)).toBeTruthy()
+    expect(document.activeElement).toBe(resultColumn(AGE))
+  })
+
+  it('FR-DEC-003, FR-DEC-018: a written decision opens in Write; in Roll it has "Roll 3d6", in Choose the grid has no entry marked; without Write in its modes it shows in Roll, with Enter result; Roll on it applies directly (mode-switch-write)', async () => {
+    const { session, saved } = setup({ document: gnome({ [AGE]: writtenEntry(), [FATE]: writtenEntry('Born under a falling star.') }), random: sequence([2, 4, 1]) })
+    renderBuilder('story')
+    await screen.findByRole('region', { name: 'Gnome Age' })
+    expect(segment('Gnome Age', 'Write').checked).toBe(true)
+    expect(within(resultColumn(AGE)!).getByText(TEXT)).toBeTruthy()
+    expect(within(resultColumn(AGE)!).getByRole('button', { name: 'Change text' })).toBeTruthy()
+
+    // Roll: o rótulo e o texto, sem caixa nem cálculo, e "Roll 3d6" (não "Reroll": o resultado não foi rolado).
+    await userEvent.click(segment('Gnome Age', 'Roll'))
+    let column = resultColumn(AGE)!
+    expect(within(column).getByText('Your own result')).toBeTruthy()
+    expect(within(column).getByText(TEXT)).toBeTruthy()
+    expect(within(column).getByRole('button', { name: 'Roll 3d6' }).className).toContain('button-secondary')
+    expect(within(card('Gnome Age')).queryByRole('button', { name: 'Reroll 3d6' })).toBeNull()
+    expect(within(card('Gnome Age')).queryByRole('button', { name: 'Change text' })).toBeNull()
+    expect(card('Gnome Age').querySelector('.roll-value, .roll-result__calc')).toBeNull()
+
+    // Choose: a grade sem entrada marcada e, abaixo, a coluna sem ações.
+    await userEvent.click(segment('Gnome Age', 'Choose'))
+    expect(within(grid('Gnome Age')).getAllByRole('radio').some((radio) => (radio as HTMLInputElement).checked)).toBe(false)
+    column = resultColumn(AGE)!
+    expect(within(column).getByText(TEXT)).toBeTruthy()
+    expect(within(column).queryByRole('button')).toBeNull()
+
+    // A Gnome Fate (regime roll) não tem Write: a escrita aparece no Roll, com "Roll 3d6" e "Enter result".
+    expect(within(modes('Gnome Fate')).queryByRole('radio', { name: 'Write' })).toBeNull()
+    expect(segment('Gnome Fate', 'Roll').checked).toBe(true)
+    const fate = resultColumn(FATE)!
+    expect(within(fate).getByText('Born under a falling star.')).toBeTruthy()
+    expect(within(fate).getByRole('button', { name: 'Roll 3d6' })).toBeTruthy()
+    expect(within(fate).getByRole('button', { name: 'Enter result' })).toBeTruthy()
+
+    // Roll sobre a escrita, sem dependentes: aplica direto, com o foco na coluna, no segmento Roll.
+    await userEvent.click(segment('Gnome Age', 'Roll'))
+    await userEvent.click(button('Gnome Age', 'Roll 3d6'))
+    column = resultColumn(AGE)!
+    expect(within(column).getByText('Rolled 3d6: 3 + 5 + 2 · Modifier +0 · Total 10')).toBeTruthy()
+    await vi.waitFor(() => expect(document.activeElement).toBe(column))
+    await storySettled(session, saved, 1)
+    expect(saved[0].decisions[AGE]).toMatchObject({ mode: 'rolled', entry: '8-12', rolls: 1 })
+
+    // Write sobre a rolada: o campo vazio e, abaixo, a coluna da rolada, com o cálculo e sem ações.
+    await userEvent.click(segment('Gnome Age', 'Write'))
+    expect(field('Gnome Age').value).toBe('')
+    column = resultColumn(AGE)!
+    expect(within(column).getByText('Rolled 3d6: 3 + 5 + 2 · Modifier +0 · Total 10')).toBeTruthy()
+    expect(within(column).queryByRole('button')).toBeNull()
+  })
+
+  it('FR-DEC-018, FR-CHG-002: Write on a chosen entry with a fixed effect applies directly, without a dialog, and takes the focus to the result column (mode-switch-write)', async () => {
+    const { session, saved } = setup({ document: gnome({ [PAST]: chosenEntry('5-6') }) })
+    renderBuilder('story')
+    await screen.findByRole('region', { name: 'Gnome Past' })
+    expect(segment('Gnome Past', 'Choose').checked).toBe(true)
+    await userEvent.click(segment('Gnome Past', 'Write'))
+    // Abaixo do formulário, a coluna da escolhida: a entrada e o efeito, sem ações.
+    let column = resultColumn(PAST)!
+    expect(column.querySelector('.roll-result__entry')!.textContent).toBe('5–6')
+    expect(within(column).getByRole('listitem').textContent).toBe('Madness +1')
+    expect(within(column).queryByRole('button')).toBeNull()
+
+    await userEvent.type(field('Gnome Past'), TEXT)
+    await userEvent.click(button('Gnome Past', 'Use this text'))
+    expect(screen.queryByRole('dialog')).toBeNull()
+    column = resultColumn(PAST)!
+    expect(within(column).getByText(TEXT)).toBeTruthy()
+    expect(within(column).queryByRole('listitem')).toBeNull()
+    await vi.waitFor(() => expect(document.activeElement).toBe(column))
+    await storySettled(session, saved, 1)
+    expect(saved[0].decisions[PAST]).toMatchObject({ mode: 'written', text: TEXT, book: TABLES })
+  })
+
+  it('FR-DEC-018, FR-DEC-021: "Change text" opens the form in place with the text, the focus and the caret at the end; Cancel and the same text go back to "Change text" without a command; empty is refused; another text replaces it, with its line break (write-again)', async () => {
+    const { session, saved } = setup({ document: gnome({ [AGE]: writtenEntry() }) })
+    const writeCommand = vi.spyOn(session, 'write')
+    renderBuilder('story')
+    await screen.findByRole('region', { name: 'Gnome Age' })
+
+    await userEvent.click(button('Gnome Age', 'Change text'))
+    let input = field('Gnome Age')
+    expect(input.value).toBe(TEXT)
+    await vi.waitFor(() => expect(document.activeElement).toBe(input))
+    expect([input.selectionStart, input.selectionEnd]).toEqual([TEXT.length, TEXT.length])
+    expect(within(card('Gnome Age')).queryByRole('button', { name: 'Change text' })).toBeNull()
+    const actionRow = button('Gnome Age', 'Use this text').parentElement!
+    expect(within(actionRow).getAllByRole('button').map((action) => action.textContent)).toEqual(['Use this text', 'Cancel'])
+
+    // Cancel: volta ao escrito sem gravar, com o foco em "Change text".
+    await userEvent.type(input, ' And more.')
+    await userEvent.click(button('Gnome Age', 'Cancel'))
+    expect(within(resultColumn(AGE)!).getByText(TEXT)).toBeTruthy()
+    await vi.waitFor(() => expect(document.activeElement).toBe(button('Gnome Age', 'Change text')))
+
+    // O mesmo texto depois do `trim` (D5): sem comando, como o Cancel; a edição anterior foi descartada.
+    await userEvent.click(button('Gnome Age', 'Change text'))
+    expect(field('Gnome Age').value).toBe(TEXT)
+    await userEvent.type(field('Gnome Age'), '  ')
+    await userEvent.click(button('Gnome Age', 'Use this text'))
+    expect(within(resultColumn(AGE)!).getByText(TEXT)).toBeTruthy()
+    await vi.waitFor(() => expect(document.activeElement).toBe(button('Gnome Age', 'Change text')))
+    expect(writeCommand).not.toHaveBeenCalled()
+
+    // Vazio: a recusa, com o formulário aberto e o foco em "Use this text".
+    await userEvent.click(button('Gnome Age', 'Change text'))
+    input = field('Gnome Age')
+    await userEvent.clear(input)
+    await userEvent.click(button('Gnome Age', 'Use this text'))
+    await vi.waitFor(() => expect(describedBy(input)).toContain(EMPTY))
+    expect(document.activeElement).toBe(button('Gnome Age', 'Use this text'))
+
+    // Outro texto, com uma quebra de linha: substitui, fecha o formulário e leva o foco à coluna.
+    const replaced = `${TEXT}\nThey taught me to mend clocks.`
+    await userEvent.type(input, `${TEXT}{Enter}They taught me to mend clocks.`)
+    await userEvent.click(button('Gnome Age', 'Use this text'))
+    const column = resultColumn(AGE)!
+    expect(column.querySelector('.written-text')!.textContent).toBe(replaced)
+    expect(within(card('Gnome Age')).queryByLabelText('Your own result')).toBeNull()
+    await vi.waitFor(() => expect(document.activeElement).toBe(column))
+    await storySettled(session, saved, 1)
+    expect(saved[0].decisions[AGE]).toMatchObject({ mode: 'written', text: replaced })
+    expect(writeCommand).toHaveBeenCalledTimes(2)
+  })
+
+  it('FR-DEC-017, FR-DEC-018, FR-CHG-001, FR-CHG-009: Write on Gnome Past 4 with the Madness rolled opens the by-write dialog; Keep leaves the form and the draft with the focus on "Use this text"; Apply sets the Madness aside and focuses the result column; Choose 4 then restores it, with the written Current (by-write, AC-6)', async () => {
+    const { session, saved, repository } = setup({ document: gnome({ [PAST]: chosenEntry('4'), [MADNESS]: madness() }), random: sequence([]) })
+    renderBuilder('story')
+    await screen.findByRole('region', { name: 'Gnome Past' })
+    await userEvent.click(segment('Gnome Past', 'Write'))
+    await userEvent.type(field('Gnome Past'), TEXT)
+    const use = button('Gnome Past', 'Use this text')
+    await userEvent.click(use)
+
+    let dialog = await screen.findByRole('dialog')
+    expect(within(dialog).getByRole('heading', { level: 2 }).textContent).toBe('Change Gnome Past from 4 to your own result?')
+    expect(dialogColumn(dialog, 'Current').textContent).toBe('Current4ChosenMadness +1d6')
+    expect(dialogColumn(dialog, 'New').textContent).toBe(`New${TEXT}Written`)
+    expect(items(within(dialog).getByRole('list', { name: 'Will be set aside' }))).toEqual(['Madness 1d6: 4 · rolled'])
+    expect(within(dialog).getByText(IMPACT_D40)).toBeTruthy()
+    expect(within(dialog).queryByText(REROLL_NOTE)).toBeNull()
+
+    // Keep: nada é gravado; o formulário continua aberto, com o rascunho, e o foco volta a "Use this text".
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Keep current result' }))
+    await vi.waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+    await vi.waitFor(() => expect(document.activeElement).toBe(use))
+    await nextFrame()
+    expect(document.activeElement).toBe(use)
+    expect(field('Gnome Past').value).toBe(TEXT)
+    expect(segment('Gnome Past', 'Write').checked).toBe(true)
+    expect(repository.save).not.toHaveBeenCalled()
+
+    // Apply: o estado escrito, sem a Madness no cartão, com o foco na coluna de resultado.
+    await userEvent.click(use)
+    dialog = await screen.findByRole('dialog')
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Apply new result' }))
+    await vi.waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+    const column = resultColumn(PAST)!
+    expect(within(column).getByText(TEXT)).toBeTruthy()
+    expect(document.getElementById(slotElementId(MADNESS))).toBeNull()
+    await vi.waitFor(() => expect(document.activeElement).toBe(column))
+    await storySettled(session, saved, 1)
+    expect(saved[0].decisions[PAST]).toMatchObject({ mode: 'written', text: TEXT })
+    expect(saved[0].decisions[MADNESS]).toMatchObject({ total: 4, setAside: true })
+
+    // Choose 4 sobre a escrita: só restauração, com o Current escrito; Apply sem sorteio, foco na entrada acionada.
+    await userEvent.click(segment('Gnome Past', 'Choose'))
+    const four = entryRadio('Gnome Past', '4 TT p.7')
+    expect(four.checked).toBe(false)
+    await userEvent.click(four)
+    dialog = await screen.findByRole('dialog')
+    expect(within(dialog).getByRole('heading', { level: 2 }).textContent).toBe('Change Gnome Past from your own result to 4?')
+    expect(dialogColumn(dialog, 'Current').textContent).toBe(`Current${TEXT}Written`)
+    expect(dialogColumn(dialog, 'New').textContent).toBe('New4ChosenMadness +1d6')
+    expect(within(dialog).queryByRole('list', { name: 'Will be set aside' })).toBeNull()
+    expect(items(within(dialog).getByRole('list', { name: 'Will be restored' }))).toEqual(['Madness 1d6: 4 · rolled'])
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Apply new result' }))
+    await vi.waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+    await vi.waitFor(() => expect(document.activeElement).toBe(entryRadio('Gnome Past', '4 TT p.7')))
+    expect(within(resultColumn(MADNESS)!).getByText('Rolled 1d6: 4 · Modifier +0 · Total 4')).toBeTruthy()
+    await storySettled(session, saved, 2)
+    expect(saved[1].decisions[MADNESS]).toEqual(madness())
+  })
+
+  it('FR-DEC-015, FR-CHG-010: Roll on a written Gnome Past that brings the Madness back opens the dialog with the written Current and the reroll note; Keep focuses "Roll d6" (mode-switch-write)', async () => {
+    const { session, saved } = setup({ document: gnome({ [PAST]: writtenEntry(), [MADNESS]: madness({ setAside: true }) }), random: sequence([3]) })
+    renderBuilder('story')
+    await screen.findByRole('region', { name: 'Gnome Past' })
+    await userEvent.click(segment('Gnome Past', 'Roll'))
+    const roll = button('Gnome Past', 'Roll d6')
+    await userEvent.click(roll)
+
+    const dialog = await screen.findByRole('dialog')
+    expect(within(dialog).getByRole('heading', { level: 2 }).textContent).toBe('Use the new roll for Gnome Past?')
+    expect(dialogColumn(dialog, 'Current').textContent).toBe(`Current${TEXT}Written`)
+    expect(dialogColumn(dialog, 'New').textContent).toBe('New4Rolled d6: 4 · Modifier +0 · Total 4Madness +1d6')
+    expect(within(dialog).getByText(REROLL_NOTE)).toBeTruthy()
+    expect(items(within(dialog).getByRole('list', { name: 'Will be restored' }))).toEqual(['Madness 1d6: 4 · rolled'])
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Keep current result' }))
+    await vi.waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+    await vi.waitFor(() => expect(document.activeElement).toBe(roll))
+    expect(within(resultColumn(PAST)!).getByText(TEXT)).toBeTruthy()
+    await storySettled(session, saved, 1)
+    expect(saved[0].decisions[PAST]).toMatchObject({ mode: 'written', text: TEXT, rolls: 1 })
+  })
+
+  it('FR-CHG-004, FR-CHG-005: in the dialog lists, a written decision shows its title and " · written", with the whole text below; the other lines stay as they were (written-line)', async () => {
+    const text = `${TEXT}\nThey taught me to mend clocks.`
+    setup({ document: gnome({ 'ancestry=gnome/stature': { mode: 'chosen', value: 1 }, [AGE]: writtenEntry(text), [FOE]: chosenEntry('1-10') }) })
+    renderBuilder()
+    await userEvent.click(await screen.findByRole('radio', { name: 'Troll' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Choose Troll' }))
+    const dialog = await screen.findByRole('dialog')
+    const lines = within(within(dialog).getByRole('list', { name: 'Will be set aside' })).getAllByRole('listitem')
+    expect(lines.map((line) => line.querySelector('.decision-line > span')!.textContent)).toEqual([
+      'Stature: 1',
+      'Gnome Age · written',
+      'Gnome Foe: 1–10 Wolves · chosen',
+    ])
+    expect(lines[1].querySelector('.written-text')!.textContent).toBe(text)
+    expect(lines[1].querySelector('.typography-badge')).toBeNull()
+    expect(lines[1].hasAttribute('aria-label')).toBe(false)
+    expect(lines.map((line) => line.querySelector('.written-text') !== null)).toEqual([false, true, false])
+  })
+
+  it('FR-CONT-016: in the open notice, a written decision of a slot that is no longer generated shows the frozen title, " · written" and the text from its log entry (written-line)', async () => {
+    const entry = {
+      id: 1,
+      at: '2026-01-01T00:00:00.000Z',
+      kind: 'decision',
+      slot: 'ancestry=troll/age',
+      slotKind: 'table',
+      step: { id: 'step:story', name: 'Story' },
+      origin: { id: 'ancestry:troll', name: 'Troll' },
+      mode: 'written',
+      subject: { id: 'table:troll-age', name: 'Troll Age' },
+      source: { book: TABLES, abbr: 'TT', page: 9 },
+      result: { text: TEXT },
+    }
+    const document = { ...gnome({ 'ancestry=troll/age': { ...writtenEntry(), logged: 1 } }), log: [entry] }
+    setup({ document })
+    renderBuilder()
+    await stepTitle("What is your character's ancestry?")
+    const notice = within(main()).getByText(NOTICE_TITLE).closest('.inline-alert') as HTMLElement
+    const list = within(notice).getByRole('list', { name: 'Set aside, because the current rules no longer have them:' })
+    const [line] = within(list).getAllByRole('listitem')
+    expect(line.querySelector('.decision-line > span')!.textContent).toBe('Troll Age · written')
+    expect(line.querySelector('.written-text')!.textContent).toBe(TEXT)
+  })
+
+  it('FR-DEC-023, FR-DEC-016, NFR-REL-001 (AC-8, AC-11): "Roll all undecided · 5" is the first element of the step body; it rolls every card before the save ends, each in Roll, announces the results and takes the focus to the reason of the disabled button; a Write draft is kept (roll-all, roll-all-applied)', async () => {
+    const { session, control, saved } = setup({ document: gnome(), random: sequence(allFaces(1)), holdSave: true })
+    renderBuilder('story')
+    await screen.findByRole('region', { name: 'Gnome Age' })
+    const rollAll = within(main()).getByRole('button', { name: 'Roll all undecided · 5' })
+    expect(rollAll.className).toContain('button-secondary')
+    expect(rollAll.querySelector('svg')!.getAttribute('aria-hidden')).toBe('true')
+    expect(rollAll.hasAttribute('aria-label')).toBe(false)
+    // Depois do cabeçalho e antes do primeiro cartão, fora dos cartões e da região fixa do celular.
+    const h1 = within(main()).getByRole('heading', { level: 1 })
+    expect(h1.compareDocumentPosition(rollAll) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(rollAll.compareDocumentPosition(card('Gnome Age')) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(rollAll.closest('.roll-card, .builder__dock')).toBeNull()
+    // A região do anúncio já existe, vazia.
+    expect(announcement().textContent).toBe('')
+
+    await userEvent.click(segment('Gnome Age', 'Write'))
+    await userEvent.type(field('Gnome Age'), 'A draft')
+    await userEvent.click(rollAll)
+
+    // Cada cartão no rolled pelo snapshot, antes da gravação, no segmento Roll (a Foe também), com "Reroll".
+    const calcs = {
+      'Gnome Age': 'Rolled 3d6: 3 + 5 + 2 · Modifier +0 · Total 10',
+      'Gnome Fate': 'Rolled 3d6: 1 + 1 + 1 · Modifier +0 · Total 3',
+      'Gnome Omen': 'Rolled 3d6+1: 6 + 6 + 6 · Modifier +1 · Total 19',
+      'Gnome Past': 'Rolled d6: 1 · Modifier +0 · Total 1',
+      'Gnome Foe': 'Rolled d20: 1 · Modifier +0 · Total 1',
+    }
+    for (const [name, calc] of Object.entries(calcs)) {
+      expect(segment(name, 'Roll').checked, `${name}: Roll`).toBe(true)
+      expect(card(name).querySelector('.roll-result__calc')!.textContent).toBe(calc)
+      expect(card(name).querySelector('.roll-value')).not.toBeNull()
+      expect(within(card(name)).getByRole('button', { name: /^Reroll / })).toBeTruthy()
+    }
+    expect(saved).toEqual([])
+    expect(announcement().textContent).toBe(
+      'Rolled 5 tables. Gnome Age: 8–12. Gnome Fate: 3–10. Gnome Omen: 12–19. Gnome Past: 1–3. Gnome Foe: 1–10 Wolves.',
+    )
+    expect(within(main()).getByText('5 of 5 decided')).toBeTruthy()
+
+    // roll-all-none: o mesmo botão, desabilitado e sem quantidade, com o motivo ligado; o foco vai para o motivo.
+    expect(within(main()).getByRole('button', { name: 'Roll all undecided' })).toBe(rollAll)
+    expect(rollAll.hasAttribute('disabled')).toBe(true)
+    expect(describedBy(rollAll)).toEqual([REASON])
+    expect(reason().getAttribute('tabindex')).toBe('-1')
+    await vi.waitFor(() => expect(document.activeElement).toBe(reason()))
+
+    control.release()
+    await storySettled(session, saved, 1)
+    expect(TABLE_KEYS.map((key) => saved[0].decisions[key])).toMatchObject(
+      TABLE_KEYS.map((_, index) => ({ mode: 'rolled', rolls: 1, book: TABLES, logged: index + 1 })),
+    )
+    expect(document.activeElement).toBe(reason())
+    expect(announcement().textContent).toMatch(/^Rolled 5 tables\./)
+
+    // O rascunho do Write ficou guardado no cartão rolado.
+    await userEvent.click(segment('Gnome Age', 'Write'))
+    expect(field('Gnome Age').value).toBe('A draft')
+  })
+
+  it('FR-DEC-023, FR-CHAR-010 (AC-8, AC-11): with the Foe chosen and the Age written, "Roll all undecided · 3" rolls only the others; a failed save keeps them with the frame alert, without moving the focus or changing the announcement (roll-all-applied)', async () => {
+    const { session, control, saved } = setup({
+      document: gnome({ [FOE]: chosenEntry('11-20'), [AGE]: writtenEntry() }),
+      random: sequence([0, 0, 0, 5, 5, 5, 0]),
+      holdSave: true,
+      failSave: true,
+    })
+    renderBuilder('story')
+    await screen.findByRole('region', { name: 'Gnome Age' })
+    await userEvent.click(within(main()).getByRole('button', { name: 'Roll all undecided · 3' }))
+    await vi.waitFor(() => expect(document.activeElement).toBe(reason()))
+    const text = 'Rolled 3 tables. Gnome Fate: 3–10. Gnome Omen: 12–19. Gnome Past: 1–3.'
+    expect(announcement().textContent).toBe(text)
+    // As decididas não mudam.
+    expect(within(resultColumn(AGE)!).getByText(TEXT)).toBeTruthy()
+    expect(segment('Gnome Age', 'Write').checked).toBe(true)
+    expect(entryRadio('Gnome Foe', '11–20 Bears').checked).toBe(true)
+
+    control.release()
+    expect((await screen.findByRole('alert')).textContent).toMatch(/Your last choice wasn't saved/)
+    await vi.waitFor(() => expect(session.getSnapshot()).toMatchObject({ save: 'failed' }))
+    await act(async () => {})
+    await nextFrame()
+    expect(saved).toEqual([])
+    expect(document.activeElement).toBe(reason())
+    expect(announcement().textContent).toBe(text)
+    expect(card('Gnome Past').querySelector('.roll-result__calc')!.textContent).toBe('Rolled d6: 1 · Modifier +0 · Total 1')
+  })
+
+  it('FR-DEC-023: with every table decided, "Roll all undecided" is disabled, without the count, out of the tab order, with the reason visible and linked (roll-all-none)', async () => {
+    const { session } = setup({
+      document: gnome({ [AGE]: writtenEntry(), [FATE]: chosenEntry('3-10'), [OMEN]: chosenEntry('4-11'), [PAST]: chosenEntry('1-3'), [FOE]: chosenEntry('1-10') }),
+    })
+    const rollAllCommand = vi.spyOn(session, 'rollAll')
+    renderBuilder('story')
+    await screen.findByRole('region', { name: 'Gnome Age' })
+    const rollAll = within(main()).getByRole('button', { name: 'Roll all undecided' })
+    expect(rollAll.hasAttribute('disabled')).toBe(true)
+    expect(describedBy(rollAll)).toEqual([REASON])
+    expect(reason().className).toContain('typography-meta')
+    await userEvent.click(rollAll)
+    expect(rollAllCommand).not.toHaveBeenCalled()
+  })
+
+  it('FR-DEC-023, FR-CHG-001, FR-CHG-009 (AC-10): Roll all with one table that brings the Madness back opens the dialog of a roll on an open slot; Keep saves nothing and focuses the button; Apply restores it, without an announcement, with the focus on the reason (by-roll-all)', async () => {
+    const { session, saved, repository } = setup({
+      document: gnome({ [AGE]: chosenEntry('3-7'), [FATE]: chosenEntry('3-10'), [OMEN]: chosenEntry('4-11'), [FOE]: chosenEntry('1-10'), [MADNESS]: madness({ setAside: true }) }),
+      random: sequence([3, 3]),
+    })
+    renderBuilder('story')
+    await screen.findByRole('region', { name: 'Gnome Past' })
+    const rollAll = within(main()).getByRole('button', { name: 'Roll all undecided · 1' })
+    await userEvent.click(rollAll)
+
+    let dialog = await screen.findByRole('dialog')
+    expect(within(dialog).getByRole('heading', { level: 2 }).textContent).toBe('Use this roll for Gnome Past?')
+    expect(dialogColumn(dialog, 'Current').textContent).toBe('CurrentNot decided yet.')
+    expect(dialogColumn(dialog, 'New').textContent).toBe('New4Rolled d6: 4 · Modifier +0 · Total 4Madness +1d6')
+    // Sem `change`, a restaurada leva o "depends on".
+    expect(items(within(dialog).getByRole('list', { name: 'Will be restored' }))).toEqual(['Madness 1d6: 4 · rolleddepends on Gnome Past'])
+    expect(within(dialog).queryByRole('list', { name: 'Will be set aside' })).toBeNull()
+    expect(within(dialog).queryByText(IMPACT_D40)).toBeNull()
+    expect(within(dialog).queryByText(REROLL_NOTE)).toBeNull()
+
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Keep current result' }))
+    await vi.waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+    await vi.waitFor(() => expect(document.activeElement).toBe(rollAll))
+    await nextFrame()
+    expect(document.activeElement).toBe(rollAll)
+    expect(rollAll.hasAttribute('disabled')).toBe(false)
+    expect(repository.save).not.toHaveBeenCalled()
+
+    await userEvent.click(rollAll)
+    dialog = await screen.findByRole('dialog')
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Apply new result' }))
+    await vi.waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+    expect(within(resultColumn(MADNESS)!).getByText('Rolled 1d6: 4 · Modifier +0 · Total 4')).toBeTruthy()
+    await vi.waitFor(() => expect(document.activeElement).toBe(reason()))
+    expect(announcement().textContent).toBe('')
+    await storySettled(session, saved, 1)
+    expect(saved[0].decisions[PAST]).toMatchObject({ mode: 'rolled', entry: '4', rolls: 1 })
+    expect(saved[0].decisions[MADNESS]).toEqual(madness())
+    expect(document.activeElement).toBe(reason())
+  })
+
+  it('FR-DEC-023, FR-CHG-001, FR-CHG-003, FR-CHG-009 (AC-10): Roll all with several tables that brings the Madness back lists one line per table in Current and New; Keep current results focuses the button; Apply new results restores it, with the focus on the reason (by-roll-all)', async () => {
+    const { session, saved, repository } = setup({
+      document: gnome({ [MADNESS]: madness({ setAside: true }) }),
+      random: sequence([...allFaces(4), ...allFaces(4)]),
+    })
+    renderBuilder('story')
+    await screen.findByRole('region', { name: 'Gnome Past' })
+    const rollAll = within(main()).getByRole('button', { name: 'Roll all undecided · 5' })
+    await userEvent.click(rollAll)
+
+    let dialog = await screen.findByRole('dialog')
+    expect(within(dialog).getByRole('heading', { level: 2 }).textContent).toBe('Use these rolls for 5 tables?')
+    expect(rows(dialogColumn(dialog, 'Current'))).toEqual(CARDS.map((name) => `${name}: Not decided yet.`))
+    expect(rows(dialogColumn(dialog, 'New'))).toEqual([
+      'Gnome Age: 8–12 · rolled',
+      'Gnome Fate: 3–10 · rolled',
+      'Gnome Omen: 12–19 · rolled',
+      'Gnome Past: 4 · rolled',
+      'Gnome Foe: 1–10 Wolves · rolled',
+    ])
+    expect(items(within(dialog).getByRole('list', { name: 'Will be restored' }))).toEqual(['Madness 1d6: 4 · rolleddepends on Gnome Past'])
+    expect(within(dialog).queryByRole('list', { name: 'Will be set aside' })).toBeNull()
+    expect(within(dialog).queryByText(IMPACT_D40)).toBeNull()
+    expect(within(dialog).queryByText(REROLL_NOTE)).toBeNull()
+    expect(within(dialog).queryByRole('button', { name: 'Keep current result' })).toBeNull()
+
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Keep current results' }))
+    await vi.waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+    await vi.waitFor(() => expect(document.activeElement).toBe(rollAll))
+    await nextFrame()
+    expect(document.activeElement).toBe(rollAll)
+    expect(within(main()).getByText('0 of 5 decided')).toBeTruthy()
+    expect(repository.save).not.toHaveBeenCalled()
+
+    await userEvent.click(rollAll)
+    dialog = await screen.findByRole('dialog')
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Apply new results' }))
+    await vi.waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+    await vi.waitFor(() => expect(document.activeElement).toBe(reason()))
+    expect(announcement().textContent).toBe('')
+    expect(within(resultColumn(MADNESS)!).getByText('Rolled 1d6: 4 · Modifier +0 · Total 4')).toBeTruthy()
+    await storySettled(session, saved, 1)
+    expect(TABLE_KEYS.map((key) => saved[0].decisions[key])).toMatchObject(TABLE_KEYS.map(() => ({ mode: 'rolled', rolls: 1 })))
+    expect(saved[0].decisions[MADNESS]).toEqual(madness())
   })
 })

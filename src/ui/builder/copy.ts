@@ -20,8 +20,8 @@ import { STORAGE_UNAVAILABLE } from '../copy'
 
 export const REGIME_LABEL: Record<NonNullable<StepView['regime']>, string> = {
   choice: 'Choice',
-  // ui-design da FEAT-009, Rótulo de regime: sem Write até a FEAT-010.
-  'roll-or-choose': 'Roll or choose',
+  // ui-design da FEAT-010, Cabeçalho da etapa: com o Write (FR-DEC-002, 003).
+  'roll-or-choose': 'Roll, choose or write your own',
   roll: 'Roll',
   derived: 'Calculated',
   free: 'Write your own',
@@ -148,6 +148,35 @@ export const CHOOSE_A_RESULT = 'Choose a result.'
 export const LATER = 'Or decide later: it stays in Open decisions.'
 export const NO_TEXT = 'No text added for this entry · '
 
+/** Rótulo de um segmento do `roll-card`, um por modo (ui-design da FEAT-010, write-mode). */
+export const MODE_LABEL = { roll: 'Roll', choose: 'Choose', write: 'Write' } as const
+
+// ui-design da FEAT-010, Textos: Write (roll-card) e Roll all undecided (etapa).
+export const WRITE_TEXT = {
+  label: 'Your own result',
+  help: 'Write it in your own words, or as your GM decides. Up to 2,000 characters.',
+  limit: "You've reached the limit. Text past 2,000 characters isn't kept.",
+  use: 'Use this text',
+  cancel: 'Cancel',
+  empty: "Write your result first. Spaces and line breaks alone don't count.",
+  change: 'Change text',
+} as const
+
+export const ROLL_ALL_TEXT = {
+  label: 'Roll all undecided',
+  none: 'Every table in this step has a result.',
+} as const
+
+/** "Roll all undecided · {n}"; sem nada a rolar, sem a quantidade. */
+export const rollAllLabel = (count: number) => (count > 0 ? `${ROLL_ALL_TEXT.label} · ${count}` : ROLL_ALL_TEXT.label)
+
+/** O anúncio da aplicação direta: "Rolled {n} tables. {Tabela}: {valor}. …", na ordem das vagas. */
+export const rollAllAnnouncement = (lines: { title: string; value: string }[]) =>
+  [`Rolled ${lines.length} ${lines.length === 1 ? 'table' : 'tables'}.`, ...lines.map(({ title, value }) => `${title}: ${value}.`)].join(' ')
+
+/** Ids da linha do Roll all: o motivo recebe o foco depois da aplicação (P1 = A), e o botão, se continuar habilitado. */
+export const ROLL_ALL_IDS = { button: 'roll-all', reason: 'roll-all-reason' } as const
+
 export const enterLabel = (dice: string) => `Your ${dice} roll`
 export const enterHelp = ([min, max]: [number, number]) =>
   `Add up what the dice show, without any modifier. From ${min} to ${max}.`
@@ -220,6 +249,8 @@ export const IMPACT_TEXT = {
   recalculated: 'Will be recalculated',
   notDecided: 'Not decided yet.',
   chosen: 'Chosen',
+  // ui-design da FEAT-010, written-line: o modo de uma escrita na coluna Current ou New.
+  written: 'Written',
   d40: 'Set-aside decisions stay with this character, off the sheet, and come back on their own if what they depend on returns.',
   rerollNote: "Whichever result you don't use goes to the log as undone. It isn't set aside.",
 } as const
@@ -231,6 +262,9 @@ export const shiftText = (increase: string, decrease: string) => `${increase} +1
 
 const ANCESTRY_ACTIONS = { keep: 'Keep current ancestry', apply: 'Apply new ancestry' }
 const RESULT_ACTIONS = { keep: 'Keep current result', apply: 'Apply new result' }
+const RESULTS_ACTIONS = { keep: 'Keep current results', apply: 'Apply new results' }
+/** O valor curto de uma escrita nos títulos, nunca o texto (ui-design da FEAT-010, Decisões entre telas). */
+const OWN_RESULT = 'your own result'
 /**
  * Decide, Enter result ou Roll numa vaga que não é ancestralidade, tabela nem efeito com dado: não acontece no conteúdo
  * do MVP (só essas vagas têm dependentes). O ui-design não tem texto para ela; "Apply new choice" é provisório.
@@ -246,8 +280,7 @@ export interface ImpactWording {
 /** Valor curto de uma vaga decidida, para o título: faixa na tabela, total no efeito, nome ou número nas escolhas. */
 function shortValue(slot: SlotView | undefined, nameOf: (id: string) => string): string | null {
   if (!slot?.decided) return null
-  // A escrita (FEAT-010) não tem faixa; o título dela é do ui-design da FEAT-010 (T5).
-  if (slot.kind === 'table') return slot.result && slot.result.mode !== 'written' ? rangeText(slot.result.entry) : null
+  if (slot.kind === 'table') return slot.result ? (slot.result.mode === 'written' ? OWN_RESULT : rangeText(slot.result.entry)) : null
   if (slot.kind === 'roll-effect') return slot.result ? String(slot.result.total) : null
   if (slot.kind === 'choose-entity') return nameOf(String(slot.value))
   if (slot.kind === 'attribute-shift') return slot.value ? shiftText(nameOf(slot.value.increase), nameOf(slot.value.decrease)) : null
@@ -257,10 +290,12 @@ function shortValue(slot: SlotView | undefined, nameOf: (id: string) => string):
 const changeTitle = (subject: string, from: string | null, to: string | null) =>
   from === null ? `Change ${subject} to ${to}?` : `Change ${subject} from ${from} to ${to}?`
 
-/** Título e ações do diálogo pela variante (ui-design da FEAT-011, Textos, diálogo de impacto). */
+/**
+ * Título e ações do diálogo pela variante (ui-design da FEAT-011 e da FEAT-010, Textos, diálogo de impacto). O `write` e
+ * o Choose, o Enter result e o Roll sobre uma escrita usam o título de troca, com "your own result" como valor curto.
+ */
 export function impactWording(
-  // `write` e `roll-all` (FEAT-010) caem no título de troca até as variantes deles (ui-design da FEAT-010, T5).
-  kind: 'decide' | 'roll' | 'enter' | 'clear' | 'write' | 'roll-all',
+  kind: 'decide' | 'roll' | 'enter' | 'clear' | 'write',
   slot: SlotView | undefined,
   from: SlotView | undefined,
   to: SlotView | undefined,
@@ -283,6 +318,12 @@ export function impactWording(
   return { title: changeTitle(subject, current, next), ...CHOICE_ACTIONS }
 }
 
+/** O diálogo `roll-all` (ui-design da FEAT-010, by-roll-all): com uma tabela, o da rolagem numa vaga aberta. */
+export function rollAllWording(count: number, subject: string): ImpactWording {
+  if (count === 1) return { title: `Use this roll for ${subject}?`, ...RESULT_ACTIONS }
+  return { title: `Use these rolls for ${count} tables?`, ...RESULTS_ACTIONS }
+}
+
 export const NOTICE_TEXT = {
   title: 'The rules changed since this character was last saved.',
   setAside: 'Set aside, because the current rules no longer have them:',
@@ -298,11 +339,33 @@ type Decision = ImpactItem['decision']
 type LogEntry = Extract<Snapshot, { status: 'ready' }>['document']['log'][number]
 type DecisionEntry = Extract<LogEntry, { kind: 'decision' }>
 
-/** As partes de uma linha de decisão (ui-design da FEAT-011, Linha de decisão): título, valor e, em resultado, o modo. */
+/**
+ * As partes de uma linha de decisão (ui-design da FEAT-011, Linha de decisão): título, valor e, em resultado, o modo. Na
+ * escrita (ui-design da FEAT-010, written-line), sem valor: o texto inteiro, numa linha abaixo.
+ */
 export interface LineParts {
   title: string
   value: string
   mode?: string
+  text?: string
+}
+
+/** O valor de um resultado de tabela na linha: a faixa e, com entidade, o nome ("7–8 Orcs", "8–12"). */
+function entryValue(table: TableView, key: string): string {
+  const entity = table.entries.find((entry) => entry.key === key)?.entity
+  return entity ? `${rangeText(key)} ${entity.name}` : rangeText(key)
+}
+
+/**
+ * A linha de uma vaga `table` decidida, pelo resultado na visão (colunas e anúncio do Roll all, FEAT-010). O título é o
+ * rótulo de pendência da tabela, o nome dela (`decisionTitle`).
+ */
+export function resultParts(slot: Extract<SlotView, { kind: 'table' }>): LineParts {
+  const title = slot.table.name
+  const { result } = slot
+  if (!result) return { title, value: '' }
+  if (result.mode === 'written') return { title, value: '', mode: 'written', text: result.text }
+  return { title, value: entryValue(slot.table, result.entry), mode: result.mode }
 }
 
 /** Uma decisão guardada na vaga dela: o rótulo de pendência, o valor gravado e o modo, só em resultado. */
@@ -310,7 +373,7 @@ export function partsOf(slot: SlotView, decision: Decision, nameOf: (id: string)
   const title = decisionTitle(toOpenDecision(slot), nameOf)
   switch (slot.kind) {
     case 'table': {
-      // A escrita (FEAT-010) não tem entrada; o texto dela na linha é do ui-design da FEAT-010 (T5).
+      if (decision.mode === 'written') return { title, value: '', mode: decision.mode, text: decision.text }
       const key = decision.mode === 'chosen' ? String(decision.value) : 'entry' in decision ? (decision.entry ?? '') : ''
       const entity = slot.table.entries.find((entry) => entry.key === key)?.entity
       return { title, value: entity ? `${rangeText(key)} ${entity.name}` : rangeText(key), mode: decision.mode }
@@ -339,6 +402,8 @@ export function partsOfLogged(log: LogEntry[], logged: number | undefined): Line
   if (!entry) return undefined
   const title = entry.subject?.name ?? entry.step.name
   const { result } = entry
+  // A escrita (ui-design da FEAT-010, written-line): o texto da entrada, inteiro, com o modo `written` dela.
+  if ('text' in result) return { title, value: '', mode: entry.mode, text: result.text }
   const value =
     'entry' in result
       ? [rangeText(result.entry), result.entity?.name].filter(Boolean).join(' ')
@@ -346,10 +411,7 @@ export function partsOfLogged(log: LogEntry[], logged: number | undefined): Line
         ? shiftText(result.shift.increase.name, result.shift.decrease.name)
         : 'value' in result
           ? formatValue(result.value)
-          : 'entity' in result
-            ? result.entity.name
-            : // A escrita (FEAT-010): o texto da linha é do ui-design da FEAT-010 (T5).
-              ''
+          : result.entity.name
   const isResult = entry.slotKind === 'table' || entry.slotKind === 'roll-effect'
   return { title, value, ...(isResult && { mode: entry.mode }) }
 }

@@ -25,7 +25,7 @@
       Guarda `src/app/changes.perf.test.ts` (design §5).
       Pronto quando: os testes do AC-8, AC-9 e AC-10 (sessão) passam no `session.test.ts` e no `changes.test.ts`, e os de `impact` com `key` nulo no `impact.test.ts`; os testes existentes do `impact` passam sem mudança de asserção (só os tipos do item 5 do §7); a guarda do AC-13 passa.
 
-- [ ] T5 — Interface: Write, Roll all undecided e diálogos (design §3.3; ui-design da FEAT-010; SCR-WEB-009)
+- [x] T5 — Interface: Write, Roll all undecided e diálogos (design §3.3; ui-design da FEAT-010; SCR-WEB-009)
       Pelo `ui-design.md`: o segmento Write (sai o filtro da T2) e o estado escrito, com o limite do campo e o erro do `empty-text`; "Roll all undecided" pelo `rollAllKeys`; as variantes `write` e `roll-all` do diálogo e do `appliedTarget`; o `REGIME_LABEL['roll-or-choose']` e os demais textos. Entrada nos estados pela mudança do snapshot (D11 da FEAT-007; C2).
       As expectativas 1 e 2 do §7 mudam aqui, e a 4 se o ui-design mudar a frase do regime, para as suítes não ficarem vermelhas entre a T5 e a T6.
       Pronto quando: os testes do AC-11 e do AC-2 (tela) passam no `Builder.test.tsx`, com a gravação retida e com `save-failed`; `npx playwright test e2e/story.spec.ts e2e/builder-dock.spec.ts --retries=0 --workers=1` verde nos 5 projetos.

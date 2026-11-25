@@ -92,26 +92,28 @@ async function saved(page: Page, keys: string[]) {
 
 const checked = (radio: Locator) => expect(radio).toBeChecked()
 
-test('FR-STEP-012, FR-STEP-013, FR-DEC-001, FR-DEC-002, FR-FLOW-011: with Dwarf, Story shows the six tables in order with their page and regime, Roll and Choose, no Write, and the shortcut focuses a card (AC-1, AC-16)', async ({
+test('FR-DEC-003, FR-STEP-012, FR-STEP-013, FR-DEC-001, FR-DEC-002, FR-FLOW-011: with Dwarf, Story shows the six tables in order with their page and regime, Roll and Choose, Write on the roll-or-choose ones, and the shortcut focuses a card (AC-1, AC-16)', async ({
   page,
 }, testInfo) => {
   const csp = await watchCsp(page)
   await toStory(page)
   const main = page.getByRole('main')
-  await expect(main.getByText('Step 3 of 8 · Roll or choose')).toBeVisible()
+  await expect(main.getByText('Step 3 of 8 · Roll, choose or write your own')).toBeVisible()
   await expect(main.locator('.step-header')).toContainText('CORE p.11')
   await expect(main.getByText('0 of 6 decided', { exact: true })).toBeVisible()
   await expect(main.getByText('6 open', { exact: true })).toBeVisible()
 
-  // AC-1: um cartão por tabela, na ordem do pacote, com o selo da página e Roll e Choose; sem Write (FEAT-010).
+  // AC-1: um cartão por tabela, na ordem do pacote, com o selo da página e Roll e Choose; Write nas cinco tabelas
+  // roll-or-choose, e não na Dwarf Hatred (regime choice; FEAT-010).
   await expect(main.locator('.roll-card h2')).toHaveText(TABLES)
   for (const [index, name] of TABLES.entries()) {
+    const hatred = name === 'Dwarf Hatred'
     await expect(card(page, name).locator('.roll-card__regime')).toContainText(index < 4 ? 'CORE p.18' : 'CORE p.19')
-    await expect(modes(page, name).getByRole('radio')).toHaveCount(2)
+    await expect(modes(page, name).getByRole('radio')).toHaveCount(hatred ? 2 : 3)
     await expect(modes(page, name).getByRole('radio', { name: 'Roll', exact: true })).toHaveCount(1)
     await expect(modes(page, name).getByRole('radio', { name: 'Choose', exact: true })).toHaveCount(1)
+    await expect(modes(page, name).getByRole('radio', { name: 'Write', exact: true })).toHaveCount(hatred ? 0 : 1)
   }
-  await expect(main.getByText(/write/i)).toHaveCount(0)
 
   // AC-2: a Hatred (regime choice) abre em Choose, com as faixas do d20 e as criaturas; as outras dizem roll or choose.
   await expect(card(page, 'Dwarf Hatred').locator('.roll-card__regime')).toHaveText('The book says to choose. CORE p.18')

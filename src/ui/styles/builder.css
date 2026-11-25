@@ -956,6 +956,68 @@ a.step-map__item--current:hover {
   font-variant-numeric: tabular-nums;
 }
 
+/* Texto escrito (ui-design da FEAT-010, written e written-line): as quebras de linha como foram digitadas, e uma palavra
+   longa quebra na largura, sem rolagem horizontal a 320 px. Sem corte nem rolagem interna. */
+.written-text {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  color: var(--color-text-default);
+}
+
+.roll-result__text {
+  max-width: var(--size-prose-max);
+}
+
+/* Roll all undecided (ui-design da FEAT-010, roll-all e roll-all-none): no topo do corpo da etapa, à esquerda, com o
+   motivo ao lado (abaixo, quando não cabe). */
+.roll-all {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+}
+
+.roll-all__reason {
+  color: var(--color-text-secondary);
+}
+
+/* Write (ui-design da FEAT-010, write-mode; design.md §4, textarea): rótulo, campo, ajuda e erro empilhados em toda a
+   largura, e as ações --space-3 abaixo. A região viva do erro, vazia, não ocupa espaço. */
+.write-form__field {
+  display: flex;
+  flex-direction: column;
+}
+
+.text-area,
+.write-form__help,
+.write-form__error .field-error {
+  margin-top: var(--space-1);
+}
+
+.write-form__help {
+  color: var(--color-text-secondary);
+}
+
+.text-area {
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-background-surface);
+  border: var(--border-width-default) solid var(--color-border-control);
+  border-radius: var(--radius-md);
+  color: var(--color-text-default);
+  resize: vertical;
+}
+
+.text-area[data-invalid] {
+  border-color: var(--color-state-danger);
+}
+
+/* "Use this text" (e "Cancel", no write-again) lado a lado, com quebra. */
+.write-form__actions {
+  margin-top: var(--space-3);
+  gap: var(--space-2);
+}
+
 /* Caixa de valor (design.md §4, roll-card): o valor com altura de linha igual ao tamanho, para caber com o rótulo. */
 .roll-value {
   flex: none;
@@ -1151,6 +1213,16 @@ a.step-map__item--current:hover {
 
 .impact-dialog__group {
   gap: var(--space-2);
+}
+
+/* by-roll-all (ui-design da FEAT-010): uma linha por tabela em Current e em New; "Written" da coluna escrita. */
+.impact-dialog__rows {
+  display: grid;
+  gap: var(--space-1-5);
+}
+
+.impact-dialog__mode {
+  color: var(--color-text-secondary);
 }
 
 .impact-dialog__value {

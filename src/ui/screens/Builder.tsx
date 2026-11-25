@@ -6,7 +6,7 @@ import type { CharacterView, StepView } from '../../engine'
 import { AppHeader, PageFooter } from '../AppHeader'
 import { AncestryStep } from '../builder/AncestryStep'
 import { AttributesStep } from '../builder/AttributesStep'
-import { formatValue, isTablesStep, lockReason, OPEN_MESSAGE, SAVE_FAILED, slotElementId, statusLabel } from '../builder/copy'
+import { formatValue, isTablesStep, lockReason, OPEN_MESSAGE, ROLL_ALL_IDS, SAVE_FAILED, slotElementId, statusLabel } from '../builder/copy'
 import { FallbackStep } from '../builder/FallbackStep'
 import { ImpactDialog } from '../builder/ImpactDialog'
 import { OpenNotice } from '../builder/OpenNotice'
@@ -255,16 +255,16 @@ function BuilderReady({ session, snapshot, route }: {
  * Destino do foco depois do Apply, pela variante (ui-design da FEAT-011, applied): o `h2` do detalhe na troca de
  * ancestralidade, a coluna de resultado depois de Roll e Enter result, o `h2` do card no `clear`. No Choose → Choose e na
  * troca de modo para Choose, devolve `null`, e a moldura devolve o foco ao `opener` guardado: a entrada acionada, agora
- * marcada.
+ * marcada. Pela FEAT-010 (applied-write-roll-all), pelo `pending.kind`: no `write`, a coluna de resultado do estado
+ * escrito; no `roll-all`, a frase do motivo da linha do Roll all, ou o botão, se continuar habilitado.
  */
 function appliedTarget(pending: PendingChange): HTMLElement | null {
-  // Roll all undecided (FEAT-010): o `opener` da moldura até o destino do ui-design da FEAT-010 (T5).
-  if (pending.kind === 'roll-all') return null
+  if (pending.kind === 'roll-all') return document.getElementById(ROLL_ALL_IDS.reason) ?? document.getElementById(ROLL_ALL_IDS.button)
   const { kind, key, impact } = pending
   const slotKind = (impact.change?.from ?? impact.change?.to)?.kind
   if (kind === 'clear') return document.getElementById(slotKind === 'attribute-shift' ? 'adjustment-title' : slotElementId(key))
   if (slotKind === 'choose-entity') return document.getElementById('ancestry-detail-title')
-  if (kind === 'roll' || kind === 'enter') return document.getElementById(`${slotElementId(key)}-result`)
+  if (kind === 'roll' || kind === 'enter' || kind === 'write') return document.getElementById(`${slotElementId(key)}-result`)
   return null
 }
 

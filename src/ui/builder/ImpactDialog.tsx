@@ -16,6 +16,8 @@ import {
   partsOf,
   rangeText,
   resultCalc,
+  resultParts,
+  rollAllWording,
   staysLabel,
   tableDice,
 } from './copy'
@@ -54,15 +56,27 @@ function ImpactContent({ pending, nameOf, onKeep, onApply }: {
   onApply: () => void
 }) {
   const { impact } = pending
-  // Sem `change` no Roll all undecided (FEAT-010 D8); a variante `roll-all` é do ui-design da FEAT-010 (T5).
-  const { from, to } = impact.change ?? {}
-  const slot = from ?? to
   const title = useRef<HTMLHeadingElement>(null)
   // Foco ao abrir no título, nunca em Apply (ui-design, dialog-open): o diálogo é para ler antes de decidir.
   useEffect(() => title.current?.focus(), [])
 
-  const wording = impactWording(pending.kind, slot, from, to, nameOf)
+  // Roll all undecided (ui-design da FEAT-010, by-roll-all): sem `change` (D8). Com uma tabela, Current e New da vaga
+  // `keys[0]`; com várias, uma linha por chave nas duas colunas.
+  const rollAll = pending.kind === 'roll-all' ? pending.keys : null
+  const slotIn = (view: CharacterView, key: string | undefined) => view.slots.find((candidate) => candidate.key === key)
+  const { from, to } =
+    rollAll?.length === 1 ? { from: slotIn(impact.before, rollAll[0]), to: slotIn(impact.after, rollAll[0]) } : (impact.change ?? {})
+  const slot = from ?? to
+  const wording =
+    pending.kind === 'roll-all'
+      ? rollAllWording(pending.keys.length, slot ? decisionTitle(toOpenDecision(slot), nameOf) : '')
+      : impactWording(pending.kind, slot, from, to, nameOf)
+  const tableTitle = (key: string) => {
+    const found = slotIn(impact.after, key)
+    return found ? decisionTitle(toOpenDecision(found), nameOf) : ''
+  }
   const recalculated = [...impact.recalculated.attributes, ...impact.recalculated.characteristics]
+  // Sem `change` (Roll all), todo item com `parent` leva a linha (ui-design da FEAT-010, by-roll-all).
   const parentTitle = (item: ImpactItem, view: CharacterView) => {
     if (item.parent === null || item.parent === impact.change?.key) return undefined
     const parent = view.slots.find((candidate) => candidate.key === item.parent)
@@ -77,11 +91,31 @@ function ImpactContent({ pending, nameOf, onKeep, onApply }: {
       <div className="impact-dialog__columns">
         <div className="impact-dialog__column">
           <h3 className="typography-eyebrow eyebrow--secondary">{IMPACT_TEXT.current}</h3>
-          <ColumnValue slot={from} nameOf={nameOf} />
+          {rollAll && rollAll.length > 1 ? (
+            <div className="impact-dialog__rows">
+              {rollAll.map((key) => (
+                <p key={key}>
+                  <span className="typography-body">{`${tableTitle(key)}: `}</span>
+                  <span className="typography-meta">{IMPACT_TEXT.notDecided}</span>
+                </p>
+              ))}
+            </div>
+          ) : (
+            <ColumnValue slot={from} nameOf={nameOf} />
+          )}
         </div>
         <div className="impact-dialog__column">
           <h3 className="typography-eyebrow eyebrow--secondary">{IMPACT_TEXT.new}</h3>
-          <ColumnValue slot={to} nameOf={nameOf} />
+          {rollAll && rollAll.length > 1 ? (
+            <div className="impact-dialog__rows">
+              {rollAll.map((key) => {
+                const after = slotIn(impact.after, key)
+                return <p key={key}>{after?.kind === 'table' && <DecisionLine parts={resultParts(after)} />}</p>
+              })}
+            </div>
+          ) : (
+            <ColumnValue slot={to} nameOf={nameOf} />
+          )}
         </div>
       </div>
       {pending.kind === 'roll' && impact.undone && <p className="typography-meta impact-dialog__note">{IMPACT_TEXT.rerollNote}</p>}
@@ -192,8 +226,15 @@ function ColumnValue({ slot, nameOf }: { slot: SlotView | undefined; nameOf: (id
     }
     case 'table': {
       const result = slot.result!
-      // A escrita (FEAT-010): a variante do diálogo é do ui-design da FEAT-010 (T5).
-      if (result.mode === 'written') return null
+      // A coluna escrita (ui-design da FEAT-010, written-line): o texto inteiro e "Written", sem faixa, cálculo nem efeitos.
+      if (result.mode === 'written') {
+        return (
+          <>
+            <p className="typography-body written-text">{result.text}</p>
+            <p className="typography-meta impact-dialog__mode">{IMPACT_TEXT.written}</p>
+          </>
+        )
+      }
       const entry = slot.table.entries.find((candidate) => candidate.key === result.entry)
       return (
         <>
