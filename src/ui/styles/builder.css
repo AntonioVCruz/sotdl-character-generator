@@ -1135,8 +1135,15 @@ a.step-map__item--current:hover {
 
 .enter-form__field > label,
 .enter-form__help,
+.enter-form__error,
 .field-error {
   grid-column: 1 / -1;
+}
+
+/* A região viva do erro (DEF-013) fica no DOM com o formulário aberto; vazia, sai da grade, para não abrir uma linha
+   nem um gap a mais. */
+.enter-form__error:empty {
+  position: absolute;
 }
 
 .text-input {

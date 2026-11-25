@@ -588,7 +588,9 @@ function DiceActions({ label, decided = false, dice, range, canEnter, logged, on
 
 /**
  * Enter result (ui-design, entering; E9): um campo por expressão de dado, validado ao confirmar. Vazio ou não inteiro dá
- * o erro local, sem comando; a recusa `out-of-range` mostra a faixa devolvida. O campo mantém o valor e o foco.
+ * o erro local, sem comando; a recusa `out-of-range` mostra a faixa devolvida. O campo mantém o valor e o foco. A região
+ * viva do erro já está no formulário desde que ele abre (`design.md` §4, "error"; D-ERR; DEF-013): a mensagem aparece
+ * nela pelo clique e pela tecla Enter, sem mover o foco.
  */
 function EnterForm({ dice, range, onEnter, actions, onCancel }: {
   dice: string
@@ -631,10 +633,12 @@ function EnterForm({ dice, range, onEnter, actions, onCancel }: {
         <Text slot="description" className="typography-meta enter-form__help">
           {enterHelp(range)}
         </Text>
-        <FieldError className="typography-meta field-error">
-          <CircleAlert className="icon icon--sm" aria-hidden="true" />
-          {error && outOfRange(error)}
-        </FieldError>
+        <div aria-live="polite" className="enter-form__error">
+          <FieldError className="typography-meta field-error">
+            <CircleAlert className="icon icon--sm" aria-hidden="true" />
+            {error && outOfRange(error)}
+          </FieldError>
+        </div>
       </TextField>
       <div className="enter-form__actions">
         <Button type="submit" className="button-primary typography-label">
