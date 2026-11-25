@@ -3,6 +3,7 @@
 > Veredito: Accepted · Data: 2026-11-17
 > Padrão: technical-design.md §6 e §5, ui-design.md @ `887c808` · Fontes: srs.md (v1.2), use-cases.md (UC-005, UC-006), design-manifest.json (SCR-WEB-009, SCR-WEB-003)
 > Estado auditado: código de `887c808`, mais a correção de nomes de teste abaixo (só artefatos de teste)
+> Re-verificação: Accepted · 2026-11-25 · DEF-013 (ver a seção no fim)
 
 ## Veredito
 
@@ -173,3 +174,55 @@ Test ref acrescentado (`features/FEAT-009-decide-a-table/acceptance-report.md`) 
 - com `(partial)`: NFR-PERF-001, NFR-REL-001, NFR-ACC-001, NFR-USE-001, NFR-L10N-001 e NFR-MAINT-002, NFRs das fundações (plano §6).
 
 FR-CONT-015, 016, FR-SRC-009 e FR-CHG-015 ficam sem registro: esta feature só adianta a parte do motor, e os Plan refs delas são outras features.
+
+## Re-verificação de 2026-11-25: DEF-013
+
+> Veredito: Accepted · Estado auditado: `e327859` (código de `4d66547`) · Padrão: technical-design.md §6, sem mudança; ui-design.md com o entering corrigido em `54583db`, contra a emenda D-ERR do design.md (`2312de8`)
+
+**Veredito.** Aceita de novo. A correção do DEF-013 (`docs/defects.md`) põe no `EnterForm` uma região `aria-live="polite"` que já está no formulário quando ele abre, e a mensagem de erro aparece dentro dela pelo clique em "Use this result" e pela tecla Enter, sem mover o foco. Os três testes vermelhos falham sem a correção, pelo motivo do defeito, e também com uma variante ingênua; passam com ela. Todas as suítes passaram nesta execução, sem retry. Nenhum achado novo.
+
+**Padrão.** Os 17 critérios da §6 continuam valendo. A manutenção toca o AC-7 (FR-DEC-019, FR-DEC-020), o AC-8 (FR-STEP-014) e a NFR-ACC-001. A regra é a do `design.md` §4 (convenção de estados, "error", e `text-input / textarea`, Erro) e §5: a mensagem que aparece sem que o foco vá até ela é anunciada por uma região `aria-live="polite"` já presente no DOM, com `aria-invalid` no campo e a mensagem no `aria-describedby`. O entering corrigido (`54583db`) diz que a região vale pelos dois caminhos, e o código faz isso: a região envolve o `FieldError` (`TablesStep.tsx:636`), e o clique e o Enter passam pelo mesmo `onSubmit` do formulário. Pelo `git diff 1935905..e327859`, só essa linha do entering mudou no ui-design da FEAT-009.
+
+**Mudanças de teste auditadas** (`1935905..e327859`, só `src/ui/screens/Builder.test.tsx`): 157 linhas acrescentadas, nenhuma removida, nenhum teste existente mudado. Nenhum skip, `.only`, retry, timeout aumentado nem mudança de configuração (`playwright.config.ts`, `vite.config.ts`, `package.json`).
+
+| Teste | Commit | Classe | Auditoria |
+| :-- | :-- | :-- | :-- |
+| DEF-013: "Use this result" com o campo vazio na Gnome Fate (regime `roll`) | `349710d` | teste novo | Fiel ao DEF e ao entering. A região é capturada antes do envio, vazia. Depois, a mesma região (por identidade) tem "Enter a value from 3 to 18.", a mensagem do `aria-describedby` a tem como ancestral `aria-live` mais próximo, o campo tem `aria-invalid="true"`, e o foco está no botão, antes e depois de um quadro. Nenhum `enter` nem gravação. Na edição seguinte, a mensagem some e a região fica. |
+| DEF-013: recusa `out-of-range` ("7") na `roll-effect` da Madness | `349710d` | teste novo | Fiel: o `enter` é chamado com 7, e a recusa aparece na região capturada antes, com o valor mantido e o foco no botão. |
+| DEF-013: tecla Enter no campo vazio da Gnome Fate | `349710d` | teste novo | Fiel ao entering corrigido: a mensagem na mesma região, com o foco no campo. |
+
+Os testes não cobrem todas as combinações (faltam o Enter na `roll-effect` e a recusa na tabela de regime `roll`), mas o formulário é o mesmo componente nos dois lugares. As oito combinações foram observadas no navegador (abaixo).
+
+**Vermelhos conferidos** (produção trocada só no disco, restaurada com `git restore` depois de cada rodada; cada linha, 3 vezes):
+
+| Teste | Comando | Sem a correção | Com a correção (`HEAD`) |
+| :-- | :-- | :-- | :-- |
+| DEF-013 (3 testes) | `npx vitest run src/ui/screens/Builder.test.tsx -t "DEF-013"` | `TablesStep.tsx` e `builder.css` de `39ab5b5`: 3/3 rodadas com os três vermelhos em `regionBeforeSubmit` (`:1093`, "aria-live="polite" region in the Enter result form: expected null not to be null"). Não há região antes do envio, que é o defeito. | 3/3 verdes |
+| DEF-013, variante ingênua | o mesmo comando | região recriada junto com a mensagem (`key={error ? 'shown' : 'empty'}` na `div` da região; local, descartada, sem commit): 3/3 rodadas com os três vermelhos em `:1098` ("expected '' to be 'Enter a value from …'"), porque a região capturada antes do envio fica vazia | — |
+
+**Execução independente** (do zero, porta 4173 livre antes; Windows 11, Node 22.15.0, Playwright 1.65.0):
+- `npm ci`, `typecheck`, `lint`, `packs:check` ("2 file(s) valid; no ids removed since HEAD") e `build`: verdes.
+- `npm test`, 3 vezes: 385 testes em 21 arquivos, 3/3 verdes.
+- `npx playwright test --retries=0 --workers=1`, uma worker, nos 5 projetos: 204 passaram, 51 pulados, 0 falhas, 0 instáveis, em 9,2 min. Por projeto: chromium 36 (15 pulados), firefox 34 (17), webkit 34 (17), mobile-chrome 51 (0), mobile-safari 49 (2). Os pulados são os previstos: 42 do `builder-dock.spec` fora do celular, 3 do `builder-focus.spec` e 6 do `perf.spec`.
+- Uma primeira invocação, com dois reporters na linha de comando, foi recusada pelo Playwright antes de rodar qualquer teste (erro de invocação no PowerShell) e não conta.
+- CI do `e327859`, run 45687328926: `check`, `e2e` e `lighthouse` verdes, `deploy` pulado. No E2E, 204 passaram e 51 foram pulados, sem linha de flaky.
+
+**Verificação direta.** Script Node com a biblioteca do Playwright, fora do repositório e descartado. Ele rodou contra dois builds servidos do zero pelo `vite preview` (base `/`): o de `e327859` e o de `39ab5b5`, de antes da correção (a produção de `349710d` é a mesma).
+- O pacote fictício do `Builder.test.tsx` foi servido no lugar do `sotdl.core.json` por `page.route`: Gnome, Gnome Fate de regime `roll` e Gnome Past com a `roll-effect` Madness na entrada 4.
+- O personagem foi criado por "New character". As decisões (Gnome; Gnome Past escolhida ou rolada em 4) foram semeadas no IndexedDB antes de abrir a Story.
+- Perfis: Desktop Chrome, Desktop Firefox, Desktop Safari, Pixel 7 e iPhone 15, no viewport do perfil e a 320 × 568.
+- O DOM foi lido no navegador. Nada foi conferido com leitor de tela.
+
+| Ponto | Observado no `HEAD`, nos 5 perfis, 3 rodadas |
+| :-- | :-- |
+| Região antes do envio e mensagem dentro dela | 8 sequências por perfil: Gnome Fate e Madness × clique em "Use this result" e Enter no campo × vazio e fora da faixa ("2" e "7"). Em todas, a `div[aria-live="polite"]` já está no formulário ao abrir, vazia, e um `MutationObserver` posto nela antes do envio registra a entrada da mensagem. Depois, a mesma região (marcada antes) contém "Enter a value from 3 to 18." ou "… from 1 to 6.". A mensagem está no `aria-describedby` e tem a região como ancestral `aria-live` mais próximo. O campo tem `aria-invalid="true"` e mantém o valor. Dois quadros depois, o foco está em "Use this result" (clique) ou no campo (Enter). 24/24 por perfil. |
+| Leiaute com a região vazia | Caixas do rótulo, do campo, da ajuda, das ações e de "Use this result", relativas ao formulário, e o tamanho do formulário: idênticas às do build de `39ab5b5`, nos 5 perfis, na Fate e na Madness, no viewport do perfil e a 320 px. A região vazia é `position: absolute`, 0 × 0, e não abre linha nem gap: o formulário tem 83,64 px de altura no desktop e 210,48 px no celular, nos dois builds. |
+| Leiaute com a mensagem | Idêntico ao de `39ab5b5`. A mensagem fica abaixo da ajuda: no desktop, a 87,64 px do topo do formulário, que passa a 106,48 px; no celular, a 110,48 px, com as ações descendo para 133,33 px. A região passa a `static` e coincide com a caixa da mensagem. |
+| 320 px | Formulário aberto, sem e com a mensagem, na Fate, na Madness com a Past escolhida e na Madness com a Past rolada: `scrollWidth` 320 e nenhum elemento fora de 0–320 pelo `getBoundingClientRect` (C17), nos 5 perfis. |
+
+- **A sonda discrimina** (C15): contra o build de `39ab5b5`, as 8 sequências falham nos 5 perfis só no ponto do defeito, sem região `aria-live` no formulário, antes ou depois do envio. O `aria-invalid`, a mensagem no `aria-describedby`, o valor e o foco passam, como deviam, porque não eram o defeito. As caixas e a ausência de rolagem horizontal dão o mesmo resultado nos dois builds.
+- **DEF-015, só registro:** a sonda vê os 4 px dele. Com a Gnome Past rolada em 4 e a Madness decidida, a 320 px, o `scrollWidth` é 324 nos 5 perfis e nos dois builds. Não é efeito desta correção nem entra neste veredito.
+
+**Achados.** Rework: nenhum. Defeito de design: nenhum. Menores: nenhum.
+
+**RTM.** Sem mudança.
