@@ -1524,3 +1524,231 @@ describe('character session: open with a new version of the pack (FEAT-011)', ()
     expect(memory.repository.save).not.toHaveBeenCalled()
   })
 })
+
+// FEAT-010 T3: Write (technical-design §3.2; D3, D4, D5). Só textos inventados, nunca texto do livro (P22).
+const D_APPEARANCE = 'ancestry=dwarf/appearance'
+const OWN = 'Raised by a caravan of tinkers.'
+const OTHER_TEXT = 'Left the mountain at forty.'
+const writtenOf = (text: string, extra: Record<string, unknown> = {}) => ({ mode: 'written', text, book: TABLES, ...extra })
+const invalidValue = { ok: false, reason: 'invalid-value' }
+const emptyText = { ok: false, reason: 'empty-text' }
+
+describe('character session: Write (FEAT-010)', () => {
+  it('FR-DEC-021: an empty text, only spaces or only line breaks gives empty-text; nothing changes and nothing is saved (AC-2)', async () => {
+    const { session, repository } = await withTables()
+    const before = ready(session)
+    for (const text of ['', '   ', '\n\n', ' \t\r\n ']) {
+      await expect(session.write(AGE, text)).resolves.toEqual(emptyText)
+    }
+    expect(session.getSnapshot()).toBe(before)
+    expect(before.document.log).toEqual([])
+    expect(repository.save).not.toHaveBeenCalled()
+  })
+
+  it('FR-DEC-021: more than 2,000 characters after the trim gives invalid-value; 2,000 with spaces at the ends is taken, trimmed (AC-2, D3)', async () => {
+    const { session, docs, repository } = await withTables()
+    const before = ready(session)
+    await expect(session.write(AGE, 'a'.repeat(2001))).resolves.toEqual(invalidValue)
+    await expect(session.write(AGE, ` ${'a'.repeat(2001)} `)).resolves.toEqual(invalidValue)
+    expect(session.getSnapshot()).toBe(before)
+    expect(repository.save).not.toHaveBeenCalled()
+
+    await expect(session.write(AGE, `  ${'a'.repeat(2000)}\n`)).resolves.toEqual({ ok: true })
+    expect(savedDocument(docs).decisions[AGE]).toEqual(writtenOf('a'.repeat(2000), { logged: 1 }))
+  })
+
+  it('FR-DEC-003, FR-DEC-021: the refusals come in order: change-pending, unknown-slot, invalid-value outside a table, then the text (§3.2)', async () => {
+    const { session, repository } = await withTables({ [PAST]: chosenEntry('4'), [MADNESS]: { mode: 'rolled', dice: [4], modifier: 0, total: 4 } })
+    const before = ready(session)
+    await expect(session.write('ancestry=gnome/nowhere', '')).resolves.toEqual({ ok: false, reason: 'unknown-slot' })
+    // A `roll-effect` só tem Roll e Enter result (FR-STEP-014); as vagas que não são `table`, também recusadas.
+    await expect(session.write(MADNESS, '')).resolves.toEqual(invalidValue)
+    await expect(session.write(MADNESS, OWN)).resolves.toEqual(invalidValue)
+    await expect(session.write('ancestry', OWN)).resolves.toEqual(invalidValue)
+    await expect(session.write('ancestry=gnome/stature', OWN)).resolves.toEqual(invalidValue)
+    expect(session.getSnapshot()).toBe(before)
+
+    await expect(session.decide(PAST, '5-6')).resolves.toEqual(needsConfirmation)
+    const waiting = ready(session)
+    await expect(session.write(AGE, '')).resolves.toEqual({ ok: false, reason: 'change-pending' })
+    await expect(session.write('ancestry=gnome/nowhere', OWN)).resolves.toEqual({ ok: false, reason: 'change-pending' })
+    expect(session.getSnapshot()).toBe(waiting)
+    expect(repository.save).not.toHaveBeenCalled()
+  })
+
+  it('FR-DEC-003, FR-LOG-003, NFR-REL-001: Write on the open Dwarf Appearance records the trimmed text with the book, logs it with the source of the table and survives reopening; the view changes before the save (AC-3)', async () => {
+    const { session, docs, repository } = await dwarf()
+    const before = ready(session)
+    const release = holdNextSave(repository)
+    const writing = session.write(D_APPEARANCE, `  ${OWN}  `)
+    // O estado escrito vem pela mudança do snapshot, antes da gravação (D11 da FEAT-007; C2).
+    expect(ready(session).save).toBe('saving')
+    expect(ready(session).pending).toBeUndefined()
+    expect(slotIn(session, D_APPEARANCE)).toMatchObject({ decided: true, result: { mode: 'written', text: OWN } })
+    expect(slotIn(session, D_APPEARANCE)).not.toHaveProperty('value')
+    expect(ready(session).view.summary).toEqual(before.view.summary)
+    expect(savedDocument(docs).decisions[D_APPEARANCE]).toBeUndefined()
+    release()
+    await expect(writing).resolves.toEqual({ ok: true })
+
+    expect(repository.save).toHaveBeenCalledTimes(1)
+    const saved = savedDocument(docs)
+    expect(saved.decisions[D_APPEARANCE]).toEqual({ mode: 'written', text: OWN, book: CORE, logged: 4 })
+    expect(saved.log.slice(3)).toEqual([
+      {
+        id: 4,
+        at: AT,
+        kind: 'decision',
+        slot: D_APPEARANCE,
+        slotKind: 'table',
+        step: { id: 'step:story', name: 'Story' },
+        origin: { id: 'ancestry:dwarf', name: 'Dwarf' },
+        mode: 'written',
+        subject: { id: 'table:dwarf-appearance', name: 'Dwarf Appearance' },
+        source: { book: CORE, abbr: 'CORE', page: 18 },
+        result: { text: OWN },
+      },
+    ])
+
+    // Recarregar: outra instância do app sobre o mesmo repositório, sem sorteio.
+    const random = sequence([])
+    const reopened = createApp({ ...deps, repository, random, lastStep: memoryLastStep() }).createSession()
+    await reopened.open('id-1')
+    expect(slotIn(reopened, D_APPEARANCE)).toEqual(slotIn(session, D_APPEARANCE))
+    expect(slotIn(reopened, D_APPEARANCE)).toMatchObject({ decided: true, result: { mode: 'written', text: OWN } })
+    expect(ready(reopened).document.decisions[D_APPEARANCE]).toEqual(saved.decisions[D_APPEARANCE])
+    expect(random).not.toHaveBeenCalled()
+  })
+
+  it('FR-DEC-018, FR-DEC-015: Write on a rolled, a chosen and (D4) an entered table replaces it: the written one takes decisions[k], and the previous one goes to the log as undone, never kept (AC-5)', async () => {
+    const { session, docs } = await withTables({}, sequence([2, 4, 1]))
+    await session.roll(AGE)
+    await session.decide(PAST, '5-6')
+    await session.enter(FATE, 11)
+    for (const key of [AGE, PAST, FATE]) await expect(session.write(key, OWN)).resolves.toEqual({ ok: true })
+
+    const saved = savedDocument(docs)
+    expect(saved.decisions[AGE]).toEqual(writtenOf(OWN, { rolls: 1, logged: 4 }))
+    expect(saved.decisions[PAST]).toEqual(writtenOf(OWN, { logged: 6 }))
+    expect(saved.decisions[FATE]).toEqual(writtenOf(OWN, { logged: 8 }))
+    expect(saved.earlier).toBeUndefined()
+    expect(ready(session).view.setAside).toEqual([])
+    expect(saved.log.slice(3)).toEqual([
+      expect.objectContaining({ id: 4, kind: 'decision', slot: AGE, mode: 'written', result: { text: OWN } }),
+      { id: 5, at: AT, kind: 'undone', slot: AGE, ref: 1, reason: 'replaced', by: 4 },
+      expect.objectContaining({ id: 6, kind: 'decision', slot: PAST, mode: 'written', result: { text: OWN } }),
+      { id: 7, at: AT, kind: 'undone', slot: PAST, ref: 2, reason: 'replaced', by: 6 },
+      expect.objectContaining({ id: 8, kind: 'decision', slot: FATE, mode: 'written', result: { text: OWN } }),
+      { id: 9, at: AT, kind: 'undone', slot: FATE, ref: 3, reason: 'replaced', by: 8 },
+    ])
+    expect(saved.log.filter((entry) => entry.kind === 'decision' && entry.mode === 'written').every((entry) => !('roll' in entry))).toBe(true)
+  })
+
+  it('FR-DEC-018, FEAT-009 D13: Write with another text replaces; the same text, also with spaces at the ends, gives ok without saving or logging; from Write, Choose, Roll and Enter result replace it (AC-5)', async () => {
+    const { session, docs, repository } = await withTables({}, sequence([0, 0, 0]))
+    await session.write(AGE, OWN)
+    await expect(session.write(AGE, OTHER_TEXT)).resolves.toEqual({ ok: true })
+    expect(savedDocument(docs).decisions[AGE]).toEqual(writtenOf(OTHER_TEXT, { logged: 2 }))
+
+    vi.mocked(repository.save).mockClear()
+    const before = ready(session)
+    for (const text of [OTHER_TEXT, `  ${OTHER_TEXT}\n`]) await expect(session.write(AGE, text)).resolves.toEqual({ ok: true })
+    expect(session.getSnapshot()).toBe(before)
+    expect(repository.save).not.toHaveBeenCalled()
+
+    await expect(session.decide(AGE, '3-7')).resolves.toEqual({ ok: true })
+    await session.write(AGE, OWN)
+    await expect(session.roll(AGE)).resolves.toEqual({ ok: true })
+    await session.write(AGE, OWN)
+    await expect(session.enter(AGE, 15)).resolves.toEqual({ ok: true })
+    const saved = savedDocument(docs)
+    expect(saved.decisions[AGE]).toEqual({ mode: 'entered', sum: 15, modifier: 0, total: 15, entry: '13-18', rolls: 1, book: TABLES, logged: 12 })
+    expect(saved.earlier).toBeUndefined()
+    expect(saved.log.filter((entry) => entry.kind === 'undone')).toEqual([
+      { id: 3, at: AT, kind: 'undone', slot: AGE, ref: 1, reason: 'replaced', by: 2 },
+      { id: 5, at: AT, kind: 'undone', slot: AGE, ref: 2, reason: 'replaced', by: 4 },
+      { id: 7, at: AT, kind: 'undone', slot: AGE, ref: 4, reason: 'replaced', by: 6 },
+      { id: 9, at: AT, kind: 'undone', slot: AGE, ref: 6, reason: 'replaced', by: 8 },
+      { id: 11, at: AT, kind: 'undone', slot: AGE, ref: 8, reason: 'replaced', by: 10 },
+      { id: 13, at: AT, kind: 'undone', slot: AGE, ref: 10, reason: 'replaced', by: 12 },
+    ])
+  })
+
+  it('FR-CHG-002, FR-DEC-018: with the core pack, Write on Background 1 applies directly, without a dialog, and Corruption goes from 1 to 0 (AC-5)', async () => {
+    const { session, docs } = await dwarf()
+    expect(corruption(session)).toBe(1)
+    const writing = session.write(D_BACKGROUND, OWN)
+    expect(ready(session).pending).toBeUndefined()
+    expect(corruption(session)).toBe(0)
+    await expect(writing).resolves.toEqual({ ok: true })
+    expect(savedDocument(docs).decisions[D_BACKGROUND]).toEqual({ mode: 'written', text: OWN, book: CORE, logged: 4 })
+    expect(savedDocument(docs).log.slice(3)).toEqual([
+      expect.objectContaining({ id: 4, kind: 'decision', slot: D_BACKGROUND, mode: 'written', source: { book: CORE, abbr: 'CORE', page: 19 }, result: { text: OWN } }),
+      { id: 5, at: AT, kind: 'undone', slot: D_BACKGROUND, ref: 2, reason: 'replaced', by: 4 },
+    ])
+  })
+
+  it('FR-DEC-017, FR-DEC-018, FR-CHG-001, FR-CHG-008, FR-CHG-009, FR-CHG-011, FR-CHG-018: Write on Gnome Past 4 with the Madness rolled waits in pending; Keep changes nothing; Apply sets the Madness aside in one write; Choose 4 then only restores it, without drawing (AC-6)', async () => {
+    const { session, docs, repository, random } = await withTables({}, sequence([3, 3]))
+    await session.roll(PAST)
+    await session.roll(MADNESS)
+    vi.mocked(repository.save).mockClear()
+    const before = ready(session)
+    const pastFour = { mode: 'rolled', dice: [4], modifier: 0, total: 4, entry: '4', rolls: 1, book: TABLES, logged: 1 }
+    const madnessFour = { mode: 'rolled', dice: [4], modifier: 0, total: 4, logged: 2 }
+
+    await expect(session.write(PAST, OWN)).resolves.toEqual(needsConfirmation)
+    const waiting = ready(session)
+    expect(waiting.document).toBe(before.document)
+    expect(waiting.view).toBe(before.view)
+    expect(waiting.pending).toMatchObject({ kind: 'write', key: PAST })
+    expect(waiting.pending!.impact.setAside.map((item) => [item.key, item.decision])).toEqual([[MADNESS, madnessFour]])
+    expect(waiting.pending!.impact.undone).toEqual(pastFour)
+    expect(waiting.pending!.impact.restored).toEqual([])
+    expect(repository.save).not.toHaveBeenCalled()
+
+    // Keep: nada muda nem é gravado.
+    await expect(session.keep()).resolves.toEqual({ ok: true })
+    expect(ready(session).pending).toBeUndefined()
+    expect(ready(session).document).toBe(before.document)
+    expect(ready(session).view).toBe(before.view)
+    expect(repository.save).not.toHaveBeenCalled()
+
+    // Apply: uma gravação, com a escrita, a desfeita e a suspensa.
+    await expect(session.write(PAST, OWN)).resolves.toEqual(needsConfirmation)
+    await expect(session.confirm()).resolves.toEqual({ ok: true })
+    expect(repository.save).toHaveBeenCalledTimes(1)
+    const saved = savedDocument(docs)
+    expect(saved.decisions[PAST]).toEqual(writtenOf(OWN, { rolls: 1, logged: 3 }))
+    expect(saved.decisions[MADNESS]).toEqual({ ...madnessFour, setAside: true })
+    expect(saved.log.slice(2)).toEqual([
+      expect.objectContaining({ id: 3, kind: 'decision', slot: PAST, mode: 'written', result: { text: OWN } }),
+      { id: 4, at: AT, kind: 'undone', slot: PAST, ref: 1, reason: 'replaced', by: 3 },
+      { id: 5, at: AT, kind: 'set-aside', slot: MADNESS, ref: 2, cause: { entry: 3 } },
+    ])
+    expect(madness(session)).toBe(0)
+
+    // Choose 4: diálogo só de restauração, com os valores gravados; Apply sem sorteio.
+    await expect(session.decide(PAST, '4')).resolves.toEqual(needsConfirmation)
+    const { impact } = ready(session).pending!
+    expect(impact.setAside).toEqual([])
+    expect(impact.restored.map((item) => [item.key, item.decision])).toEqual([[MADNESS, madnessFour]])
+    await expect(session.confirm()).resolves.toEqual({ ok: true })
+    expect(slotIn(session, MADNESS)).toMatchObject({ decided: true, result: { faces: [4], total: 4 } })
+    expect(madness(session)).toBe(4)
+    expect(random).toHaveBeenCalledTimes(2)
+  })
+
+  it('FR-DEC-016: the counter goes through Write: Roll (1) → Write (1) → Roll (2) → Write (2); Write on a table never rolled has no rolls (AC-7)', async () => {
+    const { session, docs } = await withTables({}, sequence([2, 4, 1, 0, 0, 0]))
+    await session.roll(AGE)
+    await session.write(AGE, OWN)
+    expect(savedDocument(docs).decisions[AGE]).toEqual(writtenOf(OWN, { rolls: 1, logged: 2 }))
+    await session.roll(AGE)
+    expect(savedDocument(docs).decisions[AGE]).toMatchObject({ mode: 'rolled', rolls: 2, logged: 4 })
+    await session.write(AGE, OTHER_TEXT)
+    expect(savedDocument(docs).decisions[AGE]).toEqual(writtenOf(OTHER_TEXT, { rolls: 2, logged: 6 }))
+    await session.write(PAST, OWN)
+    expect(savedDocument(docs).decisions[PAST]).toEqual(writtenOf(OWN, { logged: 8 }))
+  })
+})

@@ -54,7 +54,7 @@ export type OpenFailure = 'not-found' | 'storage-unavailable' | 'unreadable' | '
 
 /** Mudança calculada à espera de Apply ou Keep (FEAT-011 §3.2; SCR-WEB-007). O documento e a visão na tela são os de antes. */
 export interface PendingChange {
-  kind: 'decide' | 'roll' | 'enter' | 'clear'
+  kind: 'decide' | 'roll' | 'enter' | 'clear' | 'write'
   key: string
   impact: Impact
 }
@@ -92,6 +92,8 @@ export type DecideResult =
   | { ok: false; reason: 'save-failed' }
   // FEAT-011 §3.2: `pending` posto no snapshot, nada aplicado; outro comando com uma pendente; confirm ou keep sem ela.
   | { ok: false; reason: 'needs-confirmation' | 'change-pending' | 'no-pending' }
+  // FEAT-010 §3.2: Write sem texto depois do `trim` (FR-DEC-021).
+  | { ok: false; reason: 'empty-text' }
 
 export type Repository = CharacterRepository<CharacterDocument, CharacterSummary>
 export type LoadRules = (order: string[]) => Promise<Rules>
@@ -105,6 +107,9 @@ export interface SessionDeps {
   /** Padrão: o `crypto` do navegador (ADR-009). Os testes injetam uma sequência fixa. */
   random?: RandomSource
 }
+
+/** Limite do texto de uma decisão escrita, pelo `length` da string (FEAT-010 D3), o mesmo do schema. */
+const WRITTEN_MAX = 2000
 
 const NO_LAST_STEP: LastStepStore = { get: () => undefined, set: () => undefined, forget: () => undefined }
 
@@ -238,11 +243,14 @@ function logDraft(rules: Rules, slot: SlotView, decision: Decision): LogDraft {
   }
   switch (slot.kind) {
     case 'table': {
+      const subject = { id: slot.table.id, name: slot.table.name }
+      // A escrita (FEAT-010 §3.2; FR-LOG-003): sem entrada, a fonte é a da tabela, e o resultado é o texto, sem rolagem.
+      if (decision.mode === 'written') return { ...base, subject, source: sourceOf(slot.table.provenance), result: { text: decision.text } }
       const key = decision.mode === 'chosen' ? (decision.value as string) : (decision as DiceDecision).entry!
       const entry = slot.table.entries.find((candidate) => candidate.key === key)!
       return {
         ...base,
-        subject: { id: slot.table.id, name: slot.table.name },
+        subject,
         source: sourceOf(entry.provenance),
         result: { entry: key, ...(entry.entity && { entity: entry.entity }) },
         ...roll(slot.table.dice),
@@ -528,6 +536,29 @@ export function createCharacterSession({
       const decision = diceDecision(slot, { sum }, priorRolls(before, slot))
       if (!decision) return { ok: false, reason: 'invalid-value' }
       return record(before, slot, 'enter', decision)
+    },
+
+    /**
+     * Write (FEAT-010 §3.2; FR-DEC-003, 021; FR-LOG-003): o resultado escrito pelo jogador numa vaga `table`, pelo
+     * pipeline comum. O texto é aparado nas pontas e guardado como foi digitado; vazio dá `empty-text`, e mais de 2.000
+     * caracteres, `invalid-value` (D3). Com o mesmo texto da ativa escrita, `ok` sem gravar (D5). Leva o livro da versão
+     * vigente e o contador da prévia (FEAT-011 D5). O comando não confere se o Write está em `modes` (D4).
+     */
+    async write(key: string, text: string): Promise<DecideResult> {
+      const refused = blocked()
+      if (refused) return refused
+      const before = snapshot as Ready
+      const slot = liveSlot(key)
+      if (!slot) return { ok: false, reason: 'unknown-slot' }
+      // A `roll-effect` só tem Roll e Enter result (FR-STEP-014).
+      if (slot.kind !== 'table') return { ok: false, reason: 'invalid-value' }
+      const trimmed = text.trim()
+      if (trimmed === '') return { ok: false, reason: 'empty-text' }
+      if (trimmed.length > WRITTEN_MAX) return { ok: false, reason: 'invalid-value' }
+      if (slot.decided && slot.result?.mode === 'written' && slot.result.text === trimmed) return { ok: true }
+      const rolls = priorRolls(before, slot)
+      const decision: Decision = { mode: 'written', text: trimmed, book: slot.table.provenance.book, ...(rolls !== undefined && { rolls }) }
+      return record(before, slot, 'write', decision)
     },
 
     /**

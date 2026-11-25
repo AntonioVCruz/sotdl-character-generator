@@ -259,7 +259,8 @@ const changeTitle = (subject: string, from: string | null, to: string | null) =>
 
 /** Título e ações do diálogo pela variante (ui-design da FEAT-011, Textos, diálogo de impacto). */
 export function impactWording(
-  kind: 'decide' | 'roll' | 'enter' | 'clear',
+  // `write` (FEAT-010) cai no título de troca até a variante dele (ui-design da FEAT-010, T5).
+  kind: 'decide' | 'roll' | 'enter' | 'clear' | 'write',
   slot: SlotView | undefined,
   from: SlotView | undefined,
   to: SlotView | undefined,
