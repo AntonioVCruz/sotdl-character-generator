@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Book, CharacterDocument, Decision, DecisionValue } from '../content'
-import { evaluate, preview, resolve, type Resolved, type Rules, type SlotView } from '.'
+import { evaluate, preview, resolve, rollAllKeys, type Resolved, type Rules, type SlotView } from '.'
 import { parentKey, type CharacterView } from './evaluate'
 
 // Pacote fictício: três etapas, uma ancestralidade com concessões (como o Human) e uma sem (como o Dwarf).
@@ -490,7 +490,7 @@ describe('evaluate: table slots', () => {
   it('FR-DEC-001, FR-DEC-002, FR-DEC-004: every table offers roll and choose, enter only with regime roll; the regime is in the view', () => {
     const view = evaluate(tableRules, tabled())
     expect(tableAt(view, FOE).table).toMatchObject({ regime: 'choice', modes: ['roll', 'choose'] })
-    expect(tableAt(view, PAST).table).toMatchObject({ regime: 'roll-or-choose', modes: ['roll', 'choose'] })
+    expect(tableAt(view, PAST).table).toMatchObject({ regime: 'roll-or-choose', modes: ['roll', 'choose', 'write'] })
     expect(tableAt(view, FATE).table).toMatchObject({ regime: 'roll', modes: ['roll', 'choose', 'enter'] })
   })
 
@@ -915,5 +915,99 @@ describe('evaluate: candidates, active decision and set-aside decisions (FEAT-01
     expect(parentKey('ancestry=dwarf/background=2/insanity')).toBe('ancestry=dwarf/background')
     expect(parentKey('ancestry=dwarf/age')).toBe('ancestry')
     expect(parentKey('ancestry')).toBeNull()
+  })
+})
+
+// FEAT-010 §3.1: a decisão escrita (D1, D2, D6) e as vagas do Roll all undecided (D7, D9), com o pacote fictício das
+// tabelas. Só textos inventados (P22).
+const TEXT = 'Raised by a caravan of tinkers.'
+const written = (text = TEXT, book = BOOK): Decision => ({ mode: 'written', text, book })
+
+describe('evaluate: written decision and Roll all undecided (FEAT-010)', () => {
+  it('FR-DEC-003: Write is a mode of the roll-or-choose table only; choice and roll keep their modes (AC-1)', () => {
+    const view = evaluate(tableRules, tabled())
+    expect([FOE, PAST, FATE].map((key) => [tableAt(view, key).table.regime, tableAt(view, key).table.modes])).toEqual([
+      ['choice', ['roll', 'choose']],
+      ['roll-or-choose', ['roll', 'choose', 'write']],
+      ['roll', ['roll', 'choose', 'enter']],
+    ])
+  })
+
+  it('FR-DEC-003: a written table is decided with the text and no value, counts as decided and applies no entry effect (D6)', () => {
+    const lines = 'Two lines,\nkept as typed.'
+    const view = evaluate(tableRules, tabled({ [PAST]: written(lines) }))
+    const slot = tableAt(view, PAST)
+    expect(slot).toMatchObject({ decided: true, candidate: 0, result: { mode: 'written', text: lines } })
+    expect(slot).not.toHaveProperty('value')
+    expect(view.openDecisions.map((decision) => decision.key)).toEqual([FOE, FATE])
+    expect(view.steps[1]).toMatchObject({ decided: 1, open: 2, total: 3 })
+    // A Past 3 dá Taint +1; escrita, nenhuma parcela de resultado em parte alguma.
+    expect(characteristic(view, 'Taint').composition.map((stage) => stage.stage)).toEqual(['base'])
+    expect(characteristic(view, 'Taint').value).toBe(0)
+    expect(view.setAside).toEqual([])
+  })
+
+  it('FR-DEC-003, FR-STEP-014: a written table opens no roll-effect; a stored dice-effect decision is set aside, not generated (D6)', () => {
+    const view = evaluate(tableRules, tabled({ [PAST]: written(), [MADNESS]: madnessRolled }))
+    expect(slotAt(view, MADNESS)).toBeUndefined()
+    expect(view.openDecisions.map((decision) => decision.key)).not.toContain(MADNESS)
+    expect(asideRows(view)).toEqual([[MADNESS, 0, 'not-generated', PAST, undefined]])
+    expect(characteristic(view, 'Madness').value).toBe(0)
+  })
+
+  it('FR-CHG-018, FR-CHG-015: a written decision is valid by rule (a) only: another version of the same book keeps it; the table from another book sets it aside; back, it is valid again without writing (AC-4)', () => {
+    const document = tabled({ [PAST]: written() })
+    const before = JSON.stringify(document)
+    const valid = { decided: true, candidate: 0, result: { mode: 'written', text: TEXT } }
+    expect(tableAt(evaluate(tableRules, document), PAST)).toMatchObject(valid)
+
+    // Mesmo livro, outras entradas: a 18 sai e a 17 passa a 17-18.
+    const reshaped = pastEntries()
+    delete reshaped['17']
+    delete reshaped['18']
+    const version = evaluate(resolve([tableBook({ ...reshaped, '17-18': {} })], ['test.book']), document)
+    expect(tableAt(version, PAST).table.entries.map((entry) => entry.key)).toEqual(['3', '4', '5-6', '7-16', '17-18'])
+    expect(tableAt(version, PAST)).toMatchObject(valid)
+
+    // A versão vigente da tabela vem de outro livro: a regra (a) falha, a escrita fica suspensa e a vaga reabre.
+    const replaced = evaluate(replacedBy(tableRules, 'table:gnome-past', 'test.supplement'), document)
+    expect(tableAt(replaced, PAST)).toMatchObject({ decided: false })
+    expect(tableAt(replaced, PAST)).not.toHaveProperty('result')
+    expect(replaced.openDecisions.map((decision) => decision.key)).toContain(PAST)
+    expect(asideRows(replaced)).toEqual([[PAST, 0, 'invalid', 'ancestry', PAST]])
+
+    // De volta ao livro: vale de novo; o documento não mudou.
+    expect(tableAt(evaluate(tableRules, document), PAST)).toMatchObject(valid)
+    expect(JSON.stringify(document)).toBe(before)
+    expect(document.log).toEqual([])
+  })
+
+  it('FR-CHG-018: a written decision without book, or from another book, is not active; an older valid candidate is (AC-4)', () => {
+    const unbooked: Decision = { mode: 'written', text: TEXT }
+    expect(tableAt(evaluate(tableRules, tabled({ [PAST]: unbooked })), PAST)).toMatchObject({ decided: false })
+    const view = evaluate(tableRules, withEarlier(tabled({ [PAST]: written(TEXT, OTHER) }), { [PAST]: [chosen('4')] }))
+    expect(tableAt(view, PAST)).toMatchObject({ decided: true, value: '4', candidate: 1, result: { mode: 'chosen', entry: '4' } })
+    expect(asideRows(view)).toEqual([[PAST, 0, 'invalid', 'ancestry', PAST]])
+  })
+
+  it('FR-DEC-023: rollAllKeys gives the open table slots of the step in slot order, of any regime, new or reopened (D7, D9)', () => {
+    // Novas: as três, na ordem das vagas, com a Foe (`choice`).
+    expect(rollAllKeys(evaluate(tableRules, tabled()), 'step:story')).toEqual([FOE, PAST, FATE])
+    // Decididas (escolhida, rolada, escrita) não entram.
+    expect(rollAllKeys(evaluate(tableRules, tabled({ [FOE]: chosen('1-10'), [FATE]: chosen('2-4') })), 'step:story')).toEqual([PAST])
+    expect(rollAllKeys(evaluate(tableRules, tabled({ [PAST]: written(), [FATE]: rolled('5-7', [5], 1) })), 'step:story')).toEqual([FOE])
+    // Reaberta: a Past com candidatos guardados e nenhum válido entra.
+    const reopened = evaluate(tableRules, withEarlier(tabled({ [PAST]: chosen('5-7'), [FOE]: chosen('1-10') }), { [PAST]: [fromOther(chosen('4'))] }))
+    expect(tableAt(reopened, PAST)).toMatchObject({ decided: false })
+    expect(rollAllKeys(reopened, 'step:story')).toEqual([PAST, FATE])
+  })
+
+  it('FR-DEC-023: rollAllKeys leaves out the open roll-effect, and is empty for a step without open tables or an unknown step (D7)', () => {
+    const view = evaluate(tableRules, tabled({ [FOE]: chosen('1-10'), [PAST]: chosen('17'), [FATE]: chosen('2-4') }))
+    expect(slotAt(view, MADNESS)).toMatchObject({ kind: 'roll-effect', decided: false })
+    expect(view.openDecisions.map((decision) => decision.key)).toEqual([MADNESS])
+    expect(rollAllKeys(view, 'step:story')).toEqual([])
+    expect(rollAllKeys(evaluate(tableRules, tabled()), 'step:origin')).toEqual([])
+    expect(rollAllKeys(evaluate(tableRules, tabled()), 'step:unknown')).toEqual([])
   })
 })

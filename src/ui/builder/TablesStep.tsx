@@ -92,7 +92,8 @@ function RollCard({ session, slot, effects, decisions, actions }: {
   // Segmento mostrado, estado local (technical-design da FEAT-009 §3.4; ui-design da FEAT-011, decided-choose): o da
   // decisão, até a pessoa trocá-lo; sem decisão, Choose no regime `choice` e Roll nos demais. Volta ao da decisão quando o
   // snapshot muda o modo dela (uma escolha vira Choose; uma rolagem ou um Enter result vira Roll); o Keep não o muda.
-  const decisionMode = result ? (result.mode === 'chosen' ? 'choose' : 'roll') : undefined
+  // A escrita (FEAT-010) não é Roll nem Choose; o segmento dela entra com a T5.
+  const decisionMode = result && result.mode !== 'written' ? (result.mode === 'chosen' ? 'choose' : 'roll') : undefined
   const [mode, setMode] = useState<'roll' | 'choose'>(decisionMode ?? (table.regime === 'choice' ? 'choose' : 'roll'))
   const [shownFor, setShownFor] = useState(decisionMode)
   if (shownFor !== decisionMode) {
@@ -147,7 +148,8 @@ function RollCard({ session, slot, effects, decisions, actions }: {
   }
 
   const canEnter = table.modes.includes('enter')
-  const entry = result && table.entries.find((candidate) => candidate.key === result.entry)
+  const entry = result && result.mode !== 'written' ? table.entries.find((candidate) => candidate.key === result.entry) : undefined
+  const chosenEntry = result && result.mode !== 'written' ? result.entry : undefined
   // "Reroll {dado}" sobre resultado rolado ou informado; "Roll {dado}" sobre escolhido (ui-design da FEAT-011).
   const decidedActions = result && mode === 'roll' && (
     <DiceActions
@@ -214,7 +216,8 @@ function RollCard({ session, slot, effects, decisions, actions }: {
           }}
         >
           {table.modes
-            .filter((candidate) => candidate !== 'enter')
+            // Enter result fica na linha de ações; o Write (FEAT-010) entra com a T5.
+            .filter((candidate) => candidate !== 'enter' && candidate !== 'write')
             .map((candidate) => (
               <Radio key={candidate} value={candidate} className="segmented-control__segment typography-label" data-focus-ring>
                 {candidate === 'roll' ? 'Roll' : 'Choose'}
@@ -234,12 +237,12 @@ function RollCard({ session, slot, effects, decisions, actions }: {
             <RadioGroup
               className="range-grid"
               aria-labelledby={`${ids.title} ${ids.choose}`}
-              value={result?.entry ?? null}
+              value={chosenEntry ?? null}
               onChange={choose}
             >
               {table.entries.map((candidate) => (
                 <Radio key={candidate.key} value={candidate.key} className="range-grid__entry" data-focus-ring>
-                  {candidate.key === result?.entry && <Check className="icon icon--sm" aria-hidden="true" />}
+                  {candidate.key === chosenEntry && <Check className="icon icon--sm" aria-hidden="true" />}
                   <span className="typography-badge">{rangeText(candidate.key)}</span>{' '}
                   {candidate.entity ? (
                     <span className="typography-body">{candidate.entity.name}</span>
@@ -251,7 +254,7 @@ function RollCard({ session, slot, effects, decisions, actions }: {
             </RadioGroup>
             {resultColumn ?? <p className="typography-meta roll-result__note">{NOT_DECIDED}</p>}
           </>
-        ) : result && result.mode !== 'chosen' ? (
+        ) : result && result.mode !== 'chosen' && result.mode !== 'written' ? (
           <div className="roll-result">
             <ValueBox result={result} />
             {resultColumn}
@@ -278,7 +281,7 @@ function RollCard({ session, slot, effects, decisions, actions }: {
 }
 
 /** Caixa de valor (ui-design, Caixa de valor): o total já está no cálculo, então fica fora da árvore de acessibilidade. */
-function ValueBox({ result }: { result: Exclude<TableResult, { mode: 'chosen' }> | DiceResult }) {
+function ValueBox({ result }: { result: Exclude<TableResult, { mode: 'chosen' | 'written' }> | DiceResult }) {
   return (
     <div className="roll-value" aria-hidden="true">
       <span className="typography-stat-lg roll-value__total">{result.total}</span>

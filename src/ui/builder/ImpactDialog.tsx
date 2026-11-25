@@ -191,6 +191,8 @@ function ColumnValue({ slot, nameOf }: { slot: SlotView | undefined; nameOf: (id
     }
     case 'table': {
       const result = slot.result!
+      // A escrita (FEAT-010): a variante do diálogo é do ui-design da FEAT-010 (T5).
+      if (result.mode === 'written') return null
       const entry = slot.table.entries.find((candidate) => candidate.key === result.entry)
       return (
         <>

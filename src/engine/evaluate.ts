@@ -82,7 +82,7 @@ export interface EntryView {
   effects: EffectView[]
 }
 
-export type TableMode = 'roll' | 'choose' | 'enter'
+export type TableMode = 'roll' | 'choose' | 'enter' | 'write'
 
 export interface TableView {
   id: string
@@ -95,17 +95,21 @@ export interface TableView {
   enterRange: [number, number]
   regime: TableRegime
   field?: SheetField
-  /** Roll e Choose sempre; Enter result também no regime `roll` (D6; FR-DEC-001, 004). */
+  /** Roll e Choose sempre; Enter result também no regime `roll` (D6; FR-DEC-001, 004); Write no `roll-or-choose` (FEAT-010 D4). */
   modes: TableMode[]
   /** Na ordem do início da faixa, nunca na das chaves do objeto (§3.1). */
   entries: EntryView[]
 }
 
-/** O que foi gravado (D3): faces ou soma, modificador, total e entrada nunca são recalculados pelo dado atual. */
+/**
+ * O que foi gravado (D3): faces ou soma, modificador, total e entrada nunca são recalculados pelo dado atual. A escrita
+ * (FEAT-010 D1) tem só o texto do jogador, sem entrada.
+ */
 export type TableResult =
   | { mode: 'rolled'; entry: EntryKey; faces: number[]; modifier: number; total: number; rolls: number }
   | { mode: 'entered'; entry: EntryKey; sum: number; modifier: number; total: number }
   | { mode: 'chosen'; entry: EntryKey }
+  | { mode: 'written'; text: string }
 
 export type DiceResult =
   | { mode: 'rolled'; faces: number[]; modifier: number; total: number }
@@ -117,7 +121,7 @@ export type SlotView =
   // Ajuste de scores (FEAT-008 §3.3): as opções são os atributos vigentes.
   | (Omit<SlotBase, 'value'> &
       Extract<SlotDef, { kind: 'attribute-shift' }> & { options: { id: string; name: string }[]; value?: AttributeShift })
-  // FEAT-009 §3.3: a tabela concedida e o efeito com dado da entrada vigente (D7).
+  // FEAT-009 §3.3: a tabela concedida e o efeito com dado da entrada vigente (D7). Com a ativa escrita, sem `value`.
   | (SlotBase & { kind: 'table'; grant: string; table: TableView; value?: EntryKey; result?: TableResult })
   | (SlotBase & { kind: 'roll-effect'; dice: Dice; enterRange: [number, number]; target: NamedRef; result?: DiceResult })
 
@@ -418,8 +422,10 @@ function resultEffects(slots: SlotView[]): Map<string, ResultEffect[]> {
   const byTarget = new Map<string, ResultEffect[]>()
   const add = (id: string, effect: ResultEffect) => byTarget.set(id, [...(byTarget.get(id) ?? []), effect])
   for (const slot of slots) {
-    if (slot.kind !== 'table' || !slot.result) continue
-    const entry = slot.table.entries.find((candidate) => candidate.key === slot.result!.entry)
+    // A escrita não aplica efeito de entrada (FEAT-010 D6).
+    if (slot.kind !== 'table' || !slot.result || slot.result.mode === 'written') continue
+    const { entry: key } = slot.result
+    const entry = slot.table.entries.find((candidate) => candidate.key === key)
     if (!entry) continue
     const origin: ResultOrigin = {
       kind: 'table',
@@ -568,19 +574,19 @@ function tableView(rules: Rules, table: Resolved<TableItem>, key: string): Table
     enterRange: span(table.dice),
     regime: table.regime,
     ...(table.field !== undefined && { field: table.field }),
-    modes: table.regime === 'roll' ? ['roll', 'choose', 'enter'] : ['roll', 'choose'],
+    modes: table.regime === 'roll' ? ['roll', 'choose', 'enter'] : table.regime === 'roll-or-choose' ? ['roll', 'choose', 'write'] : ['roll', 'choose'],
     entries,
   }
 }
 
 /**
  * Validade na leitura (D3): a decisão vale se (a) `book` é o livro da versão vigente da tabela e (b) a entrada gravada
- * existe nela. Senão é ignorada, mas continua no documento (suspensa, D40), e volta a valer com (a) e (b).
+ * existe nela. Senão é ignorada, mas continua no documento (suspensa, D40), e volta a valer com (a) e (b). A escrita,
+ * que não tem entrada, vale só por (a) (FEAT-010 D2; ADR-004 §1).
  */
 function tableResult(decision: Decision | undefined, table: TableView): TableResult | undefined {
   if (!decision || decision.book !== table.provenance.book) return undefined
-  // FEAT-010 T1: a decisão escrita ainda não vale (a T2 a faz valer pela regra (a)).
-  if (decision.mode === 'written') return undefined
+  if (decision.mode === 'written') return { mode: 'written', text: decision.text }
   const entry = decision.mode === 'chosen' ? decision.value : decision.entry
   if (typeof entry !== 'string' || !table.entries.some((candidate) => candidate.key === entry)) return undefined
   switch (decision.mode) {
@@ -611,8 +617,14 @@ function tableSlots(
   const view = tableView(rules, table, base.key)
   const active = activeOf(character, base.key, checked, (decision) => tableResult(decision, view))
   const result = active?.value
-  const slot: SlotView = { ...base, kind: 'table', table: view, ...decidedBy(active, (picked) => ({ value: picked.entry, result: picked })) }
-  const entry = result && view.entries.find((candidate) => candidate.key === result.entry)
+  const slot: SlotView = {
+    ...base,
+    kind: 'table',
+    table: view,
+    ...decidedBy(active, (picked) => ({ ...(picked.mode !== 'written' && { value: picked.entry }), result: picked })),
+  }
+  // A escrita não abre vaga `roll-effect` (FEAT-010 D6).
+  const entry = result && result.mode !== 'written' ? view.entries.find((candidate) => candidate.key === result.entry) : undefined
   const effects = (entry?.effects ?? []).flatMap((effect): SlotView[] => {
     if (!('dice' in effect)) return []
     const decided = activeOf(character, effect.slot, checked, diceResult)
@@ -630,6 +642,15 @@ function tableSlots(
     ]
   })
   return [slot, ...effects]
+}
+
+/**
+ * As vagas do "Roll all undecided" de uma etapa (FEAT-010 D7, D9; FR-DEC-023), na ordem das vagas: as `table` vivas sem
+ * ativa, novas ou reabertas, de qualquer regime. A `roll-effect` não entra. A FEAT-024 acrescenta o filtro das tabelas
+ * aguardando (FR-DEC-014).
+ */
+export function rollAllKeys(view: CharacterView, stepId: string): string[] {
+  return view.slots.filter((slot) => slot.kind === 'table' && slot.stepId === stepId && !slot.decided).map((slot) => slot.key)
 }
 
 type GrantValue = (grant: string) => { key?: string; value: Value }

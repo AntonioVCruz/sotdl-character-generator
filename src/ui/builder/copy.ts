@@ -155,7 +155,7 @@ export const outOfRange = ([min, max]: [number, number]) => `Enter a value from 
 
 /** Cálculo de um resultado (FR-DEC-007): sempre com o modificador, mesmo +0. */
 export function resultCalc(dice: string, result: TableResult | DiceResult): string {
-  if (result.mode === 'chosen') return ''
+  if (result.mode === 'chosen' || result.mode === 'written') return ''
   const shown = result.mode === 'rolled' ? `Rolled ${dice}: ${result.faces.join(' + ')}` : `Entered for ${dice}: ${result.sum}`
   return `${shown} · Modifier ${formatModifier(result.modifier)} · Total ${result.total}`
 }
@@ -246,7 +246,8 @@ export interface ImpactWording {
 /** Valor curto de uma vaga decidida, para o título: faixa na tabela, total no efeito, nome ou número nas escolhas. */
 function shortValue(slot: SlotView | undefined, nameOf: (id: string) => string): string | null {
   if (!slot?.decided) return null
-  if (slot.kind === 'table') return slot.result ? rangeText(slot.result.entry) : null
+  // A escrita (FEAT-010) não tem faixa; o título dela é do ui-design da FEAT-010 (T5).
+  if (slot.kind === 'table') return slot.result && slot.result.mode !== 'written' ? rangeText(slot.result.entry) : null
   if (slot.kind === 'roll-effect') return slot.result ? String(slot.result.total) : null
   if (slot.kind === 'choose-entity') return nameOf(String(slot.value))
   if (slot.kind === 'attribute-shift') return slot.value ? shiftText(nameOf(slot.value.increase), nameOf(slot.value.decrease)) : null
