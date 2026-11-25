@@ -1,8 +1,7 @@
 # UI Design: FEAT-010 — Write e "Roll all undecided"
 
 > Feature de: `docs/implementation-plan.md` · Par com: `technical-design.md`
-> Telas: SCR-WEB-009, SCR-WEB-007 · Modo: por feature · Status: Draft · Data: 2026-11-24
-> Pendente: pergunta P1 (foco depois do Roll all undecided aplicado), em [Escalações e pendências](#escalações-e-pendências)
+> Telas: SCR-WEB-009, SCR-WEB-007 · Modo: por feature, re-verificado depois da emenda D-ERR do `design.md` (`2312de8`) · Status: Verified · Data: 2026-11-24 · P1 decidida pelo usuário em 2026-11-25
 
 Autoridade: `docs/design.md` e `docs/tokens.json`. Todo valor visual abaixo é token (`--…`) ou classe `.typography-*`; breakpoints pelos `@custom-media` da FEAT-007. Ícones Lucide, decorativos com `aria-hidden`. Texto da interface em inglês; o exemplo de texto escrito é o do AC-3, inventado, nunca do livro (P22). Este documento acrescenta e troca estados das telas da FEAT-009 ([SCR-WEB-009](../FEAT-009-decide-a-table/ui-design.md#scr-web-009--story-step)) e da FEAT-011 ([SCR-WEB-007](../FEAT-011-upstream-change/ui-design.md#scr-web-007--impact-dialog), [SCR-WEB-009](../FEAT-011-upstream-change/ui-design.md#scr-web-009--story-step)), sem editá-los. Fora desta feature: o checkbox "This result has a rules effect" do `roll-card` escrito (FR-DEC-022, FEAT-019), as tabelas aguardando (FEAT-024), as subdecisões de resultado (FEAT-012), "Add text" e o campo "Name" (P9a; FEAT-012).
 
@@ -65,7 +64,7 @@ Not decided yet. Nothing else waits for it.           ← sem decisão; com deci
 
 - erro do `textarea` (`design.md` §4): borda `--color-state-danger`, mensagem em `.typography-meta` `--color-state-danger` com ícone `circle-alert` (`--size-icon-sm`), abaixo da ajuda, ligada ao campo por `aria-describedby`, e `aria-invalid="true"` (o `FieldError` com `validationBehavior="aria"`, como o `EnterForm`);
 - texto: "Write your result first. Spaces and line breaks alone don't count." (diz o que fazer, `design.md` §6);
-- o campo mantém o que foi digitado; **o foco fica onde estava** (em "Use this text", pelo clique). A mensagem fica numa região `aria-live="polite"` que já existe no formulário desde que ele abre, como o anúncio do resumo vivo (FEAT-007): ao aparecer, o leitor de tela a lê sem que o foco se mova;
+- o campo mantém o que foi digitado; **o foco fica onde estava** (em "Use this text", pelo clique). Como o foco não vai até a mensagem, ela é anunciada pela regra do `design.md` §4 (convenção de estados, "error"; emenda D-ERR): uma região `aria-live="polite"` que já está no formulário desde que ele abre, antes de a mensagem aparecer; ao aparecer, o leitor de tela a lê sem que o foco se mova;
 - a mensagem some na próxima edição do campo;
 - as outras recusas (`invalid-value`, `unknown-slot`, `change-pending`) não têm mensagem: a tela não as provoca (limite no campo; página inerte com o diálogo aberto).
 
@@ -150,8 +149,9 @@ A linha do "Roll all undecided" (FR-DEC-023; D7, D9), primeiro elemento do corpo
 - **Cartões:** cada um entra no [rolled](../FEAT-009-decide-a-table/ui-design.md#rolled) da FEAT-009 pelo snapshot: caixa de valor, cálculo, entrada, sem texto, efeitos e "Reroll {dado}" ([decided-roll](../FEAT-011-upstream-change/ui-design.md#decided-roll)). O segmento mostrado passa ao Roll em todos (a regra do segmento da decisão), inclusive na Hatred, que abre em Choose. Nenhum cartão move o foco: a marca de foco de cada cartão é só do clique no próprio cartão. Um rascunho do Write num cartão rolado fica guardado ([write-mode](#write-mode), item 4). Os cartões já decididos não mudam (FR-DEC-023).
 - **Contadores e resumo:** "{d} of {t} decided" e "{n} open" seguem a visão; o resumo vivo anuncia os valores novos (`aria-live="polite"`).
 - **Linha do Roll all:** passa ao [roll-all-none](#roll-all-none) (no MVP, sempre; se o botão continua habilitado, o foco fica nele).
-- **Anúncio**, só na aplicação direta: a região `role="status"` visualmente oculta da linha do Roll all diz "Rolled {n} tables. {Tabela}: {valor}. …", na ordem das vagas, com o valor da [linha de decisão](../FEAT-011-upstream-change/ui-design.md#linha-de-decisão) (faixa e entidade, "7–8 Elves"; "8–12"). Com uma, "Rolled 1 table. {Tabela}: {valor}.". Depois do Apply do diálogo, sem anúncio: o diálogo já listou os resultados.
-- **Foco:** pendente da **P1** ([Escalações e pendências](#escalações-e-pendências)). Recomendação: a frase do motivo do [roll-all-none](#roll-all-none), com `tabindex="-1"`, no quadro seguinte à entrada do estado (direto) ou ao fechamento do diálogo (Apply).
+- **Anúncio**, só na aplicação direta: a região `role="status"` visualmente oculta da linha do Roll all diz "Rolled {n} tables. {Tabela}: {valor}. …", na ordem das vagas, com o valor da [linha de decisão](../FEAT-011-upstream-change/ui-design.md#linha-de-decisão) (faixa e entidade, "7–8 Orcs"; "8–12"). Com uma, "Rolled 1 table. {Tabela}: {valor}.". Depois do Apply do diálogo, sem anúncio: o diálogo já listou os resultados.
+- **Foco** (P1 = A, decisão do usuário de 2026-11-25): vai para a frase do motivo do [roll-all-none](#roll-all-none), "Every table in this step has a result.", que tem `tabindex="-1"` (só recebe foco pelo programa). Na aplicação direta, no quadro seguinte à entrada do estado, pela marca do Roll all no `TablesStep` (consumida quando o snapshot mostra outro `logged` em todas as chaves da marca); pelo Apply do diálogo `roll-all`, pelo `appliedTarget` da moldura, no quadro seguinte ao fechamento ([applied-write-roll-all](#applied-write-roll-all)). Se o botão continuar habilitado (não ocorre no MVP), o foco fica nele. O leitor de tela lê a frase e, em seguida, o anúncio.
+- **Decisão: o foco na frase do motivo.** Motivo: o foco fica onde a pessoa agiu, sem rolar a página; a frase visível confirma o estado novo, e o próximo Tab vai ao primeiro cartão. Alternativas rejeitadas: B, o primeiro cartão rolado, porque a página rola para longe do botão; C, o `h1` da etapa, porque o foco volta para antes do controle acionado; manter o botão focável depois de desabilitado (`aria-disabled`), variante nova do estado desabilitado do `design.md` §4.
 - **`save-failed`:** os cartões continuam rolados, com o alerta da moldura; o fim da gravação não move o foco nem repete o anúncio.
 
 - **Notas responsivas** (acréscimo às da FEAT-009 e da FEAT-011):
@@ -193,7 +193,7 @@ A linha do "Roll all undecided" (FR-DEC-023; D7, D9), primeiro elemento do corpo
   - **Ações:** "Keep current results" · "Apply new results".
 - **"depends on" sem `change`:** com `impact.change` ausente, todo item com `parent` leva a linha "depends on {decisão}", com o rótulo da vaga mãe em `impact.after`. Assim a pessoa vê qual rolagem trouxe cada restaurada ("Insanity 1d6: 4 · rolled" + "depends on Gnome Past").
 - **Keep:** nada é gravado; os dados sorteados são descartados e nenhum contador sobe (technical-design §3.2, item 5). O foco volta ao `opener`, "Roll all undecided", que continua na tela e habilitado (o personagem não mudou).
-- **Apply:** os cartões entram no [roll-all-applied](#roll-all-applied), sem anúncio; o foco vai ao destino da P1.
+- **Apply:** os cartões entram no [roll-all-applied](#roll-all-applied), sem anúncio; no quadro seguinte ao fechamento, o foco vai para a frase do motivo da linha do Roll all ("Every table in this step has a result."), pelo `appliedTarget` da moldura; se o botão continuar habilitado, para ele.
 
 ### written-line
 
@@ -215,7 +215,7 @@ Linhas que se acrescentam à tabela do [applied](../FEAT-011-upstream-change/ui-
 | Variante | Destino do foco | Coerente com |
 | :-- | :-- | :-- |
 | `write` | a coluna de resultado do cartão (`tabindex="-1"`), agora no estado escrito, lida a partir do rótulo | [written](#written) |
-| `roll-all` | o destino da P1 (recomendação: a frase do motivo da linha do Roll all) | [roll-all-applied](#roll-all-applied) |
+| `roll-all` | a frase do motivo da linha do Roll all ("Every table in this step has a result.", `tabindex="-1"`); se o botão continuar habilitado (não ocorre no MVP), o botão | [roll-all-applied](#roll-all-applied) |
 
 O destino sai de `pending.kind`, não de `impact.change`, que o `roll-all` não tem (D8).
 
@@ -268,7 +268,7 @@ Fechados para a FEAT-010, revisados contra a NFR-USE-001 e o `design.md` §6 (te
 | Colunas do Roll all | Current: "{Tabela}: " + "Not decided yet." · New: "{Tabela}: {valor} · rolled" |
 | Linha escrita | "{título} · written" + o texto · "depends on {decisão}" |
 
-Exemplos: "Change Gnome Past from 4 to your own result?" · "Change Gnome Past from your own result to 4?" · "Use these rolls for 2 tables?" · "Dwarf Appearance · written" + "Raised by a caravan of tinkers." · "Rolled 6 tables. Dwarf Hatred: 7–8 Elves. Dwarf Age: 8–12. …".
+Exemplos: "Change Gnome Past from 4 to your own result?" · "Change Gnome Past from your own result to 4?" · "Use these rolls for 2 tables?" · "Dwarf Appearance · written" + "Raised by a caravan of tinkers." · "Rolled 6 tables. Dwarf Hatred: 7–8 Orcs. Dwarf Age: 8–12. …".
 
 ### Nomes novos contra os localizadores do e2e/ (C1)
 
@@ -316,18 +316,12 @@ Conferência do §7 do technical-design com os nomes finais:
 
 ## Escalações e pendências
 
-Nenhuma escalação para a ux-foundations nem para o detailed-design. Uma pergunta aberta:
+Nenhuma escalação para o detailed-design nem pergunta aberta. Decidido pelo usuário em 2026-11-25 sobre a primeira versão (`ec9f3a7`):
 
-- **P1. Foco depois do Roll all undecided aplicado** (direto e pelo Apply do diálogo `roll-all`). O comando muda vários cartões, e o botão acionado fica desabilitado (sai da ordem de foco) assim que o snapshot mostra os resultados. Nenhum ui-design anterior tem foco depois de um comando que muda vários cartões. Em todas as alternativas, nenhum cartão move o foco e, na aplicação direta, a região `role="status"` anuncia "Rolled {n} tables. …".
-  - **A. A frase do motivo, na linha do Roll all** ("Every table in this step has a result.", com `tabindex="-1"`). Prós: o foco fica onde a pessoa agiu, sem rolar a página; a frase visível confirma o estado novo; o próximo Tab vai ao primeiro cartão. Contras: foco num parágrafo (do tipo da coluna de resultado, que já recebe foco pelo programa); o leitor de tela lê a frase e depois o anúncio.
-  - **B. O primeiro cartão rolado** (o `section` do cartão, `tabindex="-1"`, alvo do `?slot=`). Prós: alvo que já existe; a leitura segue pelos cartões rolados. Contras: a página rola até ele, que pode estar longe do botão (Hatred escolhida e Age escrita, por exemplo); o leitor lê o nome da região junto com o anúncio; o foco pula a linha do Roll all.
-  - **C. O `h1` da etapa.** Prós: alvo da moldura (FEAT-007), com os contadores logo abaixo ("6 of 6 decided"). Contras: o foco volta para antes do controle acionado; o `h1` repete a pergunta, não o que aconteceu.
-  - Fora das alternativas: manter o botão focável depois de desabilitado (`aria-disabled` no lugar de `isDisabled`), que seria uma variante nova do estado desabilitado do `design.md` §4 e pediria escalação.
-  - **Recomendação:** A.
-  - **Enquanto pendente:** a SCR-WEB-009 e a SCR-WEB-007 ficam `escalation-pending` no manifesto, e este documento em Draft. Com a decisão, a resposta entra no [roll-all-applied](#roll-all-applied) e na tabela do [applied](#applied-write-roll-all), e o manifesto passa a `designed`.
+- **P1. Foco depois do Roll all undecided aplicado** (direto e pelo Apply do diálogo `roll-all`): alternativa A, a frase do motivo da linha do Roll all, com `tabindex="-1"`. Aplicada no [roll-all-applied](#roll-all-applied), no [by-roll-all](#by-roll-all) e na tabela do [applied-write-roll-all](#applied-write-roll-all). Rejeitadas: B, o primeiro cartão rolado (a página rola para longe do botão), e C, o `h1` da etapa (o foco volta para antes do controle acionado).
+- **D-ERR. Erro anunciado por região viva** (ux-foundations; `design.md` §4, convenção de estados "error" e `text-input / textarea`, e §5): a nota da primeira versão sobre o Enter result virou emenda do `design.md` (`2312de8`). Re-verificado: o [write-refused](#write-refused) segue a regra emendada. O Enter result da FEAT-009 ([entering](../FEAT-009-decide-a-table/ui-design.md#entering)) passou a dizer o anúncio, e o código que ainda não o faz é o [DEF-013](../../defects.md).
 
 Notas, sem emenda:
-- **Enter result pelo clique** (FEAT-009, fora desta feature): o erro "Enter a value from {min} to {max}." aparece sem mover o foco e sem região viva, então o leitor de tela não o anuncia quando o foco está em "Use this result". O Write resolve o mesmo caso com a região `aria-live` do [write-refused](#write-refused); o Enter result fica como está.
 - **Para a FEAT-012** (technical-design §8): se o Roll all passar a rolar vagas filhas abertas no mesmo comando, a quantidade do rótulo e o anúncio seguem o `rollAllKeys`, sem mudar a tela.
 - **Para a FEAT-024:** com tabelas aguardando, o `rollAllKeys` as exclui; o motivo do botão desabilitado, se só restarem tabelas aguardando, é texto dessa feature.
 - **RTM:** recebe este `ui-design.md` na Design ref das FRs que as telas daqui realizam: FR-DEC-002, 003, 016, 018, 021, 023; FR-STEP-012; FR-CHG-001, 003, 004.
