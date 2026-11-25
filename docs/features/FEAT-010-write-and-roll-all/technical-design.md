@@ -3,7 +3,7 @@
 > Feature de: `docs/implementation-plan.md` §3 (E3) e §4 (posição 6) · Épico: E3 Construtor de nível 0
 > Implementa: FR-DEC-003, 021; FR-DEC-023 (parcial: sem tabelas aguardando); FR-DEC-016 (parcial: Roll all undecided); FR-DEC-018 (parcial: Write); FR-STEP-012 (parcial: Write); FR-LOG-003. Saem da linha do plano, por decisão do usuário (D11; emenda 1 do §8): FR-DEC-014 para a FEAT-024; FR-DEC-010, FR-STEP-015 e FR-CONT-008 (parcial: concessões) para a FEAT-012
 > Realiza: UC-005 (2b sem efeito de regra, 2d, 2g, 2e no Write) · UC-006 (1) · Telas: SCR-WEB-009, desenhada pelo ui-design
-> Status: Verified · Data: 2026-11-24 · Decisões do usuário de 2026-11-24: D7 e D11 · Emendas 1 a 3 do §8 aplicadas em 2026-11-24
+> Status: Verified · Data: 2026-11-24 · Decisões do usuário de 2026-11-24: D7 e D11 · Emendas 1 a 3 do §8 aplicadas em 2026-11-24 · Emenda 5 do §8 em 2026-11-24
 
 ## 1. Intenção
 
@@ -218,9 +218,10 @@ sequenceDiagram
    - o título ganha FR-DEC-003.
 3. `src/engine/evaluate.test.ts:493`: `modes` da Gnome Past (`roll-or-choose`) passa a `['roll', 'choose', 'write']`. As l.492 (`choice`) e 494 (`roll`) não mudam.
 4. **Condicional, do ui-design:** se a frase do regime `roll-or-choose` no cartão mudar, mudam `e2e/story.spec.ts:118` e `src/ui/screens/Builder.test.tsx:793`. O ui-design registra o texto, e a mudança vai num commit de documentação antes do teste.
+5. **Só tipo, na T4** (emenda 5 do §8): com `change` opcional no `Impact` (D8), oito linhas deixam de compilar ("possibly undefined"): `src/engine/impact.test.ts:146, 147, 148, 206, 207, 226` e `src/app/session.test.ts:1201, 1229`. Passam a `change!` no lugar de `change`, com as mesmas asserções e os mesmos valores esperados.
 
 Também conferidos:
-- **Sem mudança:** `impact.test.ts`, `session.test.ts`, `changes.test.ts` e os testes do `ImpactDialog` no `Builder.test.tsx`. O `impact` continua aceitando uma chave, e as pendentes das variantes atuais continuam com `key`. Os `toMatchObject` sobre `pending` (`{ kind, key, impact }`) seguem casando. O `core-view.test.ts` não confere `modes`.
+- **Sem mudança:** `changes.test.ts` e os testes do `ImpactDialog` no `Builder.test.tsx`; o `impact.test.ts` e o `session.test.ts`, salvo o tipo do item 5. O `impact` continua aceitando uma chave, e as pendentes das variantes atuais continuam com `key`. Os `toMatchObject` sobre `pending` (`{ kind, key, impact }`) seguem casando. O `core-view.test.ts` não confere `modes`.
 - **Fixtures:** nenhum documento de teste usa `written`. Os pacotes fictícios não mudam.
 - **Nomes novos contra os localizadores de `e2e/` (C1),** com os rascunhos; o ui-design confere de novo com os nomes finais:
   - "Write" (segmento): os localizadores de segmento são `exact` (`story.spec.ts:37`, `:111`, `:112`; `builder-dock.spec.ts:363`) e os de texto, `getByText('Choose', { exact: true })` (`story.spec.ts:36`, `impact.spec.ts:96`). Sem colisão. O único que casa é o da l.114 (item 1);
@@ -243,6 +244,10 @@ Também conferidos:
      - FR-CHG-018, nota: a validade de uma decisão escrita é só a regra (a), porque ela não tem entrada (D2).
   3. **software-architecture, ADR-004 §1** (D2): na frase da validade, "para a decisão escrita, que não tem entrada, só a regra (a)". A ADR não cita a feature (C19). Aplicada (`68dd471`), em §1 ("Suspensa é derivada") e em §3 ("Mais de uma decisão por vaga").
   4. **ux-foundations, `design.md` §4** (`roll-card`, estado aguardando), por decisão do usuário: o exemplo "Waits for Purpose", que contradiz o core (§2), passou ao modelo "Waits for {table}", sem mudar estado, leiaute nem tokens. Aplicada (`a74fb04`); nenhum ui-design usa o estado, então não há re-verificação.
+  5. **detailed-design, divergências achadas antes da implementação** (2026-11-24), por sondas de tipos (`tsc -b` só com as mudanças de tipo das T1 a T4, descartadas). Nenhum contrato muda; mudam a lista de testes do §7 e as listas de leitores do tasks.md:
+     - `change` opcional no `Impact` (D8) quebra oito linhas de teste que o §7 dava como "Sem mudança". Mudam só no tipo, na T4 (§7, item 5);
+     - `'write'` em `PendingChange['kind']` quebra o `ImpactDialog.tsx:63` (parâmetro `kind` do `impactWording`, `copy.ts`), que o tasks.md listava só na T4. Entra na T3, com o mínimo: o parâmetro aceita `'write'`, sem texto novo (a variante `write` do diálogo é da T5);
+     - o `TableResult` escrito quebra o `ColumnValue` do `ImpactDialog.tsx:194, 198` (caso `table`, `result.entry`), que o tasks.md não listava. Decisão do usuário: entra na T2, com o ramo `written` mínimo, sem texto novo.
 - **Sem escalação:**
   - o `design.md` §4 (`roll-card`) mantém o estado "aguardando", porque o estado continua no componente para a FEAT-024 (decisão do usuário); só o exemplo mudou (emenda 4 acima). O checkbox do estado "escrito" é da FEAT-019 (FR-DEC-022), e o ui-design desta feature desenha o estado sem ele;
   - a `ux-foundations.md` (linha da SCR-WEB-009, "aguardando" e "com subdecisão") descreve a tela inteira e continua certa. Os `gaps` do manifesto mudam de dono no ui-design desta feature (§3.3).
