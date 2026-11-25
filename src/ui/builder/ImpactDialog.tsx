@@ -242,7 +242,7 @@ function ColumnValue({ slot, nameOf }: { slot: SlotView | undefined; nameOf: (id
             <span className="typography-badge">{rangeText(result.entry)}</span>
             {entry?.entity && <span className="typography-title-sm">{entry.entity.name}</span>}
           </p>
-          <p className="typography-meta">{result.mode === 'chosen' ? IMPACT_TEXT.chosen : resultCalc(tableDice(slot.table.dice), result)}</p>
+          <p className="typography-meta impact-dialog__calc">{result.mode === 'chosen' ? IMPACT_TEXT.chosen : resultCalc(tableDice(slot.table.dice), result)}</p>
           {entry && entry.effects.length > 0 && <EffectChips texts={entry.effects.map((effect) => effectText(effect))} />}
         </>
       )
@@ -253,7 +253,7 @@ function ColumnValue({ slot, nameOf }: { slot: SlotView | undefined; nameOf: (id
       return (
         <>
           <p className="typography-title-sm">{result.total}</p>
-          <p className="typography-meta">{resultCalc(dice, result)}</p>
+          <p className="typography-meta impact-dialog__calc">{resultCalc(dice, result)}</p>
           <EffectChips texts={[`${slot.target.name} ${formatModifier(result.total)}`]} />
         </>
       )

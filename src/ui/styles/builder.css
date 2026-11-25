@@ -1228,7 +1228,9 @@ a.step-map__item--current:hover {
   gap: var(--space-1-5);
 }
 
-.impact-dialog__mode {
+/* O cálculo e o "Chosen" das colunas Current e New (SCR-WEB-007, item 2; DEF-014), na mesma cor do "Written". */
+.impact-dialog__mode,
+.impact-dialog__calc {
   color: var(--color-text-secondary);
 }
 
