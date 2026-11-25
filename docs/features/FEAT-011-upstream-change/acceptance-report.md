@@ -3,6 +3,7 @@
 > Veredito: Accepted · Data: 2026-11-19
 > Padrão: technical-design.md §6, §5 e §7, ui-design.md @ `1bc9347` · Fontes: srs.md (v1.2.1), use-cases.md (UC-010), ADR-004 (com a emenda `ff9e2f9`), design-manifest.json (SCR-WEB-003, 005, 007, 009)
 > Estado auditado: `1bc9347`, sem correção de teste
+> Re-verificação: Accepted · 2026-11-25 · DEF-014 (ver a seção no fim)
 
 ## Veredito
 
@@ -187,3 +188,57 @@ Test ref acrescentado (`features/FEAT-011-upstream-change/acceptance-report.md`)
 - com `(partial)`: NFR-REL-001, NFR-ACC-001, NFR-USE-001, NFR-L10N-001 e NFR-MAINT-002, NFRs das fundações (plano §6).
 
 A FR-CHG-014 fica sem registro (D9, FEAT-019).
+
+## Re-verificação de 2026-11-25: DEF-014
+
+> Veredito: Accepted · Estado auditado: `e327859` (código de `2a160c2`) · Padrão: technical-design.md §6 e ui-design.md, sem mudança (SCR-WEB-007, item 2; com o rolled, item 1, do ui-design da FEAT-009)
+
+**Veredito.** Aceita de novo. A correção do DEF-014 (`docs/defects.md`) dá `--color-text-secondary` ao cálculo e ao "Chosen" das colunas Current e New do diálogo de impacto, pela mesma regra do "Written". Os dois testes vermelhos falham sem a correção, pelo motivo do defeito, e passam com ela. No navegador, a cor computada é a de `--color-text-secondary` nos 5 projetos, e nenhum outro elemento do diálogo mudou de cor. Todas as suítes passaram nesta execução, sem retry. Nenhum achado novo.
+
+**Padrão.** Os 17 critérios da §6 continuam valendo. A manutenção toca a FR-CHG-003 (o diálogo de impacto). O SCR-WEB-007, item 2, pede o cálculo ou "Chosen" da coluna `table` "em `.typography-meta` `--color-text-secondary`". Para a coluna `roll-effect`, ele diz só "o cálculo", que o rolled da FEAT-009 (item 1) define em `.typography-meta` `--color-text-secondary`. O código põe a classe `impact-dialog__calc` nos dois `p` (`ImpactDialog.tsx:245`, `:256`), e o `builder.css` junta o seletor à regra do `.impact-dialog__mode`, sem token novo.
+
+**Mudanças de teste auditadas** (`1935905..e327859`, só `src/ui/screens/Builder.test.tsx`): 157 linhas acrescentadas, nenhuma removida, nenhum teste existente mudado. Nenhum skip, `.only`, retry, timeout aumentado nem mudança de configuração.
+
+| Teste | Commit | Classe | Auditoria |
+| :-- | :-- | :-- | :-- |
+| DEF-014: coluna `table`, pelo diálogo da rerrolagem da Gnome Past (Choose 4 → Roll 1, com a Madness rolada) | `e4ba028` | teste novo | Fiel ao item 2: o "Chosen" em Current e o cálculo "Rolled d6: 1 · Modifier +0 · Total 1" em New, cada um com `.typography-meta` e exatamente `var(--color-text-secondary)` entre as cores que o `builder.css` lhe dá. |
+| DEF-014: coluna `roll-effect`, com o `ImpactDialog` renderizado direto e o impacto calculado pelo motor sobre a sessão real | `e4ba028` | teste novo | Fiel ao item 2 com o rolled da FEAT-009: o texto inteiro das duas colunas e o cálculo de cada uma com a mesma cor. A montagem direta é declarada no teste, porque nenhum fluxo mostra essa coluna (abaixo). |
+
+**Método do teste e falso verde.** O Vitest não aplica CSS, então o teste lê o `builder.css` do disco e confere as declarações `color` das regras cujo seletor casa com o elemento (`Element.matches`). O teste exige exatamente uma cor, então outra regra do `builder.css` que também casasse o faria falhar. O método não vê:
+- as outras folhas;
+- a cascata entre folhas (especificidade, ordem, `!important`);
+- a condição das `@media`, cujas regras ele conta sempre;
+- estilo inline.
+
+Por isso, ele daria falso verde se outra folha carregada no Builder desse cor ao elemento ou a `.typography-meta` com precedência maior. Hoje não dá. As folhas do Builder são as do `main.tsx` (fontes do `@fontsource`, `tokens.generated.css`, `base.css` e `print.css`), o `home.css` (a Home é import estático do `App.tsx`) e o `builder.css` (o Builder é `lazy`).
+- As fontes não têm `color`.
+- O `.typography-meta` do `tokens.generated.css` só define fonte, tamanho, peso, altura de linha e espaçamento.
+- O `print.css` está todo sob `@media print`.
+- No `base.css` e no `home.css`, nenhuma regra com `color` casa com esses elementos. A única com `.typography-meta` é `.app-header__character .typography-meta`, e o diálogo é renderizado fora do cabeçalho.
+
+A cor computada, medida abaixo, fecha o ponto que o método não alcança.
+
+**Vermelhos conferidos** (produção trocada só no disco, restaurada com `git restore` depois; 3 vezes):
+
+| Teste | Comando | Sem a correção (`ImpactDialog.tsx` e `builder.css` de `349710d`) | Com a correção (`HEAD`) |
+| :-- | :-- | :-- | :-- |
+| DEF-014 (2 testes) | `npx vitest run src/ui/screens/Builder.test.tsx -t "DEF-014"` | 3/3 rodadas com os dois vermelhos: `:1448` ("Chosen: expected [] to deeply equal [ 'var(--color-text-secondary)' ]") e `:1471` ("Rolled 1d6: 4 · Modifier +0 · Total 4: expected [] …"). Nenhuma regra dá cor ao elemento, que é o defeito. | 3/3 verdes |
+
+**Execução independente.** A mesma da re-verificação da FEAT-009 desta data (DEF-013): `npm ci`, `typecheck`, `lint`, `packs:check` e `build` verdes. `npm test` 3 vezes: 385 testes em 21 arquivos, 3/3 verdes. `npx playwright test --retries=0 --workers=1`, uma worker, nos 5 projetos: 204 passaram, 51 pulados, 0 falhas, 0 instáveis, em 9,2 min. CI do `e327859`, run 45687328926: verde, sem linha de flaky.
+
+**Verificação direta.** O mesmo script da re-verificação da FEAT-009 desta data: fora do repositório e descartado, contra os builds de `e327859` e de `39ab5b5` (a produção de `349710d` é a mesma), com o pacote fictício do `Builder.test.tsx` servido por `page.route`. Perfis: Desktop Chrome, Desktop Firefox, Desktop Safari, Pixel 7 e iPhone 15, 3 rodadas no `HEAD`.
+- **Montagem:** Gnome Past escolhida em 4 e Madness rolada em 4, semeadas no IndexedDB. Na Gnome Past, segmento Roll e "Roll d6", com o `crypto.getRandomValues` da página fixo em 0 (face 1), para o diálogo abrir sempre com o mesmo conteúdo. As cores foram lidas por `getComputedStyle` depois da animação de entrada.
+- **Cor do cálculo e do "Chosen":** no `HEAD`, o "Chosen" (Current) e "Rolled d6: 1 · Modifier +0 · Total 1" (New) saem `p.typography-meta.impact-dialog__calc` com `rgb(79, 79, 75)`. É a cor de um elemento com `color: var(--color-text-secondary)` posto na mesma coluna, e a de um `p.typography-meta.impact-dialog__mode` (a classe do "Written") posto ali. O texto padrão é `rgb(26, 26, 24)`. 3/3 nos 5 perfis.
+- **Nenhum outro elemento mudou de cor:** a cor computada dos 51 elementos do diálogo, comparada um a um com o build de `39ab5b5`, nos 5 perfis. Só os dois `p` diferem: `rgb(26, 26, 24)` antes, herdada, e `rgb(79, 79, 75)` agora. Os outros 49 têm a mesma cor, e a estrutura é a mesma.
+- **A sonda discrimina** (C15): contra o build de `39ab5b5`, a comparação com `--color-text-secondary` falha nos 5 perfis nos dois elementos, e só neles.
+
+**Alcance da coluna `roll-effect`.** Nenhum fluxo a mostra, como diz o alcance do DEF-014. Isso foi constatado de três formas:
+- **Pela leitura do código:** o diálogo só abre com `needsDialog`, isto é, com algo posto de lado ou restaurado (`src/engine/impact.ts:160`). As colunas mostram a vaga mudada, e uma `roll-effect` não tem vaga filha (o efeito é `add.dice`, sem `grants`), então mudá-la não põe nada de lado nem restaura nada. O pacote do core não tem `roll-effect`.
+- **Pelo teste:** o do DEF-014 renderiza o `ImpactDialog` direto, e o `impact` do motor sobre a sessão real é aceito pelo diálogo.
+- **Pela sonda:** com a Madness rolada, "Reroll 1d6" e "Enter result" com 6 mudam o resultado ("Entered for 1d6: 6 · Modifier +0 · Total 6") sem abrir diálogo, nos 5 perfis, 3/3.
+
+A cor dessa coluna no navegador, portanto, não foi medida. Ela vem da mesma classe e da mesma regra da coluna `table`, medida acima.
+
+**Achados.** Rework: nenhum. Defeito de design: nenhum. Menores: nenhum.
+
+**RTM.** Sem mudança.
