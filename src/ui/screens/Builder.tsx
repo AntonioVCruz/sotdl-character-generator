@@ -257,8 +257,11 @@ function BuilderReady({ session, snapshot, route }: {
  * troca de modo para Choose, devolve `null`, e a moldura devolve o foco ao `opener` guardado: a entrada acionada, agora
  * marcada.
  */
-function appliedTarget({ kind, key, impact }: PendingChange): HTMLElement | null {
-  const slotKind = (impact.change.from ?? impact.change.to)?.kind
+function appliedTarget(pending: PendingChange): HTMLElement | null {
+  // Roll all undecided (FEAT-010): o `opener` da moldura até o destino do ui-design da FEAT-010 (T5).
+  if (pending.kind === 'roll-all') return null
+  const { kind, key, impact } = pending
+  const slotKind = (impact.change?.from ?? impact.change?.to)?.kind
   if (kind === 'clear') return document.getElementById(slotKind === 'attribute-shift' ? 'adjustment-title' : slotElementId(key))
   if (slotKind === 'choose-entity') return document.getElementById('ancestry-detail-title')
   if (kind === 'roll' || kind === 'enter') return document.getElementById(`${slotElementId(key)}-result`)

@@ -16,6 +16,7 @@ import {
   evaluate,
   impact,
   resolve,
+  rollAllKeys,
   settle,
   type CharacterView,
   type Impact,
@@ -25,7 +26,7 @@ import {
   type SlotView,
 } from '../engine'
 import type { CharacterRepository, LastStepStore } from '../storage'
-import { change, decline, markEntries, nextLogId, type Change, type ChangeRequest } from './changes'
+import { change, decline, markEntries, nextLogId, rollAllChange, type Change, type ChangeRequest, type RolledSlot } from './changes'
 
 // Sessão do personagem (technical-design §3.2): store externo lido pelo React com `useSyncExternalStore`
 // (ADR-006). Os comandos são os únicos que escrevem (ADR-004 §5), e cada decisão registrada vai ao log (FEAT-009 §3.3).
@@ -52,12 +53,13 @@ export interface CharacterSummary {
 
 export type OpenFailure = 'not-found' | 'storage-unavailable' | 'unreadable' | 'pack-load-failed'
 
-/** Mudança calculada à espera de Apply ou Keep (FEAT-011 §3.2; SCR-WEB-007). O documento e a visão na tela são os de antes. */
-export interface PendingChange {
-  kind: 'decide' | 'roll' | 'enter' | 'clear' | 'write'
-  key: string
-  impact: Impact
-}
+/**
+ * Mudança calculada à espera de Apply ou Keep (FEAT-011 §3.2; SCR-WEB-007). O documento e a visão na tela são os de antes.
+ * O Roll all undecided (FEAT-010 D8) é uma pendente só, com a etapa, as vagas na ordem e o `impact` sem `change`.
+ */
+export type PendingChange =
+  | { kind: 'decide' | 'roll' | 'enter' | 'clear' | 'write'; key: string; impact: Impact }
+  | { kind: 'roll-all'; step: string; keys: string[]; impact: Impact }
 
 export type Snapshot =
   | { status: 'loading'; id: string }
@@ -92,8 +94,8 @@ export type DecideResult =
   | { ok: false; reason: 'save-failed' }
   // FEAT-011 §3.2: `pending` posto no snapshot, nada aplicado; outro comando com uma pendente; confirm ou keep sem ela.
   | { ok: false; reason: 'needs-confirmation' | 'change-pending' | 'no-pending' }
-  // FEAT-010 §3.2: Write sem texto depois do `trim` (FR-DEC-021).
-  | { ok: false; reason: 'empty-text' }
+  // FEAT-010 §3.2: Write sem texto depois do `trim` (FR-DEC-021); Roll all sem vaga elegível.
+  | { ok: false; reason: 'empty-text' | 'nothing-to-roll' }
 
 export type Repository = CharacterRepository<CharacterDocument, CharacterSummary>
 export type LoadRules = (order: string[]) => Promise<Rules>
@@ -215,6 +217,9 @@ function isValid(slot: SlotView, value: DecisionValue): boolean {
 }
 
 type DiceSlot = Extract<SlotView, { kind: 'table' | 'roll-effect' }>
+type TableSlot = Extract<SlotView, { kind: 'table' }>
+/** As variantes de uma vaga só (FEAT-011 §3.2). */
+type SlotChangeKind = Exclude<PendingChange['kind'], 'roll-all'>
 /** A decisão com o fato de uma rolagem ou de uma soma informada (FEAT-009 D3). */
 type DiceDecision = Extract<Decision, { mode: 'rolled' | 'entered' }>
 type LogDraft = Omit<DecisionEntry, 'id' | 'at'>
@@ -349,13 +354,27 @@ export function createCharacterSession({
    * antes. Sem nada suspenso nem restaurado, aplica direto (FR-CHG-002); com algo, põe `pending` no snapshot e não grava
    * (FR-CHG-001, FR-DEC-017, FR-STEP-005).
    */
-  function propose(before: Ready, slot: SlotView, kind: PendingChange['kind'], request: ChangeRequest): Promise<DecideResult> {
+  function propose(before: Ready, slot: SlotView, kind: SlotChangeKind, request: ChangeRequest): Promise<DecideResult> {
     const at = now().toISOString()
     const proposed = change(before.rules, before.document, slot, request, at)
+    return offer(before, proposed, at, slot.key, (result) => ({ kind, key: slot.key, impact: result }))
+  }
+
+  /**
+   * Passo 4 do pipeline (FEAT-011 §3.2): o `impact` do candidato contra o documento de antes (`key` nulo no Roll all,
+   * FEAT-010 D8). Sem `needsDialog`, aplica, com o snapshot antes da gravação; com ele, `pending` sem gravar.
+   */
+  function offer(
+    before: Ready,
+    proposed: Change,
+    at: string,
+    key: string | null,
+    pending: (result: Impact) => PendingChange,
+  ): Promise<DecideResult> {
     const candidate = stamped(proposed, before.document, at)
-    const result = impact(before.rules, before.document, candidate, slot.key)
+    const result = impact(before.rules, before.document, candidate, key)
     if (!result.needsDialog) return apply(before, candidate, result.after)
-    set({ ...before, pending: { kind, key: slot.key, impact: result } })
+    set({ ...before, pending: pending(result) })
     proposal = proposed
     return Promise.resolve({ ok: false, reason: 'needs-confirmation' })
   }
@@ -370,7 +389,7 @@ export function createCharacterSession({
   }
 
   /** Registra a decisão nova de uma vaga, com a entrada de log dela, pelo pipeline comum. */
-  function record(before: Ready, slot: SlotView, kind: PendingChange['kind'], decision: Decision): Promise<DecideResult> {
+  function record(before: Ready, slot: SlotView, kind: SlotChangeKind, decision: Decision): Promise<DecideResult> {
     return propose(before, slot, kind, { decision, draft: logDraft(before.rules, slot, decision) })
   }
 
@@ -562,6 +581,30 @@ export function createCharacterSession({
     },
 
     /**
+     * Roll all undecided (FEAT-010 §3.2; FR-DEC-023, 016; D7, D8, D12): rola, num comando, as vagas de `rollAllKeys`, na
+     * ordem, e grava numa escrita (D11 da FEAT-007; C2). Cada uma pela regra "vaga aberta", com `rolls` = o da prévia + 1.
+     * Nenhuma ativa sai; com restauradas, uma pendente `roll-all`. Sem vaga elegível (ou etapa desconhecida),
+     * `nothing-to-roll`. O Apply grava o candidato sem rolar de novo; o Keep descarta os dados (FEAT-011 D1).
+     */
+    async rollAll(stepId: string): Promise<DecideResult> {
+      const refused = blocked()
+      if (refused) return refused
+      const before = snapshot as Ready
+      const keys = rollAllKeys(before.view, stepId)
+      if (keys.length === 0) return { ok: false, reason: 'nothing-to-roll' }
+      const rolled: RolledSlot[] = []
+      for (const key of keys) {
+        const slot = liveSlot(key) as TableSlot
+        const decision = diceDecision(slot, { dice: rollDice(slot.table.dice, random) }, priorRolls(before, slot))
+        if (!decision) return { ok: false, reason: 'invalid-value' }
+        rolled.push({ slot, decision, draft: logDraft(before.rules, slot, decision) })
+      }
+      const at = now().toISOString()
+      const proposed = rollAllChange(before.rules, before.document, rolled, at)
+      return offer(before, proposed, at, null, (result) => ({ kind: 'roll-all', step: stepId, keys, impact: result }))
+    },
+
+    /**
      * Limpa a decisão de uma vaga (FR-STEP-011; FEAT-008 D4): sai só a ativa, que vai ao log como desfeita (`cleared`;
      * FR-LOG-007), e o candidato mais recente que sobra ocupa a vaga (ADR-004 §3). Com dependentes, o diálogo.
      */
@@ -598,8 +641,8 @@ export function createCharacterSession({
       const { pending } = snapshot
       const proposed = proposal
       const kept = settled(snapshot)
-      const from = pending.impact.change.from
-      const refused = proposed?.document.decisions[pending.key]
+      const from = pending.impact.change?.from
+      const refused = pending.kind === 'roll' ? proposed?.document.decisions[pending.key] : undefined
       const [entry] = proposed?.entries ?? []
       if (pending.kind !== 'roll' || !pending.impact.undone || !from || !refused || entry?.kind !== 'decision') {
         set(kept)

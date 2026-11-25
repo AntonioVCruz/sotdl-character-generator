@@ -19,7 +19,7 @@
       Leitor que deixa de compilar (C8; emenda 5 do §8): o `impactWording` (`ImpactDialog.tsx:63`; parâmetro `kind` em `copy.ts`) aceita `'write'`, sem texto novo. A variante `write` do diálogo é da T5 e não é alcançável antes dela.
       Pronto quando: os testes do AC-2 (sessão), AC-3 (sessão, com duas instâncias do app para o recarregar), AC-5, AC-6 (sessão) e AC-7 passam no `session.test.ts`.
 
-- [ ] T4 — Roll all undecided: `impact` de vaga nula, candidato e comando (design §3.1, §3.2; D7, D8, D12; FR-DEC-023, 016; FR-CHG-001)
+- [x] T4 — Roll all undecided: `impact` de vaga nula, candidato e comando (design §3.1, §3.2; D7, D8, D12; FR-DEC-023, 016; FR-CHG-001)
       `impact` com `key` nulo e `change` opcional (`impact.ts`); em `changes.ts`, o candidato do Roll all (uma decisão por vaga pela regra "vaga aberta", entradas `decision` na ordem, `restored` com `cause.entry` da vaga ancestral); `session.rollAll(stepId)` com `nothing-to-roll`; `PendingChange` com a variante `roll-all`; `confirm()` e `keep()` por variante.
       Leitores que deixam de compilar (C8), com o mínimo e sem texto novo: `impact.change` em `session.ts` (`keep()`, l.568), `ImpactDialog.tsx` (l.57, 66) e `Builder.tsx` (`appliedTarget`, l.260–266); `pending.key` e `pending.kind` no `ImpactDialog` e no `impactWording` (`copy.ts:260`). As linhas do item 5 do §7, só tipo (`change!`). A tela ainda não chama o `rollAll`, e o diálogo `roll-all` só chega com a T5.
       Guarda `src/app/changes.perf.test.ts` (design §5).

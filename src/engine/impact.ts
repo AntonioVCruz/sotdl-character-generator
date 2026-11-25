@@ -21,8 +21,11 @@ export interface ImpactItem extends StoredRef {
 }
 
 export interface Impact {
-  /** FR-CHG-003: a vaga que muda, antes e depois; sem `to`, a vaga ficou limpa ou deixou de ser gerada. */
-  change: { key: string; from?: SlotView; to?: SlotView }
+  /**
+   * FR-CHG-003: a vaga que muda, antes e depois; sem `to`, a vaga ficou limpa ou deixou de ser gerada. Sem `change`, a
+   * mudança não é de uma vaga só, como o Roll all undecided (FEAT-010 D8).
+   */
+  change?: { key: string; from?: SlotView; to?: SlotView }
   /** A ativa que sai da própria vaga: vai ao log como desfeita, nunca a `setAside` (D40 (4)). */
   undone?: Decision
   /** FR-CHG-004, 005: ativas antes, guardadas e não ativas depois, na ordem das vagas de antes. */
@@ -33,7 +36,7 @@ export interface Impact {
   recalculated: { attributes: ValueChange[]; characteristics: ValueChange[] }
   /** FR-CHG-012: obrigatórias, vivas e abertas depois, decididas antes. */
   reopened: string[]
-  /** Ativas e iguais antes e depois, fora a vaga da mudança. */
+  /** Ativas e iguais antes e depois, fora a vaga da mudança; com `key` nulo, todas. */
   stays: ImpactItem[]
   /** FR-CHG-001, 002: `setAside` ou `restored` não vazios. */
   needsDialog: boolean
@@ -106,9 +109,16 @@ function changed<T extends { id: string; name: string }>(from: T[], to: T[], pic
 
 /**
  * O que muda de `before` para `after` (ADR-004 §4): avalia os dois documentos e compara as ativas. Mudança de fontes
- * (FEAT-004) passa `afterRules`.
+ * (FEAT-004) passa `afterRules`. Com `key` nulo (FEAT-010 D8), sem `change` nem `undone`, e `stays` com todas as ativas
+ * iguais.
  */
-export function impact(rules: Rules, before: CharacterDocument, after: CharacterDocument, key: string, afterRules: Rules = rules): Impact {
+export function impact(
+  rules: Rules,
+  before: CharacterDocument,
+  after: CharacterDocument,
+  key: string | null,
+  afterRules: Rules = rules,
+): Impact {
   const beforeView = evaluate(rules, before)
   const afterView = evaluate(afterRules, after)
   const was = activesOf(before, beforeView)
@@ -116,8 +126,8 @@ export function impact(rules: Rules, before: CharacterDocument, after: Character
   const storedBefore = storedIn(before)
   const storedAfter = storedIn(after)
 
-  const from = beforeView.slots.find((slot) => slot.key === key)
-  const to = afterView.slots.find((slot) => slot.key === key && slot.decided)
+  const from = key === null ? undefined : beforeView.slots.find((slot) => slot.key === key)
+  const to = key === null ? undefined : afterView.slots.find((slot) => slot.key === key && slot.decided)
   const leaving = [...was.entries()].find(([id, item]) => item.key === key && !storedAfter.has(id))
 
   const setAside: ImpactItem[] = []
@@ -137,7 +147,7 @@ export function impact(rules: Rules, before: CharacterDocument, after: Character
   const reopened = afterView.openDecisions.map((open) => open.key).filter((open) => decidedBefore.has(open))
 
   return {
-    change: { key, ...(from && { from }), ...(to && { to }) },
+    ...(key !== null && { change: { key, ...(from && { from }), ...(to && { to }) } }),
     ...(leaving && { undone: leaving[1].decision }),
     setAside,
     restored,

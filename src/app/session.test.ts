@@ -1198,7 +1198,7 @@ describe('character session: Reroll, mode switch and counter (FEAT-011)', () => 
     expect(waiting.pending).toMatchObject({ kind: 'roll', key: PAST })
     expect(waiting.pending!.impact.setAside.map((item) => item.key)).toEqual([MADNESS])
     expect(waiting.pending!.impact.undone).toEqual(rolledFour)
-    expect(waiting.pending!.impact.change.to).toMatchObject({ result: { mode: 'rolled', faces: [1], entry: '1-3', rolls: 2 } })
+    expect(waiting.pending!.impact.change!.to).toMatchObject({ result: { mode: 'rolled', faces: [1], entry: '1-3', rolls: 2 } })
     expect(repository.save).not.toHaveBeenCalled()
 
     const keeping = session.keep()
@@ -1226,7 +1226,7 @@ describe('character session: Reroll, mode switch and counter (FEAT-011)', () => 
 
     // A próxima rolagem conta a recusada (D5), e o Apply não sorteia de novo (D1).
     await expect(session.roll(PAST)).resolves.toEqual(needsConfirmation)
-    expect(ready(session).pending!.impact.change.to).toMatchObject({ result: { faces: [5], entry: '5-6', rolls: 3 } })
+    expect(ready(session).pending!.impact.change!.to).toMatchObject({ result: { faces: [5], entry: '5-6', rolls: 3 } })
     await expect(session.confirm()).resolves.toEqual({ ok: true })
     expect(random).toHaveBeenCalledTimes(4)
     expect(savedDocument(docs).decisions[PAST]).toEqual({ mode: 'rolled', dice: [5], modifier: 0, total: 5, entry: '5-6', rolls: 3, book: TABLES, logged: 5 })
@@ -1750,5 +1750,224 @@ describe('character session: Write (FEAT-010)', () => {
     expect(savedDocument(docs).decisions[AGE]).toEqual(writtenOf(OTHER_TEXT, { rolls: 2, logged: 6 }))
     await session.write(PAST, OWN)
     expect(savedDocument(docs).decisions[PAST]).toEqual(writtenOf(OWN, { logged: 8 }))
+  })
+})
+
+// FEAT-010 T4: Roll all undecided (technical-design §3.2; D7, D8, D12), sempre com sorteio fixo (C13).
+const D_HATRED = 'ancestry=dwarf/hated-creature'
+const D_PERSONALITY = 'ancestry=dwarf/personality'
+const STORY = 'step:story'
+const dwarfRolled = (dice: number[], entry: string, logged: number) => ({
+  mode: 'rolled',
+  dice,
+  modifier: 0,
+  total: dice.reduce((sum, face) => sum + face, 0),
+  entry,
+  rolls: 1,
+  book: CORE,
+  logged,
+})
+
+/** Dwarf do core sem nada decidido na Story (entrada 1 do log: a ancestralidade), com sorteio fixo. */
+async function dwarfStory(random = sequence([])) {
+  const memory = memoryRepository()
+  memory.docs.set('id-1', stored({}, [CORE]))
+  const session = createApp({ repository: memory.repository, ...deps, random, lastStep: memoryLastStep() }).createSession()
+  await session.open('id-1')
+  await session.decide('ancestry', 'ancestry:dwarf')
+  vi.mocked(memory.repository.save).mockClear()
+  return { ...memory, session, random }
+}
+
+/** O pacote fictício de tabelas, com relógio e sorteio próprios. */
+async function gnomeTables(decisions: Record<string, Decision>, random: ReturnType<typeof sequence>, clock = { time: AT }) {
+  const memory = memoryRepository()
+  memory.docs.set('id-1', { ...stored({}, [TABLES]), decisions: { ancestry: { mode: 'chosen', value: 'ancestry:gnome' }, ...decisions } })
+  const session = createApp({ repository: memory.repository, ...deps, now: () => new Date(clock.time), random, lastStep: memoryLastStep() }).createSession()
+  await session.open('id-1')
+  vi.mocked(memory.repository.save).mockClear()
+  return { ...memory, session, clock }
+}
+
+describe('character session: Roll all undecided (FEAT-010)', () => {
+  it('FR-DEC-023, FR-DEC-016, NFR-REL-001: with the Dwarf, the six Story tables are rolled in slot order, Hatred included, in one save, with six decision entries in sequence; the view changes before the save, and Story is done (AC-8)', async () => {
+    // Hatred d20: 5; Age 3d6: 3 + 5 + 2; Build: 1 + 1 + 1; Appearance: 6 + 6 + 6; Background d20: 10; Personality: 2 + 2 + 2.
+    const random = sequence([4, 2, 4, 1, 0, 0, 0, 5, 5, 5, 9, 1, 1, 1])
+    const { session, docs, repository } = await dwarfStory(random)
+    const release = holdNextSave(repository)
+    const rolling = session.rollAll(STORY)
+    expect(ready(session).save).toBe('saving')
+    expect(ready(session).pending).toBeUndefined()
+    expect(ready(session).view.steps.find((step) => step.id === STORY)?.status).toBe('done')
+    expect(savedDocument(docs).decisions[D_HATRED]).toBeUndefined()
+    release()
+    await expect(rolling).resolves.toEqual({ ok: true })
+
+    expect(repository.save).toHaveBeenCalledTimes(1)
+    expect(random).toHaveBeenCalledTimes(14)
+    const saved = savedDocument(docs)
+    expect(saved.decisions).toEqual({
+      ancestry: { mode: 'chosen', value: 'ancestry:dwarf', logged: 1 },
+      [D_HATRED]: dwarfRolled([5], '5-6', 2),
+      [D_AGE]: dwarfRolled([3, 5, 2], '8-12', 3),
+      [D_BUILD]: dwarfRolled([1, 1, 1], '3', 4),
+      [D_APPEARANCE]: dwarfRolled([6, 6, 6], '16-18', 5),
+      [D_BACKGROUND]: dwarfRolled([10], '10', 6),
+      [D_PERSONALITY]: dwarfRolled([2, 2, 2], '5-6', 7),
+    })
+    expect(saved.log.slice(1).map((entry) => [entry.id, entry.kind, entry.slot, entry.kind === 'decision' && entry.mode])).toEqual([
+      [2, 'decision', D_HATRED, 'rolled'],
+      [3, 'decision', D_AGE, 'rolled'],
+      [4, 'decision', D_BUILD, 'rolled'],
+      [5, 'decision', D_APPEARANCE, 'rolled'],
+      [6, 'decision', D_BACKGROUND, 'rolled'],
+      [7, 'decision', D_PERSONALITY, 'rolled'],
+    ])
+    expect(saved.log[2]).toMatchObject({ subject: { name: 'Dwarf Age' }, result: { entry: '8-12' }, roll: { count: 3, sides: 6, modifier: 0, total: 10, rolls: 1, faces: [3, 5, 2] } })
+    expect(saved.revision).toBe(3)
+    expect(ready(session).view.openDecisions).toEqual([])
+  })
+
+  it('FR-DEC-023: with the Hatred chosen and the Age written, only the other four are rolled, and the two decided ones stay as they were, with no undone (AC-8)', async () => {
+    const random = sequence([0, 0, 0, 5, 5, 5, 9, 1, 1, 1])
+    const { session, docs } = await dwarfStory(random)
+    await session.decide(D_HATRED, '1-2')
+    await session.write(D_AGE, OWN)
+    const before = savedDocument(docs)
+    await expect(session.rollAll(STORY)).resolves.toEqual({ ok: true })
+    const saved = savedDocument(docs)
+    expect(saved.decisions[D_HATRED]).toEqual(before.decisions[D_HATRED])
+    expect(saved.decisions[D_AGE]).toEqual({ mode: 'written', text: OWN, book: CORE, logged: 3 })
+    expect([D_BUILD, D_APPEARANCE, D_BACKGROUND, D_PERSONALITY].map((key) => saved.decisions[key])).toEqual([
+      dwarfRolled([1, 1, 1], '3', 4),
+      dwarfRolled([6, 6, 6], '16-18', 5),
+      dwarfRolled([10], '10', 6),
+      dwarfRolled([2, 2, 2], '5-6', 7),
+    ])
+    expect(saved.log.slice(3).map((entry) => [entry.id, entry.kind, entry.slot])).toEqual([
+      [4, 'decision', D_BUILD],
+      [5, 'decision', D_APPEARANCE],
+      [6, 'decision', D_BACKGROUND],
+      [7, 'decision', D_PERSONALITY],
+    ])
+    expect(random).toHaveBeenCalledTimes(10)
+  })
+
+  it('FR-DEC-023, FR-CHG-009: with nothing to roll, or an unknown step, nothing-to-roll; with a pending change, change-pending; nothing is drawn or saved (AC-8)', async () => {
+    const { session, repository, random } = await dwarfStory(sequence([4, 2, 4, 1, 0, 0, 0, 5, 5, 5, 9, 1, 1, 1]))
+    await expect(session.rollAll('step:nowhere')).resolves.toEqual({ ok: false, reason: 'nothing-to-roll' })
+    await expect(session.rollAll('step:ancestry')).resolves.toEqual({ ok: false, reason: 'nothing-to-roll' })
+    expect(random).not.toHaveBeenCalled()
+    await session.rollAll(STORY)
+    vi.mocked(repository.save).mockClear()
+
+    const done = ready(session)
+    await expect(session.rollAll(STORY)).resolves.toEqual({ ok: false, reason: 'nothing-to-roll' })
+    expect(session.getSnapshot()).toBe(done)
+    await expect(session.decide('ancestry', 'ancestry:human')).resolves.toEqual(needsConfirmation)
+    const waiting = ready(session)
+    await expect(session.rollAll(STORY)).resolves.toEqual({ ok: false, reason: 'change-pending' })
+    expect(session.getSnapshot()).toBe(waiting)
+    expect(repository.save).not.toHaveBeenCalled()
+    expect(random).toHaveBeenCalledTimes(14)
+  })
+
+  it('FR-DEC-023, FR-STEP-014: tables of any regime are rolled in slot order, and the open roll-effect is not (AC-8, D7)', async () => {
+    // Age 3d6, Fate 3d6, Omen 3d6+1, Foe d20; a Past 4 escolhida deixa a Madness aberta.
+    const random = sequence([0, 0, 0, 1, 1, 1, 2, 2, 2, 11])
+    const { session, docs } = await gnomeTables({ [PAST]: chosenEntry('4') }, random)
+    await expect(session.rollAll(STORY)).resolves.toEqual({ ok: true })
+    const saved = savedDocument(docs)
+    expect(saved.log.map((entry) => entry.slot)).toEqual([AGE, FATE, OMEN, FOE])
+    expect(saved.decisions[FOE]).toEqual({ mode: 'rolled', dice: [12], modifier: 0, total: 12, entry: '11-20', rolls: 1, book: TABLES, logged: 4 })
+    expect(saved.decisions[OMEN]).toMatchObject({ dice: [3, 3, 3], modifier: 1, total: 10, entry: '4-11' })
+    expect(saved.decisions[MADNESS]).toBeUndefined()
+    expect(slotIn(session, MADNESS)).toMatchObject({ decided: false })
+    await expect(session.rollAll(STORY)).resolves.toEqual({ ok: false, reason: 'nothing-to-roll' })
+    expect(random).toHaveBeenCalledTimes(10)
+  })
+
+  it('FR-DEC-023, FR-DEC-016, FR-CHG-019: a slot reopened by a new version of the pack is rolled; the new one takes decisions[k], the set-aside one goes ahead in earlier[k] with its mark and no entry about it, and rolls = its own + 1 (AC-9)', async () => {
+    const old: Decision = { mode: 'rolled', dice: [2, 2, 2], modifier: 0, total: 6, entry: '3-7', rolls: 2, book: TABLES, logged: 1 }
+    const memory = memoryRepository()
+    memory.docs.set('id-1', {
+      ...stored({}, [TABLES]),
+      decisions: {
+        ancestry: { mode: 'chosen', value: 'ancestry:gnome' },
+        [AGE]: old,
+        [FATE]: chosenEntry('3-10'),
+        [OMEN]: chosenEntry('4-11'),
+        [PAST]: chosenEntry('1-3'),
+        [FOE]: chosenEntry('1-10'),
+      },
+    })
+    // A versão nova tira a entrada 3-7 da Age; a abertura assenta a marca e grava (FR-CONT-016).
+    const random = sequence([3, 3, 3])
+    const serving = vi.fn(async (url: string) => {
+      const body = url === '/packs/test.tables.json' ? VERSION.removed : files[url]
+      return { ok: body !== undefined, status: body === undefined ? 404 : 200, json: async () => body }
+    })
+    const session = createApp({ ...deps, repository: memory.repository, packs: { baseUrl: '/', fetch: serving }, random, lastStep: memoryLastStep() }).createSession()
+    await session.open('id-1')
+    expect(slotIn(session, AGE)).toMatchObject({ decided: false })
+    expect(savedDocument(memory.docs).decisions[AGE]).toEqual({ ...old, setAside: true })
+    const logged = savedDocument(memory.docs).log.length
+
+    await expect(session.rollAll(STORY)).resolves.toEqual({ ok: true })
+    const saved = savedDocument(memory.docs)
+    expect(saved.decisions[AGE]).toEqual({ mode: 'rolled', dice: [4, 4, 4], modifier: 0, total: 12, entry: '7-12', rolls: 3, book: TABLES, logged: logged + 1 })
+    expect(saved.earlier).toEqual({ [AGE]: [{ ...old, setAside: true }] })
+    expect(saved.log.slice(logged)).toEqual([expect.objectContaining({ id: logged + 1, kind: 'decision', slot: AGE, mode: 'rolled' })])
+    expect(slotIn(session, AGE)).toMatchObject({ decided: true, value: '7-12', candidate: 0 })
+  })
+
+  it('FR-DEC-023, FR-CHG-001, FR-CHG-009, FR-CHG-018: with a draw that brings back the stored Madness, one pending roll-all without change; Keep saves nothing and raises no counter; Apply saves the candidate without drawing again, with the time of the Apply (AC-10)', async () => {
+    const random = sequence([3, 3, 3])
+    const { session, docs, repository, clock } = await gnomeTables(
+      { [AGE]: chosenEntry('3-7'), [FATE]: chosenEntry('3-10'), [OMEN]: chosenEntry('4-11'), [FOE]: chosenEntry('1-10') },
+      random,
+    )
+    await session.decide(PAST, '4')
+    await session.roll(MADNESS)
+    await expect(session.clear(PAST)).resolves.toEqual(needsConfirmation)
+    await session.confirm()
+    expect(savedDocument(docs).decisions[MADNESS]).toEqual({ mode: 'rolled', dice: [4], modifier: 0, total: 4, logged: 2, setAside: true })
+    vi.mocked(repository.save).mockClear()
+    const before = ready(session)
+
+    await expect(session.rollAll(STORY)).resolves.toEqual(needsConfirmation)
+    const waiting = ready(session)
+    expect(waiting.document).toBe(before.document)
+    expect(waiting.view).toBe(before.view)
+    expect(waiting.pending).toMatchObject({ kind: 'roll-all', step: STORY, keys: [PAST] })
+    const { impact } = waiting.pending!
+    expect(impact).not.toHaveProperty('change')
+    expect(impact).not.toHaveProperty('undone')
+    expect(impact.setAside).toEqual([])
+    expect(impact.restored.map((item) => [item.key, item.decision])).toEqual([[MADNESS, { mode: 'rolled', dice: [4], modifier: 0, total: 4, logged: 2 }]])
+    expect(repository.save).not.toHaveBeenCalled()
+
+    // Keep: nada gravado, nenhum contador sobe.
+    await expect(session.keep()).resolves.toEqual({ ok: true })
+    expect(ready(session).pending).toBeUndefined()
+    expect(ready(session).document).toBe(before.document)
+    expect(repository.save).not.toHaveBeenCalled()
+
+    // De novo (o sorteio dá 4 outra vez), e Apply mais tarde: uma gravação, sem sortear de novo.
+    await expect(session.rollAll(STORY)).resolves.toEqual(needsConfirmation)
+    clock.time = LATER_AT
+    await expect(session.confirm()).resolves.toEqual({ ok: true })
+    expect(random).toHaveBeenCalledTimes(3)
+    expect(repository.save).toHaveBeenCalledTimes(1)
+    const saved = savedDocument(docs)
+    expect(saved.decisions[PAST]).toEqual({ mode: 'rolled', dice: [4], modifier: 0, total: 4, entry: '4', rolls: 1, book: TABLES, logged: 5 })
+    expect(saved.decisions[MADNESS]).toEqual({ mode: 'rolled', dice: [4], modifier: 0, total: 4, logged: 2 })
+    expect(saved.log.slice(4)).toEqual([
+      expect.objectContaining({ id: 5, at: LATER_AT, kind: 'decision', slot: PAST, mode: 'rolled' }),
+      { id: 6, at: LATER_AT, kind: 'restored', slot: MADNESS, ref: 2, cause: { entry: 5 } },
+    ])
+    expect(saved.updatedAt).toBe(LATER_AT)
+    expect(saved.revision).toBe(before.document.revision + 1)
+    expect(madness(session)).toBe(4)
   })
 })

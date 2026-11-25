@@ -54,7 +54,8 @@ function ImpactContent({ pending, nameOf, onKeep, onApply }: {
   onApply: () => void
 }) {
   const { impact } = pending
-  const { from, to } = impact.change
+  // Sem `change` no Roll all undecided (FEAT-010 D8); a variante `roll-all` é do ui-design da FEAT-010 (T5).
+  const { from, to } = impact.change ?? {}
   const slot = from ?? to
   const title = useRef<HTMLHeadingElement>(null)
   // Foco ao abrir no título, nunca em Apply (ui-design, dialog-open): o diálogo é para ler antes de decidir.
@@ -63,7 +64,7 @@ function ImpactContent({ pending, nameOf, onKeep, onApply }: {
   const wording = impactWording(pending.kind, slot, from, to, nameOf)
   const recalculated = [...impact.recalculated.attributes, ...impact.recalculated.characteristics]
   const parentTitle = (item: ImpactItem, view: CharacterView) => {
-    if (item.parent === null || item.parent === impact.change.key) return undefined
+    if (item.parent === null || item.parent === impact.change?.key) return undefined
     const parent = view.slots.find((candidate) => candidate.key === item.parent)
     return parent && decisionTitle(toOpenDecision(parent), nameOf)
   }

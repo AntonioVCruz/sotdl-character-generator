@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { characterDocumentSchema, type Book, type CharacterDocument, type Decision, type LogEntry } from '../content'
 import { evaluate, resolve, settle, type SlotView } from '../engine'
-import { change, nextLogId, place, remove, type DecisionDraft } from './changes'
+import { change, nextLogId, place, remove, rollAllChange, type DecisionDraft } from './changes'
 
 // Pacote fictício (FEAT-011 §3.2, AC-10): a Gnome concede duas tabelas, e a entrada 17 da Past tem um efeito de dado
 // (a neta `roll-effect`); a Troll concede um valor a escolher.
@@ -299,5 +299,62 @@ describe('log entries of a change (FEAT-011 §3.2, "Entradas de log novas")', ()
     expect(result.document).toMatchObject({ revision: gnome.revision, updatedAt: gnome.updatedAt })
     expect(nextLogId(result.document)).toBe(8)
     expect(nextLogId(character({}))).toBe(1)
+  })
+})
+
+// FEAT-010 §3.2, `rollAll`, passos 2 e 3 (D8, D12): o candidato do Roll all undecided, com faces fixas.
+const rolledEntry = (value: string, dice: number[], rolls = 1): Decision => ({
+  mode: 'rolled',
+  dice,
+  modifier: 0,
+  total: dice.reduce((sum, face) => sum + face, 0),
+  entry: value,
+  rolls,
+  book: 'test.book',
+})
+const rolledIn = (document: CharacterDocument, key: string, decision: Decision) => ({ slot: slotOf(document, key), decision, draft: draft(key, '1') })
+
+describe('the Roll all undecided candidate (FEAT-010 §3.2)', () => {
+  it('FR-DEC-023, FR-CHG-018: one decision per open slot, in order, each with the logged of its entry; nothing undone; the restored child points to the entry of the rolled slot that is its ancestor (D12, AC-10)', () => {
+    // A Past sem decisão e a neta guardada e marcada (como depois de um `clear` da Past).
+    const open = settle(rules, character({ [ANCESTRY]: entity('ancestry:gnome', 1), [MADNESS]: madness(4) }, undefined, logOf([1, ANCESTRY], [4, MADNESS]))).document
+    expect(open.decisions[MADNESS]).toEqual(marked(madness(4)))
+    const before = JSON.stringify(open)
+
+    const result = rollAllChange(rules, open, [rolledIn(open, FOE, rolledEntry('1-20', [7])), rolledIn(open, PAST, rolledEntry('17', [6, 6, 5]))], AT)
+    expect(result.document.decisions[FOE]).toEqual({ ...rolledEntry('1-20', [7]), logged: 5 })
+    expect(result.document.decisions[PAST]).toEqual({ ...rolledEntry('17', [6, 6, 5]), logged: 6 })
+    expect(result.document.decisions[MADNESS]).toEqual(madness(4))
+    expect(result.document).not.toHaveProperty('earlier')
+    // A Foe vem primeiro: a causa da Madness é a Past, a ancestral dela, e não a primeira rolada.
+    expect(shapes(result.entries)).toEqual([
+      { id: 5, kind: 'decision', slot: FOE },
+      { id: 6, kind: 'decision', slot: PAST },
+      { id: 7, kind: 'restored', slot: MADNESS, ref: 4, cause: { entry: 6 } },
+    ])
+    expect(result.entries.some((logged) => logged.kind === 'undone' || logged.kind === 'set-aside')).toBe(false)
+    expect(result.settled.restored.map((item) => item.key)).toEqual([MADNESS])
+    expect(result.document.log).toEqual([...open.log, ...result.entries])
+    expect(characterDocumentSchema.parse(result.document)).toEqual(result.document)
+    // Puro: o documento recebido não muda, e revisão e `updatedAt` são da sessão.
+    expect(JSON.stringify(open)).toBe(before)
+    expect(result.document).toMatchObject({ revision: open.revision, updatedAt: open.updatedAt })
+  })
+
+  it('FR-DEC-023, FR-CHG-019: in a reopened slot the rolled one takes decisions[k] and the set-aside one goes to the front of earlier[k] with its mark, with no entry about it (AC-9)', () => {
+    const reopened = character(
+      { [ANCESTRY]: entity('ancestry:gnome', 1), [FOE]: entry('1-20', 2), [PAST]: marked({ ...rolledEntry('18', [6, 6, 6], 2), book: 'other.book', logged: 4 }) },
+      { [PAST]: [marked(entry('3-4', 3, 'other.book'))] },
+      logOf([1, ANCESTRY], [2, FOE], [3, PAST], [4, PAST]),
+    )
+    expect(slotOf(reopened, PAST).decided).toBe(false)
+    const result = rollAllChange(rules, reopened, [rolledIn(reopened, PAST, rolledEntry('5-16', [3, 3, 3], 3))], AT)
+    expect(result.document.decisions[PAST]).toEqual({ ...rolledEntry('5-16', [3, 3, 3], 3), logged: 5 })
+    expect(result.document.earlier).toEqual({
+      [PAST]: [marked({ ...rolledEntry('18', [6, 6, 6], 2), book: 'other.book', logged: 4 }), marked(entry('3-4', 3, 'other.book'))],
+    })
+    expect(result.document.decisions[FOE]).toEqual(entry('1-20', 2))
+    expect(shapes(result.entries)).toEqual([{ id: 5, kind: 'decision', slot: PAST }])
+    expect(settle(rules, result.document).document).toBe(result.document)
   })
 })

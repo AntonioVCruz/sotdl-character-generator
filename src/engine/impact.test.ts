@@ -143,9 +143,9 @@ describe('impact: switching the ancestry (FEAT-011 AC-3)', () => {
 
   it('FR-CHG-003: the change has the slot before and after; the value that leaves its own slot is undone, never set aside', () => {
     const result = impact(rules, gnome, toTroll, ANCESTRY)
-    expect(result.change.key).toBe(ANCESTRY)
-    expect(result.change.from).toMatchObject({ key: ANCESTRY, value: 'ancestry:gnome' })
-    expect(result.change.to).toMatchObject({ key: ANCESTRY, value: 'ancestry:troll' })
+    expect(result.change!.key).toBe(ANCESTRY)
+    expect(result.change!.from).toMatchObject({ key: ANCESTRY, value: 'ancestry:gnome' })
+    expect(result.change!.to).toMatchObject({ key: ANCESTRY, value: 'ancestry:troll' })
     expect(result.undone).toEqual(entity('ancestry:gnome', 1))
     expect(result.setAside.map((item) => item.key)).not.toContain(ANCESTRY)
   })
@@ -203,8 +203,8 @@ describe('impact: replacing and clearing a table (FEAT-011 AC-3)', () => {
     expect(rows(result.setAside)).toEqual([[MADNESS, madness(4, 5)]])
     expect(result.setAside[0].parent).toBe(PAST)
     expect(result.undone).toEqual(entry('17', 4))
-    expect(result.change.from).toMatchObject({ value: '17' })
-    expect(result.change.to).toMatchObject({ value: '5-16' })
+    expect(result.change!.from).toMatchObject({ value: '17' })
+    expect(result.change!.to).toMatchObject({ value: '5-16' })
     // Na ordem das vagas: as concessões da ancestralidade vêm logo depois dela.
     expect(result.stays.map((item) => item.key)).toEqual([ANCESTRY, FOE, ADJUST])
     expect(result.needsDialog).toBe(true)
@@ -223,7 +223,7 @@ describe('impact: replacing and clearing a table (FEAT-011 AC-3)', () => {
     const cleared = { ...gnome, decisions: Object.fromEntries(Object.entries(gnome.decisions).filter(([key]) => key !== PAST)) }
     const result = impact(rules, gnome, cleared, PAST)
     expect(result.reopened).toEqual([PAST])
-    expect(result.change.from).toMatchObject({ key: PAST, decided: true })
+    expect(result.change!.from).toMatchObject({ key: PAST, decided: true })
     expect(result.change).not.toHaveProperty('to')
     expect(result.undone).toEqual(entry('17', 4))
     expect(rows(result.setAside)).toEqual([[MADNESS, madness(4, 5)]])
@@ -271,6 +271,39 @@ describe('impact: replacing and clearing a table (FEAT-011 AC-3)', () => {
     const snapshot = JSON.stringify([gnome, after])
     impact(rules, gnome, after, PAST)
     expect(JSON.stringify([gnome, after])).toBe(snapshot)
+  })
+})
+
+// FEAT-010 D8: a mudança que não é de uma vaga só (o Roll all undecided) passa `key` nulo.
+describe('impact: a change without a single slot (FEAT-010 D8)', () => {
+  // A Past sem decisão, com a neta guardada e marcada (como depois de um `clear` da Past).
+  const open = settle(rules, character(Object.fromEntries(Object.entries(gnome.decisions).filter(([key]) => key !== PAST)))).document
+
+  it('FR-DEC-023, FR-CHG-001, FR-CHG-018: with key null there is no change and no undone; a rolled table that brings back a stored child lists it in restored, and stays has every equal active (AC-10)', () => {
+    expect(open.decisions[MADNESS]).toEqual({ ...madness(4, 5), setAside: true })
+    const rolled = { ...open, decisions: { ...open.decisions, [PAST]: entry('17', 6) } }
+    const result = impact(rules, open, rolled, null)
+    expect(result).not.toHaveProperty('change')
+    expect(result).not.toHaveProperty('undone')
+    expect(result.setAside).toEqual([])
+    expect(rows(result.restored)).toEqual([[MADNESS, madness(4, 5)]])
+    expect(result.restored[0]).toMatchObject({ parent: PAST, slot: { key: MADNESS, decided: true } })
+    expect(result.stays.map((item) => item.key)).toEqual([ANCESTRY, FOE, ADJUST])
+    expect(result.recalculated.characteristics).toEqual([{ id: 'characteristic:madness', name: 'Madness', from: 0, to: 4 }])
+    expect(result.needsDialog).toBe(true)
+  })
+
+  it('FR-DEC-023, FR-CHG-002: with key null and nothing restored there is no dialog; stays has every active of before that is the same after', () => {
+    const bare = character({ [ANCESTRY]: entity('ancestry:gnome', 1), [ADJUST]: gnome.decisions[ADJUST] })
+    const rolled = { ...bare, decisions: { ...bare.decisions, [FOE]: entry('1-10', 3), [PAST]: entry('5-16', 4) } }
+    const result = impact(rules, bare, rolled, null)
+    expect(result).not.toHaveProperty('change')
+    expect(result).not.toHaveProperty('undone')
+    expect(result.setAside).toEqual([])
+    expect(result.restored).toEqual([])
+    expect(result.stays.map((item) => item.key)).toEqual([ANCESTRY, ADJUST])
+    expect(result.reopened).toEqual([])
+    expect(result.needsDialog).toBe(false)
   })
 })
 

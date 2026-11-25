@@ -146,3 +146,38 @@ export function change(rules: Rules, document: CharacterDocument, slot: SlotView
   entries.push(...markEntries(settled, { entry: changeEntry }, at, id))
   return { document: { ...settled.document, log: [...document.log, ...entries] }, entries, settled }
 }
+
+/** Uma vaga do Roll all undecided: a vaga aberta da visão atual, a decisão rolada e a entrada dela. */
+export interface RolledSlot {
+  slot: SlotView
+  decision: Decision
+  draft: DecisionDraft
+}
+
+/**
+ * O documento candidato do Roll all undecided (FEAT-010 §3.2, passos 2 e 3; D8, D12): uma decisão por vaga, na ordem,
+ * pela regra "vaga aberta" (sem candidatos, ou reaberta: a de `decisions[k]` passa à frente de `earlier[k]`, sem log),
+ * cada uma com o `logged` da sua entrada `decision`, e as entradas nessa ordem. Nenhuma ativa sai, então não há `undone`.
+ * Depois, as de `settle`: cada marca leva `cause.entry` = a entrada da vaga rolada que é ancestral da vaga marcada.
+ */
+export function rollAllChange(rules: Rules, document: CharacterDocument, rolled: RolledSlot[], at: string): Change {
+  let id = nextLogId(document)
+  const entries: LogEntry[] = []
+  const entryOf = new Map<string, number>()
+  let written = document
+  for (const { slot, decision, draft } of rolled) {
+    const entry = id++
+    entries.push({ id: entry, at, ...draft })
+    entryOf.set(slot.key, entry)
+    written = place(written, slot, { ...decision, logged: entry }).document
+  }
+  // A vaga rolada mais funda cuja chave é prefixo da marcada (D12); toda restaurada do Roll all descende de uma.
+  const causeOf = (key: string) => {
+    const ancestors = rolled.map(({ slot }) => slot.key).filter((rolledKey) => key.startsWith(`${rolledKey}=`))
+    const nearest = ancestors.sort((a, b) => b.length - a.length)[0] ?? rolled[0].slot.key
+    return { entry: entryOf.get(nearest)! }
+  }
+  const settled = settle(rules, written)
+  entries.push(...markEntries(settled, { entry: entryOf.get(rolled[0].slot.key)! }, at, id).map((mark) => ({ ...mark, cause: causeOf(mark.slot) })))
+  return { document: { ...settled.document, log: [...document.log, ...entries] }, entries, settled }
+}
