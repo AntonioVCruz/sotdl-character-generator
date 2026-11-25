@@ -272,9 +272,20 @@ const recorded = { setAside: z.literal(true).optional(), logged: logId.optional(
 const rolls = z.number().int().min(1).optional()
 
 /**
+ * Texto do jogador numa decisão escrita (FEAT-010 §4, D3): de 1 a 2.000 pelo `length` da string, e nada do que o
+ * `trim()` do comando tiraria nas pontas (espaço, tabulação, quebra de linha), para schema e comando concordarem.
+ */
+const writtenText = z
+  .string()
+  .min(1)
+  .max(2000)
+  .refine((text) => text === text.trim(), 'text without whitespace at either end')
+
+/**
  * Decisão (FEAT-009 §4, D3). `chosen` grava o valor; numa vaga `table`, a entrada e o livro. `rolled` e `entered`
  * gravam o fato da rolagem: faces (ou a soma informada), modificador e total e, na vaga `table`, a entrada, o livro e
- * o contador. A forma certa por vaga é do comando; a validade na leitura, do motor.
+ * o contador. `written` (FEAT-010 D1) grava o texto do jogador, sem entrada. A forma certa por vaga é do comando; a
+ * validade na leitura, do motor.
  */
 const decisionSchema = z.discriminatedUnion('mode', [
   z.strictObject({
@@ -300,6 +311,13 @@ const decisionSchema = z.discriminatedUnion('mode', [
     modifier: z.number().int(),
     total: z.number().int(),
     entry: entryKey.optional(),
+    rolls,
+    book: bookId.optional(),
+    ...recorded,
+  }),
+  z.strictObject({
+    mode: z.literal('written'),
+    text: writtenText,
     rolls,
     book: bookId.optional(),
     ...recorded,
@@ -333,7 +351,7 @@ const decisionEntrySchema = z.strictObject({
   slotKind,
   step: z.strictObject({ id: stepId, name }),
   origin: named.nullable(),
-  mode: z.enum(['chosen', 'rolled', 'entered']),
+  mode: z.enum(['chosen', 'rolled', 'entered', 'written']),
   subject: named.nullable(),
   source: z.strictObject({ book: bookId, abbr, page: page.optional() }),
   result: z.union([
@@ -341,6 +359,8 @@ const decisionEntrySchema = z.strictObject({
     z.strictObject({ value: z.number() }),
     z.strictObject({ shift: z.strictObject({ decrease: named, increase: named }) }),
     z.strictObject({ entry: entryKey, entity: named.optional() }),
+    // FEAT-010 §3.2 (FR-LOG-003): a decisão escrita, com o texto do jogador.
+    z.strictObject({ text: writtenText }),
   ]),
   roll: z
     .union([

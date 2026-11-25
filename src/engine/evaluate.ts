@@ -579,6 +579,8 @@ function tableView(rules: Rules, table: Resolved<TableItem>, key: string): Table
  */
 function tableResult(decision: Decision | undefined, table: TableView): TableResult | undefined {
   if (!decision || decision.book !== table.provenance.book) return undefined
+  // FEAT-010 T1: a decisão escrita ainda não vale (a T2 a faz valer pela regra (a)).
+  if (decision.mode === 'written') return undefined
   const entry = decision.mode === 'chosen' ? decision.value : decision.entry
   if (typeof entry !== 'string' || !table.entries.some((candidate) => candidate.key === entry)) return undefined
   switch (decision.mode) {

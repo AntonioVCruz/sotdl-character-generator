@@ -465,4 +465,81 @@ describe('character document v1: table decisions and log', () => {
       expect('earlier' in parsed).toBe(false)
     })
   })
+
+  // FEAT-010 §4 e AC-14: a decisão escrita e a entrada de log dela. Só textos inventados (P22).
+  describe('FEAT-010: written decision and its log entry', () => {
+    const AGE = 'origin=gnome/age'
+    const TEXT = 'Raised by a caravan of tinkers.'
+    const written = { mode: 'written', text: TEXT, book: 'test.book', logged: 7 }
+    // A entrada da Gnome Age rolada, sem `roll`: a escrita não tem rolagem.
+    const writtenEntry = {
+      ...Object.fromEntries(Object.entries(rolled).filter(([field]) => field !== 'roll')),
+      id: 7,
+      mode: 'written',
+      source: { book: 'test.book', abbr: 'TB', page: 8 },
+      result: { text: TEXT },
+    }
+    const withWritten = (decision: unknown) => withDecisions({ [AGE]: decision })
+    const accepts = (document: unknown) => characterDocumentSchema.safeParse(document).success
+
+    it('FR-DEC-003, FR-LOG-003: accepts a written decision with rolls, setAside and logged, in decisions and earlier, and its log entry without roll (AC-14)', () => {
+      const document = {
+        ...withDecisions({
+          [AGE]: { ...written, rolls: 2 },
+          'origin=gnome/past': { ...written, text: 'Two lines,\nkept as typed.', setAside: true },
+        }),
+        earlier: { [AGE]: [{ mode: 'written', text: 'x' }] },
+        log: [writtenEntry],
+      }
+      expect(characterDocumentSchema.parse(document)).toEqual(document)
+    })
+
+    it('FR-DEC-021: the text is 1 to 2,000 characters by string length, both in the decision and in the entry (AC-14)', () => {
+      const longest = 'a'.repeat(2000)
+      expect(accepts(withWritten({ ...written, text: longest }))).toBe(true)
+      expect(accepts({ ...base, log: [{ ...writtenEntry, result: { text: longest } }] })).toBe(true)
+      for (const text of ['', 'a'.repeat(2001)]) {
+        expect(accepts(withWritten({ ...written, text }))).toBe(false)
+        expect(accepts({ ...base, log: [{ ...writtenEntry, result: { text } }] })).toBe(false)
+      }
+    })
+
+    it('FR-DEC-021: rejects what trim() would remove at either end: space, tab, line break (AC-14)', () => {
+      for (const text of [' ', `  ${TEXT}  `, ` ${TEXT}`, `${TEXT} `, `\t${TEXT}`, `${TEXT}\n`, `\r\n${TEXT}`, `${TEXT}\u00a0`]) {
+        expect(accepts(withWritten({ ...written, text }))).toBe(false)
+        expect(accepts({ ...base, log: [{ ...writtenEntry, result: { text } }] })).toBe(false)
+      }
+    })
+
+    it('FR-DEC-003, FR-LOG-003: rejects a written decision without text or with an entry or dice, and an entry result with text and entry (AC-14)', () => {
+      for (const decision of [
+        { mode: 'written', book: 'test.book' },
+        { ...written, entry: '8-12' },
+        { ...written, dice: [3], modifier: 0, total: 3 },
+        { ...written, value: '8-12' },
+      ]) {
+        expect(accepts(withWritten(decision))).toBe(false)
+      }
+      for (const result of [{ text: TEXT, entry: '8-12' }, { text: 7 }, {}]) {
+        expect(accepts({ ...base, log: [{ ...writtenEntry, result }] })).toBe(false)
+      }
+      expect(accepts({ ...base, log: [{ ...writtenEntry, mode: 'typed' }] })).toBe(false)
+    })
+
+    it('FR-CHG-019: documents and logs saved up to FEAT-011 stay valid, unchanged (AC-14)', () => {
+      const saved = {
+        ...withDecisions({
+          [AGE]: { mode: 'rolled', dice: [3, 5, 2], modifier: 0, total: 10, entry: '8-12', rolls: 2, book: 'test.book', logged: 8 },
+          'origin=gnome/past': { mode: 'chosen', value: '11-17', rolls: 1, book: 'test.book', logged: 9 },
+        }),
+        earlier: { [AGE]: [{ mode: 'entered', sum: 11, modifier: 0, total: 11, entry: '9-12', book: 'other.book', logged: 4, setAside: true }] },
+        log: [
+          ...logEntries,
+          { id: 7, at: '2026-01-01T00:00:00.000Z', kind: 'undone', slot: AGE, ref: 4, reason: 'replaced', by: 8 },
+          { id: 10, at: '2026-01-01T00:00:00.000Z', kind: 'restored', slot: AGE, ref: 4, cause: { content: true } },
+        ],
+      }
+      expect(characterDocumentSchema.parse(saved)).toEqual(saved)
+    })
+  })
 })

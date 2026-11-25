@@ -308,12 +308,13 @@ export function partsOf(slot: SlotView, decision: Decision, nameOf: (id: string)
   const title = decisionTitle(toOpenDecision(slot), nameOf)
   switch (slot.kind) {
     case 'table': {
-      const key = decision.mode === 'chosen' ? String(decision.value) : (decision.entry ?? '')
+      // A escrita (FEAT-010) não tem entrada; o texto dela na linha é do ui-design da FEAT-010 (T5).
+      const key = decision.mode === 'chosen' ? String(decision.value) : 'entry' in decision ? (decision.entry ?? '') : ''
       const entity = slot.table.entries.find((entry) => entry.key === key)?.entity
       return { title, value: entity ? `${rangeText(key)} ${entity.name}` : rangeText(key), mode: decision.mode }
     }
     case 'roll-effect':
-      return { title, value: decision.mode === 'chosen' ? String(decision.value) : String(decision.total), mode: decision.mode }
+      return { title, value: decision.mode === 'chosen' ? String(decision.value) : 'total' in decision ? String(decision.total) : '', mode: decision.mode }
     case 'attribute-shift': {
       const { increase, decrease } = (decision as Extract<Decision, { mode: 'chosen' }>).value as { increase: string; decrease: string }
       return { title, value: shiftText(nameOf(increase), nameOf(decrease)) }
@@ -343,7 +344,10 @@ export function partsOfLogged(log: LogEntry[], logged: number | undefined): Line
         ? shiftText(result.shift.increase.name, result.shift.decrease.name)
         : 'value' in result
           ? formatValue(result.value)
-          : result.entity.name
+          : 'entity' in result
+            ? result.entity.name
+            : // A escrita (FEAT-010): o texto da linha é do ui-design da FEAT-010 (T5).
+              ''
   const isResult = entry.slotKind === 'table' || entry.slotKind === 'roll-effect'
   return { title, value, ...(isResult && { mode: entry.mode }) }
 }

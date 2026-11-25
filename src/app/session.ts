@@ -210,6 +210,8 @@ function isValid(slot: SlotView, value: DecisionValue): boolean {
 }
 
 type DiceSlot = Extract<SlotView, { kind: 'table' | 'roll-effect' }>
+/** A decisão com o fato de uma rolagem ou de uma soma informada (FEAT-009 D3). */
+type DiceDecision = Extract<Decision, { mode: 'rolled' | 'entered' }>
 type LogDraft = Omit<DecisionEntry, 'id' | 'at'>
 type Ready = Extract<Snapshot, { status: 'ready' }>
 
@@ -229,14 +231,14 @@ function logDraft(rules: Rules, slot: SlotView, decision: Decision): LogDraft {
   const declaring = rules.items.get(slot.source?.id ?? slot.stepId)?.provenance
   const base = { kind: 'decision' as const, slot: slot.key, slotKind: slot.kind, step, origin: slot.source, mode: decision.mode }
   const roll = (dice: { count: number; sides: number }) => {
-    if (decision.mode === 'chosen') return {}
+    if (decision.mode === 'chosen' || decision.mode === 'written') return {}
     const fact = { count: dice.count, sides: dice.sides, modifier: decision.modifier, total: decision.total }
     if (decision.mode === 'entered') return { roll: { ...fact, sum: decision.sum } }
     return { roll: { ...fact, ...(decision.rolls !== undefined && { rolls: decision.rolls }), faces: decision.dice } }
   }
   switch (slot.kind) {
     case 'table': {
-      const key = decision.mode === 'chosen' ? (decision.value as string) : decision.entry!
+      const key = decision.mode === 'chosen' ? (decision.value as string) : (decision as DiceDecision).entry!
       const entry = slot.table.entries.find((candidate) => candidate.key === key)!
       return {
         ...base,
@@ -252,7 +254,7 @@ function logDraft(rules: Rules, slot: SlotView, decision: Decision): LogDraft {
         subject: slot.target,
         source: sourceOf(declaring!),
         // Rolada ou informada: o efeito com dado não tem Choose (FR-STEP-014).
-        result: { value: (decision as Exclude<Decision, { mode: 'chosen' }>).total },
+        result: { value: (decision as DiceDecision).total },
         ...roll(slot.dice),
       }
     case 'choose-entity': {

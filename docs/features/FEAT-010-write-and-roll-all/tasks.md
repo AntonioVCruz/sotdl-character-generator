@@ -4,7 +4,7 @@
 > Status: nenhuma feita · Última atualização: 2026-11-24
 > Antes da T1: as emendas 1 a 3 do §8 aplicadas, e o `ui-design.md` desta feature pronto antes da T5 (C11). Todo "pronto quando" inclui `npm run typecheck` e `npm run lint` verdes, e as suítes das features anteriores verdes, salvo as expectativas do §7 que a própria tarefa muda (C8). Vitest a partir de `C:` maiúsculo; E2E por `npx playwright test …` (C24).
 
-- [ ] T1 — Schema do documento e do log (design §4; ADR-004 §1; ADR-005)
+- [x] T1 — Schema do documento e do log (design §4; ADR-004 §1; ADR-005)
       Em `src/content/schemas.ts`: o modo `written` na `decisionSchema`, com `text` de 1 a 2.000 caracteres e sem espaço nas pontas, `rolls`, `book`, `setAside` e `logged` opcionais; `'written'` no `mode` da `decisionEntrySchema` e `{ text }` no `result`.
       Os leitores que deixam de compilar com o modo novo recebem o ramo `written` mínimo, sem comportamento novo, porque nenhuma escrita nasce antes da T3: `tableResult` (`src/engine/evaluate.ts:580`, a escrita ainda não vale), `logDraft` e o `roll` interno dele (`src/app/session.ts:227–273`), `partsOf` e `partsOfLogged` (`src/ui/builder/copy.ts:307`, `:334`).
       Pronto quando: os testes do AC-14 passam no `schemas.test.ts`, inclusive com os documentos e logs gravados até a FEAT-011; as suítes passam sem mudança.
