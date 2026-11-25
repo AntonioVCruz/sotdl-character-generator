@@ -34,6 +34,6 @@
       Em `e2e/story.spec.ts`, um teste novo: Dwarf; Write vazio recusado na Dwarf Appearance; Write com texto; recarregar; "Roll all undecided" decide as outras cinco sem mudar a Appearance; "Complete" na Home. O caso do axe ganha um cartão escrito, com o contorno do Firefox do `docs/scaffold-notes.md` (C23). Seletores pela tabela C1 do ui-design.
       Pronto quando: `npx playwright test e2e/story.spec.ts --retries=0 --workers=1 --repeat-each=3` verde nos 5 projetos (C13).
 
-- [ ] T7 — Verificação (design §6)
+- [x] T7 — Verificação (design §6)
       Todos os critérios do §6 demonstrados; `npm run typecheck`, `npm run lint`, `npm test`, `npm run packs:check`, `npm run build` e `npx playwright test --retries=0 --workers=1` verdes; nenhuma asserção mudada fora do §7; o CI do push verde, sem linha de flaky.
       Pronto quando: tudo acima passa, e o tasks.md tem as caixas marcadas.
