@@ -61,6 +61,7 @@ Vaga sem decisão. O corpo depende do modo aberto:
 - ações à direita do campo (abaixo dele no celular): `button-primary` "Use this result" e `button-secondary` "Cancel"; "Cancel" volta ao [to-decide](#to-decide) sem gravar, com o foco em "Enter result";
 - foco no campo ao abrir;
 - **validação ao confirmar** (`design.md` §4): vazio ou não inteiro → erro local, sem comando; inteiro → `session.enter(key, sum)`. Recusa `out-of-range` → erro com a faixa devolvida (`range`). Erro: borda `--color-state-danger`, mensagem em `.typography-meta` `--color-state-danger` com ícone `circle-alert` (`--size-icon-sm`), ligada por `aria-describedby`, `aria-invalid="true"`; texto "Enter a value from {min} to {max}." O campo mantém o valor digitado e o foco (AC-14). A mensagem some na próxima edição do campo.
+- **Anúncio do erro** (`design.md` §4, convenção de estados, "error", emenda D-ERR de 2026-11-25): pelo clique em "Use this result", o foco fica no botão e não vai até a mensagem; ela é anunciada por uma região `aria-live="polite"` que já está no formulário antes de a mensagem aparecer (o erro local e o da recusa `out-of-range`). Pela tecla Enter no campo, o foco já está nele e a mensagem é lida pelo `aria-describedby`. O código ainda não tem a região: [DEF-013](../../defects.md).
 
 ### rolled
 
@@ -121,7 +122,7 @@ Toda entrada do MVP (FR-DEC-008, AC-5): linha em `.typography-meta` `--color-tex
 Efeito `add.dice` da entrada vigente (D7; FR-STEP-014): a vaga `roll-effect` aparece na coluna de resultado do próprio cartão, `--space-3` abaixo dos efeitos, como `subdecision` (borda tracejada `--color-border-control`, `--radius-md`, padding `--space-3` `--space-4`), com `id` = `slotElementId(key)` e `tabindex="-1"`:
 
 - pergunta em `.typography-label`: "{Alvo} {dado do efeito}" ("Insanity 1d6"), o rótulo da pendência;
-- `button-primary` "Roll {dado do efeito}" e `button-secondary` "Enter result" (`roll` e `enter`; FR-STEP-014); "Enter result" abre o formulário do [entering](#entering) dentro da caixa;
+- `button-primary` "Roll {dado do efeito}" e `button-secondary` "Enter result" (`roll` e `enter`; FR-STEP-014); "Enter result" abre o formulário do [entering](#entering) dentro da caixa, com o mesmo erro e o mesmo anúncio;
 - rodapé em `.typography-meta`: "Or decide later: it stays in Open decisions." (texto do Size, FEAT-007);
 - o `effect-chip` da entrada mostra "Insanity +1d6", e o resumo vivo mostra o alvo pendente ("—" e "Open"; [Composição](#composição)).
 
