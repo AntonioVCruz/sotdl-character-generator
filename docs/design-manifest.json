@@ -252,15 +252,14 @@
         "content.DecisionEntry mode 'written' com result.text, para as linhas vindas do log (FEAT-010 technical-design §4)"
       ],
       "conformance": {
-        "result": "escalation-pending",
+        "result": "pass",
         "corrections": [
-          "FEAT-010 (2026-11-24): variantes write e roll-all e a linha de uma decisão escrita; Current × New mantidas no roll-all (FR-CHG-003), uma linha por tabela; Keep e Apply no padrão \"Keep current …\" / \"Apply …\", com o precedente da vaga aberta da FEAT-011; sem token nem componente novo"
+          "FEAT-010 (2026-11-24): variantes write e roll-all e a linha de uma decisão escrita; Current × New mantidas no roll-all (FR-CHG-003), uma linha por tabela; Keep e Apply no padrão \"Keep current …\" / \"Apply …\", com o precedente da vaga aberta da FEAT-011; sem token nem componente novo",
+          "FEAT-010 (2026-11-25): P1 resolvida pelo usuário (alternativa A): depois do Apply do roll-all, o foco vai para a frase do motivo da linha do Roll all (appliedTarget); re-verificada depois da emenda D-ERR do design.md (2312de8), sem mudança no diálogo"
         ],
-        "escalations": [
-          "P1 (pergunta ao usuário, ui-design da FEAT-010): destino do foco depois do Apply do roll-all, o mesmo do roll-all-applied da SCR-WEB-009"
-        ]
+        "escalations": []
       },
-      "status": "escalation-pending",
+      "status": "designed",
       "designed_at": "2026-11-17"
     },
     "SCR-WEB-009": {
@@ -388,17 +387,17 @@
         "engine.TableView.modes com 'write' no regime roll-or-choose; TableResult { mode: 'written', text } (FEAT-010 technical-design §3.1)"
       ],
       "conformance": {
-        "result": "escalation-pending",
+        "result": "pass",
         "corrections": [
           "Re-verificado em 2026-11-16 contra o design.md e a ux-foundations emendados (E10, E11 e caixa de valor; 9c5db16, 095362b): caixa de valor com altura de linha --font-size-4xl, agora como o design.md §4, não mais correção; grade das tabelas de história só com faixa e página, sem o campo Name (E10), sem tratamento provisório; A5.1 (E11) sem efeito na tela; nome acessível da grade composto pelo h2 e pelo rótulo (\"Dwarf Age Choose a result.\", C9); sem token nem componente novo",
           "FEAT-011 (2026-11-17): decided-locked e dependents-blocked saem; tabela decidida com Reroll (button-secondary, já no design.md §4) e troca de modo; sem token nem componente novo",
-          "FEAT-010 (2026-11-24): segmento Write e estado escrito (textarea do design.md §4, sem o checkbox da FEAT-019), eyebrow \"Roll, choose or write your own\", Roll all undecided como button-secondary, desabilitado com o motivo (P31); sem token nem componente novo"
+          "FEAT-010 (2026-11-24): segmento Write e estado escrito (textarea do design.md §4, sem o checkbox da FEAT-019), eyebrow \"Roll, choose or write your own\", Roll all undecided como button-secondary, desabilitado com o motivo (P31); sem token nem componente novo",
+          "FEAT-010 (2026-11-25): P1 resolvida pelo usuário (alternativa A): foco depois do Roll all undecided aplicado na frase do motivo do roll-all-none (tabindex -1); re-verificada depois da emenda D-ERR do design.md (2312de8): o erro do Write (write-refused) anunciado pela região aria-live da regra",
+          "FEAT-009 (2026-11-25), emenda D-ERR do design.md (2312de8): o erro do Enter result (entering e effect-open) passa a ser anunciado por região aria-live; o código ainda não a tem (DEF-013)"
         ],
-        "escalations": [
-          "P1 (pergunta ao usuário, ui-design da FEAT-010): destino do foco depois do Roll all undecided aplicado; recomendação: a frase do motivo da linha do Roll all"
-        ]
+        "escalations": []
       },
-      "status": "escalation-pending",
+      "status": "designed",
       "designed_at": "2026-11-16"
     },
     "SCR-WEB-016": {
