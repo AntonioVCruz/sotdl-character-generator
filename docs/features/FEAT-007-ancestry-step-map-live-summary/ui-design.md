@@ -1,7 +1,7 @@
 # UI Design: FEAT-007 — Etapa Ancestry, mapa de etapas e resumo vivo
 
 > Feature de: `docs/implementation-plan.md` · Par com: `technical-design.md`
-> Telas: SCR-WEB-003, SCR-WEB-016 · Modo: por feature, com rigor de âncora (primeira execução; não houve telas-âncora) · Status: Verified (re-verificação após a emenda E1–E4 do design system, 2026-11-12) · Data: 2026-11-12 · Emenda de 2026-11-14: foco do save-failed depois de "Try again" (re-verificação contra a E7), que no sucesso só sai do alerta para o `h1` se estava nele (C2)
+> Telas: SCR-WEB-003, SCR-WEB-016 · Modo: por feature, com rigor de âncora (primeira execução; não houve telas-âncora) · Status: Verified (re-verificação após a emenda E1–E4 do design system, 2026-11-12; emenda de 2026-11-26 re-verificada contra o `design.md`: sem token, componente nem estado visual novo) · Data: 2026-11-12 · Emenda de 2026-11-14: foco do save-failed depois de "Try again" (re-verificação contra a E7), que no sucesso só sai do alerta para o `h1` se estava nele (C2) · Emenda de 2026-11-26: aviso do navegador ao sair enquanto grava e texto do save-failed, pela revisão externa de 2026-11-25 (DEF-016 e DEF-018)
 
 Autoridade: `docs/design.md` e `docs/tokens.json`. Todo valor visual abaixo é token (`--…`) ou classe `.typography-*`; os breakpoints são `@custom-media` (`--bp-md`, `--bp-below-md`, `--bp-xl`, `--bp-below-xl`). Ícones: Lucide (`design.md` §2), traço `--icon-stroke`, decorativos com `aria-hidden`. Texto da interface em inglês (NFR-L10N-001), fechado na seção [Textos](#textos). Nenhum texto dos livros (P22).
 
@@ -275,6 +275,15 @@ Moldura comum às etapas do construtor. A FEAT-007 a cria; as features das outra
 
 **Anel de foco num contêiner** (convenção do DEF-002, `851b60a`): todo componente de etapa que desenha o anel de foco num contêiner, e não no próprio elemento focado (como o `option-card` e o `segmented-control`, cujo input fica oculto), marca esse contêiner com `data-focus-ring`. Abaixo de `--bp-md`, no foco por teclado, a moldura leva esse contêiner à vista, acima da região fixa. Toda etapa nova com esse padrão entra no `e2e/builder-dock.spec.ts`.
 
+**Saída com gravação pendente** (`snapshot.save === 'saving'`; NFR-REL-001; *emenda de 2026-11-26, DEF-016*):
+- Pelo snapshot (C2), nunca pelo retorno do comando: enquanto `save` é `'saving'`, a moldura registra na janela um ouvinte de `beforeunload` que pede a confirmação do navegador (`event.preventDefault()`, e `event.returnValue` onde o motor ainda pede). Com `'saved'` ou `'failed'`, o ouvinte sai.
+- Sem texto próprio: o navegador mostra a pergunta dele. Sem mudança visual na moldura.
+- Com `'failed'`, não há aviso ao sair: o alerta do [save-failed](#save-failed) já diz o que se perde.
+- Limites aceitos:
+  - no celular, o evento não é confiável: o navegador pode descartar a página sem dispará-lo;
+  - o navegador só mostra a pergunta se a página teve ativação do usuário; o clique da decisão conta;
+  - o aviso não protege a navegação dentro do app (a marca, "Back to My characters", About). A moldura não precisa disso: a sessão segue gravando enquanto o app está aberto, e só a falha perde a escolha, o que o texto do save-failed diz (DEF-018).
+
 ## Textos
 
 Fechados para a FEAT-007, revisados contra a NFR-USE-001, a lição 5 e o `design.md` §6 (o que aconteceu, o que ficou a salvo, o que fazer). Nenhum id, enum ou nome de vaga aparece na tela. Os rascunhos do technical-design ficam lá; vale esta tabela.
@@ -336,7 +345,7 @@ Fechados para a FEAT-007, revisados contra a NFR-USE-001, a lição 5 e o `desig
 | `unreadable` | "This character was saved by an earlier version of the generator and can't be opened. Your other characters aren't affected." |
 | `pack-load-failed` | "The rules this character uses couldn't be loaded. Nothing was changed. Check your connection and reload the page." |
 | Título dos erros de abertura | "Can't open this character" · link "Back to My characters" |
-| `save: 'failed'` | "Your last choice wasn't saved. It's still on screen, but it will be lost if you close this page." · botão "Try again" |
+| `save: 'failed'` | "Your last choice wasn't saved. It's still on screen, but it will be lost if you leave this screen or close the page." · botão "Try again" (*emenda de 2026-11-26, DEF-018*: sair da tela dentro do app também perde a escolha) |
 | `has-dependents` | "You can't switch to {New} yet: {escolhas} for {Current} depend on your current ancestry. Changing a choice that others depend on isn't available yet." |
 | Exemplo do `has-dependents` | "You can't switch to Dwarf yet: your Size choice for Human depends on your current ancestry. Changing a choice that others depend on isn't available yet." |
 | Loading (oculto) | "Loading character…" |

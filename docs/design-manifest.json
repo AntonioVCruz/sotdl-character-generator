@@ -143,7 +143,8 @@
           "FEAT-009 (2026-11-16): Decide now com as vagas table agrupadas numa linha por etapa; mensagem de has-dependents com \"result\" para resultados de tabela; sem token nem componente novo",
           "Re-verificado em 2026-11-16 contra o design.md e a ux-foundations emendados (E10, E11 e caixa de valor; 9c5db16, 095362b): nada muda na tela; linha agrupada do Decide now passa a \"{d} of {n} decided.\" (C1 conferida: o getByText('Decided.') de ancestry.spec.ts:193 roda com Human, sem vaga table)",
           "FEAT-011 (2026-11-17): dependents-blocked (FEAT-007) e dependents-blocked-tables (FEAT-009) saem; a troca com dependentes abre o impact-dialog (SCR-WEB-007), e o Keep mantém a prévia; sem token nem componente novo",
-          "Re-verificado em 2026-11-17 contra a ux-foundations e o design.md emendados (E12 e P1, 1158beb) e o technical-design emendado (M1, ec54463): open-notice nos estados globais do construtor; linha \"{n} set aside\" do live-summary sem o link até a FEAT-015; sem token nem componente novo"
+          "Re-verificado em 2026-11-17 contra a ux-foundations e o design.md emendados (E12 e P1, 1158beb) e o technical-design emendado (M1, ec54463): open-notice nos estados globais do construtor; linha \"{n} set aside\" do live-summary sem o link até a FEAT-015; sem token nem componente novo",
+          "Emenda de 2026-11-26 (DEF-016, DEF-018; revisão externa de 2026-11-25): na moldura, enquanto save é saving, um beforeunload pede a confirmação do navegador, sem texto próprio nem mudança visual; texto do save-failed passa a \"...if you leave this screen or close the page.\"; sem token nem componente novo"
         ],
         "escalations": []
       },
@@ -433,7 +434,8 @@
         "result": "pass",
         "corrections": [
           "Re-verificado em 2026-11-12 contra o design.md emendado (E1–E4): ícones arrow-left, ellipsis e chevrons; About no menu ···; step-map bloqueado no popover",
-          "Emenda de 2026-11-13 (DEF-001): na região fixa, \"Summary\" em linha própria quando a barra não cabe, e foco não escondido (WCAG 2.4.11); sem token nem componente novo"
+          "Emenda de 2026-11-13 (DEF-001): na região fixa, \"Summary\" em linha própria quando a barra não cabe, e foco não escondido (WCAG 2.4.11); sem token nem componente novo",
+          "Emenda de 2026-11-26 (DEF-016, DEF-018; revisão externa de 2026-11-25): a mesma moldura; o beforeunload enquanto grava não é confiável no celular, limite registrado no ui-design; texto do save-failed novo; sem token nem componente novo"
         ],
         "escalations": []
       },
