@@ -71,10 +71,50 @@ describe('removed slot keys', () => {
   })
 
   it('DEF-017 FR-CONT-006: accepts a change of name only, an added key and an owner moved to another file', () => {
+    // DEF-021: um dono movido de arquivo que é uma tabela muda de livro (o `provenance.book` vem do livro do arquivo,
+    // src/engine/resolve.ts:64), e as decisões dela ficam suspensas pela regra (a) (`tableResult`,
+    // src/engine/evaluate.ts:588; ADR-004 §1). A expectativa é provisória até o detailed-design da FEAT-024 (troca de
+    // fonte e `replaces`).
     const current = {
       'test.book.json': book([{ ...step({ ...slots, extra: { kind: 'choose-value' } }), name: 'Lineage' }, { ...dwarf({ ...grants, build: {} }), name: 'Dwarf (revised)' }]),
       'test.other.json': { id: 'test.other', components: [{ id: 'base', items: [table({ ...entries, 13: { grants: { ...entries[13].grants, profession: {} } } })] }] },
     }
+    expect(removedIds(base, current)).toEqual([])
+  })
+})
+
+// DEF-021 (ADR-004 §1 e §3): a validade de uma `choose-value` confere o valor gravado contra as `options` da concessão
+// (`grantedSlots`, src/engine/evaluate.ts:538), e a chave de uma vaga raiz é só a chave em `step.slots`, sem a etapa
+// (`slotTree`, src/engine/evaluate.ts:479).
+describe('removed choose-value options and moved root slots', () => {
+  const book = (items) => ({ 'test.book.json': { id: 'test.book', components: [{ id: 'base', items }] } })
+  const size = (options) => ({ kind: 'choose-value', step: 'step:ancestry', target: 'characteristic:size', options })
+  const human = (grants) => ({ id: 'ancestry:human', name: 'Human', grants })
+  const ancestry = (slots) => ({ id: 'step:ancestry', name: 'Ancestry', ...(slots && { slots }) })
+  const attributes = (slots) => ({ id: 'step:attributes', name: 'Attributes', slots })
+  const choose = { kind: 'choose-entity', of: 'ancestry' }
+  const shift = { kind: 'attribute-shift', amount: 1 }
+  const base = book([ancestry({ ancestry: choose }), attributes({ adjustment: shift }), human({ size: size([0.5, 1]) })])
+
+  it('DEF-021 FR-CONT-006: flags a removed choose-value option, qualified by its owner and grant (Size 0.5 on the Human)', () => {
+    const current = book([ancestry({ ancestry: choose }), attributes({ adjustment: shift }), human({ size: size([1]) })])
+    expect(removedIds(base, current)).toEqual(['ancestry:human grants.size.options=0.5 (was in packs/test.book.json)'])
+  })
+
+  it('DEF-021 FR-CONT-006: flags a removed choose-value grant once, without its options', () => {
+    const current = book([ancestry({ ancestry: choose }), attributes({ adjustment: shift }), human({})])
+    expect(removedIds(base, current)).toEqual(['ancestry:human grants.size (was in packs/test.book.json)'])
+  })
+
+  it('DEF-021 FR-CONT-006: accepts an added choose-value option and a change of option order', () => {
+    const added = book([ancestry({ ancestry: choose }), attributes({ adjustment: shift }), human({ size: size([0.5, 1, 2]) })])
+    const reordered = book([ancestry({ ancestry: choose }), attributes({ adjustment: shift }), human({ size: size([1, 0.5]) })])
+    expect(removedIds(base, added)).toEqual([])
+    expect(removedIds(base, reordered)).toEqual([])
+  })
+
+  it('DEF-021 FR-CONT-006: accepts a root slot moved to another step with the same key', () => {
+    const current = book([ancestry(), attributes({ ancestry: choose, adjustment: shift }), human({ size: size([0.5, 1]) })])
     expect(removedIds(base, current)).toEqual([])
   })
 })
