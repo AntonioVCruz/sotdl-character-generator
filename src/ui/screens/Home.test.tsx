@@ -54,6 +54,50 @@ describe('Home', () => {
     expect(button.querySelector('svg')).toBeNull()
   })
 
+  /** "New character" com a criação retida: `finish()` grava o personagem (a lista passa a tê-lo) e devolve o id. */
+  function heldCreation() {
+    const store: CharacterSummary[] = []
+    let finish: () => void = () => undefined
+    createCharacter.mockReturnValueOnce(
+      new Promise((done) => {
+        finish = () => {
+          store.push(summary({ id: 'c9', name: 'Brokk' }))
+          done({ ok: true, id: 'c9' })
+        }
+      }),
+    )
+    return { store, finish: () => finish() }
+  }
+
+  it('DEF-019 FR-CHAR-001: when the person leaves the Home during the creation, it still finishes and saves, but does not take them to the builder', async () => {
+    const creation = heldCreation()
+    window.location.hash = '#/'
+    const home = render(<Home />)
+    await userEvent.click(screen.getByRole('button', { name: 'New character' }))
+
+    // A pessoa abre o About: a rota muda, e o App desmonta a Home.
+    window.location.hash = '#/about'
+    home.unmount()
+    await act(async () => creation.finish())
+    await act(async () => {}) // a continuação do "New character" roda
+    expect(window.location.hash).toBe('#/about')
+
+    // De volta à Home, o personagem criado está na lista.
+    listCharacters.mockImplementationOnce(async () => ({ ok: true, characters: [...creation.store] }))
+    window.location.hash = '#/'
+    render(<Home />)
+    expect(await screen.findByRole('article', { name: 'Brokk' })).toBeTruthy()
+  })
+
+  it('DEF-019 FR-CHAR-001: with the Home still on screen, the finished creation opens the builder', async () => {
+    const creation = heldCreation()
+    window.location.hash = '#/'
+    render(<Home />)
+    await userEvent.click(screen.getByRole('button', { name: 'New character' }))
+    await act(async () => creation.finish())
+    await waitFor(() => expect(window.location.hash).toBe('#/characters/c9'))
+  })
+
   it('FR-HELP-005: a list that cannot be read shows the alert, not the empty state', async () => {
     listCharacters.mockResolvedValueOnce({ ok: false, reason: 'storage-unavailable' })
     render(<Home />)
