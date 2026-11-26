@@ -36,7 +36,17 @@ export function createIndexedDbRepository<Doc extends Keyed, Meta extends Keyed>
   database: Promise<IDBPDatabase<CharacterDb>> | (() => Promise<IDBPDatabase<CharacterDb>>),
 ): CharacterRepository<Doc, Meta> {
   let opened: Promise<IDBPDatabase<CharacterDb>> | undefined
-  const db = () => (opened ??= typeof database === 'function' ? database() : database)
+  // A abertura em andamento e a conexão aberta são compartilhadas; uma abertura rejeitada sai do cache, e a operação
+  // seguinte tenta de novo (DEF-020).
+  const db = () => {
+    if (opened) return opened
+    const attempt = typeof database === 'function' ? database() : database
+    opened = attempt
+    attempt.catch(() => {
+      if (opened === attempt) opened = undefined
+    })
+    return attempt
+  }
   let persistRequested = false
 
   return {
