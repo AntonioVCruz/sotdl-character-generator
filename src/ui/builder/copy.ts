@@ -237,7 +237,7 @@ export const OPEN_MESSAGE = {
     "The rules this character uses couldn't be loaded. Nothing was changed. Check your connection and reload the page.",
 } as const
 
-export const SAVE_FAILED = "Your last choice wasn't saved. It's still on screen, but it will be lost if you close this page."
+export const SAVE_FAILED = "Your last choice wasn't saved. It's still on screen, but it will be lost if you leave this screen or close the page."
 
 // ui-design da FEAT-011, Textos: diálogo de impacto (SCR-WEB-007), aviso ao abrir e linha do resumo (moldura).
 
