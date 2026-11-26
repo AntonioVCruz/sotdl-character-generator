@@ -247,6 +247,18 @@ describe('Builder states', () => {
     expect(leave()).toBe(false)
   })
 
+  it('DEF-018 FR-CHAR-010: the save-failed alert says the choice is lost on leaving the screen or closing the page', async () => {
+    setup({ failSave: true })
+    renderBuilder()
+    await userEvent.click(await screen.findByRole('radio', { name: 'Troll' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Choose Troll' }))
+    const alert = await screen.findByRole('alert')
+    // ui-design da FEAT-007, Textos (emenda de 2026-11-26): sair do construtor dentro do app também perde a escolha.
+    expect(within(alert).getByText(/^Your last choice wasn't saved/).textContent).toBe(
+      "Your last choice wasn't saved. It's still on screen, but it will be lost if you leave this screen or close the page.",
+    )
+  })
+
   /** Escolhe o Troll com a gravação falhando e prepara a nova tentativa: a próxima gravação dá certo, mas retida. */
   async function failThenHoldRetry() {
     const result = setup({ failSave: true })
