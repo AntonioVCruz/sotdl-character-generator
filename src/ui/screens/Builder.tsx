@@ -101,6 +101,19 @@ function BuilderReady({ session, snapshot, route }: {
     if (redirect) replace(redirect)
   }, [redirect])
 
+  // DEF-016 (ui-design da FEAT-007, Builder frame, "Saída com gravação pendente"): enquanto a decisão grava, fechar ou
+  // recarregar a página pede a confirmação do navegador, sem texto próprio. Pelo snapshot (C2); com `saved` ou `failed`,
+  // o ouvinte sai.
+  useEffect(() => {
+    if (snapshot.save !== 'saving') return
+    const ask = (event: BeforeUnloadEvent) => {
+      event.preventDefault()
+      event.returnValue = true // motores que ainda pedem o valor legado
+    }
+    window.addEventListener('beforeunload', ask)
+    return () => window.removeEventListener('beforeunload', ask)
+  }, [snapshot.save])
+
   // FR-CHAR-007: a etapa mostrada é a última visitada; registrar não grava o documento (FEAT-001 §3.4).
   useEffect(() => {
     if (shown) session.visit(shown)
