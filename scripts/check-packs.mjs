@@ -1,7 +1,8 @@
 // Validação do pacote oficial no CI (ADR-008, plano §6):
 //   1. schema estrito de cada arquivo de packs/ (o mesmo do app: src/content/schemas.ts);
 //   2. nenhum id presente na revisão base pode sumir, nem as chaves que formam as chaves das vagas (vagas de etapa,
-//      concessões, entradas e efeitos; DEF-017), qualificadas pelo dono (ADR-004: decisões salvas dependem delas).
+//      concessões, entradas e efeitos; DEF-017), qualificadas pelo dono (ADR-004: decisões salvas dependem delas), e
+//      as `options` das `choose-value` (DEF-021). A vaga raiz vale por qualquer etapa que tenha a chave dela.
 // Base: PACKS_BASE_REF (no CI: a base do PR ou o commit anterior do push); no local, HEAD.
 // A integridade referencial é da FEAT-003.
 import { execFileSync } from 'node:child_process'
@@ -35,6 +36,8 @@ const KEYED = new Set(['slots', 'grants', 'entries', 'effects'])
 /**
  * As chaves desses campos, qualificadas pelo dono (o objeto com `id` mais próximo) e pelo caminho nele, como
  * "table:dwarf-background entries.1.effects.corruption", cada uma com o pai: o id do dono ou a chave que a contém.
+ * As `options` de uma `choose-value` entram como valores da concessão, sem a posição ("ancestry:human
+ * grants.size.options=0.5"): a validade confere o valor gravado contra elas (DEF-021; evaluate.ts, `grantedSlots`).
  */
 export function collectKeys(node, keys = new Map(), owner = null, path = '', parent = null) {
   if (Array.isArray(node)) {
@@ -46,6 +49,9 @@ export function collectKeys(node, keys = new Map(), owner = null, path = '', par
     owner = node.id
     path = ''
     parent = node.id
+  }
+  if (owner && parent !== owner && node.kind === 'choose-value' && Array.isArray(node.options)) {
+    for (const option of node.options) keys.set(`${owner} ${path}.options=${option}`, parent)
   }
   for (const [field, value] of Object.entries(node)) {
     const at = path ? `${path}.${field}` : field
@@ -60,19 +66,25 @@ export function collectKeys(node, keys = new Map(), owner = null, path = '', par
   return keys
 }
 
+/** A chave de uma vaga raiz ("step:ancestry slots.ancestry" → "ancestry"), que não inclui a etapa (evaluate.ts, `slotTree`). */
+const rootSlot = (key) => /^step:\S+ slots\.([^.[=]+)$/.exec(key)?.[1]
+
 /**
  * Ids da base que não aparecem mais em nenhum arquivo atual e, com o dono ainda presente, chaves de vaga da base que
  * sumiram dele (ADR-004: ids de concessão e de entrada). Só a chave mais alta que sumiu é acusada, não as de dentro dela.
+ * Uma vaga raiz conta como presente se alguma etapa tiver a chave dela (DEF-021).
  */
 export function removedIds(baseFiles, currentFiles) {
   const current = new Set(Object.values(currentFiles).flatMap((json) => [...collectIds(json)]))
   const currentKeys = new Set(Object.values(currentFiles).flatMap((json) => [...collectKeys(json).keys()]))
+  const currentRoots = new Set([...currentKeys].map(rootSlot).filter(Boolean))
+  const present = (key) => currentKeys.has(key) || (rootSlot(key) !== undefined && currentRoots.has(rootSlot(key)))
   const ids = Object.entries(baseFiles).flatMap(([file, json]) =>
     [...collectIds(json)].filter((id) => !current.has(id)).map((id) => `${id} (was in packs/${file})`),
   )
   const keys = Object.entries(baseFiles).flatMap(([file, json]) =>
     [...collectKeys(json)]
-      .filter(([key, parent]) => !currentKeys.has(key) && (current.has(parent) || currentKeys.has(parent)))
+      .filter(([key, parent]) => !present(key) && (current.has(parent) || currentKeys.has(parent)))
       .map(([key]) => `${key} (was in packs/${file})`),
   )
   return [...ids, ...keys]
