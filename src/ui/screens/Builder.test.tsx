@@ -211,6 +211,42 @@ describe('Builder states', () => {
     expect(screen.getByRole('radio', { name: 'Troll, your choice' })).toBeTruthy()
   })
 
+  /** Um `beforeunload` disparado na janela, como o do navegador ao fechar a aba: devolve se a página pediu para ficar. */
+  const leave = () => {
+    const event = new Event('beforeunload', { cancelable: true })
+    window.dispatchEvent(event)
+    return event.defaultPrevented
+  }
+
+  it('DEF-016 NFR-REL-001 FR-CHAR-009: while a decision is being saved, leaving the page asks for confirmation; once saved, it does not', async () => {
+    const { session, control, saved } = setup({ holdSave: true })
+    renderBuilder()
+    await userEvent.click(await screen.findByRole('radio', { name: 'Troll' }))
+    expect(leave()).toBe(false)
+
+    await userEvent.click(screen.getByRole('button', { name: 'Choose Troll' }))
+    // A escolha já está na tela, e a gravação está retida (D11): sair agora a perderia.
+    expect(screen.getByRole('radio', { name: 'Troll, your choice' })).toBeTruthy()
+    expect(saved).toEqual([])
+    expect(leave()).toBe(true)
+
+    control.release()
+    await vi.waitFor(() => expect(saved).toHaveLength(1))
+    await vi.waitFor(() => expect(session.getSnapshot()).toMatchObject({ save: 'saved' }))
+    await act(async () => {}) // a tela recebe o snapshot gravado
+    expect(leave()).toBe(false)
+  })
+
+  it('DEF-016 NFR-REL-001 FR-CHAR-010: after a failed save, leaving the page does not ask; the alert says what is lost', async () => {
+    const { session } = setup({ failSave: true })
+    renderBuilder()
+    await userEvent.click(await screen.findByRole('radio', { name: 'Troll' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Choose Troll' }))
+    await screen.findByRole('alert')
+    expect(session.getSnapshot()).toMatchObject({ save: 'failed' })
+    expect(leave()).toBe(false)
+  })
+
   /** Escolhe o Troll com a gravação falhando e prepara a nova tentativa: a próxima gravação dá certo, mas retida. */
   async function failThenHoldRetry() {
     const result = setup({ failSave: true })
