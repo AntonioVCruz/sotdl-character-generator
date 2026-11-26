@@ -1,6 +1,7 @@
 // Validação do pacote oficial no CI (ADR-008, plano §6):
 //   1. schema estrito de cada arquivo de packs/ (o mesmo do app: src/content/schemas.ts);
-//   2. nenhum id presente na revisão base pode sumir (ADR-004: decisões salvas dependem dos ids).
+//   2. nenhum id presente na revisão base pode sumir, nem as chaves que formam as chaves das vagas (vagas de etapa,
+//      concessões, entradas e efeitos; DEF-017), qualificadas pelo dono (ADR-004: decisões salvas dependem delas).
 // Base: PACKS_BASE_REF (no CI: a base do PR ou o commit anterior do push); no local, HEAD.
 // A integridade referencial é da FEAT-003.
 import { execFileSync } from 'node:child_process'
@@ -24,12 +25,57 @@ export function collectIds(node, ids = new Set()) {
   return ids
 }
 
-/** Ids da base que não aparecem mais em nenhum arquivo atual. */
+/**
+ * Campos cujas chaves formam as chaves das vagas (DEF-017; ADR-004), de onde o motor as monta (src/engine/evaluate.ts):
+ * `slots` de uma etapa (a chave raiz), `grants` de uma ancestralidade e de uma entrada de tabela (`childKey`), `entries`
+ * de uma tabela (`childKey`, e a chave é o valor gravado da decisão) e `effects` de uma entrada (`childKey`).
+ */
+const KEYED = new Set(['slots', 'grants', 'entries', 'effects'])
+
+/**
+ * As chaves desses campos, qualificadas pelo dono (o objeto com `id` mais próximo) e pelo caminho nele, como
+ * "table:dwarf-background entries.1.effects.corruption", cada uma com o pai: o id do dono ou a chave que a contém.
+ */
+export function collectKeys(node, keys = new Map(), owner = null, path = '', parent = null) {
+  if (Array.isArray(node)) {
+    node.forEach((child, index) => collectKeys(child, keys, owner, `${path}[${index}]`, parent))
+    return keys
+  }
+  if (!node || typeof node !== 'object') return keys
+  if (typeof node.id === 'string') {
+    owner = node.id
+    path = ''
+    parent = node.id
+  }
+  for (const [field, value] of Object.entries(node)) {
+    const at = path ? `${path}.${field}` : field
+    if (owner && KEYED.has(field) && value && typeof value === 'object' && !Array.isArray(value)) {
+      for (const [key, child] of Object.entries(value)) {
+        const qualified = `${owner} ${at}.${key}`
+        keys.set(qualified, parent)
+        collectKeys(child, keys, owner, `${at}.${key}`, qualified)
+      }
+    } else collectKeys(value, keys, owner, at, parent)
+  }
+  return keys
+}
+
+/**
+ * Ids da base que não aparecem mais em nenhum arquivo atual e, com o dono ainda presente, chaves de vaga da base que
+ * sumiram dele (ADR-004: ids de concessão e de entrada). Só a chave mais alta que sumiu é acusada, não as de dentro dela.
+ */
 export function removedIds(baseFiles, currentFiles) {
   const current = new Set(Object.values(currentFiles).flatMap((json) => [...collectIds(json)]))
-  return Object.entries(baseFiles).flatMap(([file, json]) =>
+  const currentKeys = new Set(Object.values(currentFiles).flatMap((json) => [...collectKeys(json).keys()]))
+  const ids = Object.entries(baseFiles).flatMap(([file, json]) =>
     [...collectIds(json)].filter((id) => !current.has(id)).map((id) => `${id} (was in packs/${file})`),
   )
+  const keys = Object.entries(baseFiles).flatMap(([file, json]) =>
+    [...collectKeys(json)]
+      .filter(([key, parent]) => !currentKeys.has(key) && (current.has(parent) || currentKeys.has(parent)))
+      .map(([key]) => `${key} (was in packs/${file})`),
+  )
+  return [...ids, ...keys]
 }
 
 const git = (...args) => execFileSync('git', args, { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] })
@@ -71,7 +117,7 @@ async function main() {
     console.error(`packs: ${problems.length} problem(s)\n\n${problems.join('\n\n')}`)
     process.exit(1)
   }
-  console.log(`packs: ${Object.keys(current).length} file(s) valid; ${base ? `no ids removed since ${ref}` : `no base at ${ref}, removed-id check skipped`}`)
+  console.log(`packs: ${Object.keys(current).length} file(s) valid; ${base ? `no ids or slot keys removed since ${ref}` : `no base at ${ref}, removed-id check skipped`}`)
 }
 
 function formatIssues(error) {

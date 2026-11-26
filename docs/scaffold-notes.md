@@ -53,7 +53,7 @@ Stubs (substituídos pela FEAT indicada no código):
 | Home | lista nome e nível; sem cartões, estado, ordem, exclusão nem aviso | FEAT-001 |
 | About | texto provisório | FEAT-022 |
 | `CONTENT_VERSION` | `0.0.0` | versionamento dos pacotes (design detalhado) |
-| `packs:check`, ids removidos | compara com o commit anterior (base do PR ou `github.event.before`) | `initial-deployment`: passa a comparar com o último commit publicado (ADR-008, "versão publicada anterior") |
+| `packs:check`, ids e chaves de vaga removidos | compara com o commit anterior (base do PR ou `github.event.before`) | `initial-deployment`: passa a comparar com o último commit publicado (ADR-008, "versão publicada anterior") |
 | `packs/index.json` | nome, camada e data repetem os do livro, sem checagem de consistência | FEAT-003 |
 | referências de fórmula entre livros | conferidas só dentro do livro | FEAT-003 |
 | erro inesperado em `session.open` (fora das quatro razões) | a promessa é relançada, e a tela fica em Loading… | FEAT-022 (FR-HELP-005) |
@@ -114,7 +114,7 @@ O documento v1 foi redefinido sem migração (technical-design D1): camadas `sou
   - `lighthouse`: build e LCP;
   - `deploy`: depende dos três anteriores.
 - Actions na versão maior atual: checkout v7, setup-node v7, upload-artifact v7, configure-pages v6, upload-pages-artifact v5, deploy-pages v5. Node 22.
-- **`packs:check` no CI:** `PACKS_BASE_REF` é `origin/<base>` em PR e `github.event.before` em push. Sem base (primeiro push de um branch, ou commit sumido depois de force-push), a comparação é pulada com aviso. No local, compara com `HEAD`.
+- **`packs:check` no CI:** `PACKS_BASE_REF` é `origin/<base>` em PR e `github.event.before` em push. Sem base (primeiro push de um branch, ou commit sumido depois de force-push), a comparação é pulada com aviso. No local, compara com `HEAD`. Compara os valores de `id` e, desde o DEF-017, as chaves que formam as chaves das vagas (de onde o motor as monta, `src/engine/evaluate.ts`): `slots` das etapas, `grants` das ancestralidades e das entradas, `entries` das tabelas e `effects` das entradas. Cada chave é qualificada pelo dono, o objeto com `id` mais próximo ("removed id: ancestry:dwarf grants.background (was in packs/sotdl.core.json)"); só conta a chave mais alta que sumiu, e só com o dono ainda presente (o dono removido já sai como id). Mudança só de `name`, chave nova e dono movido de arquivo passam.
 - **Deploy escrito, não executado:** o job `deploy` só roda em push no `main` com `vars.PAGES_ENABLED == 'true'`. A variável não existe; a etapa `initial-deployment` liga o Pages (fonte: GitHub Actions) e cria a variável.
 - **Configuração:** a única variável é `BASE_PATH`, lida pelo `vite.config.ts` (`base`) e pelo Playwright e o Lighthouse. Nenhum segredo existe. O modelo é o `.env.example`, só com nomes. O `.env` local (fora do Git) foi gerado com `BASE_PATH=/`; para recriá-lo, copie o `.env.example` e preencha com `/`. O CI usa `/<repositório>/`.
 - **Validação do workflow:** o YAML foi lido e conferido localmente (jobs, `needs` e scripts npm existem). O actionlint não rodou, porque exigiria baixar uma imagem Docker. O primeiro push valida o resto.
