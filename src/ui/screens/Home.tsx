@@ -33,6 +33,15 @@ export function Home() {
   /** Id do elemento que recebe o foco depois de fechar o diálogo (ui-design, Foco na Home). */
   const [focusTo, setFocusTo] = useState<string | null>(null)
   const title = useRef<HTMLHeadingElement>(null)
+  /** Se esta Home ainda está na tela, para a continuação do "New character" (DEF-019). */
+  const mounted = useRef(true)
+
+  useEffect(() => {
+    mounted.current = true
+    return () => {
+      mounted.current = false
+    }
+  }, [])
 
   useEffect(() => {
     void app.listCharacters().then((result) => setList(result.ok ? { state: 'ready', characters: result.characters } : { state: 'error' }))
@@ -58,6 +67,8 @@ export function Home() {
     setCreating(true)
     setError(null)
     const result = await app.createCharacter()
+    // DEF-019 (C2): a criação termina e grava de qualquer jeito; se a pessoa já saiu desta Home, nada muda na tela.
+    if (!mounted.current) return
     setCreating(false)
     // FR-CHAR-010: sem gravação, avisa e fica na Home.
     if (!result.ok) return setError(FAILURE[result.reason])
